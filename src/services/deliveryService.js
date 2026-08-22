@@ -221,7 +221,7 @@ export const deliveryService = {
    * @param {import('../types/deliveree').Package} pkg - Package entity
    * @param {string|null} [userId=null] - Scoped user ID
    * @param {boolean} [bypassRateLimit=false] - Force fetch
-   * @returns {Promise<{ success: boolean, updatedPackage?: import('../types/deliveree').Package, error?: string, rateLimited?: boolean }>}
+   * @returns {Promise<{ success: boolean, updatedPackage?: import('../types/deliveree').Package, error?: string, rateLimited?: boolean, tracked?: boolean, reason?: string }>}
    */
   refreshPackageTracking: async (pkg, userId = null, bypassRateLimit = false) => {
     if (!pkg || !pkg.trackingNumber) {
@@ -236,6 +236,18 @@ export const deliveryService = {
         success: false,
         rateLimited: res.rateLimited,
         error: res.error || 'Failed to refresh tracking'
+      };
+    }
+
+    // Lookup succeeded but there is no live data for this carrier. Leave the
+    // package exactly as the user entered it — inventing progress here is what
+    // made refresh untrustworthy in the first place.
+    if (res.tracked === false) {
+      return {
+        success: true,
+        tracked: false,
+        reason: res.reason,
+        updatedPackage: pkg
       };
     }
 
@@ -270,6 +282,7 @@ export const deliveryService = {
 
     return {
       success: true,
+      tracked: true,
       updatedPackage: savedPkg
     };
   }

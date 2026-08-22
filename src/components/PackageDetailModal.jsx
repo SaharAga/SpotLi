@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   X, ExternalLink, Copy, Check, Calendar, MapPin, Plus, 
-  Truck, Clock, RefreshCw
+  Truck, Clock, RefreshCw, Info
 } from 'lucide-react';
 import { CARRIERS } from '../types/carriers';
 import { detectStore } from '../utils/storeDetector';
@@ -11,6 +11,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { formatDate, formatDateTime, getDaysRemaining } from '../utils/dateUtils';
 import { canTransition, TRANSITION_MATRIX } from '../services/deliveryService';
 import { checkRateLimit } from '../services/trackingService';
+import { isLiveTrackingSupported } from '../services/carrierApiProxy';
 import confetti from 'canvas-confetti';
 
 export function PackageDetailModal({
@@ -402,10 +403,26 @@ export function PackageDetailModal({
 
           {/* Checkpoints Timeline Section */}
           <div className="space-y-4">
+            {/* No live feed exists for this carrier — state it up front so the
+                timeline below is never mistaken for carrier-sourced events. */}
+            {!isLiveTrackingSupported(pkg.carrier) && (
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
+                <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-200/90 font-medium leading-relaxed">
+                  {t('tracking.notSupported').replace('{carrier}', language === 'he' ? carrier.hebrewName : carrier.name)}
+                </p>
+              </div>
+            )}
+
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
                 <Clock className="w-4 h-4 text-indigo-400" />
                 <span>{t('detailModal.timelineTitle')}</span>
+                {!isLiveTrackingSupported(pkg.carrier) && (
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-400/90 bg-amber-500/10 border border-amber-500/25 rounded-md px-1.5 py-0.5">
+                    {t('tracking.manualBadge')}
+                  </span>
+                )}
               </h3>
               
               <button

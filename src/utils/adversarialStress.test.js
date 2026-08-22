@@ -389,7 +389,11 @@ describe('Tier 5 Adversarial Stress & Anti-Fragility Testbench', () => {
       expect(res).toBeDefined();
       expect(Array.isArray(res.updatedPackages)).toBe(true);
       expect(res.updatedPackages.length).toBe(mixedPackages.length);
-      expect(res.refreshedCount).toBeGreaterThanOrEqual(1);
+      // No carrier here resolves to live data, so nothing may be refreshed and
+      // no package may acquire checkpoints it did not already have.
+      expect(res.refreshedCount).toBe(0);
+      expect(res.untrackedCount).toBeGreaterThanOrEqual(1);
+      expect(res.updatedPackages.every(p => !Array.isArray(p.checkpoints) || p.checkpoints.length === 0)).toBe(true);
       expect(progressReports).toBeGreaterThan(0);
     });
   });
