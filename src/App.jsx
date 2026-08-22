@@ -29,6 +29,7 @@ import { INITIAL_PACKAGES } from './data/initialMockData';
 import { useLanguage, LanguageProvider } from './context/LanguageContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { useAuth, AuthProvider } from './context/AuthContext';
+import { isAdminUser } from './constants/admin';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -570,7 +571,7 @@ function DashboardContent() {
         }}
         onOpenAbout={() => setIsAboutOpen(true)}
         onOpenFeedback={() => setIsFeedbackOpen(true)}
-        onOpenAdminFeedback={() => setIsAdminFeedbackOpen(true)}
+        onOpenAdminFeedback={isAdminUser(user) ? () => setIsAdminFeedbackOpen(true) : undefined}
         onOpenExport={() => setIsExportOpen(true)}
         onOpenLockerMap={() => setIsLockerMapOpen(true)}
         onExportData={handleExportData}

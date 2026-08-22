@@ -10,6 +10,16 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    // Admin allowlist. Mirrored by ADMIN_EMAILS in src/constants/admin.js —
+    // that constant only gates the UI; this function is the enforcement.
+    // Requires a *verified* email so an unverified self-set address cannot
+    // impersonate an admin.
+    function isAdmin() {
+      return isAuthenticated() &&
+        request.auth.token.email_verified == true &&
+        request.auth.token.email in ['saharaga97@gmail.com'];
+    }
+
     function isValidPackageData(data, userId) {
       let allowedKeys = [
         'id', 'title', 'titleHe', 'trackingNumber', 'carrier', 'carrierName',
@@ -67,7 +77,10 @@ service cloud.firestore {
         request.resource.data.rating >= 1 &&
         request.resource.data.rating <= 5 &&
         (!('timestamp' in request.resource.data) || (request.resource.data.timestamp is string && request.resource.data.timestamp.size() <= 60));
-      allow read, update, delete: if false; // Private to administrators
+      // Readable only by allowlisted admins (the Alpha Feedback Inspector).
+      // Still never writable or deletable from any client.
+      allow read: if isAdmin();
+      allow update, delete: if false;
     }
 
     // Explicitly deny everything else

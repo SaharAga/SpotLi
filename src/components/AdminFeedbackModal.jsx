@@ -1,9 +1,17 @@
-import React, { useState } from 'react';
-import { 
-  X, MessageSquare, Star, Trash2, 
-  Bug, Lightbulb, Heart 
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  X, MessageSquare, Star, Trash2,
+  Bug, Lightbulb, Heart, RefreshCw, CloudOff, Cloud
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
+import { isAdminUser } from '../constants/admin';
+import {
+  fetchAllFeedback,
+  mergeFeedbackSources,
+  getLocalFeedbackHistory,
+  LOCAL_FEEDBACK_HISTORY_KEY
+} from '../services/feedbackService';
 
 export function AdminFeedbackModal({
   isOpen,
@@ -11,21 +19,43 @@ export function AdminFeedbackModal({
   onShowToast
 }) {
   const { language } = useLanguage();
-  const [feedbacks, setFeedbacks] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('deliveree_tester_feedback') || '[]');
-    } catch {
-      return [];
+  const { user } = useAuth();
+  const isAdmin = isAdminUser(user);
+
+  const [localFeedbacks, setLocalFeedbacks] = useState(() => getLocalFeedbackHistory());
+  const [cloudFeedbacks, setCloudFeedbacks] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [cloudError, setCloudError] = useState(null);
+
+  const feedbacks = mergeFeedbackSources(cloudFeedbacks, localFeedbacks);
+
+  const loadCloudFeedback = useCallback(async () => {
+    if (!isAdmin) return;
+    setIsLoading(true);
+    setCloudError(null);
+    const result = await fetchAllFeedback();
+    setCloudFeedbacks(result.items);
+    setCloudError(result.ok ? null : result.error);
+    setIsLoading(false);
+  }, [isAdmin]);
+
+  // Pull the cloud log whenever an admin opens the inspector, so feedback from
+  // other testers' devices is visible — local history alone only ever shows
+  // submissions made in this browser.
+  useEffect(() => {
+    if (isOpen && isAdmin) {
+      loadCloudFeedback();
     }
-  });
+  }, [isOpen, isAdmin, loadCloudFeedback]);
 
   if (!isOpen) return null;
 
   const handleClearHistory = () => {
-    localStorage.removeItem('deliveree_tester_feedback');
-    setFeedbacks([]);
+    // Clears only this device's buffer; cloud records are immutable from clients.
+    localStorage.removeItem(LOCAL_FEEDBACK_HISTORY_KEY);
+    setLocalFeedbacks([]);
     if (onShowToast) {
-      onShowToast(language === 'he' ? 'היסטוריית המשובים נוקתה' : 'Feedback buffer cleared', 'info');
+      onShowToast(language === 'he' ? 'היסטוריית המשובים המקומית נוקתה' : 'Local feedback buffer cleared', 'info');
     }
   };
 
@@ -48,22 +78,74 @@ export function AdminFeedbackModal({
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
-            aria-label="Close"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <button
+                onClick={loadCloudFeedback}
+                disabled={isLoading}
+                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50"
+                aria-label={language === 'he' ? 'רענן משובים' : 'Refresh feedback'}
+              >
+                <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Source banner — makes it unambiguous whether this list includes
+            other testers' submissions or only this device's. */}
+        <div className="px-5 sm:px-6 py-2.5 border-b border-slate-800 bg-slate-950/40 flex items-center gap-2 text-[11px]">
+          {!isAdmin ? (
+            <>
+              <CloudOff className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span className="text-amber-300/90">
+                {language === 'he'
+                  ? 'תצוגה מקומית בלבד — משובים ממכשירים אחרים אינם מוצגים.'
+                  : 'This device only — other testers’ feedback is not shown.'}
+              </span>
+            </>
+          ) : cloudError ? (
+            <>
+              <CloudOff className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+              <span className="text-rose-300/90">
+                {language === 'he'
+                  ? `טעינת המשובים מהענן נכשלה (${cloudError}) — מוצגים מקומיים בלבד.`
+                  : `Couldn’t load cloud feedback (${cloudError}) — showing local only.`}
+              </span>
+            </>
+          ) : (
+            <>
+              <Cloud className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span className="text-emerald-300/90">
+                {language === 'he'
+                  ? `כולל משובים מכל הבודקים (${cloudFeedbacks.length} מהענן).`
+                  : `Includes all testers’ feedback (${cloudFeedbacks.length} from cloud).`}
+              </span>
+            </>
+          )}
         </div>
 
         {/* Content */}
         <div className="p-5 sm:p-6 text-xs text-slate-200 max-h-[60vh] overflow-y-auto space-y-3">
-          {feedbacks.length === 0 ? (
+          {isLoading && feedbacks.length === 0 ? (
+            <div className="text-center py-10 space-y-2">
+              <RefreshCw className="w-8 h-8 text-slate-600 mx-auto animate-spin" />
+              <p className="text-sm font-semibold text-slate-400">
+                {language === 'he' ? 'טוען משובים...' : 'Loading feedback...'}
+              </p>
+            </div>
+          ) : feedbacks.length === 0 ? (
             <div className="text-center py-10 space-y-2">
               <MessageSquare className="w-8 h-8 text-slate-600 mx-auto" />
               <p className="text-sm font-semibold text-slate-400">
-                {language === 'he' ? 'אין משובים מקומיים כרגע' : 'No local feedback submissions yet'}
+                {language === 'he' ? 'אין משובים כרגע' : 'No feedback submissions yet'}
               </p>
               <p className="text-[11px] text-slate-500">
                 {language === 'he' ? 'כל משוב שיישלח דרך האפליקציה ייקלט כאן.' : 'Every feedback submitted will be recorded here.'}
@@ -96,8 +178,11 @@ export function AdminFeedbackModal({
                 </p>
 
                 <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1">
-                  <span className="truncate">
+                  <span className="truncate flex items-center gap-1.5">
                     👤 Anonymous Tester
+                    {fb.source === 'cloud' && (
+                      <Cloud className="w-3 h-3 text-emerald-400/70" aria-label="From cloud" />
+                    )}
                   </span>
                   <span>📱 {fb.screenWidth}x{fb.screenHeight} • v{fb.appVersion}</span>
                 </div>

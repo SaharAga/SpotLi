@@ -220,6 +220,60 @@ export async function uploadToFirestore(payload) {
 }
 
 /**
+ * Fetches every tester's feedback from Cloud Firestore, newest first.
+ *
+ * Only succeeds for allowlisted admins — `firestore.rules` denies reads on
+ * /feedback to everyone else, so a non-admin caller gets a permission error
+ * from the SDK rather than a partial result.
+ *
+ * @param {number} [limitCount=200]
+ * @returns {Promise<{ ok: boolean, items: FeedbackPayload[], error: string|null }>}
+ */
+export async function fetchAllFeedback(limitCount = 200) {
+  if (!isFirebaseConfigured || !db) {
+    return { ok: false, items: [], error: 'not-configured' };
+  }
+  try {
+    const { collection, getDocs, query, orderBy, limit } = await import('firebase/firestore');
+    const feedbackQuery = query(
+      collection(db, 'feedback'),
+      orderBy('timestamp', 'desc'),
+      limit(limitCount)
+    );
+    const snapshot = await getDocs(feedbackQuery);
+    const items = snapshot.docs.map(docSnap => ({ ...docSnap.data(), id: docSnap.id }));
+    return { ok: true, items, error: null };
+  } catch (err) {
+    console.warn('[FeedbackService] Failed to fetch cloud feedback:', err);
+    return { ok: false, items: [], error: err?.code || 'unknown' };
+  }
+}
+
+/**
+ * Merges cloud and local feedback into one list, newest first.
+ *
+ * The two overlap: anything submitted on this device is in local history *and*
+ * (once synced) in Firestore. Cloud wins on conflict since it is the record
+ * other devices also see.
+ *
+ * @param {FeedbackPayload[]} cloudItems
+ * @param {FeedbackPayload[]} localItems
+ * @returns {FeedbackPayload[]}
+ */
+export function mergeFeedbackSources(cloudItems, localItems) {
+  const byId = new Map();
+  for (const item of Array.isArray(localItems) ? localItems : []) {
+    if (item?.id) byId.set(item.id, { ...item, source: 'local' });
+  }
+  for (const item of Array.isArray(cloudItems) ? cloudItems : []) {
+    if (item?.id) byId.set(item.id, { ...item, source: 'cloud' });
+  }
+  return Array.from(byId.values()).sort((a, b) =>
+    String(b.timestamp || '').localeCompare(String(a.timestamp || ''))
+  );
+}
+
+/**
  * Flushes all pending offline feedback items to Cloud Firestore.
  * @returns {Promise<{ flushed: number, remaining: number }>}
  */

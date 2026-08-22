@@ -7,6 +7,7 @@ const {
   flushOfflineFeedbackQueue,
   getOfflineFeedbackCount,
   getLocalFeedbackHistory,
+  mergeFeedbackSources,
   OFFLINE_FEEDBACK_QUEUE_KEY,
 } = feedbackService;
 
@@ -28,6 +29,54 @@ describe('FeedbackService Unit & Resilience Test Suite', () => {
       clear: vi.fn(() => {
         mockStorage = {};
       })
+    });
+  });
+
+  describe('mergeFeedbackSources', () => {
+    it('returns items newest-first across both sources', () => {
+      const merged = mergeFeedbackSources(
+        [{ id: 'c1', timestamp: '2026-08-20T10:00:00.000Z' }],
+        [{ id: 'l1', timestamp: '2026-08-22T10:00:00.000Z' }]
+      );
+      expect(merged.map(i => i.id)).toEqual(['l1', 'c1']);
+    });
+
+    it('dedupes by id and lets the cloud copy win', () => {
+      const merged = mergeFeedbackSources(
+        [{ id: 'same', message: 'from cloud', timestamp: '2026-08-22T10:00:00.000Z' }],
+        [{ id: 'same', message: 'stale local', timestamp: '2026-08-22T10:00:00.000Z' }]
+      );
+      expect(merged).toHaveLength(1);
+      expect(merged[0].message).toBe('from cloud');
+      expect(merged[0].source).toBe('cloud');
+    });
+
+    it('tags each item with its originating source', () => {
+      const merged = mergeFeedbackSources(
+        [{ id: 'c1', timestamp: '2026-08-21T10:00:00.000Z' }],
+        [{ id: 'l1', timestamp: '2026-08-20T10:00:00.000Z' }]
+      );
+      expect(merged.find(i => i.id === 'c1').source).toBe('cloud');
+      expect(merged.find(i => i.id === 'l1').source).toBe('local');
+    });
+
+    it('tolerates empty, nullish, and non-array inputs', () => {
+      expect(mergeFeedbackSources([], [])).toEqual([]);
+      expect(mergeFeedbackSources(null, undefined)).toEqual([]);
+      expect(mergeFeedbackSources('nope', 42)).toEqual([]);
+    });
+
+    it('skips entries without an id rather than throwing', () => {
+      const merged = mergeFeedbackSources(
+        [{ timestamp: '2026-08-22T10:00:00.000Z' }],
+        [{ id: 'l1', timestamp: '2026-08-21T10:00:00.000Z' }]
+      );
+      expect(merged.map(i => i.id)).toEqual(['l1']);
+    });
+
+    it('does not throw when timestamps are missing', () => {
+      const merged = mergeFeedbackSources([{ id: 'a' }], [{ id: 'b' }]);
+      expect(merged).toHaveLength(2);
     });
   });
 
