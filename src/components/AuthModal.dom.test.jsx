@@ -1,0 +1,159 @@
+/** @vitest-environment jsdom */
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { screen, cleanup } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { AuthModal } from './AuthModal';
+import { renderWithLanguage } from '../test-utils/renderWithProviders';
+
+function getSubmitButton(name) {
+  return screen.getAllByRole('button', { name }).find((btn) => btn.type === 'submit');
+}
+
+// AuthContext talks to Firebase, which is unconfigured in tests (no env
+// vars). Mocking useAuth lets these tests exercise the form's own
+// validation and submit wiring without needing a real Firebase project —
+// the same reason no test in this repo has rendered AuthModal before.
+const authMocks = vi.hoisted(() => ({
+  loginWithEmail: vi.fn(),
+  registerWithEmail: vi.fn(),
+  resetPassword: vi.fn(),
+  loginWithGoogle: vi.fn(),
+  loginWithApple: vi.fn(),
+  logout: vi.fn(),
+  deleteUserAccountAndData: vi.fn()
+}));
+
+vi.mock('../context/AuthContext', () => ({
+  useAuth: () => ({
+    user: null,
+    loginWithGoogle: authMocks.loginWithGoogle,
+    loginWithApple: authMocks.loginWithApple,
+    loginWithEmail: authMocks.loginWithEmail,
+    registerWithEmail: authMocks.registerWithEmail,
+    resetPassword: authMocks.resetPassword,
+    deleteUserAccountAndData: authMocks.deleteUserAccountAndData,
+    logout: authMocks.logout
+  })
+}));
+
+describe('AuthModal (rendered)', () => {
+  beforeEach(() => {
+    cleanup();
+    Object.values(authMocks).forEach((fn) => fn.mockReset());
+  });
+
+  it('rejects an invalid email without calling loginWithEmail', async () => {
+    const user = userEvent.setup();
+    renderWithLanguage(<AuthModal isOpen initialMode="signin" onClose={vi.fn()} />);
+
+    await user.type(screen.getByPlaceholderText('you@domain.com'), 'not-an-email');
+    await user.type(screen.getByPlaceholderText('••••••••'), 'somepassword1!');
+    await user.click(getSubmitButton(/sign in$/i));
+
+    expect(await screen.findByText(/valid email address/i)).toBeInTheDocument();
+    expect(authMocks.loginWithEmail).not.toHaveBeenCalled();
+  });
+
+  it('signs in with trimmed credentials and closes on success', async () => {
+    authMocks.loginWithEmail.mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    renderWithLanguage(<AuthModal isOpen initialMode="signin" onClose={onClose} />);
+
+    await user.type(screen.getByPlaceholderText('you@domain.com'), '  test@example.com  ');
+    await user.type(screen.getByPlaceholderText('••••••••'), 'correcthorse1!');
+    await user.click(getSubmitButton(/sign in$/i));
+
+    await vi.waitFor(() => {
+      expect(authMocks.loginWithEmail).toHaveBeenCalledWith('test@example.com', 'correcthorse1!');
+    });
+    await vi.waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+  });
+
+  it('surfaces the thrown error message when sign-in fails, without closing', async () => {
+    authMocks.loginWithEmail.mockRejectedValue(new Error('Wrong password.'));
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    renderWithLanguage(<AuthModal isOpen initialMode="signin" onClose={onClose} />);
+
+    await user.type(screen.getByPlaceholderText('you@domain.com'), 'test@example.com');
+    await user.type(screen.getByPlaceholderText('••••••••'), 'correcthorse1!');
+    await user.click(getSubmitButton(/sign in$/i));
+
+    expect(await screen.findByText('Wrong password.')).toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('enforces the register tab\'s stronger password rules before submitting', async () => {
+    const user = userEvent.setup();
+    renderWithLanguage(<AuthModal isOpen initialMode="signin" onClose={vi.fn()} />);
+
+    await user.click(screen.getByRole('button', { name: /^register$/i }));
+    await user.type(screen.getByPlaceholderText('e.g. Alex Cohen'), 'Alex Cohen');
+    await user.type(screen.getByPlaceholderText('you@domain.com'), 'alex@example.com');
+
+    const passwordFields = screen.getAllByPlaceholderText('••••••••');
+    await user.type(passwordFields[0], 'onlyletters'); // no number, no symbol
+    await user.type(passwordFields[1], 'onlyletters');
+    await user.click(screen.getByRole('button', { name: /create account/i }));
+
+    expect(await screen.findByText(/password must include both letters and numbers/i)).toBeInTheDocument();
+    expect(authMocks.registerWithEmail).not.toHaveBeenCalled();
+  });
+
+  it('rejects mismatched passwords on register', async () => {
+    const user = userEvent.setup();
+    renderWithLanguage(<AuthModal isOpen initialMode="register" onClose={vi.fn()} />);
+
+    await user.type(screen.getByPlaceholderText('e.g. Alex Cohen'), 'Alex Cohen');
+    await user.type(screen.getByPlaceholderText('you@domain.com'), 'alex@example.com');
+    const passwordFields = screen.getAllByPlaceholderText('••••••••');
+    await user.type(passwordFields[0], 'Correct1!Horse');
+    await user.type(passwordFields[1], 'Different1!Horse');
+    await user.click(screen.getByRole('button', { name: /create account/i }));
+
+    expect(await screen.findByText(/passwords do not match\. please re-enter/i)).toBeInTheDocument();
+    expect(authMocks.registerWithEmail).not.toHaveBeenCalled();
+  });
+
+  it('registers with a valid form and calls onShowToast', async () => {
+    authMocks.registerWithEmail.mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    const onShowToast = vi.fn();
+    renderWithLanguage(
+      <AuthModal isOpen initialMode="register" onClose={vi.fn()} onShowToast={onShowToast} />
+    );
+
+    await user.type(screen.getByPlaceholderText('e.g. Alex Cohen'), 'Alex Cohen');
+    await user.type(screen.getByPlaceholderText('you@domain.com'), 'alex@example.com');
+    const passwordFields = screen.getAllByPlaceholderText('••••••••');
+    await user.type(passwordFields[0], 'Correct1!Horse');
+    await user.type(passwordFields[1], 'Correct1!Horse');
+    await user.click(screen.getByRole('button', { name: /create account/i }));
+
+    await vi.waitFor(() => {
+      expect(authMocks.registerWithEmail).toHaveBeenCalledWith('alex@example.com', 'Correct1!Horse', 'Alex Cohen');
+    });
+    expect(onShowToast).toHaveBeenCalledWith(expect.stringMatching(/created/i), 'success');
+  });
+
+  it('sends a password reset link from the forgot-password tab', async () => {
+    authMocks.resetPassword.mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    renderWithLanguage(<AuthModal isOpen initialMode="signin" onClose={vi.fn()} />);
+
+    await user.click(screen.getByRole('button', { name: /forgot password/i }));
+    await user.type(screen.getByPlaceholderText('you@domain.com'), 'alex@example.com');
+    await user.click(screen.getByRole('button', { name: /send reset link/i }));
+
+    await vi.waitFor(() => {
+      expect(authMocks.resetPassword).toHaveBeenCalledWith('alex@example.com');
+    });
+    expect(await screen.findByText(/reset link has been sent/i)).toBeInTheDocument();
+  });
+
+  it('renders nothing when isOpen is false', () => {
+    const { container } = renderWithLanguage(<AuthModal isOpen={false} onClose={vi.fn()} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+});

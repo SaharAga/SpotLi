@@ -22,10 +22,7 @@ import { DeleteConfirmDialog } from './components/DeleteConfirmDialog';
 import { Toast } from './components/Toast';
 import { InstallPwaBanner } from './components/InstallPwaBanner';
 import { deliveryService } from './services/deliveryService';
-import { cloudAdapter } from './services/cloudStorageAdapter';
-import { syncQueueService, MUTATION_TYPES } from './services/syncQueueService';
 import { notificationService } from './services/notificationService';
-import { INITIAL_PACKAGES } from './data/initialMockData';
 import { useLanguage, LanguageProvider } from './context/LanguageContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { useAuth, AuthProvider } from './context/AuthContext';
@@ -33,91 +30,22 @@ import { isAdminUser } from './constants/admin';
 import { CARRIERS } from './types/carriers';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { usePackages } from './hooks/usePackages';
 
 function DashboardContent() {
 
   const { t, language, isRTL } = useLanguage();
   const { user, loading, triggerCloudSync } = useAuth();
 
-  // Demo URL Parameter Check (?demo=true or #demo)
-  const isDemoUrl = useMemo(() => {
-    if (typeof window === 'undefined') return false;
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('demo') === 'true' || window.location.hash === '#demo';
-  }, []);
-
-  const [isDemoMode, setIsDemoMode] = useState(isDemoUrl);
-
-  // Primary State
-  const [packages, setPackages] = useState(() => {
-    if (isDemoUrl) {
-      return INITIAL_PACKAGES;
-    }
-    return deliveryService.getPackages(user?.id || null);
-  });
-
-  // Automatically disable demo mode upon user authentication
-  useEffect(() => {
-    if (user?.id) {
-      setIsDemoMode(false);
-    }
-  }, [user?.id]);
-
-  // Load packages scoped by user or guest; guest-to-user migration is handled by AuthContext
-  useEffect(() => {
-    if (isDemoMode) {
-      setPackages(INITIAL_PACKAGES);
-    } else if (user?.id) {
-      setPackages(deliveryService.getPackages(user.id));
-    } else {
-      setPackages(deliveryService.getPackages(null));
-    }
-  }, [user?.id, isDemoMode]);
-
-  // Multi-tab package synchronization via StorageEvent
-  useEffect(() => {
-    if (typeof window === 'undefined' || isDemoMode) return;
-
-    const handlePackageStorageChange = (e) => {
-      const currentStorageKey = deliveryService.getStorageKey(user?.id || null);
-      if (e.key === currentStorageKey) {
-        if (!e.newValue) {
-          setPackages([]);
-        } else {
-          try {
-            const parsed = JSON.parse(e.newValue);
-            if (Array.isArray(parsed)) {
-              const validated = deliveryService.getPackages(user?.id || null);
-              setPackages(validated);
-            }
-          } catch (err) {
-            console.warn('[App] Multi-tab package sync error:', err);
-          }
-        }
-      }
-    };
-
-    window.addEventListener('storage', handlePackageStorageChange);
-    return () => window.removeEventListener('storage', handlePackageStorageChange);
-  }, [user?.id, isDemoMode]);
-
-  // Real-time Cloud Synchronization listener
-  useEffect(() => {
-    if (isDemoMode || !user?.id) return;
-    const unsubscribe = cloudAdapter.subscribe((updatedPackages) => {
-      if (Array.isArray(updatedPackages)) {
-        setPackages(updatedPackages);
-      }
-    });
-    return () => unsubscribe();
-  }, [user?.id, isDemoMode]);
-
-  useEffect(() => {
-    if (isDemoUrl && !isDemoMode && !user) {
-      setIsDemoMode(true);
-      setPackages(INITIAL_PACKAGES);
-    }
-  }, [isDemoUrl, isDemoMode, user]);
+  const {
+    packages,
+    setPackages,
+    isDemoMode,
+    startDemoMode,
+    updatePackagesState,
+    upsertSinglePackage,
+    removeSinglePackage
+  } = usePackages(user, triggerCloudSync);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
@@ -245,42 +173,6 @@ function DashboardContent() {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     };
   }, []);
-
-  // Sync with LocalStorage & Cloud (bulk — use for batch operations only, e.g. import/batch-refresh).
-  // Deliberately NOT routed through syncQueueService: enqueue() auto-triggers a replay per call, and
-  // a tight synchronous loop of N enqueue() calls only picks up the first item's replay pass (the
-  // queue snapshot is captured before the loop's later calls land) — bulk writes go straight to
-  // cloudAdapter's own batched Firestore write instead, which handles the whole list atomically.
-  const updatePackagesState = (newPackages) => {
-    setPackages(newPackages);
-    deliveryService.savePackages(newPackages, user?.id || null);
-    if (user?.id && cloudAdapter.isFirestoreActive?.()) {
-      cloudAdapter.savePackages(newPackages);
-    }
-    triggerCloudSync();
-  };
-
-  // Single-package mutation: writes one Firestore doc instead of batch-writing the full list (quota-efficient).
-  // The cloud write goes through syncQueueService instead of calling cloudAdapter directly, so a failed
-  // or offline write is retried with backoff and dead-lettered (not silently dropped) instead of just
-  // logging a console.warn.
-  const upsertSinglePackage = (updatedPackages, changedPkg) => {
-    setPackages(updatedPackages);
-    deliveryService.savePackages(updatedPackages, user?.id || null);
-    if (user?.id && cloudAdapter.isFirestoreActive?.()) {
-      syncQueueService.enqueue(MUTATION_TYPES.UPDATE, changedPkg, user.id);
-    }
-    triggerCloudSync();
-  };
-
-  const removeSinglePackage = (updatedPackages, packageId) => {
-    setPackages(updatedPackages);
-    deliveryService.savePackages(updatedPackages, user?.id || null);
-    if (user?.id && cloudAdapter.isFirestoreActive?.()) {
-      syncQueueService.enqueue(MUTATION_TYPES.DELETE, { id: packageId }, user.id);
-    }
-    triggerCloudSync();
-  };
 
   // Handlers
   const handleAddOrUpdatePackage = (pkgData) => {
@@ -483,8 +375,7 @@ function DashboardContent() {
   };
 
   const handleLaunchDemoMode = () => {
-    setIsDemoMode(true);
-    setPackages(INITIAL_PACKAGES);
+    startDemoMode();
     showToast(language === 'he' ? 'הופעל מצב הדגמה חי' : 'Demo mode loaded with sample packages', 'info');
   };
 

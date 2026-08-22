@@ -8,6 +8,7 @@ import {
   browserLocalPersistence 
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 
 /**
  * Firebase Client Configuration.
@@ -50,6 +51,47 @@ export const app = isFirebaseConfigured
 
 export const auth = app ? getAuth(app) : null;
 export const db = app ? getFirestore(app) : null;
+
+/**
+ * App Check.
+ *
+ * The /feedback collection accepts writes from anyone with the project's
+ * public API key, which is unauthenticated-by-design (guest testers submit
+ * feedback without an account). App Check is what actually closes that off:
+ * it rejects requests that don't come from this app's real build, without
+ * requiring sign-in.
+ *
+ * Optional and gated on VITE_RECAPTCHA_V3_SITE_KEY so a build with no key
+ * behaves exactly as before — App Check simply isn't initialized. Setting up
+ * the site key and turning on enforcement is a Firebase console step outside
+ * this repo; see README.md.
+ */
+const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_V3_SITE_KEY;
+
+if (app && recaptchaSiteKey) {
+  // Lets `npm run dev` keep working once enforcement is turned on: register
+  // this logged token as a debug token in Firebase Console -> App Check.
+  // Vite strips import.meta.env.DEV to `false` in production builds, so this
+  // branch and its console.info are compiled out of what ships.
+  if (import.meta.env.DEV) {
+    globalThis.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  }
+
+  try {
+    initializeAppCheck(app, {
+      provider: new ReCaptchaV3Provider(recaptchaSiteKey),
+      isTokenAutoRefreshEnabled: true
+    });
+  } catch (err) {
+    console.warn('[Firebase] App Check failed to initialize:', err);
+  }
+} else if (app && typeof window !== 'undefined' && import.meta.env.PROD) {
+  console.warn(
+    '[Firebase] App Check is not configured (VITE_RECAPTCHA_V3_SITE_KEY unset). ' +
+    'Firestore write paths that accept unauthenticated requests, like /feedback, ' +
+    'have no bot protection until it is.'
+  );
+}
 
 // Guarantee persistent login state across browser restarts and page refreshes
 if (auth && isFirebaseConfigured) {
