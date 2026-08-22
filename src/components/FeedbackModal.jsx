@@ -1,10 +1,16 @@
-import React, { useState } from 'react';
-import { 
-  X, MessageSquarePlus, Send, 
-  Bug, Lightbulb, Heart, Smartphone, ShieldCheck
+import React, { useState, useCallback } from 'react';
+import {
+  X, MessageSquarePlus, Send,
+  Bug, Lightbulb, Heart, Smartphone, ShieldCheck,
+  ImagePlus, Trash2, Loader2
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { submitFeedback } from '../services/feedbackService';
+import {
+  compressImageFile,
+  extractImageFromPaste,
+  ACCEPTED_IMAGE_TYPES
+} from '../utils/imageCompressor';
 
 export function FeedbackModal({
   isOpen,
@@ -17,6 +23,49 @@ export function FeedbackModal({
   const [message, setMessage] = useState('');
   const [rating, setRating] = useState(5);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [screenshot, setScreenshot] = useState(null);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [imageError, setImageError] = useState(null);
+
+  /**
+   * Downscales the picked image and holds it in state. The screenshot travels
+   * inside the Firestore document, so oversized files are rejected here rather
+   * than failing opaquely at write time.
+   */
+  const attachImage = useCallback(async (file) => {
+    setImageError(null);
+    setIsProcessingImage(true);
+    try {
+      const result = await compressImageFile(file);
+      setScreenshot(result);
+    } catch (err) {
+      const reason = err?.message;
+      const messages = {
+        'unsupported-type': language === 'he'
+          ? 'סוג קובץ לא נתמך. נסו PNG, JPEG, WEBP או GIF.'
+          : 'Unsupported file type. Try PNG, JPEG, WEBP, or GIF.',
+        'too-large': language === 'he'
+          ? 'התמונה גדולה מדי גם אחרי דחיסה. נסו לחתוך אותה ולצרף שוב.'
+          : 'Image is still too large after compression. Try cropping it and attaching again.'
+      };
+      setImageError(
+        messages[reason] ||
+        (language === 'he' ? 'לא הצלחנו לעבד את התמונה.' : 'Could not process that image.')
+      );
+    } finally {
+      setIsProcessingImage(false);
+    }
+  }, [language]);
+
+  // Pasting a screenshot straight into the textarea is the common path on
+  // desktop; the file picker covers mobile and drag-free flows.
+  const handlePaste = useCallback((event) => {
+    const file = extractImageFromPaste(event);
+    if (file) {
+      event.preventDefault();
+      attachImage(file);
+    }
+  }, [attachImage]);
 
   if (!isOpen) return null;
 
@@ -38,7 +87,8 @@ export function FeedbackModal({
         message,
         rating,
         isAnonymous: true,
-        user: 'Anonymous Tester'
+        user: 'Anonymous Tester',
+        screenshot: screenshot?.dataUrl || null
       });
 
       if (onShowToast) {
@@ -60,6 +110,8 @@ export function FeedbackModal({
       }
 
       setMessage('');
+      setScreenshot(null);
+      setImageError(null);
       onClose();
     } catch (err) {
       console.warn('[FeedbackModal] Submission error:', err);
@@ -186,8 +238,89 @@ export function FeedbackModal({
                   ? 'ספרו לנו מה אהבתם, מה היה מסורבל, או איזה כפתור לא הגיב כמצופה...'
                   : 'Tell us what felt smooth, what was confusing, or what bug you encountered...'
               }
+              onPaste={handlePaste}
               className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 rounded-xl p-3 focus:border-indigo-500 focus:outline-none resize-none leading-relaxed"
             />
+            <p className="text-[10px] text-slate-500 mt-1">
+              {language === 'he'
+                ? 'טיפ: אפשר להדביק צילום מסך ישירות לתיבה (Ctrl+V).'
+                : 'Tip: you can paste a screenshot straight into the box (Ctrl+V).'}
+            </p>
+          </div>
+
+          {/* Screenshot attachment */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-300 mb-1.5">
+              {language === 'he' ? 'צילום מסך (רשות)' : 'Screenshot (optional)'}
+            </label>
+
+            {screenshot ? (
+              <div className="relative rounded-xl overflow-hidden border border-slate-800 bg-slate-950">
+                <img
+                  src={screenshot.dataUrl}
+                  alt={language === 'he' ? 'צילום מסך מצורף' : 'Attached screenshot'}
+                  className="w-full max-h-48 object-contain bg-slate-900"
+                />
+                <div className="flex items-center justify-between px-3 py-2 text-[10px] text-slate-400">
+                  <span>
+                    {screenshot.width}×{screenshot.height} • {Math.round(screenshot.bytes / 1024)}KB
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setScreenshot(null)}
+                    className="flex items-center gap-1 text-rose-400 hover:text-rose-300 font-semibold cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>{language === 'he' ? 'הסר' : 'Remove'}</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <label
+                className={`flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed cursor-pointer transition-colors min-h-[48px] ${
+                  isProcessingImage
+                    ? 'border-slate-700 text-slate-500'
+                    : 'border-slate-700 text-slate-400 hover:border-indigo-500/60 hover:text-indigo-300'
+                }`}
+              >
+                {isProcessingImage ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ImagePlus className="w-4 h-4" />
+                )}
+                <span className="text-xs font-semibold">
+                  {isProcessingImage
+                    ? (language === 'he' ? 'מעבד תמונה...' : 'Processing image...')
+                    : (language === 'he' ? 'צרף צילום מסך' : 'Attach a screenshot')}
+                </span>
+                <input
+                  type="file"
+                  accept={ACCEPTED_IMAGE_TYPES.join(',')}
+                  className="hidden"
+                  disabled={isProcessingImage}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    // Reset so re-picking the same file still fires onChange.
+                    e.target.value = '';
+                    if (file) attachImage(file);
+                  }}
+                />
+              </label>
+            )}
+
+            {imageError && (
+              <p className="text-[10px] text-rose-400 mt-1.5">{imageError}</p>
+            )}
+
+            {/* The rest of the payload is scrubbed of PII automatically; the
+                contents of an image cannot be. Say so plainly. */}
+            {screenshot && (
+              <p className="text-[10px] text-amber-400/90 mt-1.5 leading-tight">
+                {language === 'he'
+                  ? '⚠️ שימו לב: לא ניתן להסתיר פרטים אישיים בתוך תמונה. ודאו שהצילום אינו כולל כתובת, טלפון או פרטי תשלום.'
+                  : '⚠️ Note: personal details inside an image can’t be masked automatically. Check the screenshot doesn’t show an address, phone number, or payment details.'}
+              </p>
+            )}
           </div>
 
           {/* Complete Anonymity Privacy Notice */}

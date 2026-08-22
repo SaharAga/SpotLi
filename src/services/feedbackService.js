@@ -107,6 +107,8 @@ export function validateAndSanitizeFeedback(input) {
     ? sanitizeString(input.timestamp, 50)
     : new Date().toISOString();
 
+  const screenshot = validateScreenshot(input.screenshot);
+
   return {
     id,
     status: 'pending',
@@ -120,8 +122,32 @@ export function validateAndSanitizeFeedback(input) {
     userAgent,
     screenWidth,
     screenHeight,
-    timestamp
+    timestamp,
+    ...(screenshot ? { screenshot } : {})
   };
+}
+
+/**
+ * Largest screenshot we will store, in base64 characters. Firestore caps a
+ * document at 1MiB; this leaves headroom for the message and metadata.
+ * Kept deliberately above the client-side compression ceiling so a slightly
+ * over-target image is still accepted rather than silently dropped.
+ */
+export const MAX_SCREENSHOT_CHARS = 750_000;
+
+/**
+ * Accepts a screenshot only if it is a plausible image data URL within budget.
+ * Anything else is dropped rather than throwing — a malformed attachment
+ * should never cost the user their written feedback.
+ *
+ * @param {unknown} value
+ * @returns {string|null}
+ */
+export function validateScreenshot(value) {
+  if (typeof value !== 'string' || !value) return null;
+  if (!/^data:image\/(png|jpeg|webp|gif);base64,/i.test(value)) return null;
+  if (value.length > MAX_SCREENSHOT_CHARS) return null;
+  return value;
 }
 
 /**
@@ -344,7 +370,16 @@ if (typeof window !== 'undefined') {
  */
 export async function submitFeedback(rawFeedback) {
   const validated = validateAndSanitizeFeedback(rawFeedback);
-  const payload = sanitizeForTelemetry(validated);
+
+  // Keep the screenshot out of sanitizeForTelemetry: it walks every string
+  // through redactPII, whose phone/number patterns would match inside base64
+  // and corrupt the image. It is already validated and contains no key/value
+  // text to scrub, so it is re-attached untouched afterwards.
+  const { screenshot, ...sanitizable } = validated;
+  const payload = sanitizeForTelemetry(sanitizable);
+  if (screenshot) {
+    payload.screenshot = screenshot;
+  }
 
   // Check network connectivity
   const isOnline = typeof navigator === 'undefined' || navigator.onLine !== false;

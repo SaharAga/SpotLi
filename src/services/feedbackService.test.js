@@ -32,6 +32,41 @@ describe('FeedbackService Unit & Resilience Test Suite', () => {
     });
   });
 
+  describe('screenshot attachments', () => {
+    const validPng = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==';
+
+    it('keeps a valid image data URL on the payload', () => {
+      const result = validateAndSanitizeFeedback({ message: 'bug', screenshot: validPng });
+      expect(result.screenshot).toBe(validPng);
+    });
+
+    it('omits the field entirely when no screenshot is supplied', () => {
+      const result = validateAndSanitizeFeedback({ message: 'bug' });
+      expect('screenshot' in result).toBe(false);
+    });
+
+    it('drops non-image and non-data-URL values instead of throwing', () => {
+      for (const bad of ['https://evil.example/x.png', 'data:text/html;base64,PHNjcmlwdD4=', 'nope', '', 42, {}, null]) {
+        const result = validateAndSanitizeFeedback({ message: 'bug', screenshot: bad });
+        expect('screenshot' in result).toBe(false);
+      }
+    });
+
+    it('drops an oversized screenshot rather than losing the written feedback', () => {
+      const huge = `data:image/png;base64,${'A'.repeat(800_000)}`;
+      const result = validateAndSanitizeFeedback({ message: 'still here', screenshot: huge });
+      expect('screenshot' in result).toBe(false);
+      expect(result.message).toBe('still here');
+    });
+
+    it('survives submitFeedback without being mangled by PII redaction', async () => {
+      // redactPII would otherwise rewrite digit runs inside the base64 payload.
+      const digitHeavy = `data:image/jpeg;base64,${'0123456789'.repeat(40)}`;
+      const result = await submitFeedback({ message: 'see screenshot', screenshot: digitHeavy });
+      expect(result.feedback.screenshot).toBe(digitHeavy);
+    });
+  });
+
   describe('mergeFeedbackSources', () => {
     it('returns items newest-first across both sources', () => {
       const merged = mergeFeedbackSources(
