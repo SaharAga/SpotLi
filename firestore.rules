@@ -76,7 +76,14 @@ service cloud.firestore {
         request.resource.data.rating is number &&
         request.resource.data.rating >= 1 &&
         request.resource.data.rating <= 5 &&
-        (!('timestamp' in request.resource.data) || (request.resource.data.timestamp is string && request.resource.data.timestamp.size() <= 60));
+        (!('timestamp' in request.resource.data) || (request.resource.data.timestamp is string && request.resource.data.timestamp.size() <= 60)) &&
+        // Optional base64 screenshot. Capped so a single document cannot
+        // approach Firestore's 1MiB ceiling and must be an image data URL.
+        (!('screenshot' in request.resource.data) || (
+          request.resource.data.screenshot is string &&
+          request.resource.data.screenshot.size() <= 750000 &&
+          request.resource.data.screenshot.matches('^data:image/(png|jpeg|webp|gif);base64,.*')
+        ));
       // Readable only by allowlisted admins (the Alpha Feedback Inspector).
       // Still never writable or deletable from any client.
       allow read: if isAdmin();

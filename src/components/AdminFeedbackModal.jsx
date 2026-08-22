@@ -177,6 +177,23 @@ export function AdminFeedbackModal({
                   {fb.message}
                 </p>
 
+                {fb.screenshot && (
+                  <a
+                    href={fb.screenshot}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block rounded-xl overflow-hidden border border-slate-800 hover:border-indigo-500/50 transition-colors"
+                    title={language === 'he' ? 'פתח בגודל מלא' : 'Open full size'}
+                  >
+                    <img
+                      src={fb.screenshot}
+                      alt={language === 'he' ? 'צילום מסך מהבודק' : 'Tester screenshot'}
+                      loading="lazy"
+                      className="w-full max-h-56 object-contain bg-slate-900"
+                    />
+                  </a>
+                )}
+
                 <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1">
                   <span className="truncate flex items-center gap-1.5">
                     👤 Anonymous Tester
