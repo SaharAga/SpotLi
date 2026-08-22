@@ -117,7 +117,8 @@ export function SmartImportModal({
         carrierId: parsed.carrier || 'other',
         notes: parsed.notes,
         origin: parsed.origin || '',
-        destination: parsed.destination || 'Israel'
+        destination: parsed.destination || 'Israel',
+        pickupLocation: parsed.pickupLocation || ''
       });
       onClose();
     }

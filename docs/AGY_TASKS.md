@@ -157,10 +157,30 @@ This catalog defines the comprehensive 25 engineering tasks across all priority 
 * **Summary**: Browser native BarcodeDetector API for instant packaging label scanning via phone camera.
 
 ### `TASK-24-EMAIL`: Smart Email Ingestion Integration
-* **Priority**: `P3`
-* **Status**: `Backlog`
-* **Squad**: Squad A (`delivery_pipeline_specialist`, `auth_cloud_specialist`)
-* **Summary**: Automated tracking number extraction from courier notification emails (Gmail / Outlook).
+* **Priority**: `P0` (upgraded from `P3` — 2026-08-22, real user feedback: paste-based parser fails on real messages, see SYNC-11)
+* **Status**: `In Progress` — phased, see `docs/plans/2026-08-22-smart-ingestion-ai-parsing.md`
+* **Squad**: Squad A (`delivery_pipeline_specialist`, `auth_cloud_specialist`) + Claude/Antigravity joint
+* **Summary**: Automated tracking number extraction from courier notification emails, via forwarding (not Gmail/Outlook OAuth for now — see plan doc for why). Split into TASK-24A–D below.
+
+#### `TASK-24A`: Client-side parser upgrade (free, immediate)
+* **Priority**: `P0` | **Status**: `In Progress` | **Owner**: Antigravity
+* **Summary**: Expand `src/utils/smartParser.js` to extract tracking numbers from courier URLs (e.g. `israelpost.co.il/item/...`, `hfd.co.il/?t=...`) and tracking links generally, not just labeled text (`tracking:`, `מספר מעקב`). Zero cost, no server dependency. Add unit tests for `smartParser.js` and `SmartImportModal.jsx`.
+
+#### `TASK-24B`: Serverless AI parsing engine
+* **Priority**: `P0` | **Status**: `Backlog` | **Owner**: Claude/Antigravity joint
+* **Summary**: Firebase Cloud Function `parseDeliveryPayload` — accepts text or image, returns structured package fields (Zod schema: carrier, trackingNumber, store, status, expectedDate) via an LLM/vision model call. Auth-gated, per-user daily rate limit. See plan doc for model/cost choice.
+
+#### `TASK-24C`: Email forwarding ingestion pipeline
+* **Priority**: `P0` | **Status**: `Backlog` | **Owner**: Joint/Claude
+* **Summary**: Dedicated inbound parsing address, inbound-mail webhook (e.g. CloudMailin/SendGrid/Postmark or a Firebase extension), routes to TASK-24B, auto-upserts to the user's Firestore packages with no click required. Android one-click forwarding-rule setup, iPhone manual instructions.
+
+#### `TASK-24D`: Paste-based fallback (text + image)
+* **Priority**: `P1` | **Status**: `Backlog` | **Owner**: Antigravity
+* **Summary**: `SmartImportModal.jsx` gets image paste/drop support. Free parser (TASK-24A) runs first; if it fails or confidence is low, an opt-in "✨ Enhance with AI" button invokes TASK-24B. Positioned as the fallback for anything TASK-24C's automatic ingestion missed, not the primary path.
+
+#### `TASK-24E` (Post-Alpha, deferred): Gmail API / push-based ingestion
+* **Priority**: `P2 (deferred)` | **Status**: `Deferred`
+* **Summary**: Replace forwarding with Gmail API OAuth + push (watch) notifications for zero-touch setup, once TASK-24C proves parsing accuracy/volume on real traffic. Not started before then — no point building the harder integration before the parsing engine is validated.
 
 ### `TASK-25-COURIER`: Courier Interaction Hub (WhatsApp Quick Replies & Proxy)
 * **Priority**: `P3`
