@@ -1,8 +1,27 @@
+import { readFileSync } from 'node:fs';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
 // https://vite.dev/config/
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url)));
+
+/**
+ * Injects the app version everywhere it needs to appear, from the one place
+ * it's actually defined (package.json). Fixes a real bug: index.html carried
+ * its own hardcoded version string for its cache-purge check, independent of
+ * src/constants/version.js — the two drifted apart silently, since nothing
+ * forced them to move together.
+ */
+function injectAppVersion() {
+  return {
+    name: 'inject-app-version',
+    transformIndexHtml(html) {
+      return html.replace(/__APP_VERSION__/g, pkg.version);
+    }
+  };
+}
+
 const REQUIRED_ENV = [
   'VITE_FIREBASE_API_KEY',
   'VITE_FIREBASE_AUTH_DOMAIN',
@@ -35,8 +54,12 @@ function requireFirebaseEnv() {
 }
 
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version)
+  },
   plugins: [
     requireFirebaseEnv(),
+    injectAppVersion(),
     react(),
     tailwindcss()
   ],

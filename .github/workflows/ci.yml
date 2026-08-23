@@ -11,6 +11,35 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  require-version-bump:
+    name: Require Version Bump
+    runs-on: ubuntu-latest
+    # Only meaningful for a PR diff against its base — a push to main is the
+    # merge itself, already covered by the PR that produced it.
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Check package.json version changed
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch origin "$BASE_REF" --depth=1
+          BASE_VERSION=$(git show "origin/$BASE_REF:package.json" | node -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(0,"utf8")).version)')
+          HEAD_VERSION=$(node -e 'process.stdout.write(require("./package.json").version)')
+          CHANGED_SRC=$(git diff --name-only "origin/$BASE_REF...HEAD" -- src/ | wc -l | tr -d ' ')
+          echo "Base ($BASE_REF): $BASE_VERSION"
+          echo "Head: $HEAD_VERSION"
+          echo "Changed src/ files: $CHANGED_SRC"
+          if [ "$CHANGED_SRC" -gt 0 ] && [ "$BASE_VERSION" = "$HEAD_VERSION" ]; then
+            echo "::error::This PR changes src/** but package.json's version ($HEAD_VERSION) is unchanged from $BASE_REF. Bump package.json's \"version\" field — src/constants/version.js and index.html now derive from it automatically. See CHANGELOG.md for the MAJOR.MINOR.PATCH convention."
+            exit 1
+          fi
+          echo "OK — version bumped ($BASE_VERSION -> $HEAD_VERSION), or no src/ changes in this PR."
+
   lint:
     name: Lint Check
     runs-on: ubuntu-latest
