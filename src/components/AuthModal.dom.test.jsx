@@ -116,6 +116,21 @@ describe('AuthModal (rendered)', () => {
     expect(authMocks.registerWithEmail).not.toHaveBeenCalled();
   });
 
+  it('blocks registration until the Terms of Use / Privacy Policy checkbox is checked', async () => {
+    const user = userEvent.setup();
+    renderWithLanguage(<AuthModal isOpen initialMode="register" onClose={vi.fn()} />);
+
+    await user.type(screen.getByPlaceholderText('e.g. Alex Cohen'), 'Alex Cohen');
+    await user.type(screen.getByPlaceholderText('you@domain.com'), 'alex@example.com');
+    const passwordFields = screen.getAllByPlaceholderText('••••••••');
+    await user.type(passwordFields[0], 'Correct1!Horse');
+    await user.type(passwordFields[1], 'Correct1!Horse');
+    await user.click(screen.getByRole('button', { name: /create account/i }));
+
+    expect(await screen.findByText(/must agree to the terms of use/i)).toBeInTheDocument();
+    expect(authMocks.registerWithEmail).not.toHaveBeenCalled();
+  });
+
   it('registers with a valid form and calls onShowToast', async () => {
     authMocks.registerWithEmail.mockResolvedValue(undefined);
     const user = userEvent.setup();
@@ -129,12 +144,36 @@ describe('AuthModal (rendered)', () => {
     const passwordFields = screen.getAllByPlaceholderText('••••••••');
     await user.type(passwordFields[0], 'Correct1!Horse');
     await user.type(passwordFields[1], 'Correct1!Horse');
+    await user.click(screen.getByText(/agree to the/i).closest('label').querySelector('input[type="checkbox"]'));
     await user.click(screen.getByRole('button', { name: /create account/i }));
 
     await vi.waitFor(() => {
-      expect(authMocks.registerWithEmail).toHaveBeenCalledWith('alex@example.com', 'Correct1!Horse', 'Alex Cohen');
+      expect(authMocks.registerWithEmail).toHaveBeenCalledWith(
+        'alex@example.com', 'Correct1!Horse', 'Alex Cohen', { aiTrainingOptIn: false }
+      );
     });
     expect(onShowToast).toHaveBeenCalledWith(expect.stringMatching(/created/i), 'success');
+  });
+
+  it('passes the AI-training opt-in choice through to registerWithEmail when checked', async () => {
+    authMocks.registerWithEmail.mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    renderWithLanguage(<AuthModal isOpen initialMode="register" onClose={vi.fn()} />);
+
+    await user.type(screen.getByPlaceholderText('e.g. Alex Cohen'), 'Alex Cohen');
+    await user.type(screen.getByPlaceholderText('you@domain.com'), 'alex@example.com');
+    const passwordFields = screen.getAllByPlaceholderText('••••••••');
+    await user.type(passwordFields[0], 'Correct1!Horse');
+    await user.type(passwordFields[1], 'Correct1!Horse');
+    await user.click(screen.getByText(/agree to the/i).closest('label').querySelector('input[type="checkbox"]'));
+    await user.click(screen.getByText(/help us improve accuracy/i).closest('label').querySelector('input[type="checkbox"]'));
+    await user.click(screen.getByRole('button', { name: /create account/i }));
+
+    await vi.waitFor(() => {
+      expect(authMocks.registerWithEmail).toHaveBeenCalledWith(
+        'alex@example.com', 'Correct1!Horse', 'Alex Cohen', { aiTrainingOptIn: true }
+      );
+    });
   });
 
   it('sends a password reset link from the forgot-password tab', async () => {

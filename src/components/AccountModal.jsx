@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { CARRIERS, CARRIER_LIST } from '../types/carriers';
 import { APP_VERSION, RELEASE_DATE, BUILD_CHANNEL } from '../constants/version';
 import { notificationService } from '../services/notificationService';
+import { LegalDocumentModal } from './LegalDocumentModal';
 
 const ACCOUNT_SECTIONS = [
   { id: 'preferences', icon: Settings, label: { en: 'Appearance & Language', he: 'תצוגה ושפה' } },
@@ -33,13 +34,15 @@ export function AccountModal({
 }) {
   const { language, setLanguage, t } = useLanguage();
   const { isDark, theme, setTheme } = useTheme();
-  const { user, updateUserPreferences, deleteUserAccountAndData, syncStatus, lastSyncTime, logout } = useAuth();
+  const { user, updateUserPreferences, updateAiTrainingOptIn, deleteUserAccountAndData, syncStatus, lastSyncTime, logout } = useAuth();
 
   const [activeTab, setActiveTab] = useState(initialTab); // one of ACCOUNT_SECTIONS ids
   const [deleteConfirmationInput, setDeleteConfirmationInput] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [notificationPrefs, setNotificationPrefs] = useState(() => notificationService.getPreferences());
   const [permissionStatus, setPermissionStatus] = useState(() => notificationService.getNotificationPermission());
+  const [openLegalDoc, setOpenLegalDoc] = useState(null); // 'terms' | 'privacy' | null
+  const [isTogglingAiOptIn, setIsTogglingAiOptIn] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -143,6 +146,25 @@ export function AccountModal({
     document.body.removeChild(link);
 
     if (onShowToast) onShowToast(language === 'he' ? 'קובץ CSV הורד בהצלחה' : 'CSV backup downloaded', 'success');
+  };
+
+  const handleToggleAiOptIn = async () => {
+    if (!user || isTogglingAiOptIn) return;
+    setIsTogglingAiOptIn(true);
+    const nextValue = !user.aiTrainingOptIn;
+    try {
+      await updateAiTrainingOptIn(nextValue);
+      if (onShowToast) {
+        onShowToast(
+          nextValue
+            ? (language === 'he' ? 'תודה! נאסוף דוגמאות תיקון לשיפור הדיוק.' : 'Thanks! We’ll start collecting correction examples to improve accuracy.')
+            : (language === 'he' ? 'הופסק. כל המידע שנאסף עד כה נמחק.' : 'Turned off. Any data already collected has been deleted.'),
+          'success'
+        );
+      }
+    } finally {
+      setIsTogglingAiOptIn(false);
+    }
   };
 
   const handleDeleteAccount = async () => {
@@ -350,6 +372,37 @@ export function AccountModal({
                   <Check className="w-3 h-3" />
                   <span>{language === 'he' ? 'פעיל' : 'Active'}</span>
                 </span>
+              </div>
+
+              {/* AI training opt-in — off by default, changeable anytime. See
+                  src/constants/legal.js and LegalConsentGate for the initial
+                  choice at registration/first login. */}
+              <div className="p-4 bg-slate-950/40 border border-slate-800/80 rounded-2xl flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 shrink-0">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-200 block text-xs">
+                      {language === 'he' ? 'עזרו לשפר דיוק (AI)' : 'Help Improve AI Accuracy'}
+                    </span>
+                    <span className="text-[11px] text-slate-400 leading-relaxed block mt-0.5">
+                      {language === 'he'
+                        ? 'שמירת טקסט מודבק ותיקונים שביצעת לשיפור מנוע החילוץ (ללא תמונות). כיבוי מוחק מיידית כל מידע שכבר נאסף.'
+                        : 'Stores pasted text and your corrections to improve the parser (never images). Turning this off immediately deletes any data already collected.'}
+                    </span>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer min-h-[44px] shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={!!user.aiTrainingOptIn}
+                    disabled={isTogglingAiOptIn}
+                    onChange={handleToggleAiOptIn}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[12px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-disabled:opacity-50"></div>
+                </label>
               </div>
             </div>
           )}
@@ -755,6 +808,24 @@ export function AccountModal({
                   </div>
                 </div>
               </div>
+
+              {/* Legal */}
+              <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 flex gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setOpenLegalDoc('terms')}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-semibold transition-colors cursor-pointer min-h-[44px]"
+                >
+                  {language === 'he' ? 'תנאי שימוש' : 'Terms of Use'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOpenLegalDoc('privacy')}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-semibold transition-colors cursor-pointer min-h-[44px]"
+                >
+                  {language === 'he' ? 'מדיניות פרטיות' : 'Privacy Policy'}
+                </button>
+              </div>
             </div>
           )}
           </>
@@ -789,6 +860,12 @@ export function AccountModal({
         </div>
 
       </div>
+
+      <LegalDocumentModal
+        isOpen={!!openLegalDoc}
+        onClose={() => setOpenLegalDoc(null)}
+        docType={openLegalDoc || 'terms'}
+      />
     </div>
   );
 }

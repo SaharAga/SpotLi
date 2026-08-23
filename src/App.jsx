@@ -11,6 +11,7 @@ import { SmartImportModal } from './components/SmartImportModal';
 import { AnalyticsModal } from './components/AnalyticsModal';
 import { IngestionGuideModal } from './components/IngestionGuideModal';
 import { AuthModal } from './components/AuthModal';
+import { LegalConsentGate } from './components/LegalConsentGate';
 import { AccountModal } from './components/AccountModal';
 import { AboutModal } from './components/AboutModal';
 import { FeedbackModal } from './components/FeedbackModal';
@@ -713,6 +714,7 @@ function DashboardContent() {
             setSmartImportInitialText('');
           }}
           onParsedResult={handleSmartImportResult}
+          onShowToast={showToast}
           onSwitchToManual={(rawText) => {
             setIsSmartImportOpen(false);
             setSmartImportInitialText('');
@@ -753,6 +755,13 @@ function DashboardContent() {
           onOpenSmartImport={() => setIsSmartImportOpen(true)}
           onShowToast={showToast}
         />
+      </ErrorBoundary>
+
+      {/* Blocking gate for any signed-in user who hasn't accepted the
+          current Terms of Use / Privacy Policy version — new OAuth
+          sign-ins and pre-existing accounts alike. Renders null otherwise. */}
+      <ErrorBoundary compact componentName="LegalConsentGate">
+        <LegalConsentGate onShowToast={showToast} />
       </ErrorBoundary>
 
       {/* User Account & Cloud Sync Modal */}

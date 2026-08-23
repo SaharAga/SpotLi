@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
   X, Package, Sparkles, RefreshCw, ShieldCheck, Heart,
-  CheckCircle2, Lock, Cpu, Award, Globe, Activity, AlertTriangle, XCircle
+  CheckCircle2, Lock, Cpu, Award, Globe, Activity, AlertTriangle, XCircle, FileText
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { CARRIER_LIST } from '../types/carriers';
 import { APP_VERSION, RELEASE_DATE, BUILD_CHANNEL } from '../constants/version';
 import { runAllBistDiagnostics } from '../utils/bistDiagnostics';
+import { LegalDocumentModal } from './LegalDocumentModal';
 
 export function AboutModal({
   isOpen,
@@ -20,6 +21,7 @@ export function AboutModal({
   const [isForceRefreshing, setIsForceRefreshing] = useState(false);
   const [bistResult, setBistResult] = useState(null);
   const [isRunningBist, setIsRunningBist] = useState(false);
+  const [openLegalDoc, setOpenLegalDoc] = useState(null); // 'terms' | 'privacy' | null
 
   useEffect(() => {
     if (isOpen) {
@@ -480,6 +482,29 @@ export function AboutModal({
               </div>
             </div>
           </div>
+          {/* Section 6: Legal */}
+          <div>
+            <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider mb-2.5 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-slate-400" />
+              <span>{language === 'he' ? 'משפטי' : 'Legal'}</span>
+            </h3>
+            <div className="flex gap-2.5">
+              <button
+                type="button"
+                onClick={() => setOpenLegalDoc('terms')}
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-semibold transition-colors cursor-pointer min-h-[44px]"
+              >
+                <span>{language === 'he' ? 'תנאי שימוש' : 'Terms of Use'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setOpenLegalDoc('privacy')}
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-semibold transition-colors cursor-pointer min-h-[44px]"
+              >
+                <span>{language === 'he' ? 'מדיניות פרטיות' : 'Privacy Policy'}</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Footer */}
@@ -502,6 +527,12 @@ export function AboutModal({
           </button>
         </div>
       </div>
+
+      <LegalDocumentModal
+        isOpen={!!openLegalDoc}
+        onClose={() => setOpenLegalDoc(null)}
+        docType={openLegalDoc || 'terms'}
+      />
     </div>
   );
 }
