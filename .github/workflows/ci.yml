@@ -78,6 +78,35 @@ jobs:
       - name: Run Test Suite
         run: npm run test
 
+  functions:
+    name: Cloud Functions Lint & Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: functions/package-lock.json
+
+      # --legacy-peer-deps works around an npm 10 arborist crash resolving
+      # vitest's optional peer graph (unrelated to this project's own deps);
+      # revisit once npm ships a fix.
+      - name: Install Dependencies
+        working-directory: functions
+        run: npm ci --legacy-peer-deps
+
+      - name: Run Linter
+        working-directory: functions
+        run: npm run lint
+
+      - name: Run Test Suite
+        working-directory: functions
+        run: npm run test
+
   build:
     name: Production Build Verification
     runs-on: ubuntu-latest

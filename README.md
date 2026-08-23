@@ -103,6 +103,68 @@ For local development, `firebase.js` auto-registers a debug token
 dev mode; the token is logged to the browser console on first run — add it
 under App Check → **Debug tokens** in the Firebase console.
 
+## AI-assisted import (Cloud Functions)
+
+`functions/` (the app's only backend component) hosts `parseWithAi`, a
+callable Cloud Function used two ways:
+
+- **Text fallback**: when the deterministic parser (`src/utils/smartParser.js`)
+  finds nothing in pasted text, `SmartImportModal` calls it as a fallback.
+  Most pastes match a known pattern and never reach it.
+- **Screenshots**: pasting/attaching a screenshot in Smart Import has no
+  text to run the deterministic parser on at all, so it always goes through
+  this function.
+
+It runs on Gemini (currently `gemini-3.5-flash-lite`, see
+`functions/src/config.js` — model IDs get retired on a real lifecycle,
+Gemini 2.0 Flash shut down June 2026, so this is reviewed periodically
+against [the current model list](https://ai.google.dev/gemini-api/docs/models)
+rather than left to rot). Both the request and the whole response shape are
+designed so the client never needs to know or care whether a result came
+from the regex parser or the AI fallback.
+
+**Cost guards** (`functions/src/guards.js`), layered rather than relying on
+any single one: requires sign-in (unlike `/feedback`, there's no reason
+this needs to work for a logged-out caller) and App Check; a per-user daily
+call cap and a global daily cap, both enforced transactionally in Firestore
+so concurrent calls can't race past them; and payload size caps on both
+text and image inputs. None of this is a substitute for a
+[GCP billing budget alert](https://cloud.google.com/billing/docs/how-to/budgets)
+on the project — set one up regardless.
+
+**Mis-parse detection**: an AI or regex result can be *confidently wrong*,
+which looks identical to a correct one until someone notices. Two signals
+close that gap — neither logs the actual parsed values, only which fields
+were affected:
+- *Implicit*: if a user edits a field Smart Import just auto-filled, before
+  saving, that's logged to `/parseCorrections` (`AddEditPackageModal.jsx`,
+  `src/services/parseCorrectionService.js`).
+- *Explicit*: a "this wasn't right?" button on the Smart Import result
+  routes through the existing feedback pipeline (`submitFeedback`) rather
+  than a second reporting system.
+
+**Setup** — required before any of this works, none of it done by CI:
+1. A Gemini API key from [Google AI Studio](https://aistudio.google.com/) or
+   Vertex AI, stored as a Cloud Functions secret (not a repo variable —
+   this one's an actual secret):
+   ```bash
+   firebase functions:secrets:set GEMINI_API_KEY
+   ```
+2. The Firebase project must be on the **Blaze** (pay-as-you-go) plan —
+   Cloud Functions cannot run on the free Spark plan at all.
+3. App Check must be turned on (see above) — `parseWithAi` enforces it
+   server-side, so the feature is inert without it regardless of the
+   Gemini key.
+4. Deploy:
+   ```bash
+   firebase deploy --only functions
+   ```
+   Not wired into CI's automatic deploy — unlike Hosting and Firestore
+   rules, this needs the secret and the Blaze plan in place first, and a
+   deploy step that fails on every single push until then is exactly the
+   trap `firestore.rules` auto-deploy fell into earlier; add it to
+   `ci.yml`'s `deploy-firebase` job once 1–3 above are done.
+
 ## Deployment
 
 CI (`.github/workflows/ci.yml`) runs on every push/PR to `main`: lint → test

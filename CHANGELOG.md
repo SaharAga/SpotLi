@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.9.0] - 2026-08-23
+
+### Added
+- **AI-assisted Smart Import**: a new Cloud Function (`functions/`, this
+  app's first backend component) fills two gaps — a Gemini-backed fallback
+  for pasted text the deterministic parser can't handle, and the only way
+  to extract tracking details from a pasted/attached screenshot at all
+  (previously not possible in any form). Requires sign-in and App Check;
+  guarded by per-user and global daily call caps plus payload size limits.
+  See README.md "AI-assisted import" for the full design and required
+  one-time setup (Gemini secret, Blaze plan) before it's live.
+- **Mis-parse detection**: a Smart Import result that's confidently wrong
+  looked identical to a correct one until now. An implicit signal logs
+  which fields a user edits after auto-fill, before saving
+  (`parseCorrections`, field names only — never values); an explicit
+  "this wasn't right?" button on the result routes through the existing
+  feedback pipeline instead of a second reporting system.
+
 ## [0.8.0] - 2026-08-23
 
 _Four PRs (#16–#19) merged after 0.7.0 without a version bump — this entry

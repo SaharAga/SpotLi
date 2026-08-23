@@ -1,9 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Sparkles, Package } from 'lucide-react';
 import { CARRIERS, CARRIER_LIST } from '../types/carriers';
 import { STAGES, CATEGORIES } from '../types/stages';
 import { detectCarrier } from '../utils/carrierDetector';
 import { useLanguage } from '../context/LanguageContext';
+import { recordParseCorrection } from '../services/parseCorrectionService';
+
+// Smart Import fields worth watching for a post-autofill edit. Excludes
+// `destination`, which is always a static guess ("Israel") rather than
+// something the parser extracted — editing it says nothing about parse
+// quality. Matches the allowlist enforced in firestore.rules for
+// parseCorrections.
+const AUTOFILL_TRACKED_FIELDS = ['title', 'trackingNumber', 'carrier', 'origin', 'notes'];
 
 export function AddEditPackageModal({
   isOpen,
@@ -25,6 +33,12 @@ export function AddEditPackageModal({
   const [destination, setDestination] = useState('');
   const [notes, setNotes] = useState('');
   const [status, setStatus] = useState('in_transit');
+
+  // Snapshot of what Smart Import auto-filled, so a save can detect which
+  // fields the user corrected before submitting — the implicit half of the
+  // mis-parse detection signal. Null outside a fresh Smart Import prefill
+  // (editing an existing package is not a "correction" of anything).
+  const autoFillSnapshotRef = useRef(null);
 
   // Auto-detect carrier on tracking number typing
   useEffect(() => {
@@ -50,10 +64,18 @@ export function AddEditPackageModal({
       setDestination(editPackage.destination || '');
       setNotes(editPackage.notes || '');
       setStatus(editPackage.status || 'in_transit');
+      autoFillSnapshotRef.current = null;
     } else if (initialValues) {
-      setTitle(initialValues.title || '');
-      setTrackingNumber(initialValues.trackingNumber || '');
-      setCarrier(initialValues.carrierId || 'other');
+      const title = initialValues.title || '';
+      const trackingNumber = initialValues.trackingNumber || '';
+      const carrier = initialValues.carrierId || 'other';
+      const origin = initialValues.origin || '';
+      const destination = initialValues.destination || 'Tel Aviv, Israel';
+      const notes = initialValues.notes || '';
+
+      setTitle(title);
+      setTrackingNumber(trackingNumber);
+      setCarrier(carrier);
       setIsManualCarrier(false);
       setCategory('electronics');
       setOrderDate(new Date().toISOString().slice(0, 10));
@@ -61,10 +83,21 @@ export function AddEditPackageModal({
       const nextDate = new Date();
       nextDate.setDate(nextDate.getDate() + 14);
       setExpectedDeliveryDate(nextDate.toISOString().slice(0, 10));
-      setOrigin(initialValues.origin || '');
-      setDestination(initialValues.destination || 'Tel Aviv, Israel');
-      setNotes(initialValues.notes || '');
+      setOrigin(origin);
+      setDestination(destination);
+      setNotes(notes);
       setStatus('in_transit');
+
+      // Only Smart Import (regex or AI) prefills carry _autoFillSource —
+      // manual "new package" has no initialValues.carrierId either, so this
+      // also naturally excludes the plain-manual-entry case.
+      autoFillSnapshotRef.current = initialValues.carrierId || initialValues.trackingNumber
+        ? {
+            source: initialValues._autoFillSource || 'regex',
+            confidence: initialValues._autoFillConfidence || null,
+            values: { title, trackingNumber, carrier, origin, notes }
+          }
+        : null;
     } else {
       // Clean form defaults
       setTitle('');
@@ -80,14 +113,37 @@ export function AddEditPackageModal({
       setDestination('Tel Aviv, Israel');
       setNotes('');
       setStatus('in_transit');
+      autoFillSnapshotRef.current = null;
     }
   }, [editPackage, initialValues, isOpen]);
 
   if (!isOpen) return null;
 
+  // Fire-and-forget: compares the current form values against what Smart
+  // Import auto-filled, and logs which fields the user changed before
+  // saving. Never blocks or fails the actual save.
+  const reportAutoFillCorrections = () => {
+    const snapshot = autoFillSnapshotRef.current;
+    if (!snapshot) return;
+
+    const currentValues = { title, trackingNumber, carrier, origin, notes };
+    const editedFields = AUTOFILL_TRACKED_FIELDS.filter((field) => {
+      const originalValue = snapshot.values[field];
+      if (!originalValue) return false; // parser left it blank — not a correction
+      return originalValue.trim() !== String(currentValues[field] || '').trim();
+    });
+
+    if (editedFields.length > 0) {
+      recordParseCorrection({ source: snapshot.source, confidence: snapshot.confidence, editedFields });
+    }
+    autoFillSnapshotRef.current = null; // report once per prefill, not on every future save
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim() || !trackingNumber.trim()) return;
+
+    reportAutoFillCorrections();
 
     const carrierObj = CARRIERS[carrier] || CARRIERS['other'];
 

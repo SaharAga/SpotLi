@@ -713,6 +713,7 @@ function DashboardContent() {
             setSmartImportInitialText('');
           }}
           onParsedResult={handleSmartImportResult}
+          onShowToast={showToast}
           onSwitchToManual={(rawText) => {
             setIsSmartImportOpen(false);
             setSmartImportInitialText('');

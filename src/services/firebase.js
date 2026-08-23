@@ -8,6 +8,7 @@ import {
   browserLocalPersistence 
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getFunctions } from 'firebase/functions';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 
 /**
@@ -51,6 +52,7 @@ export const app = isFirebaseConfigured
 
 export const auth = app ? getAuth(app) : null;
 export const db = app ? getFirestore(app) : null;
+export const functionsInstance = app ? getFunctions(app) : null;
 
 /**
  * App Check.
