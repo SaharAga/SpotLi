@@ -70,7 +70,7 @@ export function FilterBar({
   ];
 
   return (
-    <div className="flex flex-col gap-3 bg-slate-900/60 p-3 sm:p-4 rounded-2xl border border-slate-800 backdrop-blur-xl mb-6 shadow-sm">
+    <div className="flex flex-col gap-3 bg-slate-900 p-3 sm:p-4 rounded-2xl border border-slate-800 mb-6 shadow-sm">
       {/* Top row: Search bar & Filters */}
       <div className="flex flex-col md:flex-row gap-2.5 items-stretch md:items-center justify-between">
         {/* Search Bar */}
@@ -81,7 +81,7 @@ export function FilterBar({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={t('searchPlaceholder')}
-            className={`w-full bg-slate-950/80 border border-slate-800 text-slate-100 placeholder-slate-500 text-base sm:text-sm rounded-xl py-2.5 transition-all focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[44px] ${
+            className={`w-full bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-500 text-base sm:text-sm rounded-xl py-2.5 transition-all focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[44px] ${
               isRTL ? 'pr-9 pl-9' : 'pl-9 pr-9'
             }`}
           />
@@ -102,7 +102,7 @@ export function FilterBar({
           <select
             value={selectedCarrier}
             onChange={(e) => onCarrierChange(e.target.value)}
-            className="w-full sm:w-auto bg-slate-950/80 border border-slate-800 text-slate-200 text-base sm:text-sm rounded-xl px-2.5 py-2.5 focus:outline-none focus:border-blue-500 cursor-pointer min-h-[44px]"
+            className="w-full sm:w-auto bg-slate-950 border border-slate-800 text-slate-200 text-base sm:text-sm rounded-xl px-2.5 py-2.5 focus:outline-none focus:border-blue-500 cursor-pointer min-h-[44px]"
           >
             <option value="all">{t('filters.allCarriers')}</option>
             {CARRIER_LIST.map((carrier) => (
@@ -116,7 +116,7 @@ export function FilterBar({
           <select
             value={sortBy}
             onChange={(e) => onSortChange(e.target.value)}
-            className="w-full sm:w-auto bg-slate-950/80 border border-slate-800 text-slate-200 text-base sm:text-sm rounded-xl px-2.5 py-2.5 focus:outline-none focus:border-blue-500 cursor-pointer min-h-[44px]"
+            className="w-full sm:w-auto bg-slate-950 border border-slate-800 text-slate-200 text-base sm:text-sm rounded-xl px-2.5 py-2.5 focus:outline-none focus:border-blue-500 cursor-pointer min-h-[44px]"
           >
             <option value="newest">{t('filters.newest')}</option>
             <option value="expected">{t('filters.expectedDate')}</option>
@@ -131,7 +131,7 @@ export function FilterBar({
               disabled={isRefreshing}
               title={t('tracking.refreshAll')}
               aria-label={t('tracking.refreshAll')}
-              className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-emerald-400 text-xs font-bold transition-all min-h-[44px] ${
+              className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-emerald-400 text-xs font-bold transition-all min-h-[44px] ${
                 isRefreshing ? 'text-emerald-400' : ''
               }`}
             >
@@ -141,7 +141,7 @@ export function FilterBar({
           )}
 
           {/* View Mode Switcher (Hidden on small phones to save space) */}
-          <div className="hidden sm:flex items-center bg-slate-950/80 p-1 rounded-xl border border-slate-800 shrink-0 min-h-[44px]">
+          <div className="hidden sm:flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 shrink-0 min-h-[44px]">
             <button
               onClick={() => onViewModeChange('grid')}
               title={t('filters.gridView')}
@@ -180,7 +180,7 @@ export function FilterBar({
               className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all shrink-0 min-h-[40px] cursor-pointer ${
                 isActive
                   ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
-                  : 'bg-slate-950/50 hover:bg-slate-800 text-slate-400 hover:text-slate-200'
+                  : 'bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-slate-200'
               }`}
             >
               {TabIcon && <TabIcon className="w-3.5 h-3.5" />}

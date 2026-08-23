@@ -44,10 +44,10 @@ export function PackageTable({
   };
 
   return (
-    <div className="w-full overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur-xl shadow-lg">
+    <div className="w-full overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900 shadow-sm">
       <table className="w-full text-start text-xs border-collapse">
         <thead>
-          <tr className="border-b border-slate-800 bg-slate-950/60 text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
+          <tr className="border-b border-slate-800 bg-slate-950 text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
             <th className="py-3.5 px-4 text-start w-10"></th>
             <th className="py-3.5 px-4 text-start">{t('modal.itemTitle')}</th>
             <th className="py-3.5 px-4 text-start">{t('card.trackingNumber')}</th>
