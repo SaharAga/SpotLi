@@ -5,29 +5,69 @@
 @layer base {
   :root,
   .dark {
-    --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    /* App-wide unification with the Settings pilot's design language
+       (below): Atkinson Hyperlegible for Latin/English text — Hebrew
+       keeps Rubik since Atkinson Hyperlegible has no Hebrew glyphs and
+       would silently no-op there; the app is Hebrew-first, so --font-sans
+       mainly affects English UI strings and Latin content (tracking
+       numbers, emails) inside RTL layout. */
+    --font-sans: 'Atkinson Hyperlegible', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     --font-hebrew: 'Rubik', 'Inter', system-ui, sans-serif;
-    
-    /* Dark Theme Slate Colors (Default) — indigo-tinted (H~284) rather than
-       neutral blue-gray (was H~265), for a moodier "indigo-black" ground
-       instead of a flat charcoal. Chroma raised slightly at the darkest
-       steps so the background itself carries some color. */
-    --color-slate-50: oklch(98.4% 0.005 284);
-    --color-slate-100: oklch(96.8% 0.010 284);
-    --color-slate-200: oklch(92.9% 0.018 284);
-    --color-slate-300: oklch(86.9% 0.028 284);
-    --color-slate-400: oklch(70.4% 0.045 284);
-    --color-slate-500: oklch(55.4% 0.052 284);
-    --color-slate-600: oklch(44.6% 0.050 284);
-    --color-slate-700: oklch(37.2% 0.052 284);
-    --color-slate-800: oklch(26.5% 0.052 284);
-    --color-slate-900: oklch(19.0% 0.055 284);
-    --color-slate-950: oklch(11.5% 0.050 284);
 
-    /* Brand accent: Transit Indigo, shifted from a blue-leaning custom hue
-       (266) to the same violet-indigo family as stock Tailwind indigo-400
-       (#818CF8, H~284) — brighter and more saturated at the 400/500 steps
-       for a livelier accent against the deeper background above. */
+    /* Dark Theme Slate Colors (Default) — navy-tinted (H~255), matching
+       the Settings pilot's trust-navy ground (was H~284 indigo). Chroma
+       raised slightly at the darkest steps so the background itself
+       carries some color. */
+    --color-slate-50: oklch(98.4% 0.005 255);
+    --color-slate-100: oklch(96.8% 0.010 255);
+    --color-slate-200: oklch(92.9% 0.018 255);
+    --color-slate-300: oklch(86.9% 0.028 255);
+    --color-slate-400: oklch(70.4% 0.045 255);
+    --color-slate-500: oklch(55.4% 0.052 255);
+    --color-slate-600: oklch(44.6% 0.050 255);
+    --color-slate-700: oklch(37.2% 0.052 255);
+    --color-slate-800: oklch(26.5% 0.052 255);
+    --color-slate-900: oklch(19.0% 0.055 255);
+    --color-slate-950: oklch(11.5% 0.050 255);
+
+    /* Brand accent: dark theme moves from Transit Indigo to the Settings
+       pilot's gold (H~75), which the user confirmed liking as a whole —
+       colors included, not just layout. Light theme (below) keeps the
+       original indigo blue instead — the two themes now intentionally
+       use different accent hues, not just different lightness. */
+    --color-blue-50: oklch(97% 0.030 75);
+    --color-blue-100: oklch(93.2% 0.055 75);
+    --color-blue-200: oklch(88.2% 0.080 75);
+    --color-blue-300: oklch(82% 0.110 75);
+    --color-blue-400: oklch(78% 0.130 75);
+    --color-blue-500: oklch(74% 0.145 70);
+    --color-blue-600: oklch(68% 0.155 65);
+    --color-blue-700: oklch(58% 0.145 60);
+    --color-blue-800: oklch(48% 0.120 60);
+    --color-blue-900: oklch(40% 0.095 60);
+    --color-blue-950: oklch(28% 0.065 55);
+  }
+
+  .light {
+    /* Light Theme: Invert Slate Palette for automatic light mode. Same
+       navy hue (255) as the dark palette above, not a neutral gray —
+       a light neutral still reads as "chosen" rather than default when it
+       carries a slight bias toward the brand ink color. */
+    --color-slate-950: oklch(98.4% 0.006 255); /* Backgrounds become light */
+    --color-slate-900: oklch(96.8% 0.010 255); /* Cards/panels become clean white/light slate */
+    --color-slate-800: oklch(90.0% 0.018 255); /* Borders become subtle light borders */
+    --color-slate-700: oklch(82.0% 0.028 255); /* Sub-borders */
+    --color-slate-600: oklch(65.0% 0.040 255);
+    --color-slate-500: oklch(50.0% 0.052 255); /* Muted labels */
+    --color-slate-400: oklch(40.0% 0.048 255);
+    --color-slate-300: oklch(30.0% 0.046 255);
+    --color-slate-200: oklch(20.0% 0.046 255); /* Primary text */
+    --color-slate-100: oklch(12.9% 0.046 255); /* Headings/High contrast text */
+    --color-slate-50:  oklch(8.0% 0.046 255);
+
+    /* Light theme keeps the ORIGINAL indigo blue accent rather than the
+       dark theme's gold — same language (layout/font/shape), different
+       accent, per explicit direction: gold is a dark-theme-only choice. */
     --color-blue-50: oklch(97% 0.014 284);
     --color-blue-100: oklch(93.2% 0.028 284);
     --color-blue-200: oklch(88.2% 0.050 284);
@@ -39,28 +79,6 @@
     --color-blue-800: oklch(43% 0.155 284);
     --color-blue-900: oklch(38% 0.115 284);
     --color-blue-950: oklch(26% 0.075 284);
-  }
-
-  .light {
-    /* Light Theme: Invert Slate Palette for automatic light mode. Same
-       indigo hue (284) as the dark palette above, not a neutral gray —
-       a light neutral still reads as "chosen" rather than default when it
-       carries a slight bias toward the brand accent. */
-    --color-slate-950: oklch(98.4% 0.006 284); /* Backgrounds become light */
-    --color-slate-900: oklch(96.8% 0.010 284); /* Cards/panels become clean white/light slate */
-    --color-slate-800: oklch(90.0% 0.018 284); /* Borders become subtle light borders */
-    --color-slate-700: oklch(82.0% 0.028 284); /* Sub-borders */
-    --color-slate-600: oklch(65.0% 0.040 284);
-    --color-slate-500: oklch(50.0% 0.052 284); /* Muted labels */
-    --color-slate-400: oklch(40.0% 0.048 284);
-    --color-slate-300: oklch(30.0% 0.046 284);
-    --color-slate-200: oklch(20.0% 0.046 284); /* Primary text */
-    --color-slate-100: oklch(12.9% 0.046 284); /* Headings/High contrast text */
-    --color-slate-50:  oklch(8.0% 0.046 284);
-
-    /* Accent stays vivid enough on light surfaces too — same hue family,
-       kept as-is from the :root block above (not overridden here) since
-       the blue-* scale already works on both light and dark grounds. */
   }
 
   /* Settings pilot palette — trust-navy + gold, distinct from the app-wide
@@ -90,6 +108,12 @@
   }
 
   .light .settings-theme {
+    /* Same layout/font/shape language as dark, but the accent reverts to
+       the app's own indigo brand instead of the pilot's gold — dark keeps
+       the full navy+gold pairing (liked as-is); light keeps the precision
+       (Atkinson Hyperlegible, card structure, radii) without introducing
+       a second brand color. Exact --color-blue-600/-100 values from the
+       app's real accent, not an approximation. */
     --stg-bg: #F8FAFC;
     --stg-surface: #FFFFFF;
     --stg-surface-2: #F1F5F9;
@@ -98,8 +122,8 @@
     --stg-text-muted: #475569;
     --stg-primary: #0F172A;
     --stg-primary-on: #F8FAFC;
-    --stg-accent: #A16207;
-    --stg-accent-soft: #FEF3C7;
+    --stg-accent: oklch(56.5% 0.180 284);
+    --stg-accent-soft: oklch(93.2% 0.028 284);
     --stg-destructive: #DC2626;
     --stg-destructive-soft: #FEE2E2;
     --stg-success: #15803D;
