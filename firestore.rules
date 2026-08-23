@@ -110,6 +110,31 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Opt-in AI training data (src/services/trainingDataService.js). Unlike
+    // parseCorrections above, this stores the actual pasted text and
+    // before/after field values — only ever written when the owning
+    // user has explicitly opted in (users/{uid}.aiTrainingOptIn == true),
+    // checked here server-side rather than trusted from the client alone.
+    // Deletable (but not updatable) by its own owner: this data has no
+    // separate retention timer, its lifetime is the opt-in flag's lifetime
+    // (see AuthContext.updateAiTrainingOptIn / deleteUserAccountAndData,
+    // which purge it on opt-out and on account deletion respectively).
+    match /trainingExamples/{docId} {
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.aiTrainingOptIn == true &&
+        request.resource.data.source in ['regex', 'ai'] &&
+        (!('confidence' in request.resource.data) || request.resource.data.confidence == null ||
+          request.resource.data.confidence in ['high', 'medium', 'low', 'none']) &&
+        (!('inputText' in request.resource.data) || (request.resource.data.inputText is string && request.resource.data.inputText.size() <= 5000)) &&
+        request.resource.data.initialValues is map &&
+        request.resource.data.correctedValues is map &&
+        (!('timestamp' in request.resource.data) || (request.resource.data.timestamp is string && request.resource.data.timestamp.size() <= 60));
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow update: if false;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
     // AI-parse usage/rate-limit counters (functions/src/guards.js). Written
     // only by the Cloud Function via the Admin SDK, which bypasses these
     // rules entirely — this block is belt-and-suspenders documentation that

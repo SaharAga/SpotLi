@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { 
+import {
   X, Cloud, Check, AlertCircle,
-  Mail, User, Lock, Loader2, LogOut, Trash2, ArrowLeft
+  Mail, User, Lock, Loader2, LogOut, Trash2, ArrowLeft, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { LegalDocumentModal } from './LegalDocumentModal';
 
 export function calculatePasswordStrength(password) {
   const str = typeof password === 'string' ? password : '';
@@ -110,6 +111,8 @@ export function AuthModal({
       setActiveTab(initialMode || 'signin');
       setFormError('');
       setFormSuccess('');
+      setAgreedToTerms(false);
+      setAiOptIn(false);
     }
   }, [isOpen, initialMode]);
   const [emailInput, setEmailInput] = useState('');
@@ -123,6 +126,13 @@ export function AuthModal({
   const [isAppleLoading, setIsAppleLoading] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // Registration-only legal consent — mandatory ToS/Privacy acceptance and
+  // an optional, unchecked-by-default AI-training opt-in. OAuth sign-in has
+  // no form step, so brand-new OAuth users get the same choice post-login
+  // via LegalConsentGate instead.
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [aiOptIn, setAiOptIn] = useState(false);
+  const [openLegalDoc, setOpenLegalDoc] = useState(null); // 'terms' | 'privacy' | null
 
   const passwordStrength = useMemo(() => {
     return calculatePasswordStrength(passwordInput);
@@ -203,12 +213,20 @@ export function AuthModal({
         setFormError(language === 'he' ? 'הסיסמאות אינן תואמות. נא להזין שוב.' : 'Passwords do not match. Please re-enter.');
         return;
       }
+      if (!agreedToTerms) {
+        setFormError(
+          language === 'he'
+            ? 'יש לאשר את תנאי השימוש ומדיניות הפרטיות כדי להמשיך'
+            : 'You must agree to the Terms of Use and Privacy Policy to continue'
+        );
+        return;
+      }
     }
 
     setIsLoading(true);
     try {
       if (activeTab === 'register') {
-        await registerWithEmail(cleanEmail, cleanPassword, cleanName);
+        await registerWithEmail(cleanEmail, cleanPassword, cleanName, { aiTrainingOptIn: aiOptIn });
         if (onShowToast) onShowToast(language === 'he' ? 'החשבון נוצר בהצלחה!' : 'Account created successfully!', 'success');
       } else {
         await loginWithEmail(cleanEmail, cleanPassword);
@@ -672,6 +690,56 @@ export function AuthModal({
                   </div>
                 )}
 
+                {/* Legal consent — mandatory ToS/Privacy + optional AI-training opt-in */}
+                {activeTab === 'register' && (
+                  <div className="space-y-2 pt-1">
+                    <label className="flex items-start gap-2 p-2.5 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer min-h-[44px]">
+                      <input
+                        type="checkbox"
+                        checked={agreedToTerms}
+                        onChange={(e) => setAgreedToTerms(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 text-blue-600 rounded bg-slate-800 border-slate-700 focus:ring-blue-500 cursor-pointer shrink-0"
+                      />
+                      <span className="text-[11px] text-slate-300 leading-snug">
+                        {language === 'he' ? 'קראתי ואני מסכים/ה ל' : 'I agree to the'}{' '}
+                        <button
+                          type="button"
+                          onClick={(e) => { e.preventDefault(); setOpenLegalDoc('terms'); }}
+                          className="text-blue-400 hover:text-blue-300 underline underline-offset-2 cursor-pointer"
+                        >
+                          {language === 'he' ? 'תנאי השימוש' : 'Terms of Use'}
+                        </button>
+                        {' '}{language === 'he' ? 'ול' : 'and'}{' '}
+                        <button
+                          type="button"
+                          onClick={(e) => { e.preventDefault(); setOpenLegalDoc('privacy'); }}
+                          className="text-blue-400 hover:text-blue-300 underline underline-offset-2 cursor-pointer"
+                        >
+                          {language === 'he' ? 'מדיניות הפרטיות' : 'Privacy Policy'}
+                        </button>
+                        {' *'}
+                      </span>
+                    </label>
+
+                    <label className="flex items-start gap-2 p-2.5 rounded-xl bg-blue-950/20 border border-blue-500/20 cursor-pointer min-h-[44px]">
+                      <input
+                        type="checkbox"
+                        checked={aiOptIn}
+                        onChange={(e) => setAiOptIn(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 text-blue-600 rounded bg-slate-800 border-slate-700 focus:ring-blue-500 cursor-pointer shrink-0"
+                      />
+                      <span className="text-[11px] text-slate-300 leading-snug flex items-start gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
+                        <span>
+                          {language === 'he'
+                            ? 'עזרו לשפר דיוק: שמרו טקסט מודבק ותיקונים שאבצע כדי לשפר את מנוע החילוץ (ללא תמונות). ניתן לשנות בהגדרות.'
+                            : 'Help us improve accuracy: store pasted text and my corrections to improve the parser (never images). Changeable in Settings anytime.'}
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+                )}
+
                 <button
                   type="submit"
                   disabled={isLoading || isGoogleLoading}
@@ -691,6 +759,12 @@ export function AuthModal({
           )}
         </div>
       </div>
+
+      <LegalDocumentModal
+        isOpen={!!openLegalDoc}
+        onClose={() => setOpenLegalDoc(null)}
+        docType={openLegalDoc || 'terms'}
+      />
     </div>
   );
 }

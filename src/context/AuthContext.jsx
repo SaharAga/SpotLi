@@ -12,18 +12,19 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged
 } from 'firebase/auth';
-import { doc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
-import { 
-  auth, 
-  db, 
-  googleProvider, 
-  appleProvider, 
-  facebookProvider, 
-  isFirebaseConfigured 
+import { doc, setDoc, deleteDoc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import {
+  auth,
+  db,
+  googleProvider,
+  appleProvider,
+  facebookProvider,
+  isFirebaseConfigured
 } from '../services/firebase';
 import { cloudAdapter } from '../services/cloudStorageAdapter';
 import { deliveryService } from '../services/deliveryService';
 import { sanitizeString } from '../utils/packageValidator';
+import { LEGAL_VERSION } from '../constants/legal';
 
 const AuthContext = createContext();
 
@@ -317,6 +318,14 @@ export function validateUserProfile(raw) {
 
   const createdAt = sanitizeString(safeObj.createdAt, 50) || new Date().toISOString().slice(0, 10);
 
+  // Legal acceptance & AI training opt-in (see src/constants/legal.js,
+  // src/components/LegalConsentGate.jsx). null/false until the user
+  // explicitly accepts — never defaulted true.
+  const legalAcceptedVersion = sanitizeString(safeObj.legalAcceptedVersion, 20) || null;
+  const legalAcceptedAt = sanitizeString(safeObj.legalAcceptedAt, 50) || null;
+  const aiTrainingOptIn = Boolean(safeObj.aiTrainingOptIn);
+  const aiTrainingOptInUpdatedAt = sanitizeString(safeObj.aiTrainingOptInUpdatedAt, 50) || null;
+
   const preferences = safeObj.preferences && typeof safeObj.preferences === 'object' && !Array.isArray(safeObj.preferences)
     ? {
         defaultCarrier: sanitizeString(safeObj.preferences.defaultCarrier, 50) || 'all',
@@ -341,6 +350,10 @@ export function validateUserProfile(raw) {
     devicesCount,
     createdAt,
     emailVerified: Boolean(safeObj.emailVerified),
+    legalAcceptedVersion,
+    legalAcceptedAt,
+    aiTrainingOptIn,
+    aiTrainingOptInUpdatedAt,
     preferences
   };
 }
@@ -394,8 +407,57 @@ export function buildCleanUserProfile(firebaseUser, customName = null) {
     plan: cached?.plan || 'Personal Account',
     devicesCount: cached?.devicesCount || 1,
     createdAt: firebaseUser.metadata?.creationTime || cached?.createdAt || new Date().toISOString(),
+    legalAcceptedVersion: cached?.legalAcceptedVersion || null,
+    legalAcceptedAt: cached?.legalAcceptedAt || null,
+    aiTrainingOptIn: cached?.aiTrainingOptIn || false,
+    aiTrainingOptInUpdatedAt: cached?.aiTrainingOptInUpdatedAt || null,
     preferences: cached?.preferences
   });
+}
+
+/**
+ * Best-effort cross-device hydration for legal consent: a device with no
+ * local cache for this uid (a new device, or a cache clear) would otherwise
+ * re-show LegalConsentGate even though the user already accepted elsewhere.
+ * Only runs when the freshly-built profile has no local record of
+ * acceptance, and only ever fills that gap in — never overrides it.
+ */
+async function fetchStoredLegalConsent(uid) {
+  if (!db || !uid) return null;
+  try {
+    const snap = await getDoc(doc(db, 'users', uid));
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data?.legalAcceptedVersion) {
+        return {
+          legalAcceptedVersion: data.legalAcceptedVersion,
+          legalAcceptedAt: data.legalAcceptedAt || null,
+          aiTrainingOptIn: Boolean(data.aiTrainingOptIn),
+          aiTrainingOptInUpdatedAt: data.aiTrainingOptInUpdatedAt || null
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('[AuthContext] Failed to fetch stored legal consent:', err?.message);
+  }
+  return null;
+}
+
+/**
+ * Deletes every /trainingExamples doc for a user — used both when they
+ * toggle the AI-training opt-in off and on full account deletion. This data
+ * intentionally has no separate retention timer: its lifetime is the opt-in
+ * flag's lifetime (see firestore.rules for the matching delete rule).
+ */
+async function purgeTrainingExamples(userId) {
+  if (!db || !userId) return;
+  try {
+    const q = query(collection(db, 'trainingExamples'), where('userId', '==', userId));
+    const snapshot = await getDocs(q);
+    await Promise.all(snapshot.docs.map((d) => deleteDoc(d.ref)));
+  } catch (err) {
+    console.warn('[AuthContext] Failed to purge training examples:', err?.message);
+  }
 }
 
 export function AuthProvider({ children }) {
@@ -475,11 +537,11 @@ export function AuthProvider({ children }) {
     }
   }, [user]);
 
-  const syncProfileToFirestore = async (firebaseUser, customName = null) => {
+  const syncProfileToFirestore = async (firebaseUser, customName = null, overrideProfile = null) => {
     if (!db || !firebaseUser) return null;
-    const cleanUser = buildCleanUserProfile(firebaseUser, customName);
+    const cleanUser = overrideProfile || buildCleanUserProfile(firebaseUser, customName);
     if (!cleanUser) return null;
-    
+
     const profileData = {
       ...cleanUser,
       updatedAt: new Date().toISOString()
@@ -529,9 +591,15 @@ export function AuthProvider({ children }) {
       if (!isMountedRef.current) return;
       if (firebaseUser) {
         isExplicitLogoutRef.current = false;
-        const cleanUser = buildCleanUserProfile(firebaseUser);
+        let cleanUser = buildCleanUserProfile(firebaseUser);
+        if (cleanUser && !cleanUser.legalAcceptedVersion) {
+          const stored = await withTimeout(fetchStoredLegalConsent(firebaseUser.uid), 1500);
+          if (stored && isMountedRef.current) {
+            cleanUser = { ...cleanUser, ...stored };
+          }
+        }
         migrateGuestDataToUser(firebaseUser.uid);
-        setUser(cleanUser);
+        if (isMountedRef.current) setUser(cleanUser);
       } else {
         if (isExplicitLogoutRef.current) {
           setUser(null);
@@ -658,7 +726,7 @@ export function AuthProvider({ children }) {
     }
   }, [triggerCloudSync]);
 
-  const registerWithEmail = useCallback(async (email, password, name = '') => {
+  const registerWithEmail = useCallback(async (email, password, name = '', legalConsent = null) => {
     isExplicitLogoutRef.current = false;
     setAuthError(null);
     if (!isFirebaseConfigured || !auth) {
@@ -672,9 +740,21 @@ export function AuthProvider({ children }) {
         if (name.trim()) {
           updateProfile(result.user, { displayName: name.trim() }).catch(() => {});
         }
-        const cleanUser = buildCleanUserProfile(result.user, name.trim());
+        // The registration form collects mandatory ToS + optional AI-opt-in
+        // consent inline (unlike OAuth, which defers to LegalConsentGate
+        // post-login) — record it as part of this same profile write rather
+        // than a separate round trip.
+        const baseUser = buildCleanUserProfile(result.user, name.trim());
+        const cleanUser = legalConsent
+          ? {
+              ...baseUser,
+              legalAcceptedVersion: LEGAL_VERSION,
+              legalAcceptedAt: new Date().toISOString(),
+              aiTrainingOptIn: Boolean(legalConsent.aiTrainingOptIn)
+            }
+          : baseUser;
         setUser(cleanUser);
-        syncProfileToFirestore(result.user, name.trim());
+        syncProfileToFirestore(result.user, name.trim(), cleanUser);
         migrateGuestDataToUser(result.user.uid);
       }
       triggerCloudSync();
@@ -739,6 +819,57 @@ export function AuthProvider({ children }) {
     triggerCloudSync();
   }, [user, triggerCloudSync]);
 
+  /**
+   * Records acceptance of the current Terms of Use / Privacy Policy version,
+   * plus the AI-training opt-in choice made alongside it — called by
+   * LegalConsentGate (existing accounts & OAuth sign-ins that never saw a
+   * registration form) after the current `user` is already set.
+   */
+  const acceptLegalTerms = useCallback(async (aiTrainingOptIn = false) => {
+    if (!user || !isMountedRef.current) return;
+    const now = new Date().toISOString();
+    const updatedUser = {
+      ...user,
+      legalAcceptedVersion: LEGAL_VERSION,
+      legalAcceptedAt: now,
+      aiTrainingOptIn: Boolean(aiTrainingOptIn),
+      aiTrainingOptInUpdatedAt: now
+    };
+    setUser(updatedUser);
+    if (db && user.id) {
+      withTimeout(setDoc(doc(db, 'users', user.id), {
+        legalAcceptedVersion: LEGAL_VERSION,
+        legalAcceptedAt: now,
+        aiTrainingOptIn: Boolean(aiTrainingOptIn),
+        aiTrainingOptInUpdatedAt: now
+      }, { merge: true }), 1500);
+    }
+    triggerCloudSync();
+  }, [user, triggerCloudSync]);
+
+  /**
+   * Changes the AI-training opt-in from Account Settings, independent of
+   * legal acceptance. Turning it off purges any training data already
+   * collected — see purgeTrainingExamples' doc comment for why.
+   */
+  const updateAiTrainingOptIn = useCallback(async (value) => {
+    if (!user || !isMountedRef.current) return;
+    const now = new Date().toISOString();
+    const optIn = Boolean(value);
+    const updatedUser = { ...user, aiTrainingOptIn: optIn, aiTrainingOptInUpdatedAt: now };
+    setUser(updatedUser);
+    if (db && user.id) {
+      withTimeout(setDoc(doc(db, 'users', user.id), {
+        aiTrainingOptIn: optIn,
+        aiTrainingOptInUpdatedAt: now
+      }, { merge: true }), 1500);
+    }
+    if (!optIn) {
+      purgeTrainingExamples(user.id);
+    }
+    triggerCloudSync();
+  }, [user, triggerCloudSync]);
+
   const deleteUserAccountAndData = useCallback(async (userId) => {
     const targetId = userId || user?.id;
     if (!targetId) return;
@@ -755,13 +886,17 @@ export function AuthProvider({ children }) {
       // Ignore
     }
 
-    // 2. Non-blocking Firestore purge with timeout
+    // 2. Non-blocking Firestore purge with timeout. Runs before the Auth
+    // user is deleted below — the trainingExamples delete rule requires
+    // `resource.data.userId == request.auth.uid`, which needs the caller to
+    // still be authenticated as targetId.
     if (db) {
       withTimeout((async () => {
         const userPackagesRef = collection(db, 'users', targetId, 'packages');
         const snapshot = await getDocs(userPackagesRef);
         const deletePromises = snapshot.docs.map(d => deleteDoc(d.ref));
         await Promise.all(deletePromises);
+        await purgeTrainingExamples(targetId);
         await deleteDoc(doc(db, 'users', targetId));
       })(), 2000);
     }
@@ -823,6 +958,8 @@ export function AuthProvider({ children }) {
     sendVerificationEmail,
     migrateGuestDataToUser,
     updateUserPreferences,
+    acceptLegalTerms,
+    updateAiTrainingOptIn,
     deleteUserAccountAndData,
     logout,
     syncStatus,
@@ -841,6 +978,8 @@ export function AuthProvider({ children }) {
     resetPassword,
     sendVerificationEmail,
     updateUserPreferences,
+    acceptLegalTerms,
+    updateAiTrainingOptIn,
     deleteUserAccountAndData,
     logout,
     syncStatus,

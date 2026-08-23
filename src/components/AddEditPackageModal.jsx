@@ -4,7 +4,9 @@ import { CARRIERS, CARRIER_LIST } from '../types/carriers';
 import { STAGES, CATEGORIES } from '../types/stages';
 import { detectCarrier } from '../utils/carrierDetector';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { recordParseCorrection } from '../services/parseCorrectionService';
+import { recordTrainingExample } from '../services/trainingDataService';
 
 // Smart Import fields worth watching for a post-autofill edit. Excludes
 // `destination`, which is always a static guess ("Israel") rather than
@@ -21,6 +23,7 @@ export function AddEditPackageModal({
   initialValues = null
 }) {
   const { t, language } = useLanguage();
+  const { user } = useAuth();
 
   const [title, setTitle] = useState('');
   const [trackingNumber, setTrackingNumber] = useState('');
@@ -95,6 +98,7 @@ export function AddEditPackageModal({
         ? {
             source: initialValues._autoFillSource || 'regex',
             confidence: initialValues._autoFillConfidence || null,
+            inputText: initialValues._autoFillInputText || '',
             values: { title, trackingNumber, carrier, origin, notes }
           }
         : null;
@@ -135,6 +139,21 @@ export function AddEditPackageModal({
 
     if (editedFields.length > 0) {
       recordParseCorrection({ source: snapshot.source, confidence: snapshot.confidence, editedFields });
+
+      // Real values, not just field names — only ever sent when the user
+      // has explicitly opted in (AccountModal / LegalConsentGate). Rules
+      // re-check the same flag server-side; this client check just avoids
+      // a doomed write attempt for everyone else.
+      if (user?.aiTrainingOptIn) {
+        recordTrainingExample({
+          userId: user.id,
+          source: snapshot.source,
+          confidence: snapshot.confidence,
+          inputText: snapshot.inputText,
+          initialValues: snapshot.values,
+          correctedValues: currentValues
+        });
+      }
     }
     autoFillSnapshotRef.current = null; // report once per prefill, not on every future save
   };

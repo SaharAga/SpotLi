@@ -165,6 +165,28 @@ were affected:
    trap `firestore.rules` auto-deploy fell into earlier; add it to
    `ci.yml`'s `deploy-firebase` job once 1–3 above are done.
 
+## Legal consent & AI-training opt-in
+
+Registration (email/password) requires checking a mandatory box to accept
+the Terms of Use and Privacy Policy (`src/constants/legal.js` — a working
+draft, not yet lawyer-reviewed; see that file's header). OAuth sign-in
+(Google/Apple/Facebook) has no form step, so `LegalConsentGate` blocks any
+signed-in user whose stored `legalAcceptedVersion` doesn't match the current
+`LEGAL_VERSION` — new OAuth sign-ups and pre-existing accounts alike — until
+they accept. Bump `LEGAL_VERSION` when the documents' substance changes to
+re-prompt everyone.
+
+A second, separate, unchecked-by-default checkbox opts in to AI-training
+data collection: for opted-in users, a Smart Import correction stores the
+actual pasted text and before/after field values (`trainingExamples`
+collection, `src/services/trainingDataService.js`) instead of just the field
+names `parseCorrections` logs for everyone else. Never the screenshot image.
+Changeable anytime from Account Settings → Profile. This data has no
+separate retention timer — turning the opt-in off, or deleting the account,
+deletes it immediately, enforced both client-side and by `firestore.rules`
+(the `aiTrainingOptIn` flag on the user's own profile doc is re-checked
+server-side on every write).
+
 ## Deployment
 
 CI (`.github/workflows/ci.yml`) runs on every push/PR to `main`: lint → test

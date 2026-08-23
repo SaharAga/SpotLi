@@ -260,7 +260,11 @@ export function SmartImportModal({
         // to know which fields were auto-filled and how confidently, so an
         // edit before saving can be logged as a correction signal.
         _autoFillSource: parseSource,
-        _autoFillConfidence: aiConfidence
+        _autoFillConfidence: aiConfidence,
+        // The raw pasted text, only used if the user has opted in to the
+        // AI-training data collection (empty for image-sourced parses,
+        // which is fine — we never retain the image either).
+        _autoFillInputText: rawText || ''
       });
       onClose();
     }

@@ -5,6 +5,10 @@ import userEvent from '@testing-library/user-event';
 import { AddEditPackageModal } from './AddEditPackageModal';
 import { renderWithLanguage } from '../test-utils/renderWithProviders';
 
+vi.mock('../context/AuthContext', () => ({
+  useAuth: () => ({ user: null })
+}));
+
 // This is the app's primary write path: every package a user creates or
 // edits goes through this form. Before this file it had no rendered
 // coverage at all — only the pure detectCarrier/schema utilities it calls

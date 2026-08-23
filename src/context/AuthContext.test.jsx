@@ -70,6 +70,10 @@ describe('AuthContext - validateUserProfile', () => {
     expect(validated).toEqual({
       ...raw,
       emailVerified: false,
+      legalAcceptedVersion: null,
+      legalAcceptedAt: null,
+      aiTrainingOptIn: false,
+      aiTrainingOptInUpdatedAt: null,
       preferences: {
         defaultCarrier: 'all',
         language: 'he',

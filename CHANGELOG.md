@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.10.0] - 2026-08-23
+
+### Added
+- **Legal consent & AI-training opt-in**: registration now requires
+  accepting the Terms of Use / Privacy Policy (`src/constants/legal.js`,
+  `LegalDocumentModal`), plus a separate, unchecked-by-default checkbox to
+  opt in to AI-training data collection. OAuth sign-ins (Google/Apple/
+  Facebook) have no form step, so a blocking `LegalConsentGate` catches
+  those — and any pre-existing account — on first login after this shipped.
+  Changeable anytime from Account Settings → Profile.
+- **Real training data for opted-in users** (`trainingExamples` collection,
+  `src/services/trainingDataService.js`): unlike the existing field-names-
+  only `parseCorrections` signal, opted-in users' actual pasted text and
+  before/after correction values are stored, tied to their account — the
+  first real dataset for improving the Smart Import parser beyond the
+  built-in regex patterns. Text only, never the screenshot image. This data
+  has no separate retention timer: turning the opt-in off, or deleting the
+  account, deletes it immediately (`AuthContext.updateAiTrainingOptIn`,
+  `deleteUserAccountAndData`) — enforced both client-side and by
+  `firestore.rules` (`aiTrainingOptIn` re-checked server-side on write).
+
+### Note
+- `src/constants/legal.js` is a working draft, not a lawyer-reviewed
+  document — see the file's own header comment. Get real legal review
+  (Israeli Privacy Protection Law Amendment 13 in particular) before
+  relying on it as a binding agreement.
+
 ## [0.9.0] - 2026-08-23
 
 ### Added
