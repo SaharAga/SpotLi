@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.15.0] - 2026-08-23
+
+_Unifies the Settings pilot's design language across the entire app,
+instead of keeping it scoped to one modal — per explicit direction that
+the dark navy+gold pairing (colors included) and the light theme's
+layout/font precision (blue accent kept, not gold) should be the app's
+one design language, not two coexisting ones._
+
+### Changed
+- **App-wide color retint** (`index.css`): the same `--color-slate-*`/
+  `--color-blue-*` custom properties every component already reads via
+  standard Tailwind classes (`bg-slate-900`, `text-blue-400`, etc. — the
+  same mechanism the 0.11.0 indigo redesign used) are retinted again:
+  - **Dark theme**: slate hue shifted from indigo (H284) to navy (H255,
+    matching the Settings pilot's `--stg-*` dark values), and the blue
+    accent scale replaced with gold (H~55-78) — the app's one dark accent
+    now, not a second color living only in Settings.
+  - **Light theme**: slate follows the same navy hue shift, but the accent
+    scale is now *explicitly* diverged from dark instead of shared — light
+    keeps the original indigo-blue accent rather than adopting gold, per
+    the explicit "layout/font, not colors" direction for light mode.
+  - No component files needed changes for this — it's the same token
+    indirection already in place app-wide.
+- **`--font-sans` set to Atkinson Hyperlegible** (falls back to Inter),
+  matching the Settings pilot's font. Only affects Latin/English text —
+  Hebrew keeps Rubik unchanged, since Atkinson Hyperlegible has no Hebrew
+  glyphs and the app is Hebrew-first.
+- **Settings light theme's accent** (`--stg-accent`/`--stg-accent-soft` in
+  `.light .settings-theme`) changed from gold to the app's exact
+  `--color-blue-600`/`--color-blue-100` values, so Settings and the rest
+  of the app now use identically-sourced blue in light mode.
+
+### Fixed
+- **`sanitizeAuthError`'s fallback code-extraction regex** was reading
+  *any* `auth/xxx`-shaped substring out of a raw error message — including
+  Firebase's own auth-helper iframe URL path (`.../__/auth/iframe`), which
+  is not a real error code at all. That produced the misleading
+  "Authentication error (auth/iframe)" message reported after 0.14.0: not
+  a genuine Firebase error code, just a URL fragment being mislabeled as
+  one. Tightened the regex to exclude matches preceded by another `/`, and
+  added a specific, actionable message for the iframe-load-failure case
+  (the most likely real cause — third-party cookies/storage blocked by
+  browser privacy settings or an ad/tracker blocker) instead of the
+  generic fallback.
+
 ## [0.14.0] - 2026-08-23
 
 _Removes a broken sign-in option, fixes a real RTL toggle-switch bug, and

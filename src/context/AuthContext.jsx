@@ -122,7 +122,12 @@ export function sanitizeAuthError(err, language = 'en') {
   let code = typeof err === 'object' && err !== null && err.code ? String(err.code) : '';
   
   if (!code && rawMsg) {
-    const match = rawMsg.match(/auth\/([a-z0-9-]+)/i);
+    // A negative lookbehind excludes "auth/" that's part of a longer URL
+    // path (e.g. Firebase's own helper iframe at .../__/auth/iframe) —
+    // without it, that URL gets misread as if "auth/iframe" were itself a
+    // real Firebase error code, when it's just a path fragment inside a
+    // network/load failure message.
+    const match = rawMsg.match(/(?<!\/)auth\/([a-z0-9-]+)/i);
     if (match) code = `auth/${match[1].toLowerCase()}`;
   }
   
@@ -267,6 +272,16 @@ export function sanitizeAuthError(err, language = 'en') {
         return language === 'he'
           ? 'אחסון הדפדפן או העוגיות חסומים בדפדפן זה.'
           : 'Web storage or cookies are blocked in this browser.';
+      }
+      if (/\/__\/auth\/iframe|iframe/i.test(rawMsg)) {
+        // The most common real cause: Firebase's OAuth helper iframe
+        // (hosted at <authDomain>/__/auth/iframe) failed to load or
+        // communicate — usually third-party cookies/storage blocked by
+        // browser privacy settings, an ad/tracker blocker, or a private
+        // browsing mode, not an actual Firebase-side error.
+        return language === 'he'
+          ? 'לא ניתן היה לטעון את חלון ההתחברות המאובטח. נא לבדוק שעוגיות צד שלישי אינן חסומות (או לכבות חוסמי פרסומות עבור אתר זה), או להתחבר עם אימייל וסיסמה.'
+          : 'Could not load the secure sign-in helper. Please check that third-party cookies aren’t blocked (or disable ad/privacy blockers for this site), or use email/password instead.';
       }
       if (code) {
         return language === 'he'
