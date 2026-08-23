@@ -1,0 +1,75 @@
+name: Production Health Check
+
+# A single lightweight scheduled check, not a full nightly/weekly/signoff
+# tier system — see the 2026-08-23 AGY_TASKS.md discussion for why. It
+# targets the exact two bugs that were caught by a human screenshot instead
+# of CI in one evening: a stale version badge that Pre-Submit CI has no way
+# to catch (it never touches the live site), and the Firestore rules
+# auto-deploy 403 (TASK-27) that only shows up as one easy-to-miss red job
+# on the merge commit that caused it, with nothing re-checking it after.
+#
+# Runs daily so either failure re-surfaces as a fresh, hard-to-ignore red
+# run — not just once at merge time — until actually fixed. GitHub emails
+# repo watchers by default when a scheduled workflow run fails, so this
+# needs no separate notification wiring.
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # 06:00 UTC daily
+  workflow_dispatch: {}
+
+jobs:
+  version-check:
+    name: Live Site Version Matches main
+    runs-on: ubuntu-latest
+    # Same gate as deploy-firebase in ci.yml — nothing to check against a
+    # site that was never deployed.
+    if: vars.FIREBASE_HOSTING_ENABLED == 'true'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+
+      - name: Compare live site version to package.json on main
+        run: |
+          REPO_VERSION=$(node -e 'process.stdout.write(require("./package.json").version)')
+          LIVE_HTML=$(curl -fsSL "https://deliveree-app-2a938.web.app/?health-check=$(date +%s)")
+          LIVE_VERSION=$(echo "$LIVE_HTML" | grep -oE "APP_CURRENT_VER = '[^']+'" | sed -E "s/APP_CURRENT_VER = '([^']+)'/\1/")
+
+          echo "Repo (main): $REPO_VERSION"
+          echo "Live site:   ${LIVE_VERSION:-<not found>}"
+
+          if [ -z "$LIVE_VERSION" ]; then
+            echo "::error::Could not find an APP_CURRENT_VER marker in the live site's index.html — either the site is unreachable, or that marker (index.html) changed shape and this check needs updating."
+            exit 1
+          fi
+
+          if [ "$REPO_VERSION" != "$LIVE_VERSION" ]; then
+            echo "::error::Live site is running $LIVE_VERSION but main is at $REPO_VERSION. Check whether the last 'Deploy to Firebase Hosting' job on main actually succeeded."
+            exit 1
+          fi
+
+          echo "OK — live site matches main ($REPO_VERSION)."
+
+  firestore-rules-sync:
+    name: Firestore Rules In Sync
+    runs-on: ubuntu-latest
+    if: vars.FIREBASE_HOSTING_ENABLED == 'true'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+
+      - name: Authenticate
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DELIVEREE }}'
+
+      # Idempotent — a no-op if the live rules already match firestore.rules
+      # on main. Re-running this daily (rather than only at merge time, like
+      # ci.yml's deploy-firebase job already does) means a permission
+      # regression shows up as a fresh daily failure that's hard to miss,
+      # instead of one red job on a merge commit nobody revisits. This is
+      # also the actual fix mechanism: once the underlying IAM permission
+      # (see TASK-27, docs/AGY_TASKS.md) is granted, this starts passing
+      # and keeps rules in sync going forward with no further action.
+      - name: Re-deploy Firestore rules (drift/permission check)
+        run: npx --yes firebase-tools@14 deploy --only firestore:rules --project deliveree-app-2a938 --non-interactive

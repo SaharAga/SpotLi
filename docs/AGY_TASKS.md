@@ -2,6 +2,8 @@
 
 This catalog defines the comprehensive 25 engineering tasks across all priority tiers (P0 through P3), mapped to our **3-Squad Autonomous Topology** and **7-Stage Quality Gate Pipeline**.
 
+This is an **agent-executable backlog** — every task here is something a squad/agent can pick up and do. Things that need Sahar's own action (a GCP Console setting, a legal decision, an API key) don't belong here — they go in [GitHub Issues](https://github.com/SaharAga/Deliveree/issues) instead, where they're natively assignable, closeable, and notify him directly. (An earlier version of this file briefly mixed the two in a "Tier 0 addendum" — moved to issues #23–#25.)
+
 ---
 
 ## Tier 0: Critical P0 Architecture & Foundation Tasks
@@ -167,7 +169,7 @@ This catalog defines the comprehensive 25 engineering tasks across all priority 
 * **Summary**: Expand `src/utils/smartParser.js` to extract tracking numbers from courier URLs (e.g. `israelpost.co.il/item/...`, `hfd.co.il/?t=...`) and tracking links generally, not just labeled text (`tracking:`, `מספר מעקב`). Zero cost, no server dependency. Add unit tests for `smartParser.js` and `SmartImportModal.jsx`.
 
 #### `TASK-24B`: Serverless AI parsing engine
-* **Priority**: `P0` | **Status**: `Backlog` | **Owner**: Claude/Antigravity joint
+* **Priority**: `P0` | **Status**: `Done` — PR #21 | **Owner**: Claude/Antigravity joint
 * **Summary**: Firebase Cloud Function `parseDeliveryPayload` — accepts text or image, returns structured package fields (Zod schema: carrier, trackingNumber, store, status, expectedDate) via an LLM/vision model call. Auth-gated, per-user daily rate limit. See plan doc for model/cost choice.
 
 #### `TASK-24C`: Email forwarding ingestion pipeline
@@ -175,7 +177,7 @@ This catalog defines the comprehensive 25 engineering tasks across all priority 
 * **Summary**: Dedicated inbound parsing address, inbound-mail webhook (e.g. CloudMailin/SendGrid/Postmark or a Firebase extension), routes to TASK-24B, auto-upserts to the user's Firestore packages with no click required. Android one-click forwarding-rule setup, iPhone manual instructions.
 
 #### `TASK-24D`: Paste-based fallback (text + image)
-* **Priority**: `P1` | **Status**: `Backlog` | **Owner**: Antigravity
+* **Priority**: `P1` | **Status**: `Done` — PR #21 | **Owner**: Antigravity
 * **Summary**: `SmartImportModal.jsx` gets image paste/drop support. Free parser (TASK-24A) runs first; if it fails or confidence is low, an opt-in "✨ Enhance with AI" button invokes TASK-24B. Positioned as the fallback for anything TASK-24C's automatic ingestion missed, not the primary path.
 
 #### `TASK-24E` (Post-Alpha, deferred): Gmail API / push-based ingestion
