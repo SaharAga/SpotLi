@@ -264,10 +264,7 @@
 /* Respect prefers-reduced-motion app-wide instead of per-component: this
    overrides every animation/transition (including Tailwind's own animate-*
    utilities and arbitrary-duration transitions) rather than requiring a
-   motion-reduce: variant on each one individually.
-   (Ported from PR #27 — that PR and this branch both edit index.css from
-   the same pre-#27 base; carrying this over now so this branch never
-   regresses it regardless of which merges to main first.) */
+   motion-reduce: variant on each one individually. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
