@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.15.1] - 2026-08-23
+
+### Fixed
+- **Google sign-in failing with "Could not load the secure sign-in helper."**
+  Root cause: the app is served from `deliveree-app-2a938.web.app`, but
+  `authDomain` was `deliveree-app-2a938.firebaseapp.com`. `signInWithPopup`
+  loads a helper iframe at `https://<authDomain>/__/auth/iframe`, so a
+  mismatched authDomain makes that iframe **cross-origin** — its
+  cookies/storage are third-party, which Chrome's 3P-cookie phase-out,
+  Safari ITP, and in-app webviews all block. The iframe then can't relay the
+  auth result and sign-in dies. `authDomain` now resolves to the page's own
+  hostname whenever the app is served from one of the project's Firebase
+  Hosting domains (Hosting serves `/__/auth/*` from every site in the
+  project), making the iframe first-party; any other origin (custom domain,
+  localhost, tests) still uses the configured value.
+
+  This same fix landed once before in `9470547` and was reverted 8 minutes
+  later in `dffebf6` — the code was correct, but the Google Cloud OAuth
+  client only allowed the `.firebaseapp.com` redirect URI, so changing
+  origins broke sign-in a different way. **Both console entries are required
+  for this to work** (see the comment on `resolveAuthDomain`):
+  - Firebase Console → Authentication → Settings → Authorized domains:
+    `deliveree-app-2a938.web.app`
+  - Google Cloud Console → Credentials → Web OAuth client → Authorized
+    redirect URIs: `https://deliveree-app-2a938.web.app/__/auth/handler`
+
+  Extracted as a pure `resolveAuthDomain(hostname, configuredDomain)` with
+  unit tests, including a guard against lookalike domains (`notweb.app`,
+  `evil-firebaseapp.com`) being treated as our own origin.
+
 ## [0.15.0] - 2026-08-23
 
 _Unifies the Settings pilot's design language across the entire app,

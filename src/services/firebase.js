@@ -22,9 +22,50 @@ import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
  * When unconfigured (tests, or a local run without a .env), the app degrades to
  * local-only storage rather than throwing.
  */
+/**
+ * Resolves the Firebase `authDomain`.
+ *
+ * Why this isn't just the env var: `signInWithPopup`/`signInWithRedirect`
+ * load a hidden helper iframe at `https://<authDomain>/__/auth/iframe`. When
+ * authDomain differs from the origin the app is served from, that iframe is
+ * cross-origin — so its cookies/storage are third-party, and every modern
+ * browser blocks them (Chrome's 3P-cookie phase-out, Safari ITP, and any
+ * in-app webview). The iframe then can't relay the auth result and sign-in
+ * fails. Firebase's own guidance is to keep authDomain on the same origin as
+ * the app.
+ *
+ * Firebase Hosting serves the `/__/auth/*` helper routes from every Hosting
+ * site in the project, so when the page is already on one of this project's
+ * Hosting domains, pointing authDomain at that same hostname makes the
+ * iframe same-origin and the whole third-party-storage problem disappears.
+ * Anywhere else (custom domain, localhost, tests) we fall back to the
+ * configured value.
+ *
+ * History: this existed once (9470547) and was reverted 8 minutes later
+ * (dffebf6) — the code was right, but the Google Cloud OAuth client still
+ * only allowed the `.firebaseapp.com` redirect URI, so switching origins
+ * broke sign-in a different way. Both console entries below must exist for
+ * this to work:
+ *   - Firebase Console → Authentication → Settings → Authorized domains:
+ *     `deliveree-app-2a938.web.app`
+ *   - Google Cloud Console → APIs & Services → Credentials → the Web OAuth
+ *     client → Authorized redirect URIs:
+ *     `https://deliveree-app-2a938.web.app/__/auth/handler`
+ */
+export function resolveAuthDomain(hostname, configuredDomain) {
+  const isProjectHostingDomain =
+    typeof hostname === 'string' &&
+    (hostname.endsWith('.web.app') || hostname.endsWith('.firebaseapp.com'));
+
+  return isProjectHostingDomain ? hostname : configuredDomain;
+}
+
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  authDomain: resolveAuthDomain(
+    typeof window !== 'undefined' ? window.location.hostname : undefined,
+    import.meta.env.VITE_FIREBASE_AUTH_DOMAIN
+  ),
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
