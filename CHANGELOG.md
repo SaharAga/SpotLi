@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.13.0] - 2026-08-23
+
+_Settings pilot redesign + a genuine one-line FilterBar._
+
+### Changed
+- **`FilterBar` is now a true single row**: search, status, carrier, and
+  sort all live in one `flex` row with `overflow-x-auto` as the mobile
+  fallback (horizontal scroll, never a second line) instead of a primary
+  row + secondary row. The previous two-row compact layout (0.12.0) didn't
+  actually satisfy "one line."
+- **Settings (`AccountModal`) restyled** around a blind design-tool pass
+  run specifically for a settings/preferences page (independent of the
+  0.11.0 dashboard redesign's indigo palette): trust-navy + gold accent,
+  Atkinson Hyperlegible (an accessibility-first typeface), sharper
+  `rounded-lg`/`rounded-xl` radii instead of `rounded-2xl`/`rounded-3xl`.
+  Scoped via a new `.settings-theme` class + `--stg-*` custom properties
+  (`index.css`) that only apply inside this modal — the rest of the app is
+  untouched, since this is a pilot for the palette, not yet a decided
+  app-wide direction. All existing functionality (profile, notifications,
+  preferences, data export, danger zone, about) preserved exactly; only
+  the styling changed.
+- Added Atkinson Hyperlegible to the Google Fonts `<link>` in `index.html`.
+
 ## [0.12.0] - 2026-08-23
 
 _Follow-up pass on the 0.11.0 dashboard redesign, closing the gap between it
