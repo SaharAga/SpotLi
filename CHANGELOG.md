@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.14.0] - 2026-08-23
+
+_Removes a broken sign-in option, fixes a real RTL toggle-switch bug, and
+simplifies the filter bar down to search + one filters panel per user
+feedback on 0.13.0._
+
+### Fixed
+- **RTL toggle-switch thumb rendering outside its track** (`AccountModal`'s
+  `Switch`) — the old markup positioned the thumb with a `peer-checked:
+  after:translate-x-full` / `rtl:peer-checked:after:-translate-x-full`
+  pair: two same-specificity rules where source order decides the winner,
+  which broke silently in RTL. Rewritten to position the thumb directly
+  from the `checked` prop via logical `inset-inline-start` (`start-[2px]`
+  / `start-[22px]`) instead — correct in both directions with no `rtl:`
+  variant needed.
+- **Removed the Apple sign-in button** (`AuthModal`) — it was never wired
+  up in Firebase/Apple Developer (added in an earlier, unrelated PR months
+  before this session), so it could only ever fail for anyone who clicked
+  it. Google remains as the one working OAuth option, now full-width.
+
+### Changed
+- **`FilterBar` simplified**: the "one line" from 0.13.0 was technically
+  one row but still five separate controls (search, status, carrier, sort)
+  crowded into it. Now it's just a search bar plus a single "Filters"
+  button that opens a small panel (status list with counts, carrier, sort)
+  — refresh and the grid/table toggle stay as icon buttons beside it. The
+  bar itself can never overflow or need scrolling, at any width.
+
 ## [0.13.0] - 2026-08-23
 
 _Settings pilot redesign + a genuine one-line FilterBar._

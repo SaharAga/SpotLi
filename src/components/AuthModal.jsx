@@ -92,11 +92,10 @@ export function AuthModal({
   onClose,
   onShowToast
 }) {
-  const { 
-    user, 
-    loginWithGoogle, 
-    loginWithApple,
-    loginWithEmail, 
+  const {
+    user,
+    loginWithGoogle,
+    loginWithEmail,
     registerWithEmail, 
     resetPassword,
     deleteUserAccountAndData,
@@ -124,7 +123,6 @@ export function AuthModal({
   const [formSuccess, setFormSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [isAppleLoading, setIsAppleLoading] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   // Registration-only legal consent — mandatory ToS/Privacy acceptance and
@@ -267,24 +265,6 @@ export function AuthModal({
     }
   };
 
-  const handleAppleClick = async () => {
-    setIsAppleLoading(true);
-    setFormError('');
-    try {
-      const u = await loginWithApple();
-      if (u) {
-        if (onShowToast) onShowToast(language === 'he' ? 'התחברת בהצלחה!' : 'Logged in successfully!', 'success');
-        onClose();
-      }
-    } catch (err) {
-      if (err && err.message) {
-        setFormError(err.message);
-      }
-    } finally {
-      setIsAppleLoading(false);
-    }
-  };
-
   const handleDeleteAccount = async () => {
     setIsDeletingAccount(true);
     try {
@@ -421,44 +401,29 @@ export function AuthModal({
               {/* Social / OAuth Sign-in Buttons */}
               {activeTab !== 'forgot' && (
                 <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {/* Google Sign-in Button */}
-                    <button
-                      type="button"
-                      onClick={handleGoogleClick}
-                      disabled={isGoogleLoading || isAppleLoading || isLoading}
-                      className="w-full flex items-center justify-center gap-2.5 p-3 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs transition-all shadow-md cursor-pointer min-h-[48px] disabled:opacity-50"
-                    >
-                      {isGoogleLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin text-slate-900" />
-                      ) : (
-                        <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                        </svg>
-                      )}
-                      <span>Google</span>
-                    </button>
-
-                    {/* Apple Sign-in Button */}
-                    <button
-                      type="button"
-                      onClick={handleAppleClick}
-                      disabled={isGoogleLoading || isAppleLoading || isLoading}
-                      className="w-full flex items-center justify-center gap-2.5 p-3 rounded-2xl bg-black hover:bg-slate-950 border border-slate-700 text-white font-bold text-xs transition-all shadow-md cursor-pointer min-h-[48px] disabled:opacity-50"
-                    >
-                      {isAppleLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin text-white" />
-                      ) : (
-                        <svg className="w-4 h-4 shrink-0 fill-current" viewBox="0 0 170 170">
-                          <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.05-7.62-7.85-11.77-14.4-6.41-10.13-11.24-21.2-14.49-33.22-3.24-12.01-4.87-23.23-4.87-33.64 0-14.15 3.52-25.75 10.56-34.8 7.04-9.05 15.75-13.68 26.13-13.88 4.79 0 10.19 1.25 16.2 3.75 6.01 2.5 10.02 3.8 12.03 3.9 1.79-.1 5.92-1.42 12.39-3.95 6.47-2.54 11.75-3.7 15.83-3.5 11.66.58 20.94 4.89 27.84 12.92-10.22 6.18-15.22 14.73-15 25.64.22 8.44 3.42 15.48 9.6 21.12 6.18 5.63 13.48 9.07 21.9 10.31-2.22 6.64-4.83 13.2-7.84 19.68zM119.22 31.84c0-7.22 2.62-13.88 7.86-19.98 5.24-6.1 11.64-9.74 19.2-10.92.54 1.13.82 2.37.82 3.72 0 7.23-2.73 14.07-8.18 20.52-5.46 6.46-12.04 10.15-19.7 11.08z"/>
-                        </svg>
-                      )}
-                      <span>Apple</span>
-                    </button>
-                  </div>
+                  {/* Google Sign-in Button — the only OAuth provider actually
+                      configured. Apple was previously offered here but was
+                      never set up in Firebase/Apple Developer, so it could
+                      only ever fail; removed rather than leave a broken
+                      option in front of users. */}
+                  <button
+                    type="button"
+                    onClick={handleGoogleClick}
+                    disabled={isGoogleLoading || isLoading}
+                    className="w-full flex items-center justify-center gap-2.5 p-3 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs transition-all shadow-md cursor-pointer min-h-[48px] disabled:opacity-50"
+                  >
+                    {isGoogleLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-slate-900" />
+                    ) : (
+                      <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                      </svg>
+                    )}
+                    <span>{language === 'he' ? 'המשך עם Google' : 'Continue with Google'}</span>
+                  </button>
 
                   <div className="flex items-center gap-2 text-slate-500 my-2">
                     <div className="flex-1 h-px bg-slate-800" />
