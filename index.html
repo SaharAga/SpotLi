@@ -26,7 +26,7 @@
     <!-- Instant Hard Cache Purge & Service Worker Reset -->
     <script>
       (function() {
-        var APP_CURRENT_VER = '0.6.2.17';
+        var APP_CURRENT_VER = '__APP_VERSION__';
         var storedVer = localStorage.getItem('deliveree_app_build_version');
         if (storedVer !== APP_CURRENT_VER) {
           if ('serviceWorker' in navigator) {
