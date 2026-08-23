@@ -410,6 +410,7 @@ function DashboardContent() {
 
       if (activeTab === 'all') return true;
       if (activeTab === 'active') return pkg.status !== 'delivered';
+      if (activeTab === 'transit') return pkg.status !== 'delivered' && pkg.status !== 'customs' && pkg.status !== 'exception';
       if (activeTab === 'in_transit') return pkg.status === 'in_transit' || pkg.status === 'shipped' || pkg.status === 'ordered';
       if (activeTab === 'out_for_delivery') return pkg.status === 'out_for_delivery';
       if (activeTab === 'delivered') return pkg.status === 'delivered';
@@ -625,7 +626,10 @@ function DashboardContent() {
                 </div>
               </div>
             ) : viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 animate-fade-in">
+              <div className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-5 animate-fade-in">
+                {/* auto-fit (not auto-fill) collapses unused column tracks to
+                    0fr, so a handful of cards stretch to fill the row
+                    instead of leaving a wide empty gap next to a fixed grid. */}
                 {filteredPackages.map((pkg) => (
                   <PackageCard
                     key={pkg.id}

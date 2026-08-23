@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import {
   Copy, Check, MoreVertical, Pin, Archive, Trash2, Edit3,
-  Calendar, CheckCircle, ArrowUpRight, ChevronRight, RefreshCw, Loader2, Package
+  Calendar, CheckCircle, ArrowUpRight, RefreshCw, Loader2, Package
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { CARRIERS } from '../types/carriers';
@@ -182,8 +182,14 @@ export function PackageCard({
       >
         {/* Row 1: leading icon, title + tracking/carrier meta, status pill */}
         <div className="flex items-start gap-3">
-          <div className={`p-2 rounded-xl shrink-0 ${stage.badgeClass.split(' ').filter(c => c.startsWith('bg-') || c.startsWith('text-')).join(' ')}`}>
+          <div className={`relative p-2 rounded-xl shrink-0 ${stage.badgeClass.split(' ').filter(c => c.startsWith('bg-') || c.startsWith('text-')).join(' ')}`}>
             <Package className="w-4 h-4" />
+            {pkg.isPinned && (
+              <Pin
+                className={`absolute -top-1 w-3 h-3 fill-blue-400 text-blue-400 ${isRTL ? '-left-1' : '-right-1'}`}
+                aria-hidden="true"
+              />
+            )}
           </div>
 
           <div className="min-w-0 flex-1">
@@ -221,26 +227,11 @@ export function PackageCard({
             )}
           </div>
 
+          {/* Only the two highest-frequency actions stay visible; everything
+              else (copy, carrier link, pin, edit, archive, delete) lives in
+              the overflow menu — the whole card is already the "view
+              details" tap target, so a 7-icon row was pure clutter. */}
           <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={handleCopy}
-              title={t('card.copyTracking')}
-              className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
-            >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-            </button>
-
-            <a
-              href={trackingUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={t('card.viewCarrier')}
-              aria-label={t('card.viewCarrier')}
-              className="p-2 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-slate-800 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
-            >
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </a>
-
             {onRefreshTracking && (
               <button
                 onClick={handleRefresh}
@@ -265,25 +256,13 @@ export function PackageCard({
               <CheckCircle className={`w-3.5 h-3.5 ${pkg.status === 'delivered' ? 'fill-emerald-500/20' : ''}`} />
             </button>
 
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onTogglePin(pkg.id);
-              }}
-              title={pkg.isPinned ? t('card.unpin') : t('card.pin')}
-              className={`p-2 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center ${
-                pkg.isPinned ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-              }`}
-            >
-              <Pin className={`w-3.5 h-3.5 ${pkg.isPinned ? 'fill-blue-400' : ''}`} />
-            </button>
-
             <div className="relative">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setMenuOpen(!menuOpen);
                 }}
+                title={t('card.viewDetails')}
                 className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
               >
                 <MoreVertical className="w-3.5 h-3.5" />
@@ -293,10 +272,45 @@ export function PackageCard({
                 <>
                   <div className="fixed inset-0 z-30" onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }} />
                   <div
-                    className={`absolute z-40 top-full mt-1 w-44 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-1 text-xs ${
+                    className={`absolute z-40 top-full mt-1 w-48 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-1 text-xs ${
                       isRTL ? 'left-0' : 'right-0'
                     }`}
                   >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuOpen(false);
+                        handleCopy(e);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white min-h-[40px]"
+                    >
+                      {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{t('card.copyTracking')}</span>
+                    </button>
+
+                    <a
+                      href={trackingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }}
+                      className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white min-h-[40px]"
+                    >
+                      <ArrowUpRight className="w-3.5 h-3.5" />
+                      <span>{t('card.viewCarrier')}</span>
+                    </a>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuOpen(false);
+                        onTogglePin(pkg.id);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white min-h-[40px]"
+                    >
+                      <Pin className={`w-3.5 h-3.5 ${pkg.isPinned ? 'fill-blue-400 text-blue-400' : ''}`} />
+                      <span>{pkg.isPinned ? t('card.unpin') : t('card.pin')}</span>
+                    </button>
+
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -336,18 +350,6 @@ export function PackageCard({
                 </>
               )}
             </div>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenDetails(pkg);
-              }}
-              title={t('card.viewDetails')}
-              aria-label={t('card.viewDetails')}
-              className="p-2 rounded-lg text-blue-400 hover:text-white hover:bg-blue-600 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
-            >
-              <ChevronRight className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
-            </button>
           </div>
         </div>
       </div>
