@@ -210,6 +210,19 @@ npm run build
 firebase deploy --only hosting,firestore:rules
 ```
 
+### Production health check
+
+`.github/workflows/health-check.yml` runs daily (plus manual dispatch) and
+checks two things `ci.yml` can't, since it never touches the live site after
+deploying: that the deployed site's version actually matches `main`'s
+`package.json`, and that `firestore.rules` deploys cleanly (idempotent — a
+no-op when already in sync, and the same drift/permission check re-run
+daily rather than only once at merge time). GitHub emails repo watchers by
+default when a scheduled workflow fails, so a regression in either — like
+the Firestore rules 403 in `TASK-27`, `docs/AGY_TASKS.md` — surfaces as a
+fresh daily failure instead of one easy-to-miss red job on the merge commit
+that caused it.
+
 ## Security
 
 `firestore.rules` is the source of truth for who can read or write what —
