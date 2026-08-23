@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.10.2] - 2026-08-23
+
+_Found by running the `ui-ux-pro-max` design/accessibility skill's checklist
+against the actual code, not just describing what should be true._
+
+### Fixed
+- **Toasts were invisible to screen readers** (`Toast.jsx`) — content
+  appeared/disappeared with no `role`/`aria-live`, so nothing announced it.
+  Error toasts now use `role="alert"` (assertive); success/info use
+  `role="status"` (polite).
+- **`prefers-reduced-motion` was never respected anywhere** — the app's
+  `animate-fade-in`/`animate-bounce-in`/`animate-pulse-subtle` etc. always
+  played regardless of the OS setting. Added one global override in
+  `index.css` rather than a `motion-reduce:` variant on every animated
+  element individually.
+
+### Noted, not fixed this round
+- Text-input focus indicators (`focus:outline-none` paired only with
+  `focus:border-blue-500`) are a visible but weaker-than-ideal focus signal
+  — a border color change rather than a ring. Below best practice, not
+  urgent enough to bundle here.
+
 ## [0.10.1] - 2026-08-23
 
 _Response to a structured contract review of `legal.js`
