@@ -1,25 +1,28 @@
 import React from 'react';
-import { Package, Truck, Navigation, CheckCircle2, AlertOctagon } from 'lucide-react';
+import { Package, Truck, CheckCircle2, AlertOctagon } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 export function StatsCards({ packages = [], activeFilter, onSelectFilter }) {
   const { t } = useLanguage();
 
   const safePackages = Array.isArray(packages) ? packages : [];
-  
-  // Single-pass O(N) aggregation to prevent redundant array scans
-  const { total, inTransit, outForDelivery, delivered, customs } = safePackages.reduce(
+
+  // Single-pass O(N) aggregation to prevent redundant array scans. Four
+  // top-level buckets only — in_transit/out_for_delivery collapse into one
+  // "transit" tile and customs/exception into one "attention" tile so the
+  // KPI row stays a clean 4-up grid; the finer-grained status still shows
+  // per-package (card badge, detail-modal stepper), just not promoted here.
+  const { total, transit, delivered, attention } = safePackages.reduce(
     (acc, p) => {
       if (!p) return acc;
       acc.total += 1;
       const s = p.status;
-      if (s === 'in_transit' || s === 'shipped' || s === 'ordered') acc.inTransit += 1;
-      else if (s === 'out_for_delivery') acc.outForDelivery += 1;
-      else if (s === 'delivered') acc.delivered += 1;
-      else if (s === 'customs' || s === 'exception') acc.customs += 1;
+      if (s === 'delivered') acc.delivered += 1;
+      else if (s === 'customs' || s === 'exception') acc.attention += 1;
+      else acc.transit += 1; // in_transit, out_for_delivery, shipped, ordered
       return acc;
     },
-    { total: 0, inTransit: 0, outForDelivery: 0, delivered: 0, customs: 0 }
+    { total: 0, transit: 0, delivered: 0, attention: 0 }
   );
 
   const stats = [
@@ -33,23 +36,13 @@ export function StatsCards({ packages = [], activeFilter, onSelectFilter }) {
       activeRing: 'ring-2 ring-blue-500'
     },
     {
-      id: 'in_transit',
+      id: 'transit',
       title: t('stats.inTransit'),
-      count: inTransit,
+      count: transit,
       icon: Truck,
       stripe: 'bg-cyan-500',
       iconBg: 'bg-cyan-500/15 text-cyan-400',
       activeRing: 'ring-2 ring-cyan-500'
-    },
-    {
-      id: 'out_for_delivery',
-      title: t('stats.outForDelivery'),
-      count: outForDelivery,
-      icon: Navigation,
-      stripe: 'bg-amber-500',
-      iconBg: 'bg-amber-500/15 text-amber-400',
-      activeRing: 'ring-2 ring-amber-500',
-      glow: outForDelivery > 0
     },
     {
       id: 'delivered',
@@ -63,26 +56,26 @@ export function StatsCards({ packages = [], activeFilter, onSelectFilter }) {
     {
       id: 'customs',
       title: t('stats.customs'),
-      count: customs,
+      count: attention,
       icon: AlertOctagon,
-      stripe: 'bg-purple-500',
-      iconBg: 'bg-purple-500/15 text-purple-400',
-      activeRing: 'ring-2 ring-purple-500'
+      stripe: 'bg-amber-500',
+      iconBg: 'bg-amber-500/15 text-amber-400',
+      activeRing: 'ring-2 ring-amber-500',
+      glow: attention > 0
     }
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4 my-4 sm:my-6">
-      {stats.map((item, idx) => {
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 my-4 sm:my-6">
+      {stats.map((item) => {
         const Icon = item.icon;
         const isActive = activeFilter === item.id;
-        const isLastOnMobile = idx === 4 ? 'col-span-2 sm:col-span-1' : '';
 
         return (
           <button
             key={item.id}
             onClick={() => onSelectFilter(item.id)}
-            className={`flex flex-col p-3 sm:p-4 rounded-2xl border transition-all duration-200 text-start group relative overflow-hidden shadow-sm ${isLastOnMobile} ${
+            className={`flex flex-col p-3 sm:p-4 rounded-2xl border transition-all duration-200 text-start group relative overflow-hidden shadow-sm ${
               isActive
                 ? `${item.activeRing} bg-slate-900 shadow-lg`
                 : 'bg-slate-900 hover:bg-slate-800 border-slate-800 hover:border-slate-700'
@@ -105,7 +98,7 @@ export function StatsCards({ packages = [], activeFilter, onSelectFilter }) {
               <span className="text-xl sm:text-3xl font-semibold text-slate-100 tracking-tight [font-variant-numeric:tabular-nums]">
                 {item.count}
               </span>
-              {item.id === 'out_for_delivery' && item.count > 0 && (
+              {item.id === 'customs' && item.count > 0 && (
                 <span className="flex h-2 w-2 sm:h-2.5 sm:w-2.5 relative">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-amber-500"></span>

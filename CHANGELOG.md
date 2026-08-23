@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.12.0] - 2026-08-23
+
+_Follow-up pass on the 0.11.0 dashboard redesign, closing the gap between it
+and the comparison mockup it drew from: a compact filter bar, a decluttered
+package card, symmetric 4-tile stats, and a fix for the desktop card grid
+leaving large empty gaps with few results._
+
+### Changed
+- **`FilterBar`** rebuilt around a compact primary row (one status dropdown
+  + search, replacing a 7-button pill row that wrapped across two lines) with
+  carrier/sort/refresh/view-mode demoted to a smaller secondary row. The
+  dropdown's options are the same higher-level buckets used by the new
+  4-tile stats (all/transit/attention/delivered/archived); the finer
+  in_transit vs. out_for_delivery split is still visible per-package (card
+  badge, detail-modal stepper), just not a top-level filter anymore.
+- **`StatsCards`** reduced from 5 tiles to 4 (`grid-cols-2 lg:grid-cols-4`,
+  no more odd-tile mobile spanning hack) by merging in_transit +
+  out_for_delivery into one "Transit" tile and customs + exception into one
+  "Attention" tile — matches the 4-tile grouping from the comparison mockup
+  and keeps the KPI row a clean, symmetric grid.
+- **`PackageCard`** action row cut from 7 always-visible icons to 2
+  (refresh, mark-delivered) plus one overflow menu holding the rest (copy
+  tracking #, open carrier link, pin/unpin, edit, archive, delete) — the
+  whole card was already the "view details" tap target, so the previous
+  row was pure visual clutter. A pinned package now shows a small pin badge
+  on its leading icon instead of a dedicated always-visible pin button.
+- **Desktop package grid**: `grid-cols-1 md:grid-cols-2 lg:grid-cols-3` (a
+  fixed column count) replaced with `grid-cols-[repeat(auto-fit,minmax(320px,1fr))]`.
+  `auto-fit` collapses unused column tracks to `0fr`, so 1–2 filtered
+  results stretch to fill the row on a wide screen instead of sitting in a
+  fixed-width card next to a large empty gap.
+
+### Investigated, not changed
+- Consulted the third-party `ui-ux-pro-max` design-linter tool (per its own
+  request) on the compact filter/list pattern, card-grid empty-space
+  handling, and Settings page orientation/layout. Its database returned
+  only generic, non-Deliveree-specific guidelines (debounce search inputs,
+  avoid `overflow-hidden` clipping, avoid horizontal scroll) and zero
+  matches for "settings page layout" specifically — the concrete changes
+  above are original design judgment, not tool output. Settings
+  (`AccountModal`) itself was reviewed and left as-is: its nav-rail-left +
+  content-right pattern (collapsing to a horizontal tab strip on mobile)
+  is already a standard, RTL-correct settings layout with no structural
+  issue found.
+
 ## [0.11.0] - 2026-08-23
 
 _Dashboard redesign: an indigo-black dark theme, solid surfaces in place of
