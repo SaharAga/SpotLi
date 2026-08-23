@@ -16,8 +16,17 @@ export function Toast({ toast, onClose }) {
     info: 'border-blue-500/30 bg-slate-900/90 text-slate-100'
   };
 
+  // Errors are announced assertively (interrupt); success/info are polite —
+  // otherwise this is invisible to screen reader users, since it's DOM
+  // content appearing/disappearing with no other signal.
+  const isError = toast.type === 'error';
+
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2 max-w-sm w-full animate-bounce-in">
+    <div
+      className="fixed bottom-6 right-6 z-50 flex flex-col gap-2 max-w-sm w-full animate-bounce-in"
+      role={isError ? 'alert' : 'status'}
+      aria-live={isError ? 'assertive' : 'polite'}
+    >
       <div className={`flex items-center justify-between p-4 rounded-xl border shadow-2xl backdrop-blur-xl transition-all duration-300 ${borderColors[toast.type || 'info']}`}>
         <div className="flex items-center gap-3">
           {icons[toast.type || 'info']}
