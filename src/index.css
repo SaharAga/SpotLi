@@ -8,46 +8,59 @@
     --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     --font-hebrew: 'Rubik', 'Inter', system-ui, sans-serif;
     
-    /* Dark Theme Slate Colors (Default) */
-    --color-slate-50: oklch(98.4% 0.003 247.858);
-    --color-slate-100: oklch(96.8% 0.007 247.896);
-    --color-slate-200: oklch(92.9% 0.013 255.508);
-    --color-slate-300: oklch(86.9% 0.022 252.894);
-    --color-slate-400: oklch(70.4% 0.04 256.788);
-    --color-slate-500: oklch(55.4% 0.046 257.417);
-    --color-slate-600: oklch(44.6% 0.043 257.281);
-    --color-slate-700: oklch(37.2% 0.044 257.287);
-    --color-slate-800: oklch(27.9% 0.041 260.031);
-    --color-slate-900: oklch(20.8% 0.042 265.755);
-    --color-slate-950: oklch(12.9% 0.042 264.695);
+    /* Dark Theme Slate Colors (Default) — indigo-tinted (H~284) rather than
+       neutral blue-gray (was H~265), for a moodier "indigo-black" ground
+       instead of a flat charcoal. Chroma raised slightly at the darkest
+       steps so the background itself carries some color. */
+    --color-slate-50: oklch(98.4% 0.005 284);
+    --color-slate-100: oklch(96.8% 0.010 284);
+    --color-slate-200: oklch(92.9% 0.018 284);
+    --color-slate-300: oklch(86.9% 0.028 284);
+    --color-slate-400: oklch(70.4% 0.045 284);
+    --color-slate-500: oklch(55.4% 0.052 284);
+    --color-slate-600: oklch(44.6% 0.050 284);
+    --color-slate-700: oklch(37.2% 0.052 284);
+    --color-slate-800: oklch(26.5% 0.052 284);
+    --color-slate-900: oklch(19.0% 0.055 284);
+    --color-slate-950: oklch(11.5% 0.050 284);
 
-    /* Brand accent: Transit Indigo (replaces default Tailwind blue app-wide) */
-    --color-blue-50: oklch(97% 0.010 266);
-    --color-blue-100: oklch(93.2% 0.020 266);
-    --color-blue-200: oklch(88.2% 0.035 266);
-    --color-blue-300: oklch(80.9% 0.060 266);
-    --color-blue-400: oklch(70.7% 0.095 266);
-    --color-blue-500: oklch(62.3% 0.125 266);
-    --color-blue-600: oklch(54.6% 0.140 266);
-    --color-blue-700: oklch(48.8% 0.140 266);
-    --color-blue-800: oklch(42.4% 0.125 266);
-    --color-blue-900: oklch(37.9% 0.100 266);
-    --color-blue-950: oklch(28.2% 0.070 266);
+    /* Brand accent: Transit Indigo, shifted from a blue-leaning custom hue
+       (266) to the same violet-indigo family as stock Tailwind indigo-400
+       (#818CF8, H~284) — brighter and more saturated at the 400/500 steps
+       for a livelier accent against the deeper background above. */
+    --color-blue-50: oklch(97% 0.014 284);
+    --color-blue-100: oklch(93.2% 0.028 284);
+    --color-blue-200: oklch(88.2% 0.050 284);
+    --color-blue-300: oklch(80.9% 0.085 284);
+    --color-blue-400: oklch(72.5% 0.135 284);
+    --color-blue-500: oklch(64.5% 0.170 284);
+    --color-blue-600: oklch(56.5% 0.180 284);
+    --color-blue-700: oklch(49.5% 0.175 284);
+    --color-blue-800: oklch(43% 0.155 284);
+    --color-blue-900: oklch(38% 0.115 284);
+    --color-blue-950: oklch(26% 0.075 284);
   }
 
   .light {
-    /* Light Theme: Invert Slate Palette for automatic light mode */
-    --color-slate-950: oklch(98.4% 0.003 247.858); /* Backgrounds become light */
-    --color-slate-900: oklch(96.8% 0.007 247.896); /* Cards/panels become clean white/light slate */
-    --color-slate-800: oklch(90.0% 0.015 255.508); /* Borders become subtle light borders */
-    --color-slate-700: oklch(82.0% 0.025 252.894); /* Sub-borders */
-    --color-slate-600: oklch(65.0% 0.035 256.788);
-    --color-slate-500: oklch(50.0% 0.046 257.417); /* Muted labels */
-    --color-slate-400: oklch(40.0% 0.043 257.281);
-    --color-slate-300: oklch(30.0% 0.042 260.031);
-    --color-slate-200: oklch(20.0% 0.042 265.755); /* Primary text */
-    --color-slate-100: oklch(12.9% 0.042 264.695); /* Headings/High contrast text */
-    --color-slate-50:  oklch(8.0% 0.042 264.695);
+    /* Light Theme: Invert Slate Palette for automatic light mode. Same
+       indigo hue (284) as the dark palette above, not a neutral gray —
+       a light neutral still reads as "chosen" rather than default when it
+       carries a slight bias toward the brand accent. */
+    --color-slate-950: oklch(98.4% 0.006 284); /* Backgrounds become light */
+    --color-slate-900: oklch(96.8% 0.010 284); /* Cards/panels become clean white/light slate */
+    --color-slate-800: oklch(90.0% 0.018 284); /* Borders become subtle light borders */
+    --color-slate-700: oklch(82.0% 0.028 284); /* Sub-borders */
+    --color-slate-600: oklch(65.0% 0.040 284);
+    --color-slate-500: oklch(50.0% 0.052 284); /* Muted labels */
+    --color-slate-400: oklch(40.0% 0.048 284);
+    --color-slate-300: oklch(30.0% 0.046 284);
+    --color-slate-200: oklch(20.0% 0.046 284); /* Primary text */
+    --color-slate-100: oklch(12.9% 0.046 284); /* Headings/High contrast text */
+    --color-slate-50:  oklch(8.0% 0.046 284);
+
+    /* Accent stays vivid enough on light surfaces too — same hue family,
+       kept as-is from the :root block above (not overridden here) since
+       the blue-* scale already works on both light and dark grounds. */
   }
 
   [dir="rtl"] {
@@ -246,4 +259,20 @@
 
 .animate-bounce-in {
   animation: bounceIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Respect prefers-reduced-motion app-wide instead of per-component: this
+   overrides every animation/transition (including Tailwind's own animate-*
+   utilities and arbitrary-duration transitions) rather than requiring a
+   motion-reduce: variant on each one individually.
+   (Ported from PR #27 — that PR and this branch both edit index.css from
+   the same pre-#27 base; carrying this over now so this branch never
+   regresses it regardless of which merges to main first.) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

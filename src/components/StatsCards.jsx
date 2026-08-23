@@ -28,8 +28,8 @@ export function StatsCards({ packages = [], activeFilter, onSelectFilter }) {
       title: t('stats.total'),
       count: total,
       icon: Package,
-      gradient: 'from-blue-500/20 to-indigo-500/20 text-blue-400 border-blue-500/30',
-      iconBg: 'bg-blue-500/20 text-blue-400',
+      stripe: 'bg-blue-500',
+      iconBg: 'bg-blue-500/15 text-blue-400',
       activeRing: 'ring-2 ring-blue-500'
     },
     {
@@ -37,8 +37,8 @@ export function StatsCards({ packages = [], activeFilter, onSelectFilter }) {
       title: t('stats.inTransit'),
       count: inTransit,
       icon: Truck,
-      gradient: 'from-cyan-500/20 to-blue-500/20 text-cyan-400 border-cyan-500/30',
-      iconBg: 'bg-cyan-500/20 text-cyan-400',
+      stripe: 'bg-cyan-500',
+      iconBg: 'bg-cyan-500/15 text-cyan-400',
       activeRing: 'ring-2 ring-cyan-500'
     },
     {
@@ -46,8 +46,8 @@ export function StatsCards({ packages = [], activeFilter, onSelectFilter }) {
       title: t('stats.outForDelivery'),
       count: outForDelivery,
       icon: Navigation,
-      gradient: 'from-amber-500/20 to-orange-500/20 text-amber-400 border-amber-500/30',
-      iconBg: 'bg-amber-500/20 text-amber-400 animate-pulse',
+      stripe: 'bg-amber-500',
+      iconBg: 'bg-amber-500/15 text-amber-400',
       activeRing: 'ring-2 ring-amber-500',
       glow: outForDelivery > 0
     },
@@ -56,8 +56,8 @@ export function StatsCards({ packages = [], activeFilter, onSelectFilter }) {
       title: t('stats.delivered'),
       count: delivered,
       icon: CheckCircle2,
-      gradient: 'from-emerald-500/20 to-teal-500/20 text-emerald-400 border-emerald-500/30',
-      iconBg: 'bg-emerald-500/20 text-emerald-400',
+      stripe: 'bg-emerald-500',
+      iconBg: 'bg-emerald-500/15 text-emerald-400',
       activeRing: 'ring-2 ring-emerald-500'
     },
     {
@@ -65,8 +65,8 @@ export function StatsCards({ packages = [], activeFilter, onSelectFilter }) {
       title: t('stats.customs'),
       count: customs,
       icon: AlertOctagon,
-      gradient: 'from-purple-500/20 to-pink-500/20 text-purple-400 border-purple-500/30',
-      iconBg: 'bg-purple-500/20 text-purple-400',
+      stripe: 'bg-purple-500',
+      iconBg: 'bg-purple-500/15 text-purple-400',
       activeRing: 'ring-2 ring-purple-500'
     }
   ];
@@ -82,16 +82,17 @@ export function StatsCards({ packages = [], activeFilter, onSelectFilter }) {
           <button
             key={item.id}
             onClick={() => onSelectFilter(item.id)}
-            className={`flex flex-col p-3 sm:p-4 rounded-2xl border transition-all duration-300 text-start group relative overflow-hidden backdrop-blur-xl ${isLastOnMobile} ${
+            className={`flex flex-col p-3 sm:p-4 rounded-2xl border transition-all duration-200 text-start group relative overflow-hidden shadow-sm ${isLastOnMobile} ${
               isActive
-                ? `${item.activeRing} bg-slate-900/90 shadow-xl`
-                : 'bg-slate-900/50 hover:bg-slate-900/80 border-slate-800/80 hover:border-slate-700'
+                ? `${item.activeRing} bg-slate-900 shadow-lg`
+                : 'bg-slate-900 hover:bg-slate-800 border-slate-800 hover:border-slate-700'
             }`}
           >
-            {/* Ambient background glow */}
-            <div className={`absolute -right-8 -top-8 w-24 h-24 rounded-full bg-gradient-to-br ${item.gradient} blur-2xl opacity-40 group-hover:opacity-70 transition-opacity`} />
+            {/* Identity stripe — always visible, not just on hover/active, so
+                each tile's category reads at a glance in a scan. */}
+            <span className={`absolute inset-y-0 start-0 w-[3px] ${item.stripe}`} aria-hidden="true" />
 
-            <div className="flex items-center justify-between w-full mb-2 sm:mb-3 z-10">
+            <div className="flex items-center justify-between w-full mb-2 sm:mb-3">
               <span className="text-[11px] sm:text-xs font-semibold text-slate-400 group-hover:text-slate-200 transition-colors truncate">
                 {item.title}
               </span>
@@ -100,8 +101,8 @@ export function StatsCards({ packages = [], activeFilter, onSelectFilter }) {
               </div>
             </div>
 
-            <div className="flex items-baseline justify-between z-10">
-              <span className="text-xl sm:text-3xl font-extrabold text-slate-100 tracking-tight">
+            <div className="flex items-baseline justify-between">
+              <span className="text-xl sm:text-3xl font-semibold text-slate-100 tracking-tight [font-variant-numeric:tabular-nums]">
                 {item.count}
               </span>
               {item.id === 'out_for_delivery' && item.count > 0 && (
