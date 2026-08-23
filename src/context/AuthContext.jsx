@@ -870,12 +870,40 @@ export function AuthProvider({ children }) {
     triggerCloudSync();
   }, [user, triggerCloudSync]);
 
+  /**
+   * Deletion order matters and is deliberately NOT fire-and-forget: Firestore
+   * data is purged and *awaited* first (while the caller is still
+   * authenticated as targetId, which firestore.rules' isOwner()/userId
+   * checks require), and the Firebase Auth credential is deleted only once
+   * that's confirmed done. Either step throwing propagates to the caller
+   * instead of being swallowed — AccountModal/AuthModal already show a real
+   * error toast on a caught exception, and a silent "success" here would
+   * leave orphaned Firestore data with no client able to reach it again
+   * (once the uid is gone, isOwner(uid) can never match). Local state is
+   * only cleared at the very end, once both deletes actually succeeded.
+   */
   const deleteUserAccountAndData = useCallback(async (userId) => {
     const targetId = userId || user?.id;
     if (!targetId) return;
-    isExplicitLogoutRef.current = true;
 
-    // 1. Delete local caches immediately
+    if (db) {
+      const userPackagesRef = collection(db, 'users', targetId, 'packages');
+      const snapshot = await getDocs(userPackagesRef);
+      await Promise.all(snapshot.docs.map((d) => deleteDoc(d.ref)));
+      await purgeTrainingExamples(targetId);
+      await deleteDoc(doc(db, 'users', targetId));
+    }
+
+    isExplicitLogoutRef.current = true;
+    if (auth && auth.currentUser) {
+      // Most commonly throws auth/requires-recent-login — surfaced as-is
+      // rather than caught-and-signed-out, since the Firestore data above
+      // is already gone either way and the user needs to know the Auth
+      // credential specifically still exists and needs a fresh sign-in to
+      // finish deleting.
+      await deleteUser(auth.currentUser);
+    }
+
     try {
       localStorage.removeItem(`deliveree_packages_${targetId}`);
       localStorage.removeItem('deliveree_packages_guest');
@@ -886,36 +914,6 @@ export function AuthProvider({ children }) {
       // Ignore
     }
 
-    // 2. Non-blocking Firestore purge with timeout. Runs before the Auth
-    // user is deleted below — the trainingExamples delete rule requires
-    // `resource.data.userId == request.auth.uid`, which needs the caller to
-    // still be authenticated as targetId.
-    if (db) {
-      withTimeout((async () => {
-        const userPackagesRef = collection(db, 'users', targetId, 'packages');
-        const snapshot = await getDocs(userPackagesRef);
-        const deletePromises = snapshot.docs.map(d => deleteDoc(d.ref));
-        await Promise.all(deletePromises);
-        await purgeTrainingExamples(targetId);
-        await deleteDoc(doc(db, 'users', targetId));
-      })(), 2000);
-    }
-
-    // 3. Delete Firebase Auth user
-    if (auth && auth.currentUser) {
-      try {
-        await deleteUser(auth.currentUser);
-      } catch (err) {
-        console.warn('[AuthContext] Error deleting auth user, signing out:', err);
-        try {
-          await firebaseSignOut(auth);
-        } catch {
-          // Ignore
-        }
-      }
-    }
-
-    // 4. Immediately clear client session
     cloudAdapter.setUserId(null);
     if (isMountedRef.current) {
       setUser(null);

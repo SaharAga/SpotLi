@@ -6,6 +6,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { LegalDocumentModal } from './LegalDocumentModal';
+import { APP_VERSION } from '../constants/version';
 
 export function calculatePasswordStrength(password) {
   const str = typeof password === 'string' ? password : '';
@@ -312,7 +313,7 @@ export function AuthModal({
             <div>
               <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
                 <span>{language === 'he' ? 'חשבון וסנכרון ענן' : 'Account & Cloud Sync'}</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono">v0.6.2.17</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono">v{APP_VERSION}</span>
               </h2>
               <p className="text-xs text-slate-400">
                 {language === 'he' ? 'סנכרון החבילות שלך מכל מכשיר' : 'Access your packages from any device'}

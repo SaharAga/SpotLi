@@ -1,5 +1,6 @@
 import { httpsCallable } from 'firebase/functions';
 import { functionsInstance, auth } from './firebase';
+import { redactPII } from '../utils/privacySanitizer';
 
 /**
  * Client for the `parseWithAi` Cloud Function — a fallback for the
@@ -29,8 +30,19 @@ export async function parseWithAi(payload) {
   }
 
   try {
+    // Redact obvious third-party PII (emails, phone numbers, "recipient:"/
+    // "c/o:"-style note prefixes) before it leaves the device for Google's
+    // API — the pasted text is often a courier message about someone else's
+    // delivery, not just the signed-in user's own data. Best-effort: a
+    // tracking number that happens to be a 13-19 digit string can get
+    // caught by the same credit-card pattern and redacted too, which just
+    // means this call comes back empty rather than leaking anything.
+    const outgoingPayload = payload?.mode === 'text-fallback' && typeof payload.text === 'string'
+      ? { ...payload, text: redactPII(payload.text) }
+      : payload;
+
     const callable = httpsCallable(functionsInstance, 'parseWithAi');
-    const result = await callable(payload);
+    const result = await callable(outgoingPayload);
     return { success: true, data: result.data };
   } catch (err) {
     if (err?.code === 'functions/resource-exhausted') {

@@ -169,7 +169,13 @@ were affected:
 
 Registration (email/password) requires checking a mandatory box to accept
 the Terms of Use and Privacy Policy (`src/constants/legal.js` — a working
-draft, not yet lawyer-reviewed; see that file's header). OAuth sign-in
+draft, revised once against a structured contract-review pass
+(`docs/legal-review-2026-08-23.md`) but still not lawyer-reviewed; see that
+file's header for the known open gaps — anonymous `/feedback` can't
+currently be deleted per-account, no formal international-transfer
+safeguard for the China-based carrier calls, no Israeli Security
+Regulations paperwork, and this is still an individual operating
+personally rather than a registered entity). OAuth sign-in
 (Google/Apple/Facebook) has no form step, so `LegalConsentGate` blocks any
 signed-in user whose stored `legalAcceptedVersion` doesn't match the current
 `LEGAL_VERSION` — new OAuth sign-ups and pre-existing accounts alike — until
