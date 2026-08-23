@@ -78,6 +78,10 @@ jobs:
           VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
           VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
+          # Optional: enables Firebase App Check when set. See README.md
+          # "Abuse protection (App Check)". Unset is fine — App Check just
+          # never initializes.
+          VITE_RECAPTCHA_V3_SITE_KEY: ${{ vars.VITE_RECAPTCHA_V3_SITE_KEY }}
 
       - name: Upload build output
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
