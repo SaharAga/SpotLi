@@ -3,7 +3,8 @@ import {
   inferStageFromText, 
   getCachedTracking, 
   setCachedTracking, 
-  fetchLiveCarrierTracking 
+  fetchLiveCarrierTracking,
+  isLiveTrackingSupported
 } from './carrierApiProxy';
 
 describe('carrierApiProxy Service', () => {
@@ -72,25 +73,50 @@ describe('carrierApiProxy Service', () => {
   });
 
   describe('fetchLiveCarrierTracking', () => {
-    it('creates a clean structured initial carrier record for new shipments', async () => {
+    it('returns an explicit untracked record for a carrier with no integration', async () => {
       const res = await fetchLiveCarrierTracking('CH10849201', 'chita', true);
       expect(res.carrier).toBe('chita');
-      expect(res.status).toBe('ordered');
-      expect(res.checkpoints.length).toBeGreaterThan(0);
-      expect(res.checkpoints[0].title).toBe('פרטי המשלוח נקלטו במערכת');
+      expect(res.tracked).toBe(false);
+      expect(res.reason).toBe('carrier-unsupported');
+      expect(res.checkpoints).toEqual([]);
+      expect(res.status).toBeNull();
+      expect(res.estimatedDelivery).toBeNull();
     });
 
-    it('returns from cache when available', async () => {
+    it('never fabricates checkpoints for any unsupported carrier', async () => {
+      const carriers = ['chita', 'hfd', 'boxit', 'cainiao', 'dhl', 'fedex', 'ups', 'usps', 'other'];
+
+      for (const carrierId of carriers) {
+        const res = await fetchLiveCarrierTracking('XX123456789XX', carrierId, true);
+        expect(res.tracked).toBe(false);
+        expect(res.checkpoints).toEqual([]);
+        expect(res.estimatedDelivery).toBeNull();
+      }
+    });
+
+    it('serves a supported carrier from cache when a prior lookup succeeded', async () => {
       const cachedData = {
-        carrier: 'hfd',
+        carrier: 'israel-post',
+        tracked: true,
         status: 'out_for_delivery',
         checkpoints: []
       };
-      setCachedTracking('HFD90481029', cachedData);
+      setCachedTracking('RS948219481IL', cachedData);
 
-      const res = await fetchLiveCarrierTracking('HFD90481029', 'hfd', false);
+      const res = await fetchLiveCarrierTracking('RS948219481IL', 'israel-post', false);
       expect(res.isFromCache).toBe(true);
       expect(res.status).toBe('out_for_delivery');
+    });
+
+    it('does not cache a failed lookup', async () => {
+      await fetchLiveCarrierTracking('RS777777777IL', 'israel-post', true);
+      expect(getCachedTracking('RS777777777IL')).toBeNull();
+    });
+
+    it('identifies which carriers have a live integration', () => {
+      expect(isLiveTrackingSupported('israel-post')).toBe(true);
+      expect(isLiveTrackingSupported('dhl')).toBe(false);
+      expect(isLiveTrackingSupported('other')).toBe(false);
     });
   });
 });

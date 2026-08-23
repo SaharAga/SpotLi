@@ -30,6 +30,7 @@ import { useLanguage, LanguageProvider } from './context/LanguageContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { useAuth, AuthProvider } from './context/AuthContext';
 import { isAdminUser } from './constants/admin';
+import { CARRIERS } from './types/carriers';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -380,8 +381,26 @@ function DashboardContent() {
     }
   };
 
+  // Display name for a carrier, in the active language.
+  const carrierLabel = (pkg) => {
+    const def = CARRIERS[pkg?.carrier];
+    if (!def) return pkg?.carrierName || pkg?.carrier || '';
+    return language === 'he' ? (def.hebrewName || def.name) : def.name;
+  };
+
   const handleRefreshSinglePackage = async (pkg) => {
     const res = await deliveryService.refreshPackageTracking(pkg, user?.id || null);
+
+    // Lookup worked, but this carrier has no live feed. Say so plainly rather
+    // than reporting a successful refresh that changed nothing.
+    if (res.success && res.tracked === false) {
+      const key = res.reason === 'carrier-unavailable'
+        ? 'tracking.carrierUnavailable'
+        : 'tracking.notSupported';
+      showToast(t(key).replace('{carrier}', carrierLabel(pkg)), 'info');
+      return;
+    }
+
     if (res.success && res.updatedPackage) {
       const updatedList = packages.map(p => (p.id === pkg.id ? res.updatedPackage : p));
       upsertSinglePackage(updatedList, res.updatedPackage);
@@ -419,6 +438,8 @@ function DashboardContent() {
       showToast(t('tracking.refreshedSuccess').replace('{count}', String(res.refreshedCount)), 'success');
     } else if (res.rateLimitedCount > 0) {
       showToast(t('card.rateLimited'), 'info');
+    } else if (res.untrackedCount > 0) {
+      showToast(t('tracking.untrackedBatch').replace('{count}', String(res.untrackedCount)), 'info');
     } else {
       showToast(t('tracking.refreshSuccessSingle'), 'info');
     }

@@ -373,8 +373,11 @@ describe('Delivery Service and Storage Persistence', () => {
 
       const res = await deliveryService.refreshPackageTracking(testPkg, null, true);
       expect(res.success).toBe(true);
-      expect(res.updatedPackage).toBeDefined();
-      expect(res.updatedPackage.checkpoints.length).toBeGreaterThan(0);
+      expect(res.tracked).toBe(false);
+      expect(res.reason).toBe('carrier-unsupported');
+      // Chita has no live feed, so the package must come back exactly as saved.
+      expect(res.updatedPackage.checkpoints).toEqual([]);
+      expect(res.updatedPackage.status).toBe('in_transit');
     });
 
     it('returns error if package is invalid in refreshPackageTracking', async () => {

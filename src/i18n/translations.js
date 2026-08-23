@@ -65,7 +65,11 @@ export const translations = {
       statusTransitioned: 'Package status updated to {status}',
       invalidTransition: 'Invalid transition from {from} to {to}',
       overrideStatus: 'Change Status',
-      overrideStatusPrompt: 'Override package status:'
+      overrideStatusPrompt: 'Override package status:',
+      notSupported: 'Live tracking isn\u2019t available for {carrier} yet \u2014 update this package manually.',
+      carrierUnavailable: '{carrier} tracking is unreachable right now. Nothing was changed.',
+      untrackedBatch: '{count} packages have no live tracking and were left unchanged.',
+      manualBadge: 'Manual tracking'
     },
     modal: {
       addNew: 'Add New Package',
@@ -256,7 +260,11 @@ export const translations = {
       statusTransitioned: 'סטטוס החבילה שונה ל-{status}',
       invalidTransition: 'מעבר סטטוס לא חוקי מ-{from} אל {to}',
       overrideStatus: 'שינוי סטטוס ידני',
-      overrideStatusPrompt: 'בחר סטטוס חדש עבור החבילה:'
+      overrideStatusPrompt: 'בחר סטטוס חדש עבור החבילה:',
+      notSupported: 'מעקב אוטומטי עבור {carrier} עדיין לא נתמך \u2014 יש לעדכן את החבילה ידנית.',
+      carrierUnavailable: 'לא ניתן להתחבר כרגע למערכת המעקב של {carrier}. שום פרט לא שונה.',
+      untrackedBatch: '{count} חבילות ללא מעקב אוטומטי נותרו ללא שינוי.',
+      manualBadge: 'מעקב ידני'
     },
     modal: {
       addNew: 'הוספת חבילה חדשה למעקב',

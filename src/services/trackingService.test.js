@@ -6,7 +6,6 @@ import {
   checkRateLimit,
   recordTrackingFetch,
   normalizeCheckpoints,
-  simulateCarrierTracking,
   fetchTrackingUpdates,
   batchRefreshTracking,
   debounce
@@ -23,7 +22,6 @@ describe('Multi-Carrier Tracking Service', () => {
       expect(trackingService.fetchTrackingUpdates).toBeDefined();
       expect(trackingService.batchRefreshTracking).toBeDefined();
       expect(trackingService.checkRateLimit).toBeDefined();
-      expect(trackingService.simulateCarrierTracking).toBeDefined();
     });
   });
 
@@ -97,57 +95,6 @@ describe('Multi-Carrier Tracking Service', () => {
     });
   });
 
-  describe('Carrier Resolvers & Simulation', () => {
-    it('resolves Israel Post tracking with domestic checkpoints', async () => {
-      const res = await simulateCarrierTracking('RS948219481IL', 'israel-post');
-      expect(res.checkpoints.length).toBeGreaterThan(0);
-      expect(res.status).toBeDefined();
-      expect(res.checkpoints[0].title).toBeDefined();
-      expect(res.estimatedDelivery).toBeDefined();
-    });
-
-    it('resolves Cheetah (Chita) tracking', async () => {
-      const res = await simulateCarrierTracking('CH10849201', 'chita');
-      expect(res.checkpoints.length).toBeGreaterThan(0);
-      expect(['in_transit', 'out_for_delivery']).toContain(res.status);
-    });
-
-    it('resolves HFD Delivery tracking', async () => {
-      const res = await simulateCarrierTracking('HFD90481029', 'hfd');
-      expect(res.checkpoints.length).toBeGreaterThan(0);
-      expect(['in_transit', 'out_for_delivery']).toContain(res.status);
-    });
-
-    it('resolves BoxIt locker delivery tracking', async () => {
-      const res = await simulateCarrierTracking('BOX920194', 'boxit');
-      expect(res.checkpoints.length).toBeGreaterThan(0);
-      expect(res.status).toBe('out_for_delivery');
-      expect(res.checkpoints.some(cp => cp.title.includes('BoxIt') || cp.titleHe?.includes('BoxIt'))).toBe(true);
-    });
-
-    it('resolves global Cainiao / AliExpress tracking with customs stages', async () => {
-      const res = await simulateCarrierTracking('LP00582910482CN', 'cainiao');
-      expect(res.checkpoints.length).toBeGreaterThan(0);
-      expect(['in_transit', 'customs']).toContain(res.status);
-    });
-
-    it('resolves DHL Express tracking with courier stages', async () => {
-      const res = await simulateCarrierTracking('4829104821', 'dhl');
-      expect(res.checkpoints.length).toBeGreaterThan(0);
-      expect(['in_transit', 'out_for_delivery', 'delivered']).toContain(res.status);
-    });
-
-    it('resolves FedEx, UPS, and USPS tracking', async () => {
-      const fedexRes = await simulateCarrierTracking('794820194821', 'fedex');
-      const upsRes = await simulateCarrierTracking('1Z999AA10123456784', 'ups');
-      const uspsRes = await simulateCarrierTracking('9400100000000000000000', 'usps');
-
-      expect(fedexRes.checkpoints.length).toBeGreaterThan(0);
-      expect(upsRes.checkpoints.length).toBeGreaterThan(0);
-      expect(uspsRes.checkpoints.length).toBeGreaterThan(0);
-    });
-  });
-
   describe('fetchTrackingUpdates', () => {
     it('returns error for invalid tracking number', async () => {
       const res = await fetchTrackingUpdates('', 'israel-post');
@@ -155,12 +102,31 @@ describe('Multi-Carrier Tracking Service', () => {
       expect(res.error).toBe('Invalid tracking number');
     });
 
-    it('successfully fetches and normalizes tracking updates', async () => {
+    it('reports an unsupported carrier as untracked rather than inventing data', async () => {
+      const res = await fetchTrackingUpdates('CH10849201', 'chita');
+      expect(res.success).toBe(true);
+      expect(res.tracked).toBe(false);
+      expect(res.reason).toBe('carrier-unsupported');
+      expect(res.carrier).toBe('chita');
+      expect(res.checkpoints).toEqual([]);
+      expect(res.status).toBeUndefined();
+      expect(res.expectedDeliveryDate).toBeUndefined();
+    });
+
+    it('reports an unreachable supported carrier as untracked', async () => {
       const res = await fetchTrackingUpdates('RS948219481IL', 'israel-post');
       expect(res.success).toBe(true);
-      expect(res.carrier).toBe('israel-post');
-      expect(res.status).toBeDefined();
-      expect(res.checkpoints.length).toBeGreaterThan(0);
+      expect(res.tracked).toBe(false);
+      expect(res.reason).toBe('carrier-unavailable');
+      expect(res.checkpoints).toEqual([]);
+    });
+
+    it('does not spend the rate-limit cooldown on an unsupported carrier', async () => {
+      const tracking = 'CH55555555';
+      await fetchTrackingUpdates(tracking, 'chita');
+      const second = await fetchTrackingUpdates(tracking, 'chita');
+      expect(second.success).toBe(true);
+      expect(second.rateLimited).toBeUndefined();
     });
 
     it('rejects subsequent fetch within cooldown period', async () => {
@@ -218,9 +184,13 @@ describe('Multi-Carrier Tracking Service', () => {
       const progressSteps = [];
       const res = await batchRefreshTracking(packages, (p) => progressSteps.push(p));
 
-      expect(res.refreshedCount).toBe(2);
+      // Neither carrier can be tracked here, so both packages must come back
+      // untouched instead of gaining invented checkpoints.
+      expect(res.refreshedCount).toBe(0);
+      expect(res.untrackedCount).toBe(2);
       expect(res.updatedPackages.length).toBe(2);
-      expect(res.updatedPackages[0].checkpoints.length).toBeGreaterThan(0);
+      expect(res.updatedPackages[0].checkpoints).toEqual([]);
+      expect(res.updatedPackages[1].checkpoints).toEqual([]);
       expect(progressSteps.length).toBeGreaterThan(0);
     });
 

@@ -1,11 +1,17 @@
 /**
- * Real Multi-Carrier Live Tracking Proxy Adapter
- * Connects to live postal and courier endpoints (Israel Post, Cheetah, HFD, BoxIt, Cainiao, 17Track).
- * Includes 2-hour client-side caching, timeout guards, and bilingual stage normalization.
+ * Live Tracking Proxy Adapter.
+ *
+ * Israel Post is currently the only carrier with a real upstream integration
+ * (see LIVE_TRACKING_CARRIERS). Every other carrier resolves to an explicit
+ * untracked result — the adapter never synthesises checkpoints or delivery
+ * estimates, because a fabricated timeline is indistinguishable from a real
+ * one once it reaches the UI.
+ *
+ * Includes 2-hour client-side caching of successful lookups, timeout guards,
+ * and bilingual stage normalization.
  */
 
 import { detectCarrier, sanitizeTrackingNumber } from '../utils/carrierDetector';
-import { CARRIERS } from '../types/carriers';
 
 const CACHE_KEY_PREFIX = 'deliveree_live_track_';
 const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
@@ -119,18 +125,71 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = FETCH_TIMEOUT_MS)
 }
 
 /**
- * Query real Israel Post item trace
- * @param {string} trackingNumber 
+ * Carriers with a real upstream integration.
+ *
+ * Anything not listed here has no live data source, so the app reports the
+ * package as untracked rather than inventing checkpoints for it. Add a carrier
+ * here only once `fetchLiveCarrierTracking` can actually reach it.
+ */
+export const LIVE_TRACKING_CARRIERS = Object.freeze(['israel-post']);
+
+/**
+ * Reasons a lookup returned no tracking data.
+ * - `carrier-unsupported`: no integration exists for this carrier.
+ * - `carrier-unavailable`: an integration exists but the upstream call failed.
+ */
+export const UNTRACKED_REASONS = Object.freeze({
+  UNSUPPORTED: 'carrier-unsupported',
+  UNAVAILABLE: 'carrier-unavailable'
+});
+
+/**
+ * @param {string} carrierId
+ * @returns {boolean} true when a real upstream lookup exists for this carrier
+ */
+export function isLiveTrackingSupported(carrierId) {
+  return LIVE_TRACKING_CARRIERS.includes(carrierId);
+}
+
+/**
+ * Build an explicit "no tracking data" result.
+ *
+ * Deliberately carries no checkpoints, status or delivery estimate: a package
+ * we cannot track must look untracked to the user, not plausibly in transit.
+ *
+ * @param {string} carrierId
+ * @param {string} reason - one of UNTRACKED_REASONS
+ * @returns {{ carrier: string, tracked: false, reason: string, status: null, checkpoints: [], estimatedDelivery: null }}
+ */
+export function createUntrackedRecord(carrierId, reason) {
+  return {
+    carrier: carrierId,
+    tracked: false,
+    reason,
+    status: null,
+    checkpoints: [],
+    estimatedDelivery: null
+  };
+}
+
+/**
+ * Query the real Israel Post item trace gateway.
+ *
+ * @param {string} trackingNumber
+ * @returns {Promise<object>} a tracked record, or an untracked one when the
+ *   gateway is unreachable or returns nothing for this item.
  */
 async function queryIsraelPostLive(trackingNumber) {
   const clean = sanitizeTrackingNumber(trackingNumber);
+
+  // Tests never reach the network; they must not get fabricated data either.
   if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') {
-    return generateInitialCarrierRecord(clean, 'israel-post');
+    return createUntrackedRecord('israel-post', UNTRACKED_REASONS.UNAVAILABLE);
   }
 
   // Israel Post Open Status Gateway
   const endpoint = `https://mypost.israelpost.co.il/umbraco/api/itemtrace/getitemtrace?itemcode=${encodeURIComponent(clean)}`;
-  
+
   try {
     const res = await fetchWithTimeout(endpoint, {
       headers: { 'Accept': 'application/json, text/plain, */*' }
@@ -140,7 +199,7 @@ async function queryIsraelPostLive(trackingNumber) {
       if (data && data.itemcode) {
         const stage = inferStageFromText(data.itemhistory || data.laststatus || '');
         const checkpoints = [];
-        
+
         if (data.laststatus) {
           checkpoints.push({
             id: `cp-ilp-${clean}-0`.slice(0, 100),
@@ -155,6 +214,7 @@ async function queryIsraelPostLive(trackingNumber) {
 
         return {
           carrier: 'israel-post',
+          tracked: true,
           status: stage,
           checkpoints,
           location: data.unitname || null,
@@ -163,44 +223,18 @@ async function queryIsraelPostLive(trackingNumber) {
       }
     }
   } catch (err) {
-    console.info('[CarrierProxy] Israel Post direct gateway fallback:', err?.message);
+    console.info('[CarrierProxy] Israel Post gateway unreachable:', err?.message);
   }
 
-  // Graceful standard carrier record for valid Israel Post formats
-  return generateInitialCarrierRecord(clean, 'israel-post');
+  return createUntrackedRecord('israel-post', UNTRACKED_REASONS.UNAVAILABLE);
 }
 
 /**
- * Generate clean initial carrier record when freshly registered
- * @param {string} trackingNumber 
- * @param {string} carrierId 
- */
-function generateInitialCarrierRecord(trackingNumber, carrierId) {
-  const carrierObj = CARRIERS[carrierId] || CARRIERS['other'];
-  const carrierName = carrierObj.hebrewName || carrierObj.name;
-  const now = new Date();
-
-  return {
-    carrier: carrierId,
-    status: 'ordered',
-    checkpoints: [
-      {
-        id: `cp-${carrierId}-${trackingNumber}-init`.slice(0, 100),
-        title: 'פרטי המשלוח נקלטו במערכת',
-        description: `המספר שויך לחברת ${carrierName}. ממתין לסריקה ראשונית במרכז ההפצה.`,
-        descriptionHe: `המספר שויך לחברת ${carrierName}. ממתין לסריקה ראשונית במרכז ההפצה.`,
-        location: carrierObj.country || 'ישראל',
-        timestamp: now.toISOString(),
-        isCompleted: true
-      }
-    ],
-    estimatedDelivery: new Date(now.getTime() + 4 * 86400000).toISOString().slice(0, 10)
-  };
-}
-
-/**
- * Universal Multi-Carrier Live Resolver
- * 
+ * Universal Multi-Carrier Live Resolver.
+ *
+ * Returns `tracked: false` when no live data could be obtained — callers must
+ * check that flag before merging anything into a package.
+ *
  * @param {string} trackingNumber - Tracking number
  * @param {string} [carrierOverride] - Optional forced carrier
  * @param {boolean} [forceRefresh=false] - Bypass 2-hour cache
@@ -213,6 +247,11 @@ export async function fetchLiveCarrierTracking(trackingNumber, carrierOverride, 
 
   const detected = carrierOverride || detectCarrier(cleanTrack).carrierId || 'other';
 
+  // No integration for this carrier — say so instead of guessing.
+  if (!isLiveTrackingSupported(detected)) {
+    return { ...createUntrackedRecord(detected, UNTRACKED_REASONS.UNSUPPORTED), isFromCache: false };
+  }
+
   // 1. Check 2-Hour Edge Cache
   if (!forceRefresh) {
     const cached = getCachedTracking(cleanTrack);
@@ -221,22 +260,18 @@ export async function fetchLiveCarrierTracking(trackingNumber, carrierOverride, 
     }
   }
 
-  let result = null;
+  let result;
 
   // 2. Carrier-specific dispatch
   try {
-    if (detected === 'israel-post') {
-      result = await queryIsraelPostLive(cleanTrack);
-    } else {
-      result = generateInitialCarrierRecord(cleanTrack, detected);
-    }
+    result = await queryIsraelPostLive(cleanTrack);
   } catch (err) {
-    console.warn('[CarrierProxy] Upstream error, generating fallback record:', err);
-    result = generateInitialCarrierRecord(cleanTrack, detected);
+    console.warn('[CarrierProxy] Upstream error:', err);
+    result = createUntrackedRecord(detected, UNTRACKED_REASONS.UNAVAILABLE);
   }
 
-  // 3. Save into 2-Hour Cache
-  if (result) {
+  // 3. Cache successful lookups only — never cache a failure for two hours.
+  if (result.tracked) {
     setCachedTracking(cleanTrack, result);
   }
 

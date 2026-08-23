@@ -66,8 +66,18 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      # Public Firebase client identifiers, supplied as repository variables so
+      # they live in exactly one place and never in a committed file (see
+      # scripts/pre_commit_secrets_check.js). The build fails loudly if unset.
       - name: Build Application
         run: npm run build
+        env:
+          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
 
       - name: Upload build output
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -102,3 +112,13 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DELIVEREE }}'
           projectId: deliveree-app-2a938
           channelId: live
+
+      # Hosting deploys do not touch Firestore rules, so without this step the
+      # live security rules drift from firestore.rules in this repo.
+      - name: Authenticate for Firestore rules deploy
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DELIVEREE }}'
+
+      - name: Deploy Firestore rules
+        run: npx --yes firebase-tools@14 deploy --only firestore:rules --project deliveree-app-2a938 --non-interactive
