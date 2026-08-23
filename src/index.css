@@ -63,6 +63,49 @@
        the blue-* scale already works on both light and dark grounds. */
   }
 
+  /* Settings pilot palette — trust-navy + gold, distinct from the app-wide
+     indigo accent above. Scoped to .settings-theme (wraps AccountModal
+     only) so it doesn't retint anything else while it's being evaluated as
+     a possible app-wide direction. Prefixed --stg-* (not --color-*) so it
+     never collides with or overrides the global Tailwind tokens. */
+  .settings-theme {
+    --stg-font: 'Atkinson Hyperlegible', var(--font-sans);
+  }
+
+  .dark .settings-theme {
+    --stg-bg: #0B1220;
+    --stg-surface: #131C2E;
+    --stg-surface-2: #1A2438;
+    --stg-border: #263248;
+    --stg-text: #EEF2F8;
+    --stg-text-muted: #97A3B8;
+    --stg-primary: #EEF2F8;
+    --stg-primary-on: #0B1220;
+    --stg-accent: #E3A62F;
+    --stg-accent-soft: #3A2E10;
+    --stg-destructive: #F27272;
+    --stg-destructive-soft: #3A1414;
+    --stg-success: #6FD696;
+    --stg-success-soft: #12301E;
+  }
+
+  .light .settings-theme {
+    --stg-bg: #F8FAFC;
+    --stg-surface: #FFFFFF;
+    --stg-surface-2: #F1F5F9;
+    --stg-border: #E2E8F0;
+    --stg-text: #020617;
+    --stg-text-muted: #475569;
+    --stg-primary: #0F172A;
+    --stg-primary-on: #F8FAFC;
+    --stg-accent: #A16207;
+    --stg-accent-soft: #FEF3C7;
+    --stg-destructive: #DC2626;
+    --stg-destructive-soft: #FEE2E2;
+    --stg-success: #15803D;
+    --stg-success-soft: #DCFCE7;
+  }
+
   [dir="rtl"] {
     font-family: var(--font-hebrew);
   }

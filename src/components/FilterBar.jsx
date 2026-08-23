@@ -73,115 +73,113 @@ export function FilterBar({
     { id: 'archived', label: t('tabs.archived') }
   ];
 
+  // Every control lives in one flex row that never wraps — on a viewport
+  // too narrow to fit it all, the row scrolls horizontally instead of
+  // dropping to a second line (search stays put via sticky ordering: it's
+  // the widest, flex-1 element, so it's what visually "leads" the scroll).
   return (
-    <div className="flex flex-col gap-2.5 bg-slate-900 p-3 sm:p-4 rounded-2xl border border-slate-800 mb-6 shadow-sm">
-      {/* Primary row: status filter + search — the compact pair a user reaches for most */}
-      <div className="flex flex-col sm:flex-row gap-2.5">
-        <div className="relative shrink-0 sm:w-52">
-          <Filter className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none ${isRTL ? 'right-3' : 'left-3'}`} />
-          <select
-            value={activeTab}
-            onChange={(e) => onTabChange(e.target.value)}
-            aria-label={t('filters.status')}
-            className={`w-full bg-slate-950 border border-slate-800 text-slate-200 text-base sm:text-sm rounded-xl py-2.5 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer min-h-[44px] ${
-              isRTL ? 'pr-9 pl-3' : 'pl-9 pr-3'
-            }`}
+    <div className="flex items-center gap-2 bg-slate-900 p-2.5 sm:p-3 rounded-2xl border border-slate-800 mb-6 shadow-sm overflow-x-auto no-scrollbar">
+      <div className="relative flex-1 min-w-[160px]">
+        <Search className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 ${isRTL ? 'right-3' : 'left-3'}`} />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder={t('searchPlaceholder')}
+          className={`w-full bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-500 text-sm rounded-xl py-2.5 transition-all focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[44px] ${
+            isRTL ? 'pr-9 pl-9' : 'pl-9 pr-9'
+          }`}
+        />
+        {searchQuery && (
+          <button
+            onClick={() => onSearchChange('')}
+            className={`absolute top-1/2 -translate-y-1/2 p-2 rounded-md text-slate-400 hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center ${isRTL ? 'left-1' : 'right-1'}`}
+            aria-label="Clear search"
           >
-            {statusOptions.map((opt) => (
-              <option key={opt.id} value={opt.id}>
-                {opt.label} ({tabCounts[opt.id] || 0})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="relative flex-1">
-          <Search className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 ${isRTL ? 'right-3' : 'left-3'}`} />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={t('searchPlaceholder')}
-            className={`w-full bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-500 text-base sm:text-sm rounded-xl py-2.5 transition-all focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[44px] ${
-              isRTL ? 'pr-9 pl-9' : 'pl-9 pr-9'
-            }`}
-          />
-          {searchQuery && (
-            <button
-              onClick={() => onSearchChange('')}
-              className={`absolute top-1/2 -translate-y-1/2 p-2 rounded-md text-slate-400 hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center ${isRTL ? 'left-1' : 'right-1'}`}
-              aria-label="Clear search"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
-      {/* Secondary row: carrier, sort, refresh, view mode — lower-frequency controls */}
-      <div className="flex items-center gap-2 pt-2.5 border-t border-slate-800/80 overflow-x-auto no-scrollbar">
+      <div className="relative shrink-0">
+        <Filter className={`absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none ${isRTL ? 'right-2.5' : 'left-2.5'}`} />
         <select
-          value={selectedCarrier}
-          onChange={(e) => onCarrierChange(e.target.value)}
-          className="shrink-0 bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-lg px-2.5 py-2 focus:outline-none focus:border-blue-500 cursor-pointer min-h-[36px]"
+          value={activeTab}
+          onChange={(e) => onTabChange(e.target.value)}
+          aria-label={t('filters.status')}
+          className={`bg-slate-950 border border-slate-800 text-slate-200 text-xs rounded-xl py-2.5 focus:outline-none focus:border-blue-500 cursor-pointer min-h-[44px] w-32 sm:w-40 ${
+            isRTL ? 'pr-8 pl-2' : 'pl-8 pr-2'
+          }`}
         >
-          <option value="all">{t('filters.allCarriers')}</option>
-          {CARRIER_LIST.map((carrier) => (
-            <option key={carrier.id} value={carrier.id}>
-              {language === 'he' ? carrier.hebrewName : carrier.name}
+          {statusOptions.map((opt) => (
+            <option key={opt.id} value={opt.id}>
+              {opt.label} ({tabCounts[opt.id] || 0})
             </option>
           ))}
         </select>
+      </div>
 
-        <select
-          value={sortBy}
-          onChange={(e) => onSortChange(e.target.value)}
-          className="shrink-0 bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-lg px-2.5 py-2 focus:outline-none focus:border-blue-500 cursor-pointer min-h-[36px]"
+      <select
+        value={selectedCarrier}
+        onChange={(e) => onCarrierChange(e.target.value)}
+        aria-label={t('filters.allCarriers')}
+        className="shrink-0 bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-xl px-2.5 py-2.5 focus:outline-none focus:border-blue-500 cursor-pointer min-h-[44px] w-24 sm:w-32"
+      >
+        <option value="all">{t('filters.allCarriers')}</option>
+        {CARRIER_LIST.map((carrier) => (
+          <option key={carrier.id} value={carrier.id}>
+            {language === 'he' ? carrier.hebrewName : carrier.name}
+          </option>
+        ))}
+      </select>
+
+      <select
+        value={sortBy}
+        onChange={(e) => onSortChange(e.target.value)}
+        aria-label={t('filters.sortBy')}
+        className="shrink-0 hidden md:block bg-slate-950 border border-slate-800 text-slate-300 text-xs rounded-xl px-2.5 py-2.5 focus:outline-none focus:border-blue-500 cursor-pointer min-h-[44px] w-28"
+      >
+        <option value="newest">{t('filters.newest')}</option>
+        <option value="expected">{t('filters.expectedDate')}</option>
+        <option value="title">{t('filters.title')}</option>
+        <option value="status">{t('filters.status')}</option>
+      </select>
+
+      {onRefreshAll && (
+        <button
+          onClick={onRefreshAll}
+          disabled={isRefreshing}
+          title={t('tracking.refreshAll')}
+          aria-label={t('tracking.refreshAll')}
+          className={`shrink-0 p-2.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-emerald-400 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center ${
+            isRefreshing ? 'text-emerald-400' : ''
+          }`}
         >
-          <option value="newest">{t('filters.newest')}</option>
-          <option value="expected">{t('filters.expectedDate')}</option>
-          <option value="title">{t('filters.title')}</option>
-          <option value="status">{t('filters.status')}</option>
-        </select>
+          {isRefreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+        </button>
+      )}
 
-        <div className="flex-1" />
-
-        {onRefreshAll && (
-          <button
-            onClick={onRefreshAll}
-            disabled={isRefreshing}
-            title={t('tracking.refreshAll')}
-            aria-label={t('tracking.refreshAll')}
-            className={`shrink-0 p-2 rounded-lg bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-emerald-400 transition-all min-h-[36px] min-w-[36px] flex items-center justify-center ${
-              isRefreshing ? 'text-emerald-400' : ''
-            }`}
-          >
-            {isRefreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-          </button>
-        )}
-
-        <div className="shrink-0 flex items-center bg-slate-950 p-1 rounded-lg border border-slate-800">
-          <button
-            onClick={() => onViewModeChange('grid')}
-            title={t('filters.gridView')}
-            aria-label={t('filters.gridView')}
-            className={`p-1.5 rounded-md transition-colors min-h-[28px] min-w-[28px] flex items-center justify-center ${
-              viewMode === 'grid' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <LayoutGrid className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={() => onViewModeChange('table')}
-            title={t('filters.tableView')}
-            aria-label={t('filters.tableView')}
-            className={`p-1.5 rounded-md transition-colors min-h-[28px] min-w-[28px] flex items-center justify-center ${
-              viewMode === 'table' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <List className="w-3.5 h-3.5" />
-          </button>
-        </div>
+      <div className="shrink-0 flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
+        <button
+          onClick={() => onViewModeChange('grid')}
+          title={t('filters.gridView')}
+          aria-label={t('filters.gridView')}
+          className={`p-2 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center ${
+            viewMode === 'grid' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <LayoutGrid className="w-3.5 h-3.5" />
+        </button>
+        <button
+          onClick={() => onViewModeChange('table')}
+          title={t('filters.tableView')}
+          aria-label={t('filters.tableView')}
+          className={`p-2 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center ${
+            viewMode === 'table' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <List className="w-3.5 h-3.5" />
+        </button>
       </div>
     </div>
   );
