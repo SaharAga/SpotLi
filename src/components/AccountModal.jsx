@@ -30,6 +30,12 @@ const sectionTitle = 'text-xs font-bold text-[var(--stg-text)] flex items-center
 const selectCls = 'w-full bg-[var(--stg-surface)] border border-[var(--stg-border)] text-[var(--stg-text)] text-base sm:text-sm rounded-lg p-2.5 focus:border-[var(--stg-accent)] focus:outline-none cursor-pointer min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed';
 
 function Switch({ checked, onChange, disabled }) {
+  // Thumb position is driven directly by `checked` via logical inset-start
+  // (not a peer-checked + rtl: translate combo) — that combo relies on two
+  // same-specificity rules where source order decides the winner, which
+  // silently broke in RTL. inset-inline-start already flips with `dir`,
+  // so one conditional class is correct in both directions with no
+  // rtl: variant needed at all.
   return (
     <label className="relative inline-flex items-center cursor-pointer min-h-[44px] shrink-0">
       <input
@@ -39,7 +45,12 @@ function Switch({ checked, onChange, disabled }) {
         onChange={onChange}
         className="sr-only peer"
       />
-      <div className="w-11 h-6 bg-[var(--stg-border)] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[var(--stg-accent)] rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--stg-accent)] peer-disabled:opacity-50" />
+      <span className="w-11 h-6 rounded-full bg-[var(--stg-border)] peer-checked:bg-[var(--stg-accent)] peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--stg-accent)] peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-[var(--stg-surface)] peer-disabled:opacity-50 transition-colors" />
+      <span
+        className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white shadow transition-[inset-inline-start] duration-150 ${
+          checked ? 'start-[22px]' : 'start-[2px]'
+        }`}
+      />
     </label>
   );
 }
