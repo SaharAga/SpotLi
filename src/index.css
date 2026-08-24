@@ -46,6 +46,39 @@
     --color-blue-800: oklch(48% 0.120 60);
     --color-blue-900: oklch(40% 0.095 60);
     --color-blue-950: oklch(28% 0.065 55);
+
+    /* Components across the app hand-mix `blue` with Tailwind's STOCK
+       indigo/purple in gradients and glows (e.g. "from-blue-600
+       via-indigo-500 to-purple-600") on the assumption all three sit in
+       the same cool-blue family. That assumption broke when blue moved
+       to gold above — stock indigo/purple stayed cool violet, so those
+       gradients quietly became gold-meets-violet. Fix: override indigo/
+       purple too, as warm hues adjacent to gold (H75 → H50 → H30, an
+       ember/sunset progression) so every existing gradient/glow class
+       reads as one family again, with no JSX changes required. */
+    --color-indigo-50: oklch(97% 0.025 55);
+    --color-indigo-100: oklch(93% 0.048 55);
+    --color-indigo-200: oklch(87% 0.075 52);
+    --color-indigo-300: oklch(80% 0.105 50);
+    --color-indigo-400: oklch(74% 0.125 48);
+    --color-indigo-500: oklch(68% 0.140 46);
+    --color-indigo-600: oklch(60% 0.145 44);
+    --color-indigo-700: oklch(51% 0.135 42);
+    --color-indigo-800: oklch(43% 0.115 42);
+    --color-indigo-900: oklch(36% 0.090 42);
+    --color-indigo-950: oklch(25% 0.062 40);
+
+    --color-purple-50: oklch(97% 0.022 35);
+    --color-purple-100: oklch(92.5% 0.042 33);
+    --color-purple-200: oklch(86% 0.068 30);
+    --color-purple-300: oklch(78% 0.095 28);
+    --color-purple-400: oklch(70% 0.115 26);
+    --color-purple-500: oklch(62% 0.130 24);
+    --color-purple-600: oklch(54% 0.135 22);
+    --color-purple-700: oklch(46% 0.125 20);
+    --color-purple-800: oklch(39% 0.105 20);
+    --color-purple-900: oklch(33% 0.082 20);
+    --color-purple-950: oklch(23% 0.058 18);
   }
 
   .light {
@@ -79,6 +112,35 @@
     --color-blue-800: oklch(43% 0.155 284);
     --color-blue-900: oklch(38% 0.115 284);
     --color-blue-950: oklch(26% 0.075 284);
+
+    /* Same fix as dark's block above, tuned for the indigo accent instead
+       of gold: indigo/purple pulled in as explicit siblings of blue
+       (H278, H300) rather than left as Tailwind's stock hues, which only
+       happened to look coherent by coincidence. Locks in the coordination
+       so a future accent change can't silently break these again. */
+    --color-indigo-50: oklch(97% 0.012 278);
+    --color-indigo-100: oklch(93% 0.026 278);
+    --color-indigo-200: oklch(87.5% 0.046 278);
+    --color-indigo-300: oklch(80% 0.078 278);
+    --color-indigo-400: oklch(71.5% 0.125 278);
+    --color-indigo-500: oklch(63.5% 0.160 276);
+    --color-indigo-600: oklch(55.5% 0.170 274);
+    --color-indigo-700: oklch(48.5% 0.165 272);
+    --color-indigo-800: oklch(42% 0.145 272);
+    --color-indigo-900: oklch(37% 0.108 272);
+    --color-indigo-950: oklch(25% 0.070 270);
+
+    --color-purple-50: oklch(97% 0.014 300);
+    --color-purple-100: oklch(93% 0.030 300);
+    --color-purple-200: oklch(87.5% 0.052 300);
+    --color-purple-300: oklch(80% 0.088 300);
+    --color-purple-400: oklch(71.5% 0.135 300);
+    --color-purple-500: oklch(63.5% 0.170 300);
+    --color-purple-600: oklch(55.5% 0.180 300);
+    --color-purple-700: oklch(48.5% 0.175 300);
+    --color-purple-800: oklch(42% 0.155 300);
+    --color-purple-900: oklch(37% 0.115 300);
+    --color-purple-950: oklch(25% 0.075 300);
   }
 
   /* Settings pilot palette — trust-navy + gold, distinct from the app-wide
