@@ -30,54 +30,48 @@
     --color-slate-900: oklch(19.0% 0.055 255);
     --color-slate-950: oklch(11.5% 0.050 255);
 
-    /* Brand accent: gold (H~75), from the Settings pilot. Light theme
-       (below) shares this same hue, tuned for white backgrounds, rather
-       than keeping a separate indigo brand — one accent across both
-       themes, adjusted per theme for contrast only. */
-    --color-blue-50: oklch(97% 0.030 75);
-    --color-blue-100: oklch(93.2% 0.055 75);
-    --color-blue-200: oklch(88.2% 0.080 75);
-    --color-blue-300: oklch(82% 0.110 75);
-    --color-blue-400: oklch(78% 0.130 75);
-    --color-blue-500: oklch(74% 0.145 70);
-    --color-blue-600: oklch(68% 0.155 65);
-    --color-blue-700: oklch(58% 0.145 60);
-    --color-blue-800: oklch(48% 0.120 60);
-    --color-blue-900: oklch(40% 0.095 60);
-    --color-blue-950: oklch(28% 0.065 55);
+    /* Brand accent: indigo (H~284), one hue across both themes, tuned
+       per theme for contrast only. */
+    --color-blue-50: oklch(97% 0.030 294);
+    --color-blue-100: oklch(93.2% 0.055 294);
+    --color-blue-200: oklch(88.2% 0.080 294);
+    --color-blue-300: oklch(82% 0.110 294);
+    --color-blue-400: oklch(78% 0.130 294);
+    --color-blue-500: oklch(74% 0.145 289);
+    --color-blue-600: oklch(68% 0.155 284);
+    --color-blue-700: oklch(58% 0.145 279);
+    --color-blue-800: oklch(48% 0.120 279);
+    --color-blue-900: oklch(40% 0.095 279);
+    --color-blue-950: oklch(28% 0.065 274);
 
     /* Components across the app hand-mix `blue` with Tailwind's STOCK
-       indigo/purple in gradients and glows (e.g. "from-blue-600
-       via-indigo-500 to-purple-600") on the assumption all three sit in
-       the same cool-blue family. That assumption broke when blue moved
-       to gold above — stock indigo/purple stayed cool violet, so those
-       gradients quietly became gold-meets-violet. Fix: override indigo/
-       purple too, as warm hues adjacent to gold (H75 → H50 → H30, an
-       ember/sunset progression) so every existing gradient/glow class
-       reads as one family again, with no JSX changes required. */
-    --color-indigo-50: oklch(97% 0.025 55);
-    --color-indigo-100: oklch(93% 0.048 55);
-    --color-indigo-200: oklch(87% 0.075 52);
-    --color-indigo-300: oklch(80% 0.105 50);
-    --color-indigo-400: oklch(74% 0.125 48);
-    --color-indigo-500: oklch(68% 0.140 46);
-    --color-indigo-600: oklch(60% 0.145 44);
-    --color-indigo-700: oklch(51% 0.135 42);
-    --color-indigo-800: oklch(43% 0.115 42);
-    --color-indigo-900: oklch(36% 0.090 42);
-    --color-indigo-950: oklch(25% 0.062 40);
+       indigo/purple in gradients and glows. Override indigo/purple to
+       cool hues adjacent to the accent (H284 → H263 → H241) so every
+       existing gradient/glow class reads as one family, no JSX changes
+       required. */
+    --color-indigo-50: oklch(97% 0.025 274);
+    --color-indigo-100: oklch(93% 0.048 274);
+    --color-indigo-200: oklch(87% 0.075 271);
+    --color-indigo-300: oklch(80% 0.105 269);
+    --color-indigo-400: oklch(74% 0.125 267);
+    --color-indigo-500: oklch(68% 0.140 265);
+    --color-indigo-600: oklch(60% 0.145 263);
+    --color-indigo-700: oklch(51% 0.135 261);
+    --color-indigo-800: oklch(43% 0.115 261);
+    --color-indigo-900: oklch(36% 0.090 261);
+    --color-indigo-950: oklch(25% 0.062 259);
 
-    --color-purple-50: oklch(97% 0.022 35);
-    --color-purple-100: oklch(92.5% 0.042 33);
-    --color-purple-200: oklch(86% 0.068 30);
-    --color-purple-300: oklch(78% 0.095 28);
-    --color-purple-400: oklch(70% 0.115 26);
-    --color-purple-500: oklch(62% 0.130 24);
-    --color-purple-600: oklch(54% 0.135 22);
-    --color-purple-700: oklch(46% 0.125 20);
-    --color-purple-800: oklch(39% 0.105 20);
-    --color-purple-900: oklch(33% 0.082 20);
-    --color-purple-950: oklch(23% 0.058 18);
+    --color-purple-50: oklch(97% 0.022 254);
+    --color-purple-100: oklch(92.5% 0.042 252);
+    --color-purple-200: oklch(86% 0.068 249);
+    --color-purple-300: oklch(78% 0.095 247);
+    --color-purple-400: oklch(70% 0.115 245);
+    --color-purple-500: oklch(62% 0.130 243);
+    --color-purple-600: oklch(54% 0.135 241);
+    --color-purple-700: oklch(46% 0.125 239);
+    --color-purple-800: oklch(39% 0.105 239);
+    --color-purple-900: oklch(33% 0.082 239);
+    --color-purple-950: oklch(23% 0.058 237);
   }
 
   .light {
@@ -97,56 +91,50 @@
     --color-slate-100: oklch(12.9% 0.046 255); /* Headings/High contrast text */
     --color-slate-50:  oklch(8.0% 0.046 255);
 
-    /* Light theme now shares dark's gold family (H~75) instead of a
-       separate indigo brand — one accent hue across both themes, tuned
-       per theme for contrast rather than swapped for a different color.
-       Kept closer to true gold/amber (H62-80) than the first attempt,
-       which drifted to H50-55 and read as brown on white. */
-    --color-blue-50: oklch(97% 0.025 80);
-    --color-blue-100: oklch(93% 0.050 80);
-    --color-blue-200: oklch(87% 0.078 78);
-    --color-blue-300: oklch(79% 0.105 76);
-    --color-blue-400: oklch(71% 0.125 75);
-    --color-blue-500: oklch(63% 0.140 73);
-    --color-blue-600: oklch(55% 0.145 70);
-    --color-blue-700: oklch(47% 0.135 68);
-    --color-blue-800: oklch(40% 0.115 66);
-    --color-blue-900: oklch(34% 0.088 64);
-    --color-blue-950: oklch(24% 0.060 62);
+    /* Same indigo hue as dark, tuned for white backgrounds. */
+    --color-blue-50: oklch(97% 0.025 294);
+    --color-blue-100: oklch(93% 0.050 294);
+    --color-blue-200: oklch(87% 0.078 292);
+    --color-blue-300: oklch(79% 0.105 290);
+    --color-blue-400: oklch(71% 0.125 289);
+    --color-blue-500: oklch(63% 0.140 287);
+    --color-blue-600: oklch(55% 0.145 284);
+    --color-blue-700: oklch(47% 0.135 282);
+    --color-blue-800: oklch(40% 0.115 280);
+    --color-blue-900: oklch(34% 0.088 278);
+    --color-blue-950: oklch(24% 0.060 276);
 
-    /* Same ember-family logic as dark's indigo/purple, tuned for light
-       backgrounds: siblings of the gold accent above, not Tailwind's
-       stock cool violet, so gradients read as one family here too. */
-    --color-indigo-50: oklch(97% 0.022 50);
-    --color-indigo-100: oklch(93% 0.042 50);
-    --color-indigo-200: oklch(86% 0.068 48);
-    --color-indigo-300: oklch(78% 0.095 47);
-    --color-indigo-400: oklch(70% 0.115 46);
-    --color-indigo-500: oklch(61% 0.130 44);
-    --color-indigo-600: oklch(52% 0.135 42);
-    --color-indigo-700: oklch(44% 0.125 40);
-    --color-indigo-800: oklch(37% 0.105 40);
-    --color-indigo-900: oklch(31% 0.082 40);
-    --color-indigo-950: oklch(21% 0.058 38);
+    /* Same indigo/purple sibling logic as dark, tuned for light backgrounds. */
+    --color-indigo-50: oklch(97% 0.022 264);
+    --color-indigo-100: oklch(93% 0.042 264);
+    --color-indigo-200: oklch(86% 0.068 262);
+    --color-indigo-300: oklch(78% 0.095 261);
+    --color-indigo-400: oklch(70% 0.115 260);
+    --color-indigo-500: oklch(61% 0.130 258);
+    --color-indigo-600: oklch(52% 0.135 256);
+    --color-indigo-700: oklch(44% 0.125 254);
+    --color-indigo-800: oklch(37% 0.105 254);
+    --color-indigo-900: oklch(31% 0.082 254);
+    --color-indigo-950: oklch(21% 0.058 252);
 
-    --color-purple-50: oklch(97% 0.020 30);
-    --color-purple-100: oklch(92.5% 0.038 28);
-    --color-purple-200: oklch(85% 0.062 26);
-    --color-purple-300: oklch(76% 0.088 25);
-    --color-purple-400: oklch(67% 0.108 23);
-    --color-purple-500: oklch(58% 0.122 21);
-    --color-purple-600: oklch(49% 0.128 19);
-    --color-purple-700: oklch(41% 0.118 18);
-    --color-purple-800: oklch(34% 0.098 18);
-    --color-purple-900: oklch(29% 0.076 18);
-    --color-purple-950: oklch(20% 0.054 16);
+    --color-purple-50: oklch(97% 0.020 244);
+    --color-purple-100: oklch(92.5% 0.038 242);
+    --color-purple-200: oklch(85% 0.062 240);
+    --color-purple-300: oklch(76% 0.088 239);
+    --color-purple-400: oklch(67% 0.108 237);
+    --color-purple-500: oklch(58% 0.122 235);
+    --color-purple-600: oklch(49% 0.128 233);
+    --color-purple-700: oklch(41% 0.118 232);
+    --color-purple-800: oklch(34% 0.098 232);
+    --color-purple-900: oklch(29% 0.076 232);
+    --color-purple-950: oklch(20% 0.054 230);
   }
 
-  /* Settings pilot palette — trust-navy + gold, now the same accent
-     family as the app-wide tokens above (both themes share the gold
-     hue). Scoped to .settings-theme (wraps AccountModal only) so it
-     doesn't retint anything else. Prefixed --stg-* (not --color-*) so it
-     never collides with or overrides the global Tailwind tokens. */
+  /* Settings pilot palette — same indigo accent as the app-wide tokens
+     above (both themes share the hue). Scoped to .settings-theme (wraps
+     AccountModal only) so it doesn't retint anything else. Prefixed
+     --stg-* (not --color-*) so it never collides with or overrides the
+     global Tailwind tokens. */
   .settings-theme {
     --stg-font: 'Atkinson Hyperlegible', var(--font-sans);
   }
@@ -160,8 +148,8 @@
     --stg-text-muted: #97A3B8;
     --stg-primary: #EEF2F8;
     --stg-primary-on: #0B1220;
-    --stg-accent: #E3A62F;
-    --stg-accent-soft: #3A2E10;
+    --stg-accent: oklch(68% 0.155 284);
+    --stg-accent-soft: oklch(28% 0.065 274);
     --stg-destructive: #F27272;
     --stg-destructive-soft: #3A1414;
     --stg-success: #6FD696;
@@ -169,9 +157,9 @@
   }
 
   .light .settings-theme {
-    /* Same layout/font/shape language as dark, same gold accent family
-       too now — pulled from --color-blue-600/-100 above so this stays
-       locked to the app's real accent instead of an independent value. */
+    /* Same layout/font/shape language as dark, same indigo accent family
+       too — pulled from --color-blue-600/-100 above so this stays locked
+       to the app's real accent instead of an independent value. */
     --stg-bg: #F8FAFC;
     --stg-surface: #FFFFFF;
     --stg-surface-2: #F1F5F9;
@@ -180,8 +168,8 @@
     --stg-text-muted: #475569;
     --stg-primary: #0F172A;
     --stg-primary-on: #F8FAFC;
-    --stg-accent: oklch(55% 0.145 70);
-    --stg-accent-soft: oklch(93% 0.050 80);
+    --stg-accent: oklch(55% 0.145 284);
+    --stg-accent-soft: oklch(93% 0.050 294);
     --stg-destructive: #DC2626;
     --stg-destructive-soft: #FEE2E2;
     --stg-success: #15803D;
