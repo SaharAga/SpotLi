@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.15.1] - 2026-08-24
+
+### Fixed
+- **Google sign-in broken by a stray newline in `VITE_FIREBASE_AUTH_DOMAIN`.**
+  The CI repository variable's value carried a trailing CRLF (easy to
+  introduce by pasting into a secrets/variables field). Firebase builds its
+  OAuth helper iframe URL by string-concatenating `authDomain`, so the
+  newline survived into the URL —
+  `https://…firebaseapp.com%0D%0A/__/auth/iframe?…` — and the SDK rejected
+  it with `Illegal url for new iframe`. Config values are now trimmed before
+  reaching Firebase, so a whitespace-contaminated variable can't corrupt a
+  URL again.
+
+  This one hid well: **email/password sign-in kept working**, because that
+  path calls `identitytoolkit.googleapis.com` with the API key and never
+  touches `authDomain` — so only the Google button failed. It also surfaced
+  as a generic auth error rather than a config problem, and two earlier
+  guesses at the cause (an `auth/iframe` "error code" that was really a URL
+  fragment, then a cross-origin `authDomain` theory) were both wrong. The
+  actual diagnosis came from the raw `rawMsg` in the browser console.
+
+- **Google Fonts blocked by CSP** — `connect-src` was missing
+  `fonts.googleapis.com`/`fonts.gstatic.com`, so the service worker's
+  `fetch()` for every webfont was refused (`font-src` allows a browser's own
+  font load, but a `fetch()` from the SW is governed by `connect-src`).
+  Inter, Rubik, Open Sans and the newly-added Atkinson Hyperlegible were all
+  silently falling back to system fonts in production. Both hosts added.
+
 ## [0.15.0] - 2026-08-23
 
 _Unifies the Settings pilot's design language across the entire app,
