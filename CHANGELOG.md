@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.15.5] - 2026-08-24
+
+### Changed
+- **Account tab's CSV backup now uses the shared, validated exporter.** The
+  Account tab hand-rolled its own copy of the CSV writer, which had drifted
+  from `exportUtils`. It now calls the shared `exportToCSV`, so the file it
+  produces changes in three user-visible ways: rows end with RFC 4180 `\r\n`
+  instead of `\n` (correct for Excel and strict CSV parsers), the export runs
+  through the same validation as every other export, and the Title/Notes
+  columns now prefer the Hebrew field (`titleHe`/`notesHe`) over the English
+  one, matching the rest of the app instead of the reverse. The filename,
+  the UTF-8 BOM for Hebrew in Excel, and the confirmation toasts are
+  unchanged. Any column added to the shared schema from now on appears in
+  this export automatically.
+
+### Fixed
+- **Date formatters were rebuilt on every render.** `formatDate` and
+  `formatDateTime` constructed a fresh `Intl.DateTimeFormat` on each call —
+  once per package card, table row, and checkpoint — so a list of 50
+  packages re-created 50 formatters on every keystroke. Formatters are now
+  cached per locale at module scope. Displayed dates are identical.
+
+### Internal
+- Added `todayISO()` in `dateUtils` and `readJSON`/`writeJSON` in a new
+  `utils/storage.js`, replacing repeated `localStorage` guard/parse/warn
+  boilerplate in `notificationService` and `ThemeContext`; extracted a
+  single `downloadBlob()` used by both the CSV and JSON exporters. Stored
+  values and fallback behavior are unchanged; `writeJSON` reports failure
+  (e.g. quota exceeded) to its caller rather than discarding it silently.
+
 ## [0.15.3] - 2026-08-24
 
 ### Removed
