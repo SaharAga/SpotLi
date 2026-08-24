@@ -12,6 +12,8 @@ import { CARRIERS, CARRIER_LIST } from '../types/carriers';
 import { APP_VERSION, RELEASE_DATE, BUILD_CHANNEL } from '../constants/version';
 import { notificationService } from '../services/notificationService';
 import { LegalDocumentModal } from './LegalDocumentModal';
+import { exportToCSV } from '../utils/exportUtils';
+import { todayISO } from '../utils/dateUtils';
 
 const ACCOUNT_SECTIONS = [
   { id: 'preferences', icon: Settings, label: { en: 'Appearance & Language', he: 'תצוגה ושפה' } },
@@ -155,28 +157,9 @@ export function AccountModal({
       return;
     }
 
-    const headers = ['ID', 'Title', 'TrackingNumber', 'Carrier', 'Status', 'OrderDate', 'ExpectedDeliveryDate', 'Origin', 'Destination', 'Notes'];
-    const rows = packages.map(p => [
-      `"${p.id || ''}"`,
-      `"${(p.title || p.titleHe || '').replace(/"/g, '""')}"`,
-      `"${p.trackingNumber || ''}"`,
-      `"${p.carrier || ''}"`,
-      `"${p.status || ''}"`,
-      `"${p.orderDate || ''}"`,
-      `"${p.expectedDeliveryDate || ''}"`,
-      `"${p.origin || ''}"`,
-      `"${p.destination || ''}"`,
-      `"${(p.notes || p.notesHe || '').replace(/"/g, '""')}"`
-    ]);
-
-    const csvContent = 'data:text/csv;charset=utf-8,﻿' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `deliveree_backup_${user.id}_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Delegate to the shared, validated, RFC 4180-compliant exporter so this tab
+    // never drifts from the canonical CSV schema.
+    exportToCSV(packages, true, `deliveree_backup_${user.id}_${todayISO()}.csv`);
 
     if (onShowToast) onShowToast(language === 'he' ? 'קובץ CSV הורד בהצלחה' : 'CSV backup downloaded', 'success');
   };
