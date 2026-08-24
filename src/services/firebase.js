@@ -22,14 +22,36 @@ import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
  * When unconfigured (tests, or a local run without a .env), the app degrades to
  * local-only storage rather than throwing.
  */
+/**
+ * Trims surrounding whitespace from a config value.
+ *
+ * Not defensive programming for its own sake: a trailing CRLF in the
+ * `VITE_FIREBASE_AUTH_DOMAIN` repository variable (easy to introduce by
+ * pasting a value into a CI secrets/variables field) silently broke Google
+ * sign-in in production. Firebase builds its OAuth helper iframe URL by
+ * string-concatenating authDomain, so the newline survived into the URL as
+ * `https://…firebaseapp.com%0D%0A/__/auth/iframe?…` and the SDK rejected it
+ * with "Illegal url for new iframe".
+ *
+ * It failed quietly in the worst way: email/password sign-in kept working
+ * (that path talks to identitytoolkit.googleapis.com with the API key and
+ * never touches authDomain), so only the Google button broke, and the
+ * error surfaced as a generic auth failure rather than a config problem.
+ */
+function cleanConfigValue(value) {
+  return typeof value === 'string' ? value.trim() : value;
+}
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: cleanConfigValue(import.meta.env.VITE_FIREBASE_API_KEY),
+  authDomain: cleanConfigValue(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN),
+  projectId: cleanConfigValue(import.meta.env.VITE_FIREBASE_PROJECT_ID),
+  storageBucket: cleanConfigValue(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET),
+  messagingSenderId: cleanConfigValue(import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID),
+  appId: cleanConfigValue(import.meta.env.VITE_FIREBASE_APP_ID),
 };
+
+export { cleanConfigValue };
 
 export const isFirebaseConfigured = Boolean(
   firebaseConfig.apiKey &&
