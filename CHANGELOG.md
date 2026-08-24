@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.15.3] - 2026-08-24
+
+### Removed
+- **Unused 4-tier IndexedDB storage adapter (`src/services/idbStorageAdapter.js`, 362 lines) and its test suites.**
+  It had zero non-test importers. It also did not relieve localStorage quota
+  pressure — `getPackages()` shadow-wrote the full package list back to
+  localStorage on every read — and adopting it would have forced
+  `deliveryService.getPackages()` from sync to async, breaking the `useState`
+  lazy initializer in `usePackages.js`. It additionally carried a live bug:
+  `memoryCache` was a per-partition `Map` while its TTL timestamp was a single
+  module-global scalar shared across all partitions. Recoverable from git
+  history as a design sketch.
+- **Six zero-consumer values from the `AuthContext` context value**:
+  `isGuestMode`, `authError`/`setAuthError`, `sendVerificationEmail`,
+  `loginWithApple`, `loginWithFacebook`, and the re-export of
+  `migrateGuestDataToUser`. The leftover `appleProvider`/`facebookProvider`
+  plumbing went with them — Apple sign-in was deliberately dropped from the UI
+  earlier because it was never configured. Error propagation is unchanged:
+  `sanitizeAuthError` still wraps every thrown auth error. The module-level
+  `migrateGuestDataToUser` export is untouched; only its context re-export was
+  removed.
+
 ## [0.15.2] - 2026-08-24
 
 ### Fixed
