@@ -28,6 +28,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fragment, then a cross-origin `authDomain` theory) were both wrong. The
   actual diagnosis came from the raw `rawMsg` in the browser console.
 
+### Added
+- **Build-time guard against malformed Firebase config** (`vite.config.js`).
+  The existing check only verified the `VITE_FIREBASE_*` variables were
+  *present*; a production build now also fails if any of them contain
+  whitespace or control characters. None of these values may legitimately
+  contain whitespace, so whitespace is always a paste accident — and this
+  turns the exact failure above from a silent production outage into a loud
+  CI failure naming the offending variable. Verified by building with the
+  real contaminated value (fails with a clear message) and with clean values
+  (builds normally).
+
+### Fixed
 - **Google Fonts blocked by CSP** — `connect-src` was missing
   `fonts.googleapis.com`/`fonts.gstatic.com`, so the service worker's
   `fetch()` for every webfont was refused (`font-src` allows a browser's own

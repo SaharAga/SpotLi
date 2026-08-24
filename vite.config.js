@@ -32,9 +32,28 @@ const REQUIRED_ENV = [
 ];
 
 /**
- * Fail the production build when Firebase config is missing, instead of
- * shipping a bundle that silently runs without cloud sync.
+ * Fail the production build when Firebase config is missing or malformed,
+ * instead of shipping a bundle that silently runs without cloud sync — or,
+ * worse, one that looks fine and breaks a single auth path at runtime.
+ *
+ * The malformed check exists because of a real outage: a trailing CRLF in
+ * VITE_FIREBASE_AUTH_DOMAIN (pasted into the CI variables field with the
+ * newline attached) rode into Firebase's OAuth iframe URL as
+ * `https://…firebaseapp.com%0D%0A/__/auth/iframe`, which the SDK rejected.
+ * Google sign-in broke while email/password kept working, and the error
+ * surfaced as a generic auth failure — so it took a browser console dump to
+ * find. None of these values may legitimately contain whitespace, so
+ * whitespace anywhere in one is always a paste accident. Better to fail
+ * loudly here in CI than to ship it and debug it in production again.
  */
+function malformedReason(value) {
+  if (value !== value.trim()) return 'has leading or trailing whitespace';
+  if (/\s/.test(value)) return 'contains an internal space or line break';
+  // eslint-disable-next-line no-control-regex
+  if (/[\x00-\x1F\x7F]/.test(value)) return 'contains a control character';
+  return null;
+}
+
 function requireFirebaseEnv() {
   return {
     name: 'require-firebase-env',
@@ -47,6 +66,21 @@ function requireFirebaseEnv() {
         throw new Error(
           `Missing required environment variables for a production build: ${missing.join(', ')}. ` +
           'See .env.example.'
+        );
+      }
+
+      const malformed = REQUIRED_ENV
+        .map((key) => {
+          const reason = malformedReason(env[key]);
+          return reason ? `${key} ${reason}` : null;
+        })
+        .filter(Boolean);
+
+      if (malformed.length > 0) {
+        throw new Error(
+          `Malformed environment variables for a production build:\n  - ${malformed.join('\n  - ')}\n` +
+          'These values must not contain whitespace. Re-save them in GitHub -> Settings -> ' +
+          'Secrets and variables -> Actions, taking care not to include a trailing newline.'
         );
       }
     }
