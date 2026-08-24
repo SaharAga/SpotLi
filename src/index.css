@@ -30,11 +30,10 @@
     --color-slate-900: oklch(19.0% 0.055 255);
     --color-slate-950: oklch(11.5% 0.050 255);
 
-    /* Brand accent: dark theme moves from Transit Indigo to the Settings
-       pilot's gold (H~75), which the user confirmed liking as a whole —
-       colors included, not just layout. Light theme (below) keeps the
-       original indigo blue instead — the two themes now intentionally
-       use different accent hues, not just different lightness. */
+    /* Brand accent: gold (H~75), from the Settings pilot. Light theme
+       (below) shares this same hue, tuned for white backgrounds, rather
+       than keeping a separate indigo brand — one accent across both
+       themes, adjusted per theme for contrast only. */
     --color-blue-50: oklch(97% 0.030 75);
     --color-blue-100: oklch(93.2% 0.055 75);
     --color-blue-200: oklch(88.2% 0.080 75);
@@ -98,55 +97,55 @@
     --color-slate-100: oklch(12.9% 0.046 255); /* Headings/High contrast text */
     --color-slate-50:  oklch(8.0% 0.046 255);
 
-    /* Light theme keeps the ORIGINAL indigo blue accent rather than the
-       dark theme's gold — same language (layout/font/shape), different
-       accent, per explicit direction: gold is a dark-theme-only choice. */
-    --color-blue-50: oklch(97% 0.014 284);
-    --color-blue-100: oklch(93.2% 0.028 284);
-    --color-blue-200: oklch(88.2% 0.050 284);
-    --color-blue-300: oklch(80.9% 0.085 284);
-    --color-blue-400: oklch(72.5% 0.135 284);
-    --color-blue-500: oklch(64.5% 0.170 284);
-    --color-blue-600: oklch(56.5% 0.180 284);
-    --color-blue-700: oklch(49.5% 0.175 284);
-    --color-blue-800: oklch(43% 0.155 284);
-    --color-blue-900: oklch(38% 0.115 284);
-    --color-blue-950: oklch(26% 0.075 284);
+    /* Light theme now shares dark's gold family (H~75) instead of a
+       separate indigo brand — one accent hue across both themes, tuned
+       per theme for contrast rather than swapped for a different color.
+       Kept closer to true gold/amber (H62-80) than the first attempt,
+       which drifted to H50-55 and read as brown on white. */
+    --color-blue-50: oklch(97% 0.025 80);
+    --color-blue-100: oklch(93% 0.050 80);
+    --color-blue-200: oklch(87% 0.078 78);
+    --color-blue-300: oklch(79% 0.105 76);
+    --color-blue-400: oklch(71% 0.125 75);
+    --color-blue-500: oklch(63% 0.140 73);
+    --color-blue-600: oklch(55% 0.145 70);
+    --color-blue-700: oklch(47% 0.135 68);
+    --color-blue-800: oklch(40% 0.115 66);
+    --color-blue-900: oklch(34% 0.088 64);
+    --color-blue-950: oklch(24% 0.060 62);
 
-    /* Same fix as dark's block above, tuned for the indigo accent instead
-       of gold: indigo/purple pulled in as explicit siblings of blue
-       (H278, H300) rather than left as Tailwind's stock hues, which only
-       happened to look coherent by coincidence. Locks in the coordination
-       so a future accent change can't silently break these again. */
-    --color-indigo-50: oklch(97% 0.012 278);
-    --color-indigo-100: oklch(93% 0.026 278);
-    --color-indigo-200: oklch(87.5% 0.046 278);
-    --color-indigo-300: oklch(80% 0.078 278);
-    --color-indigo-400: oklch(71.5% 0.125 278);
-    --color-indigo-500: oklch(63.5% 0.160 276);
-    --color-indigo-600: oklch(55.5% 0.170 274);
-    --color-indigo-700: oklch(48.5% 0.165 272);
-    --color-indigo-800: oklch(42% 0.145 272);
-    --color-indigo-900: oklch(37% 0.108 272);
-    --color-indigo-950: oklch(25% 0.070 270);
+    /* Same ember-family logic as dark's indigo/purple, tuned for light
+       backgrounds: siblings of the gold accent above, not Tailwind's
+       stock cool violet, so gradients read as one family here too. */
+    --color-indigo-50: oklch(97% 0.022 50);
+    --color-indigo-100: oklch(93% 0.042 50);
+    --color-indigo-200: oklch(86% 0.068 48);
+    --color-indigo-300: oklch(78% 0.095 47);
+    --color-indigo-400: oklch(70% 0.115 46);
+    --color-indigo-500: oklch(61% 0.130 44);
+    --color-indigo-600: oklch(52% 0.135 42);
+    --color-indigo-700: oklch(44% 0.125 40);
+    --color-indigo-800: oklch(37% 0.105 40);
+    --color-indigo-900: oklch(31% 0.082 40);
+    --color-indigo-950: oklch(21% 0.058 38);
 
-    --color-purple-50: oklch(97% 0.014 300);
-    --color-purple-100: oklch(93% 0.030 300);
-    --color-purple-200: oklch(87.5% 0.052 300);
-    --color-purple-300: oklch(80% 0.088 300);
-    --color-purple-400: oklch(71.5% 0.135 300);
-    --color-purple-500: oklch(63.5% 0.170 300);
-    --color-purple-600: oklch(55.5% 0.180 300);
-    --color-purple-700: oklch(48.5% 0.175 300);
-    --color-purple-800: oklch(42% 0.155 300);
-    --color-purple-900: oklch(37% 0.115 300);
-    --color-purple-950: oklch(25% 0.075 300);
+    --color-purple-50: oklch(97% 0.020 30);
+    --color-purple-100: oklch(92.5% 0.038 28);
+    --color-purple-200: oklch(85% 0.062 26);
+    --color-purple-300: oklch(76% 0.088 25);
+    --color-purple-400: oklch(67% 0.108 23);
+    --color-purple-500: oklch(58% 0.122 21);
+    --color-purple-600: oklch(49% 0.128 19);
+    --color-purple-700: oklch(41% 0.118 18);
+    --color-purple-800: oklch(34% 0.098 18);
+    --color-purple-900: oklch(29% 0.076 18);
+    --color-purple-950: oklch(20% 0.054 16);
   }
 
-  /* Settings pilot palette — trust-navy + gold, distinct from the app-wide
-     indigo accent above. Scoped to .settings-theme (wraps AccountModal
-     only) so it doesn't retint anything else while it's being evaluated as
-     a possible app-wide direction. Prefixed --stg-* (not --color-*) so it
+  /* Settings pilot palette — trust-navy + gold, now the same accent
+     family as the app-wide tokens above (both themes share the gold
+     hue). Scoped to .settings-theme (wraps AccountModal only) so it
+     doesn't retint anything else. Prefixed --stg-* (not --color-*) so it
      never collides with or overrides the global Tailwind tokens. */
   .settings-theme {
     --stg-font: 'Atkinson Hyperlegible', var(--font-sans);
@@ -170,12 +169,9 @@
   }
 
   .light .settings-theme {
-    /* Same layout/font/shape language as dark, but the accent reverts to
-       the app's own indigo brand instead of the pilot's gold — dark keeps
-       the full navy+gold pairing (liked as-is); light keeps the precision
-       (Atkinson Hyperlegible, card structure, radii) without introducing
-       a second brand color. Exact --color-blue-600/-100 values from the
-       app's real accent, not an approximation. */
+    /* Same layout/font/shape language as dark, same gold accent family
+       too now — pulled from --color-blue-600/-100 above so this stays
+       locked to the app's real accent instead of an independent value. */
     --stg-bg: #F8FAFC;
     --stg-surface: #FFFFFF;
     --stg-surface-2: #F1F5F9;
@@ -184,8 +180,8 @@
     --stg-text-muted: #475569;
     --stg-primary: #0F172A;
     --stg-primary-on: #F8FAFC;
-    --stg-accent: oklch(56.5% 0.180 284);
-    --stg-accent-soft: oklch(93.2% 0.028 284);
+    --stg-accent: oklch(55% 0.145 70);
+    --stg-accent-soft: oklch(93% 0.050 80);
     --stg-destructive: #DC2626;
     --stg-destructive-soft: #FEE2E2;
     --stg-success: #15803D;
