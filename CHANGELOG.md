@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.15.2] - 2026-08-24
+
+### Fixed
+- **Accent color hardcoded outside the theme system, silently breaking on any accent change.**
+  Components mixed the themed `--color-blue-*` accent with Tailwind's
+  stock, un-themed `indigo`/`purple` in gradients and glows (e.g.
+  `from-blue-600 via-indigo-500 to-purple-600`), assuming all three sat in
+  the same hue family. That assumption broke invisibly — `indigo`/`purple`
+  never moved when the accent did, since they were never wired into
+  `index.css`'s theme tokens. `--color-indigo-*` and `--color-purple-*` are
+  now overridden per theme, coordinated with the accent, so every existing
+  gradient/glow class stays one family with no JSX changes needed.
+- Light and dark now share one accent hue (indigo, H~284) instead of two
+  independent brand colors, each tuned per theme for contrast.
+
 ## [0.15.1] - 2026-08-24
 
 ### Fixed
