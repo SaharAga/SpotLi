@@ -11,36 +11,17 @@ import {
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './firebase';
 import { deliveryService } from './deliveryService';
-import { validatePackageListSafe, validatePackageSafe } from '../schemas/packageSchema';
-import { validatePackageList, validatePackage } from '../utils/packageValidator';
+import { parsePackage, parsePackageList } from '../schemas/packageSchema';
 
 /**
- * Validates a package using Zod schema with fallback to packageValidator.
- * 
- * @param {unknown} pkg
- * @returns {object|null}
- */
-function strictlyValidatePackage(pkg) {
-  const result = validatePackageSafe(pkg);
-  if (result.success) {
-    return result.data;
-  }
-  return validatePackage(pkg);
-}
-
-/**
- * Validates a package list using Zod schema with fallback to packageValidator.
- * 
+ * Validates a package list through the single repairing schema entry point.
+ * (The old try-Zod-then-fall-back-to-the-hand-rolled-validator bridge is gone.)
+ *
  * @param {unknown} packages
  * @returns {Array<object>}
  */
-function strictlyValidatePackageList(packages) {
-  if (!Array.isArray(packages)) return [];
-  const result = validatePackageListSafe(packages);
-  if (result.success) {
-    return result.data;
-  }
-  return validatePackageList(packages);
+function validateList(packages) {
+  return parsePackageList(packages).packages;
 }
 
 /**
@@ -113,7 +94,7 @@ export class CloudStorageAdapter {
           const unsyncedLocal = localPackages.filter(p => !remoteIds.has(p.id || p.trackingNumber));
           const merged = [...remotePackages, ...unsyncedLocal];
 
-          const validated = strictlyValidatePackageList(merged);
+          const validated = validateList(merged);
           deliveryService.savePackages(validated, this.userId);
           this.notifyListeners(validated);
 
@@ -163,7 +144,7 @@ export class CloudStorageAdapter {
         remotePackages.push({ ...docSnap.data(), id: docSnap.id });
       });
 
-      const validated = strictlyValidatePackageList(remotePackages);
+      const validated = validateList(remotePackages);
       deliveryService.savePackages(validated, this.userId);
       return validated;
     } catch (err) {
@@ -176,7 +157,7 @@ export class CloudStorageAdapter {
    * Saves/Syncs full package list
    */
   async savePackages(packages) {
-    const validated = strictlyValidatePackageList(packages);
+    const validated = validateList(packages);
     deliveryService.savePackages(validated, this.userId);
     this.notifyListeners(validated);
 
@@ -205,7 +186,7 @@ export class CloudStorageAdapter {
    * Adds or updates a single package
    */
   async upsertPackage(pkg) {
-    const validatedPkg = strictlyValidatePackage(pkg);
+    const validatedPkg = parsePackage(pkg);
     if (!validatedPkg) return deliveryService.getPackages(this.userId);
 
     const existing = deliveryService.getPackages(this.userId);
@@ -271,7 +252,7 @@ export class CloudStorageAdapter {
   async upsertPackageRemote(pkg, userId) {
     if (!userId) throw new Error('upsertPackageRemote requires a userId');
     if (!isFirebaseConfigured || !db) throw new Error('Firestore is not configured');
-    const validatedPkg = strictlyValidatePackage(pkg);
+    const validatedPkg = parsePackage(pkg);
     if (!validatedPkg) throw new Error('Invalid package payload');
     const docRef = doc(db, 'users', userId, 'packages', validatedPkg.id);
     await setDoc(docRef, { ...validatedPkg, userId }, { merge: true });
