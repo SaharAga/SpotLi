@@ -12,7 +12,8 @@ import { CARRIERS, CARRIER_LIST } from '../types/carriers';
 import { APP_VERSION, RELEASE_DATE, BUILD_CHANNEL } from '../constants/version';
 import { notificationService } from '../services/notificationService';
 import { LegalDocumentModal } from './LegalDocumentModal';
-import { exportRawToCSV } from '../utils/exportUtils';
+import { exportRawToJSON } from '../utils/exportUtils';
+import { deliveryService } from '../services/deliveryService';
 import { todayISO } from '../utils/dateUtils';
 
 const ACCOUNT_SECTIONS = [
@@ -161,21 +162,31 @@ export function AccountModal({
     }
   };
 
-  const handleExportCSV = () => {
-    if (!packages || packages.length === 0) {
-      if (onShowToast) onShowToast(language === 'he' ? 'אין חבילות לייצוא' : 'No packages to export', 'info');
+  const handleBackupJSON = () => {
+    // A backup must be able to reconstruct what the user actually has, which
+    // rules out both the in-memory list and CSV.
+    //
+    // The `packages` prop has already been through the repair pass — every
+    // source (getPackages, the storage event, the cloud subscribe path) runs
+    // parsePackageList on read — so unknown carriers, empty titles and messy
+    // tracking numbers were rewritten before they ever reached this button.
+    // Reading the persisted blob directly is what makes the file faithful,
+    // and it leaves the repair-on-read behaviour (which stops the app dying on
+    // corrupt data) exactly as it was.
+    //
+    // JSON rather than CSV because ten flat columns cannot carry checkpoints,
+    // titleHe/notesHe, category, the flags or schemaVersion — and because
+    // deliveryService.importData reads JSON, so this file actually restores.
+    const rawPackages = deliveryService.getRawPackages(user.id);
+
+    if (rawPackages.length === 0) {
+      if (onShowToast) onShowToast(language === 'he' ? 'אין חבילות לגיבוי' : 'No packages to back up', 'info');
       return;
     }
 
-    // A backup must reconstruct what the user actually has, so this path uses
-    // the raw exporter: same RFC 4180 formatting and UTF-8 BOM as the shared
-    // exporter, but no validatePackageList repair pass and no row cap. Routing
-    // a backup through validation rewrote unknown carriers/statuses, filled
-    // empty dates and titles, blanked tracking numbers to UNTRACKED and
-    // truncated notes.
-    exportRawToCSV(packages, true, `deliveree_backup_${user.id}_${todayISO()}.csv`);
+    exportRawToJSON(rawPackages, true, `deliveree_backup_${user.id}_${todayISO()}.json`);
 
-    if (onShowToast) onShowToast(language === 'he' ? 'קובץ CSV הורד בהצלחה' : 'CSV backup downloaded', 'success');
+    if (onShowToast) onShowToast(language === 'he' ? 'קובץ גיבוי JSON הורד בהצלחה' : 'JSON backup downloaded', 'success');
   };
 
   const handleToggleAiOptIn = async () => {
@@ -656,24 +667,24 @@ export function AccountModal({
                 >
                   <div className="flex items-center gap-2 text-[var(--stg-accent)] font-bold">
                     <Download className="w-4 h-4" />
-                    <span>{language === 'he' ? 'מרכז ייצוא וגיבוי מלא' : 'Export Center & Backup'}</span>
+                    <span>{language === 'he' ? 'מרכז דוחות וייצוא' : 'Export Center (Reports)'}</span>
                   </div>
                   <p className="text-[11px] text-[var(--stg-text-muted)] leading-relaxed">
-                    {language === 'he' ? 'פתח את מרכז הייצוא הייעודי לבחירת פורמטים (CSV/JSON/PDF) וסינונים.' : 'Open dedicated export dialog with format and scope selection.'}
+                    {language === 'he' ? 'דוחות לקריאה (CSV/JSON/PDF) עם סינון — לצפייה ולא לשחזור.' : 'Readable reports (CSV/JSON/PDF) with filtering — for reading, not for restoring.'}
                   </p>
                 </button>
 
                 <button
                   type="button"
-                  onClick={handleExportCSV}
+                  onClick={handleBackupJSON}
                   className="p-4 rounded-xl bg-[var(--stg-surface-2)] hover:bg-[var(--stg-border)] border border-[var(--stg-border)] text-start transition-all cursor-pointer flex flex-col gap-2 min-h-[48px]"
                 >
                   <div className="flex items-center gap-2 text-[var(--stg-success)] font-bold">
                     <Database className="w-4 h-4" />
-                    <span>{language === 'he' ? 'ייצוא ישיר לאקסל / CSV' : 'Quick Export to CSV'}</span>
+                    <span>{language === 'he' ? 'הורדת גיבוי מלא (JSON)' : 'Download Full Backup (JSON)'}</span>
                   </div>
                   <p className="text-[11px] text-[var(--stg-text-muted)] leading-relaxed">
-                    {language === 'he' ? 'ייצא את טבלת המעקב לקובץ פשוט לפתיחה ב-Excel או Google Sheets.' : 'Export shipment records into an Excel / Sheets-ready spreadsheet.'}
+                    {language === 'he' ? 'קובץ שחזור מלא הנקרא ישירות מהאחסון — כולל כל השדות, וניתן לייבוא חזרה לאפליקציה.' : 'A restorable snapshot read straight from storage — every field, importable back into the app.'}
                   </p>
                 </button>
               </div>

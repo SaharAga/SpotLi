@@ -58,7 +58,6 @@ export function canTransition(fromStatus, toStatus) {
 }
 
 export const MAX_IMPORT_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
-export const MAX_IMPORT_PACKAGES = 1000;
 
 export const deliveryService = {
   /**
@@ -91,15 +90,45 @@ export const deliveryService = {
   },
 
   /**
+   * Reads the persisted package blob **verbatim** - no repair pass.
+   *
+   * `getPackages` runs every record through `parsePackageList`, which rewrites
+   * unknown carriers and statuses, fills empty titles and dates and normalises
+   * tracking numbers. That is right for the running app (it must not crash on
+   * corrupt stored data) and wrong for a backup, which has to reproduce what is
+   * actually stored. This accessor is the backup path's source of truth.
+   *
+   * @param {string|null} [userId=null]
+   * @returns {Array<object>} The stored array as-is, or `[]` if absent/unreadable.
+   */
+  getRawPackages: (userId = null) => {
+    try {
+      const key = getStorageKey(userId);
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.error('Failed to read raw packages from localStorage', e);
+    }
+    return [];
+  },
+
+  /**
    * Saves the validated package list to localStorage scoped by userId or guest.
    *
-   * Returns the validated array, carrying `ok` / `error` / `overflow` status so
-   * a failed write (e.g. quota exhaustion) is no longer indistinguishable from
-   * a successful one (P0.3).
+   * Returns a plain result object (see `makeSaveResult`) whose `packages` field
+   * holds the validated array and whose `ok` / `error` / `overflow` fields are
+   * ordinary enumerable properties, so a failed write (e.g. quota exhaustion)
+   * is distinguishable from a successful one (P0.3) and the status survives
+   * spread, cloning and serialisation.
    *
    * @param {unknown} packages
    * @param {string|null} [userId=null]
-   * @returns {Array<object> & { ok: boolean, packages: Array<object>, error: Error|null, overflow: boolean }}
+   * @returns {{ ok: boolean, packages: Array<object>, error: Error|null, overflow: boolean }}
    */
   savePackages: (packages, userId = null) => {
     const { packages: validated, overflow } = parsePackageList(packages);
@@ -156,7 +185,8 @@ export const deliveryService = {
   },
 
   /**
-   * Imports data from JSON file with strict size limits, count caps, and validation
+   * Imports data from a JSON file with a strict payload-size limit and
+   * validation. The full list is honoured - nothing is truncated silently.
    */
   importData: (jsonString) => {
     if (typeof jsonString !== 'string') {
@@ -174,9 +204,11 @@ export const deliveryService = {
     try {
       const parsed = JSON.parse(jsonString);
       if (Array.isArray(parsed)) {
-        const limited = parsed.slice(0, MAX_IMPORT_PACKAGES);
-        const { packages: validated } = parsePackageList(limited);
-        if (validated.length === 0 && limited.length > 0) {
+        // No count cap. Exports are uncapped, so capping here silently turned a
+        // complete backup into an incomplete restore with nothing said about
+        // it. The 2MB payload limit above is the only bound, and it reports.
+        const { packages: validated } = parsePackageList(parsed);
+        if (validated.length === 0 && parsed.length > 0) {
           return { success: false, error: 'Imported items failed schema validation' };
         }
         const saved = deliveryService.savePackages(validated);

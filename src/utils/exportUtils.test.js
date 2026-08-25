@@ -2,9 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import {
   escapeCSVCell,
   formatPackageCSVRow,
-  formatRawPackageCSVRow,
   exportToCSV,
-  exportRawToCSV,
+  exportRawToJSON,
   exportToJSON,
   generatePrintableSummary,
   exportUtils,
@@ -221,6 +220,7 @@ describe('exportUtils Unit Tests', () => {
     it('exports all utility functions cleanly on the exportUtils object', () => {
       expect(exportUtils.exportToCSV).toBe(exportToCSV);
       expect(exportUtils.exportToJSON).toBe(exportToJSON);
+      expect(exportUtils.exportRawToJSON).toBe(exportRawToJSON);
       expect(exportUtils.generatePrintableSummary).toBe(generatePrintableSummary);
       expect(exportUtils.downloadBlob).toBe(downloadBlob);
     });
@@ -234,7 +234,7 @@ describe('exportUtils Unit Tests', () => {
   });
 });
 
-describe('exportRawToCSV — the backup path', () => {
+describe('exportRawToJSON — the backup path', () => {
   const raw = {
     id: 'raw-1',
     title: 'Widget',
@@ -247,61 +247,87 @@ describe('exportRawToCSV — the backup path', () => {
     origin: '',
     destination: '',
     notes: 'a'.repeat(2000),
-    notesHe: 'הערות'
+    notesHe: 'הערות',
+    category: 'electronics',
+    isPinned: true,
+    isArchived: false,
+    carrierName: 'Some Courier',
+    schemaVersion: 3,
+    checkpoints: [{ id: 'cp-1', status: 'in_transit', location: 'Haifa', timestamp: '2026-08-01T00:00:00.000Z' }]
   };
 
-  const rowOf = (csv) => csv.replace(/^\uFEFF/, '').split('\r\n')[1];
-
-  it('shares the header row with the validated exporter', () => {
-    const rawHeader = exportRawToCSV([]).replace(/^\uFEFF/, '').split('\r\n')[0];
-    const validatedHeader = exportToCSV([]).replace(/^\uFEFF/, '').split('\r\n')[0];
-    expect(rawHeader).toBe(validatedHeader);
-  });
-
-  it('keeps the UTF-8 BOM and CRLF line endings', () => {
-    const csv = exportRawToCSV([raw]);
-    expect(csv.startsWith('\uFEFF')).toBe(true);
-    expect(csv).toContain('\r\n');
-  });
-
   it('applies no repair pass to carrier, status, dates or tracking number', () => {
-    const row = rowOf(exportRawToCSV([raw]));
-    expect(row).toContain('"not_a_known_carrier"');
-    expect(row).toContain('"not_a_known_status"');
-    expect(row).toContain('"lower case/tracking#"');
-    expect(row).not.toContain('UNTRACKED');
-    expect(row).not.toContain('"other"');
-    expect(row).not.toContain('"in_transit"');
+    const [out] = JSON.parse(exportRawToJSON([raw]));
+    expect(out.carrier).toBe('not_a_known_carrier');
+    expect(out.status).toBe('not_a_known_status');
+    expect(out.trackingNumber).toBe('lower case/tracking#');
+    expect(out.orderDate).toBe('');
+    expect(out.destination).toBe('');
   });
 
   it('does not truncate long notes the way sanitizeString does', () => {
-    const row = rowOf(exportRawToCSV([raw]));
-    expect(row).toContain('a'.repeat(2000));
+    const [out] = JSON.parse(exportRawToJSON([raw]));
+    expect(out.notes).toBe('a'.repeat(2000));
   });
 
-  it('prefers the English title/notes, unlike formatPackageCSVRow', () => {
-    const row = rowOf(exportRawToCSV([raw]));
-    expect(row).toContain('"Widget"');
-    expect(row).not.toContain('ווידג׳ט');
-    expect(formatPackageCSVRow(raw)[1]).toBe('"ווידג׳ט"');
-    expect(formatRawPackageCSVRow(raw)[1]).toBe('"Widget"');
+  it('keeps the Hebrew fields the CSV backup dropped (#53)', () => {
+    const [out] = JSON.parse(exportRawToJSON([raw]));
+    expect(out.title).toBe('Widget');
+    expect(out.titleHe).toBe('ווידג׳ט');
+    expect(out.notesHe).toBe('הערות');
   });
 
-  it('still escapes quotes per RFC 4180', () => {
-    const row = rowOf(exportRawToCSV([{ id: 'x', title: 'He said "hi"' }]));
-    expect(row).toContain('"He said ""hi"""');
+  it('carries the fields no CSV column set can represent', () => {
+    const [out] = JSON.parse(exportRawToJSON([raw]));
+    expect(out.checkpoints).toEqual(raw.checkpoints);
+    expect(out.category).toBe('electronics');
+    expect(out.isPinned).toBe(true);
+    expect(out.isArchived).toBe(false);
+    expect(out.carrierName).toBe('Some Courier');
+    expect(out.schemaVersion).toBe(3);
   });
 
-  it('emits one row per item with no cap', () => {
+  it('reproduces the input array exactly', () => {
+    expect(JSON.parse(exportRawToJSON([raw]))).toEqual([raw]);
+  });
+
+  it('emits every item with no cap', () => {
     const many = Array.from({ length: 2500 }, (_, i) => ({ id: `p${i}` }));
-    const lines = exportRawToCSV(many).replace(/^\uFEFF/, '').split('\r\n');
-    expect(lines.length).toBe(2501);
+    expect(JSON.parse(exportRawToJSON(many))).toHaveLength(2500);
   });
 
-  it('tolerates non-array and malformed input', () => {
-    expect(exportRawToCSV(null).replace(/^\uFEFF/, '').split('\r\n')).toHaveLength(1);
-    const row = rowOf(exportRawToCSV([null]));
-    expect(row).toBe(Array(10).fill('""').join(','));
+  it('tolerates non-array input', () => {
+    expect(JSON.parse(exportRawToJSON(null))).toEqual([]);
+    expect(JSON.parse(exportRawToJSON(undefined))).toEqual([]);
+  });
+});
+
+describe('CSV formula injection (#54)', () => {
+  it('neutralises every leading formula trigger', () => {
+    expect(escapeCSVCell('=HYPERLINK("http://attacker/","click")')).toBe(
+      '"\'=HYPERLINK(""http://attacker/"",""click"")"'
+    );
+    expect(escapeCSVCell('+1+1')).toBe('"\'+1+1"');
+    expect(escapeCSVCell('-2+3')).toBe('"\'-2+3"');
+    expect(escapeCSVCell('@SUM(A1)')).toBe('"\'@SUM(A1)"');
+    expect(escapeCSVCell('\tcmd')).toBe('"\'\tcmd"');
+    expect(escapeCSVCell('\r=1')).toBe('"\'\r=1"');
+  });
+
+  it('leaves benign values untouched', () => {
+    expect(escapeCSVCell('Widget')).toBe('"Widget"');
+    expect(escapeCSVCell('דואר ישראל')).toBe('"דואר ישראל"');
+    expect(escapeCSVCell('a=b')).toBe('"a=b"');
+    expect(escapeCSVCell('')).toBe('""');
+    expect(escapeCSVCell(0)).toBe('"0"');
+  });
+
+  it('protects the report export end to end', () => {
+    const csv = exportToCSV([
+      { id: 'x1', title: '=HYPERLINK("http://attacker/","click")', trackingNumber: 'TRK1', carrier: 'other', status: 'in_transit' }
+    ]);
+    expect(csv).toContain('"\'=HYPERLINK(');
+    expect(csv).not.toContain('"=HYPERLINK(');
   });
 });
 
@@ -324,7 +350,6 @@ describe('validated exports preserve unknown fields (#41)', () => {
   });
 
   it('the raw backup never validates, so nothing can be stripped', () => {
-    const csv = exportRawToCSV([withUnknown]);
-    expect(csv).toContain('unk-1');
+    expect(JSON.parse(exportRawToJSON([withUnknown]))).toEqual([withUnknown]);
   });
 });
