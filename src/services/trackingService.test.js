@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import * as carrierApiProxy from './carrierApiProxy';
 import {
   trackingService,
   RATE_LIMIT_COOLDOWN_MS,
@@ -238,5 +239,68 @@ describe('Multi-Carrier Tracking Service', () => {
       expect(fn).toHaveBeenCalledTimes(1);
       vi.useRealTimers();
     });
+  });
+});
+
+describe('batchRefreshTracking - schemaVersion and unknown fields survive a refresh (issue #41)', () => {
+  beforeEach(() => {
+    resetTrackingCooldown();
+    vi.restoreAllMocks();
+  });
+
+  it('keeps schemaVersion and unknown fields across a live-tracking refresh', async () => {
+    vi.spyOn(carrierApiProxy, 'fetchLiveCarrierTracking').mockResolvedValue({
+      tracked: true,
+      status: 'out_for_delivery',
+      estimatedDelivery: '2026-09-01',
+      checkpoints: [
+        { id: 'cp-new', title: 'Out for delivery', timestamp: '2026-08-25T10:00:00Z', isCompleted: true }
+      ]
+    });
+
+    const pkg = {
+      id: 'pkg-keep',
+      title: 'Keeps its extras',
+      trackingNumber: 'RS555555555IL',
+      carrier: 'israel-post',
+      status: 'in_transit',
+      category: 'other',
+      isPinned: false,
+      isArchived: false,
+      checkpoints: [],
+      schemaVersion: 1,
+      // A field outside the known keys — e.g. written by a newer client.
+      futureField: { nested: 'value' }
+    };
+
+    const res = await batchRefreshTracking([pkg]);
+
+    expect(res.refreshedCount).toBe(1);
+    const updated = res.updatedPackages[0];
+    expect(updated.status).toBe('out_for_delivery');
+    expect(updated.checkpoints.length).toBe(1);
+    expect(updated.schemaVersion).toBe(1);
+    expect(updated.futureField).toEqual({ nested: 'value' });
+  });
+
+  it('stamps schemaVersion on a refreshed record that never had one', async () => {
+    vi.spyOn(carrierApiProxy, 'fetchLiveCarrierTracking').mockResolvedValue({
+      tracked: true,
+      status: 'in_transit',
+      estimatedDelivery: '',
+      checkpoints: [{ id: 'cp-a', title: 'Departed', timestamp: '2026-08-25T09:00:00Z' }]
+    });
+
+    const res = await batchRefreshTracking([{
+      id: 'pkg-legacy',
+      title: 'Legacy record',
+      trackingNumber: 'RS666666666IL',
+      carrier: 'israel-post',
+      status: 'in_transit',
+      checkpoints: []
+    }]);
+
+    expect(res.refreshedCount).toBe(1);
+    expect(res.updatedPackages[0].schemaVersion).toBe(1);
   });
 });

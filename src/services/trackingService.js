@@ -1,6 +1,6 @@
 import { fetchLiveCarrierTracking, UNTRACKED_REASONS } from './carrierApiProxy';
 import { detectCarrier } from '../utils/carrierDetector';
-import { validatePackageSafe } from '../schemas/packageSchema';
+import { parsePackage } from '../schemas/packageSchema';
 
 /**
  * Cooldown duration in milliseconds per tracking number (60 seconds)
@@ -282,9 +282,13 @@ export async function batchRefreshTracking(packages, onProgress, concurrencyLimi
           updatedAt: new Date().toISOString()
         };
 
-        const validated = validatePackageSafe(updatedPkg);
-        if (validated.success) {
-          results[actualIndex] = validated.data;
+        // Route through THE single validation entry point. The old
+        // `validatePackageSafe` path ran a `.strip()` schema that did not list
+        // `schemaVersion`, so every refresh silently erased it along with any
+        // unknown field on the record (issue #41).
+        const validated = parsePackage(updatedPkg);
+        if (validated) {
+          results[actualIndex] = validated;
           refreshedCount++;
         }
       } else if (res.rateLimited) {

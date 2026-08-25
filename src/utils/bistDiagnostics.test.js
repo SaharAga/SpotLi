@@ -146,21 +146,24 @@ describe('Built-in Self-Test (BIST) Diagnostics Engine', () => {
   });
 
   describe('3. Memory Bounds Self Test (runMemoryBoundsSelfTest)', () => {
-    it(`asserts that 1,000 package limit constraint is intact (${MAX_PACKAGE_MEMORY_BOUND} items)`, () => {
+    it(`asserts that lists above the advisory bound (${MAX_PACKAGE_MEMORY_BOUND}) are NOT truncated`, () => {
       const result = runMemoryBoundsSelfTest();
       expect(result.id).toBe('memory-bounds-self-test');
       expect(result.status).toBe('PASS');
-      expect(result.details.limit).toBe(1000);
-      expect(result.details.outputSize).toBe(1000);
+      expect(result.details.advisoryLimit).toBe(1000);
       expect(result.details.inputSize).toBe(1250);
+      expect(result.details.outputSize).toBe(1250);
+      expect(result.details.truncated).toBe(false);
+      expect(result.details.overAdvisoryLimit).toBe(true);
     });
 
-    it('asserts that larger input sizes (e.g. 2,000 items) are strictly capped at 1,000 items', () => {
+    it('asserts that larger input sizes (e.g. 2,000 items) still come back in full', () => {
       const result = runMemoryBoundsSelfTest(2000);
       expect(result.status).toBe('PASS');
-      expect(result.details.limit).toBe(1000);
-      expect(result.details.outputSize).toBe(1000);
+      expect(result.details.advisoryLimit).toBe(1000);
       expect(result.details.inputSize).toBe(2000);
+      expect(result.details.outputSize).toBe(2000);
+      expect(result.details.truncated).toBe(false);
     });
   });
 

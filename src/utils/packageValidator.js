@@ -29,6 +29,24 @@ const VALID_CATEGORY_IDS = new Set(CATEGORIES.map(c => c.id));
 const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
 /**
+ * Current package record schema version stamped on validated records.
+ * Kept in sync with `CURRENT_SCHEMA_VERSION` in `../schemas/packageSchema`; it
+ * is duplicated rather than imported because packageSchema imports from this
+ * module and the dependency must stay one-directional.
+ * @type {number}
+ */
+export const SCHEMA_VERSION = 1;
+
+/**
+ * Advisory ceiling for a package list. Nothing is truncated at this size — it
+ * exists so callers can warn. Silently slicing here meant a user with more
+ * than 1,000 packages had every export quietly cut short while storage kept
+ * all of them (issue #40).
+ * @type {number}
+ */
+export const PACKAGE_LIST_ADVISORY_LIMIT = 1000;
+
+/**
  * Sanitizes an untrusted string by stripping HTML/script tags, XSS attack vectors,
  * dangerous URI schemes, HTML entities, and non-printable control characters.
  *
@@ -145,7 +163,8 @@ const ALLOWED_PACKAGE_KEYS = new Set([
   'checkpoints',
   'createdAt',
   'updatedAt',
-  'userId'
+  'userId',
+  'schemaVersion'
 ]);
 
 /**
@@ -218,6 +237,12 @@ export function validatePackage(pkg) {
   const createdAt = sanitizeString(safeObj.createdAt, 50) || new Date().toISOString();
   const updatedAt = sanitizeString(safeObj.updatedAt, 50) || new Date().toISOString();
   
+  // Schema version: preserved when already stamped, otherwise stamped now.
+  const rawSchemaVersion = safeObj.schemaVersion;
+  const schemaVersion = Number.isInteger(rawSchemaVersion) && rawSchemaVersion > 0
+    ? rawSchemaVersion
+    : SCHEMA_VERSION;
+
   // Optional userId
   const userId = safeObj.userId ? sanitizeString(safeObj.userId, 128) : undefined;
 
@@ -241,7 +266,8 @@ export function validatePackage(pkg) {
     isArchived,
     checkpoints,
     createdAt,
-    updatedAt
+    updatedAt,
+    schemaVersion
   };
 
   if (userId) {
@@ -255,6 +281,10 @@ export function validatePackage(pkg) {
  * Validates, filters, and sanitizes an entire package list.
  * Guards against prototype pollution and discards invalid entries.
  *
+ * NEVER truncates: every valid entry is returned. Lists longer than
+ * `PACKAGE_LIST_ADVISORY_LIMIT` are returned in full — callers that care about
+ * size can compare against that constant (see `isPackageListOverflowing`).
+ *
  * @param {unknown} packages - The list of packages
  * @returns {Array<object>} Sanitized list of valid packages
  */
@@ -263,11 +293,9 @@ export function validatePackageList(packages) {
     return [];
   }
 
-  // Strict slice cap of 1,000 items to guard LocalStorage quota
-  const cappedPackages = packages.slice(0, 1000);
   const result = [];
-  for (let i = 0; i < cappedPackages.length; i++) {
-    const item = cappedPackages[i];
+  for (let i = 0; i < packages.length; i++) {
+    const item = packages[i];
     if (item && typeof item === 'object' && !Array.isArray(item)) {
       const validated = validatePackage(item);
       if (validated) {
@@ -277,4 +305,15 @@ export function validatePackageList(packages) {
   }
 
   return result;
+}
+
+/**
+ * Reports whether a validated list sits above the advisory ceiling. Advisory
+ * only — nothing is dropped.
+ *
+ * @param {unknown} packages
+ * @returns {boolean}
+ */
+export function isPackageListOverflowing(packages) {
+  return Array.isArray(packages) && packages.length > PACKAGE_LIST_ADVISORY_LIMIT;
 }

@@ -87,7 +87,7 @@ describe('Tier 5 Adversarial Stress & Anti-Fragility Testbench', () => {
   });
 
   describe('Storage Quota & Concurrency Race Stress', () => {
-    it('enforces package list limit of 1000 items and strips excess', () => {
+    it('never truncates an over-large package list (issue #40)', () => {
       const oversizedList = Array.from({ length: 1200 }, (_, i) => ({
         id: `pkg-${i}`,
         title: `Package ${i}`,
@@ -96,7 +96,7 @@ describe('Tier 5 Adversarial Stress & Anti-Fragility Testbench', () => {
       }));
 
       const validated = validatePackageList(oversizedList);
-      expect(validated.length).toBeLessThanOrEqual(1000);
+      expect(validated.length).toBe(1200);
     });
   });
 
