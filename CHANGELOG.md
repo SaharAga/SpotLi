@@ -7,35 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
-<<<<<<< HEAD
-## [0.15.10] - 2026-08-25
-
-### Fixed
-- **Restored the parser → detector integration coverage** deleted in `0.15.3`.
-  `src/tests/integration/ingestionPipeline.integration.test.js` was removed
-  wholesale because the dead IndexedDB adapter was its terminal sink, but only
-  its last two steps used that adapter. Steps 1–3 were the repo's only
-  assertion that `parseSmartText` → `detectCarrier` → `detectStore` compose on
-  raw share text; the surviving unit suites feed each module hand-built inputs,
-  so a change to `parseSmartText`'s output shape that broke `detectCarrier`'s
-  input contract passed CI. The test is back with `deliveryService` as the
-  sink, keeping the original Hebrew Israel Post SMS case.
-- **De-flaked the wall-clock assertions** in `adversarialStress.test.js` and
-  `adversarialP0Audit.test.js`. Tight per-iteration bounds (50–250ms) failed
-  intermittently on loaded runners, training everyone to re-run red CI. The
-  loops now assert behaviour per input and carry a single generous whole-loop
-  ceiling; catastrophic backtracking costs seconds to minutes on these inputs,
-  so the pathological-input protection is preserved while scheduler noise no
-  longer trips it.
-- **Closed the checksum corpus gap.** `carrierDetectorCorpus.js` had no input
-  yielding `isValidChecksum: true` for USPS `mod10-31` or Royal Mail
-  `upu-s10`, so the committed snapshot pinned only the failing branch of two of
-  three validators and would not have caught a validator inversion. Added two
-  valid IMpb numbers and one valid GB S10 with computed check digits, and
-  regenerated the snapshot — every pre-existing entry is byte-identical.
-
-=======
-## [0.15.9] - 2026-08-25
+## [0.15.12] - 2026-08-25
 
 ### Fixed
 - **The Account-tab backup now exports raw stored data (#42).** `#37` deduped
@@ -58,8 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and because the signal was the *absence* of `ok`, a transformed array read as
   a failure on a **successful** save. `usePackages` now reads that status: it
   exposes `saveError`/`clearSaveError` and calls an optional `onSaveError`
-  callback, so a quota-exceeded write is no longer indistinguishable from a
-  successful one.
+  callback, and `App.jsx` consumes `saveError` to raise a bilingual error toast
+  through the existing `showToast`/`Toast` path — so a quota-exceeded write is
+  no longer indistinguishable from a successful one *on screen*, not merely in
+  the hook's return value.
 - **`notificationService.savePreferences` no longer reports false success
   (#43).** It ignored `writeJSON`'s `false` return and logged at `warn`, which
   was *less* failure visibility than before `#37`. Added
@@ -85,7 +59,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New coverage for an unrepaired backup round trip, an uncapped export, and a
   simulated quota failure surfacing through `usePackages` and the
   notification-preferences path.
->>>>>>> d0981e1 (fix: raw Account backup + visible save failures (#42, #43))
+
+- New `src/App.saveFailure.dom.test.jsx` renders the real dashboard, rejects a
+  `localStorage` write, and asserts the rendered `role="alert"` toast — an
+  end-to-end check rather than a callback assertion, which would have passed
+  while nothing consumed the signal. Verified against a negative control: with
+  the `App.jsx` effect removed, the test fails.
+
+## [0.15.10] - 2026-08-25
+
+### Fixed
+- **Restored the parser → detector integration coverage** deleted in `0.15.3`.
+  `src/tests/integration/ingestionPipeline.integration.test.js` was removed
+  wholesale because the dead IndexedDB adapter was its terminal sink, but only
+  its last two steps used that adapter. Steps 1–3 were the repo's only
+  assertion that `parseSmartText` → `detectCarrier` → `detectStore` compose on
+  raw share text; the surviving unit suites feed each module hand-built inputs,
+  so a change to `parseSmartText`'s output shape that broke `detectCarrier`'s
+  input contract passed CI. The test is back with `deliveryService` as the
+  sink, keeping the original Hebrew Israel Post SMS case.
+- **De-flaked the wall-clock assertions** in `adversarialStress.test.js` and
+  `adversarialP0Audit.test.js`. Tight per-iteration bounds (50–250ms) failed
+  intermittently on loaded runners, training everyone to re-run red CI. The
+  loops now assert behaviour per input and carry a single generous whole-loop
+  ceiling; catastrophic backtracking costs seconds to minutes on these inputs,
+  so the pathological-input protection is preserved while scheduler noise no
+  longer trips it.
+- **Closed the checksum corpus gap.** `carrierDetectorCorpus.js` had no input
+  yielding `isValidChecksum: true` for USPS `mod10-31` or Royal Mail
+  `upu-s10`, so the committed snapshot pinned only the failing branch of two of
+  three validators and would not have caught a validator inversion. Added two
+  valid IMpb numbers and one valid GB S10 with computed check digits, and
+  regenerated the snapshot — every pre-existing entry is byte-identical.
 ## [0.15.8] - 2026-08-25
 
 ### Fixed
