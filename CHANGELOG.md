@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.15.8] - 2026-08-25
+
+### Fixed
+- **Exports no longer silently truncate at 1,000 packages** (#40).
+  `validatePackageList` hard-sliced its input at 1,000 items while the storage
+  path had already dropped its cap, so a user holding 1,200 packages had all
+  1,200 persisted and every CSV/JSON/print export quietly cut to 1,000 rows.
+  The slice is gone: the function now returns every valid record it is given.
+  The 1,000 figure survives only as `PACKAGE_LIST_ADVISORY_LIMIT`, exposed via
+  the new `isPackageListOverflowing()` helper for callers that want to warn.
+  Fixed in the shared function rather than at each export call site, so every
+  consumer inherits it.
+- **The built-in diagnostics no longer certify a guarantee the app lost** (#40).
+  `runMemoryBoundsSelfTest` asserted that lists were capped at 1,000 and passed
+  by testing `validatePackageList` directly, certifying a property the
+  application no longer had. It now asserts the opposite and true property —
+  that a list of any size comes back in full — and reports `truncated` /
+  `overAdvisoryLimit` in its details.
+- **Live-tracking refreshes no longer erase `schemaVersion` and unknown fields**
+  (#41). `trackingService.batchRefreshTracking` validated each refreshed record
+  through `validatePackageSafe`, a `.strip()` schema that does not list
+  `schemaVersion`, and wrote the stripped result back — so every refresh
+  reverted a record to the 19 known keys. It now routes through `parsePackage`,
+  the single repairing entry point, which preserves unknown fields and stamps
+  `schemaVersion`.
+- `validatePackage` (the legacy hand-rolled validator, still used by the export
+  path) now carries `schemaVersion` through instead of dropping it.
+
 ## [0.15.7] - 2026-08-24
 
 ### Changed

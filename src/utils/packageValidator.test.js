@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sanitizeString, validatePackage, validatePackageList } from './packageValidator';
+import { sanitizeString, validatePackage, validatePackageList, isPackageListOverflowing, PACKAGE_LIST_ADVISORY_LIMIT } from './packageValidator';
 
 describe('packageValidator - sanitizeString', () => {
   it('returns empty string for null, undefined, and non-string falsy values', () => {
@@ -211,5 +211,49 @@ describe('packageValidator - validatePackageList', () => {
     expect(result.length).toBe(2);
     expect(result[0].title).toBe('Item 1');
     expect(result[1].notes).toBe('Notes 2');
+  });
+});
+
+describe('packageValidator - no silent truncation above 1,000 (issue #40)', () => {
+  const makeList = (n) => Array.from({ length: n }, (_, i) => ({
+    id: `pkg-${i}`,
+    title: `Package ${i}`,
+    trackingNumber: `RR${String(i).padStart(9, '0')}IL`,
+    carrier: 'israel-post'
+  }));
+
+  it('returns all 1,200 records instead of slicing at the advisory limit', () => {
+    const result = validatePackageList(makeList(1200));
+    expect(result.length).toBe(1200);
+    expect(result[1199].id).toBe('pkg-1199');
+  });
+
+  it('survives a read -> write -> export-shaped round trip without losing records', () => {
+    const original = makeList(1200);
+
+    // read (validate) -> persist (serialize) -> re-read -> export (validate again)
+    const onRead = validatePackageList(original);
+    const persisted = JSON.stringify(onRead);
+    const rehydrated = JSON.parse(persisted);
+    const exported = validatePackageList(rehydrated);
+
+    expect(onRead.length).toBe(1200);
+    expect(rehydrated.length).toBe(1200);
+    expect(exported.length).toBe(1200);
+    expect(exported.map(p => p.id)).toEqual(original.map(p => p.id));
+  });
+
+  it('flags overflow as advisory rather than dropping records', () => {
+    const result = validatePackageList(makeList(PACKAGE_LIST_ADVISORY_LIMIT + 5));
+    expect(isPackageListOverflowing(result)).toBe(true);
+    expect(result.length).toBe(PACKAGE_LIST_ADVISORY_LIMIT + 5);
+    expect(isPackageListOverflowing(validatePackageList(makeList(3)))).toBe(false);
+  });
+
+  it('preserves an already-stamped schemaVersion and stamps one otherwise', () => {
+    const [stamped] = validatePackageList([{ title: 'A', trackingNumber: 'T1', schemaVersion: 7 }]);
+    const [unstamped] = validatePackageList([{ title: 'B', trackingNumber: 'T2' }]);
+    expect(stamped.schemaVersion).toBe(7);
+    expect(unstamped.schemaVersion).toBe(1);
   });
 });
