@@ -1,9 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { APP_VERSION, RELEASE_DATE, BUILD_CHANNEL, FIREBASE_SCHEMA_VERSION } from './version';
+import pkg from '../../package.json';
 
 describe('Version Constants Baseline', () => {
   it('should export correct APP_VERSION semver format', () => {
-    expect(APP_VERSION).toBe('0.15.12');
+    // Compared against package.json rather than a hardcoded literal. The old
+    // form had to be edited on every release, so it could only fail when
+    // someone bumped and forgot to update the test — which CI already caught.
+    // This form catches the failure that actually matters: the injected
+    // __APP_VERSION__ drifting from the one place the version is defined.
+    expect(APP_VERSION).toBe(pkg.version);
     expect(APP_VERSION).toMatch(/^\d+\.\d+\.\d+(\.\d+)?(-[a-zA-Z0-9.]+)?$/);
   });
 
