@@ -1,4 +1,37 @@
-// Carrier definitions, brand themes, tracking URL templates, and regex detection patterns
+// Carrier definitions, brand themes, tracking URL templates, and detection rules.
+//
+// `patterns` is the single source of truth for carrier detection. Each entry is
+// a *rule*, not a bare regex, so the table can express everything the detector
+// needs instead of having the detector restate it:
+//
+//   re         the regex to match a sanitized (uppercased, unpunctuated) code
+//   confidence 'high' for a rule that identifies the carrier on its own,
+//              'medium' for a loose/ambiguous format (the default)
+//   checksum   name of a validator in the detector's checksum registry, or null
+//   priority   lower wins; rules are evaluated in ascending priority across all
+//              carriers, which is how cross-carrier precedence (e.g. Aramex's
+//              11-digit rule before FedEx's 12-digit one) is encoded
+//
+// Rules expose a `test()` method, so a rule can be used anywhere a regex was.
+
+/** Priority given to rules that don't ask for one: after every explicit rule. */
+export const GENERIC_RULE_PRIORITY = 1000;
+
+/**
+ * Build a detection rule.
+ * @param {RegExp} re
+ * @param {{ confidence?: 'high' | 'medium', checksum?: string | null, priority?: number }} [options]
+ */
+function rule(re, options = {}) {
+  return {
+    re,
+    confidence: options.confidence || 'medium',
+    checksum: options.checksum || null,
+    priority: options.priority ?? GENERIC_RULE_PRIORITY,
+    /** @param {string} value */
+    test: (value) => re.test(value)
+  };
+}
 
 export const CARRIERS = {
   'israel-post': {
@@ -12,10 +45,52 @@ export const CARRIERS = {
     website: 'https://mypost.israelpost.co.il',
     getTrackingUrl: (trackNum) => `https://mypost.israelpost.co.il/itemtrace?itemcode=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
+    /**
+     * Real upstream integration (Israel Post Open Status Gateway).
+     *
+     * A carrier that carries `liveTracking` can be tracked live; one that
+     * doesn't is reported as untracked rather than having data invented for it.
+     * `parse` returns a tracked record, or null when the gateway had nothing
+     * for this item — it must never fabricate checkpoints.
+     */
+    liveTracking: {
+      endpoint: (trackNum) =>
+        `https://mypost.israelpost.co.il/umbraco/api/itemtrace/getitemtrace?itemcode=${encodeURIComponent(trackNum)}`,
+      parse: (data, trackNum, { inferStageFromText }) => {
+        if (!data || !data.itemcode) return null;
+
+        const stage = inferStageFromText(data.itemhistory || data.laststatus || '');
+        const checkpoints = [];
+
+        if (data.laststatus) {
+          checkpoints.push({
+            id: `cp-ilp-${trackNum}-0`.slice(0, 100),
+            title: data.laststatus,
+            description: data.itemhistory || '',
+            descriptionHe: data.laststatus,
+            location: data.unitname || 'דואר ישראל',
+            timestamp: new Date().toISOString(),
+            isCompleted: true
+          });
+        }
+
+        return {
+          carrier: 'israel-post',
+          tracked: true,
+          status: stage,
+          checkpoints,
+          location: data.unitname || null,
+          estimatedDelivery: null
+        };
+      }
+    },
     patterns: [
-      /^[A-Z]{2}\d{9}IL$/i,           // Standard UPU S10 format ending in IL (e.g. RS123456789IL, RR..., CP...)
-      /^\d{13}IL$/i,
-      /^[A-Z]{2}\d{8,9}$/i            // Universal registered mail
+      // UPU S10 ending in IL (e.g. RS123456789IL) — carries a mod-11 check digit.
+      rule(/^[A-Z]{2}\d{9}IL$/i, { confidence: 'high', checksum: 'upu-s10', priority: 10 }),
+      // Any other alphanumeric code ending in IL is still Israel Post, unchecksummed.
+      rule(/^[A-Z0-9]{7,}IL$/i, { confidence: 'high', priority: 20 }),
+      // Universal registered mail without a country suffix — ambiguous, hence medium.
+      rule(/^[A-Z]{2}\d{8,9}$/i)
     ],
     sample: 'RS948219481IL',
     country: 'Israel'
@@ -32,9 +107,8 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://chita-il.com/runportal/tracking?num=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
-      /^CH\d{8,12}$/i,
-      /^CT\d{8,12}$/i,
-      /^CHT[A-Z0-9]{8,12}$/i
+      rule(/^(CH|CT)\d{8,12}$/i, { confidence: 'high', priority: 30 }),
+      rule(/^CHT[A-Z0-9]{8,12}$/i, { confidence: 'high', priority: 31 })
     ],
     sample: 'CH10849201',
     country: 'Israel'
@@ -51,9 +125,9 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://hfd.co.il/tracking?num=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
-      /^HFD\d{8,12}$/i,
-      /^EP\d{8,12}$/i,
-      /^5\d{8,9}$/
+      rule(/^HFD\d{8,12}$/i, { confidence: 'high', priority: 50 }),
+      rule(/^EP\d{8,12}$/i, { confidence: 'high', priority: 51 }),
+      rule(/^5\d{8,9}$/)
     ],
     sample: 'HFD90481029',
     country: 'Israel'
@@ -70,8 +144,8 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://boxit.co.il/tracking/${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
-      /^BOX[0-9A-Z]{6,12}$/i,
-      /^BX\d{7,10}$/i
+      rule(/^BOX[0-9A-Z]{6,12}$/i, { confidence: 'high', priority: 40 }),
+      rule(/^BX\d{7,10}$/i, { confidence: 'high', priority: 41 })
     ],
     sample: 'BOX920194',
     country: 'Israel'
@@ -88,9 +162,8 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://tapuzdelivery.co.il/%D7%90%D7%99%D7%A4%D7%94-%D7%94%D7%97%D7%91%D7%99%D7%9C%D7%94-%D7%A9%D7%9C%D7%99/?num=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
-      /^TPZ\d{7,12}$/i,
-      /^YDM\d{7,12}$/i,
-      /^7\d{8}$/
+      rule(/^(TPZ|YDM)\d{7,12}$/i, { confidence: 'high', priority: 60 }),
+      rule(/^7\d{8}$/)
     ],
     sample: 'TPZ84920194',
     country: 'Israel'
@@ -107,8 +180,8 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://cargoexpress.co.il/track?tracknum=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
-      /^CRG\d{7,12}$/i,
-      /^CARGO\d{6,10}$/i
+      rule(/^CRG\d{7,12}$/i, { confidence: 'high', priority: 70 }),
+      rule(/^CARGO\d{6,10}$/i, { confidence: 'high', priority: 71 })
     ],
     sample: 'CRG9104821',
     country: 'Israel'
@@ -125,8 +198,8 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://getpackage.com/tracking?id=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
-      /^GP[A-Z0-9]{8,12}$/i,
-      /^GET\d{8,10}$/i
+      rule(/^GP[A-Z0-9]{8,12}$/i, { confidence: 'high', priority: 80 }),
+      rule(/^GET\d{8,10}$/i, { confidence: 'high', priority: 81 })
     ],
     sample: 'GP94820194',
     country: 'Israel'
@@ -143,8 +216,8 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://www.flying-cargo.com/tracking?n=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
-      /^FC\d{8,12}$/i,
-      /^4\d{9}$/
+      rule(/^FC\d{8,12}$/i, { confidence: 'high', priority: 90 }),
+      rule(/^4\d{9}$/)
     ],
     sample: 'FC84920194',
     country: 'Israel'
@@ -161,8 +234,7 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://orian.com/track?num=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
-      /^OR\d{8,12}$/i,
-      /^ORN\d{8,10}$/i
+      rule(/^(OR|ORN)\d{8,12}$/i, { confidence: 'high', priority: 100 })
     ],
     sample: 'OR94820194',
     country: 'Israel'
@@ -179,8 +251,8 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://barexpress.co.il/track?track=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
-      /^BAR\d{7,12}$/i,
-      /^9\d{8}$/
+      rule(/^BAR\d{7,12}$/i, { confidence: 'high', priority: 110 }),
+      rule(/^9\d{8}$/)
     ],
     sample: 'BAR1094821',
     country: 'Israel'
@@ -197,8 +269,8 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://zigzag24.co.il/track?code=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
-      /^ZZ\d{7,12}$/i,
-      /^ZIG\d{6,10}$/i
+      rule(/^ZZ\d{7,12}$/i, { confidence: 'high', priority: 120 }),
+      rule(/^ZIG\d{6,10}$/i, { confidence: 'high', priority: 121 })
     ],
     sample: 'ZZ9482019',
     country: 'Israel'
@@ -215,10 +287,13 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://global.cainiao.com/newDetail.htm?mailNoList=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
-      /^(LP|CAINIAO)\d+/i,
-      /^[A-Z]{2}\d{9}CN$/i,
-      /^CN\d{10,}/i,
-      /^AE[A-Z0-9]{10,18}$/i
+      // S10 ending in CN is checksummed; the Cainiao-specific prefixes are not,
+      // so they report a passing checksum exactly as the previous branch did.
+      rule(/^[A-Z]{2}\d{9}CN$/i, { confidence: 'high', checksum: 'upu-s10', priority: 140 }),
+      rule(/^(LP|CAINIAO)\d+/i, { confidence: 'high', checksum: 'assume-valid', priority: 141 }),
+      rule(/^AE[A-Z0-9]{10,18}$/i, { confidence: 'high', checksum: 'assume-valid', priority: 142 }),
+      rule(/^CN\d{10,}$/i, { confidence: 'high', checksum: 'assume-valid', priority: 143 }),
+      rule(/^CN\d{10,}/i)
     ],
     sample: 'LP00582910482CN',
     country: 'China'
@@ -235,8 +310,7 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://www.yuntrack.com/parcelTracking?pNumbers=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
-      /^YT\d{16}$/i,
-      /^YT\d{18}$/i
+      rule(/^YT\d{16,18}$/i, { confidence: 'high', priority: 130 })
     ],
     sample: 'YT2109849201948201',
     country: 'China / Global'
@@ -253,8 +327,8 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://express.4px.com/track/search?keyword=${encodeURIComponent(trackNum)}`,
     patterns: [
-      /^4PX\d+/i,
-      /^FPX\d+/i
+      rule(/^4PX\d+/i, { confidence: 'high', priority: 150 }),
+      rule(/^FPX\d+/i, { confidence: 'high', priority: 151 })
     ],
     sample: '4PX300184920194',
     country: 'China / Global'
@@ -271,9 +345,9 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://www.dhl.com/en/express/tracking.html?AWB=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
-      /^\d{10}$/,
-      /^JJD\d{16,18}$/i,
-      /^GM\d{16,18}$/i
+      rule(/^\d{10}$/, { confidence: 'high', priority: 210 }),
+      rule(/^JJD\d+/i, { confidence: 'high', priority: 211 }),
+      rule(/^GM\d{16,18}$/i, { confidence: 'high', priority: 212 })
     ],
     sample: '4829104821',
     country: 'Germany / Global'
@@ -290,10 +364,10 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://www.fedex.com/fedextrack/?trknbr=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
-      /^\d{12}$/,
-      /^\d{15}$/,
-      /^\d{20}$/,
-      /^\d{22}$/
+      rule(/^\d{12}$/, { confidence: 'high', priority: 220 }),
+      rule(/^\d{15}$/, { confidence: 'high', priority: 221 }),
+      rule(/^\d{20}$/, { confidence: 'high', priority: 222 }),
+      rule(/^\d{22}$/, { confidence: 'high', priority: 223 })
     ],
     sample: '794820194821',
     country: 'USA / Global'
@@ -310,9 +384,9 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://www.ups.com/track?tracknum=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
-      /^1Z[0-9A-Z]{16}$/i,
-      /^\d{9}$/,
-      /^\d{11}$/
+      rule(/^1Z[0-9A-Z]{16}$/i, { confidence: 'high', priority: 160 }),
+      rule(/^\d{9}$/),
+      rule(/^\d{11}$/)
     ],
     sample: '1Z999AA10123456784',
     country: 'USA / Global'
@@ -329,10 +403,9 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://tools.usps.com/go/TrackConfirmAction?tLabels=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
-      /^94\d{20}$/,
-      /^92\d{20}$/,
-      /^93\d{20}$/,
-      /^[A-Z]{2}\d{9}US$/i
+      // IMpb 94/92/93 labels carry a weighted mod-10 check digit.
+      rule(/^9[234]\d{20}$/, { confidence: 'high', checksum: 'mod10-31', priority: 180 }),
+      rule(/^[A-Z]{2}\d{9}US$/i, { confidence: 'high', checksum: 'upu-s10', priority: 181 })
     ],
     sample: '9400100000000000000000',
     country: 'USA'
@@ -349,7 +422,7 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://www.royalmail.com/track-your-item#/tracking-results/${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
-      /^[A-Z]{2}\d{9}GB$/i
+      rule(/^[A-Z]{2}\d{9}GB$/i, { confidence: 'high', checksum: 'upu-s10', priority: 170 })
     ],
     sample: 'RN123456789GB',
     country: 'United Kingdom'
@@ -366,8 +439,10 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://www.aramex.com/track/results?ShipmentNumber=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
-      /^\d{10,11}$/,
-      /^3\d{9}$/
+      // Aramex 11-digit codes must be tested before FedEx's 12-digit rule.
+      rule(/^3\d{9}$/, { confidence: 'high', priority: 200 }),
+      rule(/^\d{11}$/, { confidence: 'high', priority: 201 }),
+      rule(/^\d{10,11}$/)
     ],
     sample: '3094829104',
     country: 'Middle East / Global'
@@ -384,9 +459,11 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (_trackNum) => `https://www.yw56.com.cn/en/`,
     patterns: [
-      /^U[A-Z]\d{9}YP$/i,
-      /^VR\d{9}YP$/i,
-      /^LP\d{14}YP$/i
+      rule(/^U[A-Z]\d{9}YP$/i, { confidence: 'high', priority: 190 }),
+      rule(/^VR\d{9}YP$/i, { confidence: 'high', priority: 191 }),
+      rule(/^LP\d{14}YP$/i, { confidence: 'high', priority: 192 }),
+      // Any sufficiently long code ending in YP is a Yanwen label.
+      rule(/^[\s\S]{8,}YP$/, { confidence: 'high', priority: 193 })
     ],
     sample: 'UY894729184YP',
     country: 'China'
@@ -409,3 +486,38 @@ export const CARRIERS = {
 };
 
 export const CARRIER_LIST = Object.values(CARRIERS);
+
+/**
+ * Look up a carrier by id, falling back to the universal 'other' carrier.
+ *
+ * Every consumer needs the same fallback, so it lives here rather than being
+ * re-derived as `CARRIERS[id] || CARRIERS['other']` at each call site.
+ *
+ * @param {string} [carrierId]
+ * @returns {typeof CARRIERS[keyof typeof CARRIERS]}
+ */
+export function getCarrier(carrierId) {
+  // Own-property check: a carrier id is user-influenced data, and a bare
+  // `CARRIERS[id]` would happily return `Object.prototype.constructor`.
+  return Object.prototype.hasOwnProperty.call(CARRIERS, carrierId)
+    ? CARRIERS[carrierId]
+    : CARRIERS['other'];
+}
+
+/**
+ * All detection rules across every carrier, in evaluation order.
+ *
+ * Sorted by priority (lower first), then high confidence before medium. The
+ * sort is stable, so rules that tie keep table order — which is what the
+ * previous generic `for (carrier of CARRIERS)` sweep relied on.
+ *
+ * @type {Array<{ carrier: object, re: RegExp, confidence: string, checksum: string|null, priority: number, test: (v: string) => boolean }>}
+ */
+export const DETECTION_RULES = CARRIER_LIST
+  .filter((carrier) => carrier.id !== 'other')
+  .flatMap((carrier) => carrier.patterns.map((r) => ({ ...r, carrier })))
+  .sort((a, b) => {
+    if (a.priority !== b.priority) return a.priority - b.priority;
+    if (a.confidence === b.confidence) return 0;
+    return a.confidence === 'high' ? -1 : 1;
+  });

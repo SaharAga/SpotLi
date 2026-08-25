@@ -1,0 +1,3927 @@
+{
+  "0": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "1": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "2": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "3": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "4": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "5": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "6": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "7": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "8": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "9": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "11": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "21": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "31": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "41": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "51": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "61": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "71": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "81": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "91": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "112": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "212": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "312": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "412": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "512": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "612": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "712": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "812": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "912": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "1123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "2123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "3123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "4123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "5123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "6123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "7123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "8123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "9123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "11234": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "21234": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "31234": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "41234": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "51234": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "61234": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "71234": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "81234": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "91234": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "112345": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "212345": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "312345": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "412345": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "512345": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "612345": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "712345": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "812345": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "912345": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "1123456": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "2123456": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "3123456": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "4123456": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "5123456": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "6123456": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "7123456": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "8123456": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "9123456": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "11234567": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "21234567": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "31234567": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "41234567": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "51234567": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "61234567": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "71234567": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "81234567": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "91234567": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "112345678": {
+    "carrierId": "ups",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "212345678": {
+    "carrierId": "ups",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "312345678": {
+    "carrierId": "ups",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "412345678": {
+    "carrierId": "ups",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "512345678": {
+    "carrierId": "hfd",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "612345678": {
+    "carrierId": "ups",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "712345678": {
+    "carrierId": "tapuz",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "812345678": {
+    "carrierId": "ups",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "912345678": {
+    "carrierId": "bar",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "1123456789": {
+    "carrierId": "dhl",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "2123456789": {
+    "carrierId": "dhl",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "3094829104": {
+    "carrierId": "aramex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "3123456789": {
+    "carrierId": "aramex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "4123456789": {
+    "carrierId": "dhl",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "RS123456789IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "RS948219481IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "RS948219483IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "RS777777777IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "RR123456789IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "CP123456789IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "EA123456789US": {
+    "carrierId": "usps",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "EE123456789US": {
+    "carrierId": "usps",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "RN123456789GB": {
+    "carrierId": "royal-mail",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "RM123456789GB": {
+    "carrierId": "royal-mail",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "LZ123456789CN": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "RB123456789CN": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "XX123456789XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "AB12345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "1234567890123IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "ABCDEFGIL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CH10849201": {
+    "carrierId": "chita",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CT99482019": {
+    "carrierId": "chita",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CHT10029482": {
+    "carrierId": "chita",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CH1084920123456": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "BOX920194": {
+    "carrierId": "boxit",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "BX1084920": {
+    "carrierId": "boxit",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "BOXABC123": {
+    "carrierId": "boxit",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "BOX12345": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "HFD90481029": {
+    "carrierId": "hfd",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "EP10849201": {
+    "carrierId": "hfd",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "5123456789": {
+    "carrierId": "dhl",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "TPZ84920194": {
+    "carrierId": "tapuz",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "YDM8492019": {
+    "carrierId": "tapuz",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CRG9104821": {
+    "carrierId": "cargo",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CARGO123456": {
+    "carrierId": "cargo",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GP94820194": {
+    "carrierId": "getpackage",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GET12345678": {
+    "carrierId": "getpackage",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "FC84920194": {
+    "carrierId": "flying-cargo",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "OR94820194": {
+    "carrierId": "orian",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "ORN12345678": {
+    "carrierId": "orian",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "BAR1094821": {
+    "carrierId": "bar",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "ZZ9482019": {
+    "carrierId": "zigzag",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "ZIG123456": {
+    "carrierId": "zigzag",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "LP00582910482CN": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "CAINIAO123456789": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "AE109482019482": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "CN12345678901": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "YT2109849201948201": {
+    "carrierId": "yunexpress",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "YT210984920194820123": {
+    "carrierId": "yunexpress",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "4PX30004928194": {
+    "carrierId": "4px",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "FPX30004928194": {
+    "carrierId": "4px",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "1Z999AA10123456784": {
+    "carrierId": "ups",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "1Z9999999999999999": {
+    "carrierId": "ups",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "9400100000000000000000": {
+    "carrierId": "usps",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "9205590164917312345612": {
+    "carrierId": "usps",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "920559016491731234561": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "9400100000000000000006": {
+    "carrierId": "usps",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "9205590164917312345615": {
+    "carrierId": "usps",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "RN123456785GB": {
+    "carrierId": "royal-mail",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "UY894729184YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "VR123456789YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "LP12345678901234YP": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "ABCDEFGHYP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "4829104821": {
+    "carrierId": "dhl",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "JJD018492019482019": {
+    "carrierId": "dhl",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GM1029384756102938": {
+    "carrierId": "dhl",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "794820194821": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "784920194821": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "123456789012345": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "1Z 999 999 99 9999 9999": {
+    "carrierId": "ups",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "rs123456789il": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  " RS123456789IL ": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "RS-948-219-481-IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "YT_2109849201948201": {
+    "carrierId": "yunexpress",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "   ": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "NON_EXISTENT": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "UNKNOWN_XYZ_999": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "TRACK12345678": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "!!!": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "A": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "AB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "#$%^&*": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "ABCDEFGHIJKLMNOP": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "rs948219481il": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "ch10849201": {
+    "carrierId": "chita",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "hfd90481029": {
+    "carrierId": "hfd",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "box920194": {
+    "carrierId": "boxit",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "tpz84920194": {
+    "carrierId": "tapuz",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "crg9104821": {
+    "carrierId": "cargo",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "gp94820194": {
+    "carrierId": "getpackage",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "fc84920194": {
+    "carrierId": "flying-cargo",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "or94820194": {
+    "carrierId": "orian",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "bar1094821": {
+    "carrierId": "bar",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "zz9482019": {
+    "carrierId": "zigzag",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "lp00582910482cn": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "yt2109849201948201": {
+    "carrierId": "yunexpress",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "4PX300184920194": {
+    "carrierId": "4px",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "4px300184920194": {
+    "carrierId": "4px",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "1z999aa10123456784": {
+    "carrierId": "ups",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "rn123456789gb": {
+    "carrierId": "royal-mail",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "uy894729184yp": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "track12345678": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "01": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "012": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "0123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "01234": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "012345": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "0123456": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "01234567": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "012345678": {
+    "carrierId": "ups",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "0123456789": {
+    "carrierId": "dhl",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "01234567890": {
+    "carrierId": "aramex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "012345678901": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "0123456789012": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "01234567890123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "012345678901234": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "0123456789012345": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "01234567890123456": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "012345678901234567": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "0123456789012345678": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "01234567890123456789": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "012345678901234567890": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "0123456789012345678901": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "01234567890123456789012": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "012345678901234567890123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "11234567890": {
+    "carrierId": "aramex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "112345678901": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "1123456789012": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "11234567890123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "112345678901234": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "1123456789012345": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "11234567890123456": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "112345678901234567": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "1123456789012345678": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "11234567890123456789": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "112345678901234567890": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "1123456789012345678901": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "11234567890123456789012": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "112345678901234567890123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "21234567890": {
+    "carrierId": "aramex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "212345678901": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "2123456789012": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "21234567890123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "212345678901234": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "2123456789012345": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "21234567890123456": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "212345678901234567": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "2123456789012345678": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "21234567890123456789": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "212345678901234567890": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "2123456789012345678901": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "21234567890123456789012": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "212345678901234567890123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "31234567890": {
+    "carrierId": "aramex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "312345678901": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "3123456789012": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "31234567890123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "312345678901234": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "3123456789012345": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "31234567890123456": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "312345678901234567": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "3123456789012345678": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "31234567890123456789": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "312345678901234567890": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "3123456789012345678901": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "31234567890123456789012": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "312345678901234567890123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "41234567890": {
+    "carrierId": "aramex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "412345678901": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "4123456789012": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "41234567890123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "412345678901234": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "4123456789012345": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "41234567890123456": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "412345678901234567": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "4123456789012345678": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "41234567890123456789": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "412345678901234567890": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "4123456789012345678901": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "41234567890123456789012": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "412345678901234567890123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "51234567890": {
+    "carrierId": "aramex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "512345678901": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "5123456789012": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "51234567890123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "512345678901234": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "5123456789012345": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "51234567890123456": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "512345678901234567": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "5123456789012345678": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "51234567890123456789": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "512345678901234567890": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "5123456789012345678901": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "51234567890123456789012": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "512345678901234567890123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "6123456789": {
+    "carrierId": "dhl",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "61234567890": {
+    "carrierId": "aramex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "612345678901": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "6123456789012": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "61234567890123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "612345678901234": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "6123456789012345": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "61234567890123456": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "612345678901234567": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "6123456789012345678": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "61234567890123456789": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "612345678901234567890": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "6123456789012345678901": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "61234567890123456789012": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "612345678901234567890123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "7123456789": {
+    "carrierId": "dhl",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "71234567890": {
+    "carrierId": "aramex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "712345678901": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "7123456789012": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "71234567890123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "712345678901234": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "7123456789012345": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "71234567890123456": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "712345678901234567": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "7123456789012345678": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "71234567890123456789": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "712345678901234567890": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "7123456789012345678901": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "71234567890123456789012": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "712345678901234567890123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "8123456789": {
+    "carrierId": "dhl",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "81234567890": {
+    "carrierId": "aramex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "812345678901": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "8123456789012": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "81234567890123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "812345678901234": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "8123456789012345": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "81234567890123456": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "812345678901234567": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "8123456789012345678": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "81234567890123456789": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "812345678901234567890": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "8123456789012345678901": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "81234567890123456789012": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "812345678901234567890123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "9123456789": {
+    "carrierId": "dhl",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "91234567890": {
+    "carrierId": "aramex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "912345678901": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "9123456789012": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "91234567890123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "912345678901234": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "9123456789012345": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "91234567890123456": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "912345678901234567": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "9123456789012345678": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "91234567890123456789": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "912345678901234567890": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "9123456789012345678901": {
+    "carrierId": "fedex",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "91234567890123456789012": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "912345678901234567890123": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "AA12345678": {
+    "carrierId": "israel-post",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "AA12345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "AA12345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "AA12345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "AA12345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "AA12345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "AA12345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "AA123456789": {
+    "carrierId": "israel-post",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "AA123456789IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "AA123456789GB": {
+    "carrierId": "royal-mail",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "AA123456789US": {
+    "carrierId": "usps",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "AA123456789CN": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "AA123456789YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "AA123456789XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "AA1234567890": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "AA1234567890IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "AA1234567890GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "AA1234567890US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "AA1234567890CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "AA1234567890YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "AA1234567890XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "AA123456789012345678": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "AA123456789012345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "AA123456789012345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "AA123456789012345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "AA123456789012345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "AA123456789012345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "AA123456789012345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CH12345678": {
+    "carrierId": "chita",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CH12345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CH12345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CH12345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CH12345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CH12345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CH12345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CH123456789": {
+    "carrierId": "chita",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CH123456789IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "CH123456789GB": {
+    "carrierId": "royal-mail",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "CH123456789US": {
+    "carrierId": "usps",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "CH123456789CN": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "CH123456789YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CH123456789XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CH1234567890": {
+    "carrierId": "chita",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CH1234567890IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CH1234567890GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CH1234567890US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CH1234567890CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CH1234567890YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CH1234567890XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CH123456789012345678": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CH123456789012345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CH123456789012345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CH123456789012345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CH123456789012345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CH123456789012345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CH123456789012345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CT12345678": {
+    "carrierId": "chita",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CT12345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CT12345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CT12345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CT12345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CT12345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CT12345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CT123456789": {
+    "carrierId": "chita",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CT123456789IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "CT123456789GB": {
+    "carrierId": "royal-mail",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "CT123456789US": {
+    "carrierId": "usps",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "CT123456789CN": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "CT123456789YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CT123456789XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CT1234567890": {
+    "carrierId": "chita",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CT1234567890IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CT1234567890GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CT1234567890US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CT1234567890CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CT1234567890YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CT1234567890XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CT123456789012345678": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CT123456789012345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CT123456789012345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CT123456789012345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CT123456789012345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CT123456789012345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CT123456789012345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "EP12345678": {
+    "carrierId": "hfd",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "EP12345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "EP12345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "EP12345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "EP12345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "EP12345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "EP12345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "EP123456789": {
+    "carrierId": "hfd",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "EP123456789IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "EP123456789GB": {
+    "carrierId": "royal-mail",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "EP123456789US": {
+    "carrierId": "usps",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "EP123456789CN": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "EP123456789YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "EP123456789XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "EP1234567890": {
+    "carrierId": "hfd",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "EP1234567890IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "EP1234567890GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "EP1234567890US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "EP1234567890CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "EP1234567890YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "EP1234567890XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "EP123456789012345678": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "EP123456789012345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "EP123456789012345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "EP123456789012345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "EP123456789012345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "EP123456789012345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "EP123456789012345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "GP12345678": {
+    "carrierId": "getpackage",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GP12345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GP12345678GB": {
+    "carrierId": "getpackage",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GP12345678US": {
+    "carrierId": "getpackage",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GP12345678CN": {
+    "carrierId": "getpackage",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GP12345678YP": {
+    "carrierId": "getpackage",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GP12345678XX": {
+    "carrierId": "getpackage",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GP123456789": {
+    "carrierId": "getpackage",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GP123456789IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "GP123456789GB": {
+    "carrierId": "getpackage",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GP123456789US": {
+    "carrierId": "getpackage",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GP123456789CN": {
+    "carrierId": "getpackage",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GP123456789YP": {
+    "carrierId": "getpackage",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GP123456789XX": {
+    "carrierId": "getpackage",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GP1234567890": {
+    "carrierId": "getpackage",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GP1234567890IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GP1234567890GB": {
+    "carrierId": "getpackage",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GP1234567890US": {
+    "carrierId": "getpackage",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GP1234567890CN": {
+    "carrierId": "getpackage",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GP1234567890YP": {
+    "carrierId": "getpackage",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GP1234567890XX": {
+    "carrierId": "getpackage",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GP123456789012345678": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "GP123456789012345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GP123456789012345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "GP123456789012345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "GP123456789012345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "GP123456789012345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "GP123456789012345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "OR12345678": {
+    "carrierId": "orian",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "OR12345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "OR12345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "OR12345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "OR12345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "OR12345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "OR12345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "OR123456789": {
+    "carrierId": "orian",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "OR123456789IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "OR123456789GB": {
+    "carrierId": "royal-mail",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "OR123456789US": {
+    "carrierId": "usps",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "OR123456789CN": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "OR123456789YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "OR123456789XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "OR1234567890": {
+    "carrierId": "orian",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "OR1234567890IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "OR1234567890GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "OR1234567890US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "OR1234567890CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "OR1234567890YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "OR1234567890XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "OR123456789012345678": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "OR123456789012345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "OR123456789012345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "OR123456789012345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "OR123456789012345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "OR123456789012345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "OR123456789012345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "ZZ12345678": {
+    "carrierId": "zigzag",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "ZZ12345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "ZZ12345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "ZZ12345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "ZZ12345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "ZZ12345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "ZZ12345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "ZZ123456789": {
+    "carrierId": "zigzag",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "ZZ123456789IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "ZZ123456789GB": {
+    "carrierId": "royal-mail",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "ZZ123456789US": {
+    "carrierId": "usps",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "ZZ123456789CN": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "ZZ123456789YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "ZZ123456789XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "ZZ1234567890": {
+    "carrierId": "zigzag",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "ZZ1234567890IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "ZZ1234567890GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "ZZ1234567890US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "ZZ1234567890CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "ZZ1234567890YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "ZZ1234567890XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "ZZ123456789012345678": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "ZZ123456789012345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "ZZ123456789012345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "ZZ123456789012345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "ZZ123456789012345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "ZZ123456789012345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "ZZ123456789012345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "YT12345678": {
+    "carrierId": "israel-post",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "YT12345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "YT12345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "YT12345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "YT12345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "YT12345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "YT12345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "YT123456789": {
+    "carrierId": "israel-post",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "YT123456789IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "YT123456789GB": {
+    "carrierId": "royal-mail",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "YT123456789US": {
+    "carrierId": "usps",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "YT123456789CN": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "YT123456789YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "YT123456789XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "YT1234567890": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "YT1234567890IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "YT1234567890GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "YT1234567890US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "YT1234567890CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "YT1234567890YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "YT1234567890XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "YT123456789012345678": {
+    "carrierId": "yunexpress",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "YT123456789012345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "YT123456789012345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "YT123456789012345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "YT123456789012345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "YT123456789012345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "YT123456789012345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "LP12345678": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "LP12345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "LP12345678GB": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "LP12345678US": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "LP12345678CN": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "LP12345678YP": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "LP12345678XX": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "LP123456789": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "LP123456789IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "LP123456789GB": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "LP123456789US": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "LP123456789CN": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "LP123456789YP": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "LP123456789XX": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "LP1234567890": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "LP1234567890IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "LP1234567890GB": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "LP1234567890US": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "LP1234567890CN": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "LP1234567890YP": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "LP1234567890XX": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "LP123456789012345678": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "LP123456789012345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "LP123456789012345678GB": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "LP123456789012345678US": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "LP123456789012345678CN": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "LP123456789012345678YP": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "LP123456789012345678XX": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "CN12345678": {
+    "carrierId": "israel-post",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "CN12345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CN12345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CN12345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CN12345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CN12345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CN12345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CN123456789": {
+    "carrierId": "israel-post",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "CN123456789IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "CN123456789GB": {
+    "carrierId": "royal-mail",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "CN123456789US": {
+    "carrierId": "usps",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "CN123456789CN": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "CN123456789YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CN123456789XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "CN1234567890": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "CN1234567890IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CN1234567890GB": {
+    "carrierId": "cainiao",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "CN1234567890US": {
+    "carrierId": "cainiao",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "CN1234567890CN": {
+    "carrierId": "cainiao",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "CN1234567890YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CN1234567890XX": {
+    "carrierId": "cainiao",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "CN123456789012345678": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "CN123456789012345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CN123456789012345678GB": {
+    "carrierId": "cainiao",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "CN123456789012345678US": {
+    "carrierId": "cainiao",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "CN123456789012345678CN": {
+    "carrierId": "cainiao",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "CN123456789012345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "CN123456789012345678XX": {
+    "carrierId": "cainiao",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "AE12345678": {
+    "carrierId": "israel-post",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "AE12345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "AE12345678GB": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "AE12345678US": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "AE12345678CN": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "AE12345678YP": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "AE12345678XX": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "AE123456789": {
+    "carrierId": "israel-post",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "AE123456789IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "AE123456789GB": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "AE123456789US": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "AE123456789CN": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "AE123456789YP": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "AE123456789XX": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "AE1234567890": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "AE1234567890IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "AE1234567890GB": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "AE1234567890US": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "AE1234567890CN": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "AE1234567890YP": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "AE1234567890XX": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "AE123456789012345678": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "AE123456789012345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "AE123456789012345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "AE123456789012345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "AE123456789012345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "AE123456789012345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "AE123456789012345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "BX12345678": {
+    "carrierId": "boxit",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "BX12345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "BX12345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "BX12345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "BX12345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "BX12345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "BX12345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "BX123456789": {
+    "carrierId": "boxit",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "BX123456789IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "BX123456789GB": {
+    "carrierId": "royal-mail",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "BX123456789US": {
+    "carrierId": "usps",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "BX123456789CN": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "BX123456789YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "BX123456789XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "BX1234567890": {
+    "carrierId": "boxit",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "BX1234567890IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "BX1234567890GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "BX1234567890US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "BX1234567890CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "BX1234567890YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "BX1234567890XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "BX123456789012345678": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "BX123456789012345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "BX123456789012345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "BX123456789012345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "BX123456789012345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "BX123456789012345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "BX123456789012345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "FC12345678": {
+    "carrierId": "flying-cargo",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "FC12345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "FC12345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "FC12345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "FC12345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "FC12345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "FC12345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "FC123456789": {
+    "carrierId": "flying-cargo",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "FC123456789IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "FC123456789GB": {
+    "carrierId": "royal-mail",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "FC123456789US": {
+    "carrierId": "usps",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "FC123456789CN": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "FC123456789YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "FC123456789XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "FC1234567890": {
+    "carrierId": "flying-cargo",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "FC1234567890IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "FC1234567890GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "FC1234567890US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "FC1234567890CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "FC1234567890YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "FC1234567890XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "FC123456789012345678": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "FC123456789012345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "FC123456789012345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "FC123456789012345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "FC123456789012345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "FC123456789012345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "FC123456789012345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "UY12345678": {
+    "carrierId": "israel-post",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "UY12345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "UY12345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "UY12345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "UY12345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "UY12345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "UY12345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "UY123456789": {
+    "carrierId": "israel-post",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "UY123456789IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "UY123456789GB": {
+    "carrierId": "royal-mail",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "UY123456789US": {
+    "carrierId": "usps",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "UY123456789CN": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "UY123456789YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "UY123456789XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "UY1234567890": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "UY1234567890IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "UY1234567890GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "UY1234567890US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "UY1234567890CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "UY1234567890YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "UY1234567890XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "UY123456789012345678": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "UY123456789012345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "UY123456789012345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "UY123456789012345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "UY123456789012345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "UY123456789012345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "UY123456789012345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "VR12345678": {
+    "carrierId": "israel-post",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "VR12345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "VR12345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "VR12345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "VR12345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "VR12345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "VR12345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "VR123456789": {
+    "carrierId": "israel-post",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "VR123456789IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "VR123456789GB": {
+    "carrierId": "royal-mail",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "VR123456789US": {
+    "carrierId": "usps",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "VR123456789CN": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "VR123456789XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "VR1234567890": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "VR1234567890IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "VR1234567890GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "VR1234567890US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "VR1234567890CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "VR1234567890YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "VR1234567890XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "VR123456789012345678": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "VR123456789012345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "VR123456789012345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "VR123456789012345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "VR123456789012345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "VR123456789012345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "VR123456789012345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "RS12345678": {
+    "carrierId": "israel-post",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "RS12345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "RS12345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "RS12345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "RS12345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "RS12345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "RS12345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "RS123456789": {
+    "carrierId": "israel-post",
+    "confidence": "medium",
+    "isValidChecksum": null
+  },
+  "RS123456789GB": {
+    "carrierId": "royal-mail",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "RS123456789US": {
+    "carrierId": "usps",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "RS123456789CN": {
+    "carrierId": "cainiao",
+    "confidence": "high",
+    "isValidChecksum": false
+  },
+  "RS123456789YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "RS123456789XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "RS1234567890": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "RS1234567890IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "RS1234567890GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "RS1234567890US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "RS1234567890CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "RS1234567890YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "RS1234567890XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "RS123456789012345678": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "RS123456789012345678IL": {
+    "carrierId": "israel-post",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "RS123456789012345678GB": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "RS123456789012345678US": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "RS123456789012345678CN": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "RS123456789012345678YP": {
+    "carrierId": "yanwen",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "RS123456789012345678XX": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  }
+}

@@ -13,7 +13,10 @@ export const GOLD_STANDARD_CARRIER_SAMPLES = Object.freeze({
 });
 
 /**
- * Maximum capacity constraint for in-memory package validation list.
+ * Advisory ceiling for an in-memory package list. This is NOT a cap: since
+ * issue #40, `validatePackageList` returns every valid record it is given.
+ * The constant is retained so the diagnostic can report how far past the
+ * advisory line a list sits.
  */
 export const MAX_PACKAGE_MEMORY_BOUND = 1000;
 
@@ -176,12 +179,19 @@ export function runCarrierRegexSelfTest(customSamples = GOLD_STANDARD_CARRIER_SA
 }
 
 /**
- * Asserts that the 1,000 package limit constraint is intact and enforced by validatePackageList().
- * 
- * @param {number} [testInputSize=1250] - Size of test input array to verify against invariant
+ * Asserts that `validatePackageList()` is NON-TRUNCATING: every valid record
+ * handed to it comes back out.
+ *
+ * This probe previously certified the opposite — that lists were capped at
+ * 1,000 — a guarantee the application stopped having once the storage path
+ * dropped its cap. A self-test that certifies something untrue is worse than
+ * no self-test (issue #40).
+ *
+ * @param {number} [testInputSize=1250] - Size of test input array, deliberately above the advisory bound
  * @returns {{ id: string, name: string, status: 'PASS' | 'FAIL', message: string, details?: any }}
  */
 export function runMemoryBoundsSelfTest(testInputSize = 1250) {
+  const NAME = 'Package List Non-Truncation Invariant Probe';
   try {
     const inputSize = Math.max(testInputSize, MAX_PACKAGE_MEMORY_BOUND + 100);
     const oversizedArray = Array.from({ length: inputSize }, (_, idx) => ({
@@ -197,46 +207,50 @@ export function runMemoryBoundsSelfTest(testInputSize = 1250) {
     if (!Array.isArray(result)) {
       return {
         id: 'memory-bounds-self-test',
-        name: 'Memory Bounds & Package Cap Invariant Probe',
+        name: NAME,
         status: 'FAIL',
         message: 'validatePackageList did not return an array',
         details: { resultType: typeof result }
       };
     }
 
-    if (result.length > MAX_PACKAGE_MEMORY_BOUND) {
+    if (result.length !== inputSize) {
       return {
         id: 'memory-bounds-self-test',
-        name: 'Memory Bounds & Package Cap Invariant Probe',
+        name: NAME,
         status: 'FAIL',
-        message: `Package capacity bound breached: allowed ${result.length} items (system limit: ${MAX_PACKAGE_MEMORY_BOUND})`,
-        details: { inputSize, outputSize: result.length, limit: MAX_PACKAGE_MEMORY_BOUND }
-      };
-    }
-
-    if (result.length !== MAX_PACKAGE_MEMORY_BOUND) {
-      return {
-        id: 'memory-bounds-self-test',
-        name: 'Memory Bounds & Package Cap Invariant Probe',
-        status: 'FAIL',
-        message: `Package cap truncation anomaly: expected exactly ${MAX_PACKAGE_MEMORY_BOUND} valid items, got ${result.length}`,
-        details: { inputSize, outputSize: result.length, limit: MAX_PACKAGE_MEMORY_BOUND }
+        message: `Package list truncation detected: ${inputSize} valid records in, only ${result.length} out`,
+        details: {
+          inputSize,
+          outputSize: result.length,
+          advisoryLimit: MAX_PACKAGE_MEMORY_BOUND,
+          limit: MAX_PACKAGE_MEMORY_BOUND,
+          truncated: true,
+          overAdvisoryLimit: result.length > MAX_PACKAGE_MEMORY_BOUND
+        }
       };
     }
 
     return {
       id: 'memory-bounds-self-test',
-      name: 'Memory Bounds & Package Cap Invariant Probe',
+      name: NAME,
       status: 'PASS',
-      message: `Memory bounds constraint verified: input array of ${inputSize} items safely capped to ${result.length} (limit: ${MAX_PACKAGE_MEMORY_BOUND})`,
-      details: { inputSize, outputSize: result.length, limit: MAX_PACKAGE_MEMORY_BOUND }
+      message: `Non-truncation verified: all ${result.length} valid records preserved (advisory limit: ${MAX_PACKAGE_MEMORY_BOUND})`,
+      details: {
+        inputSize,
+        outputSize: result.length,
+        advisoryLimit: MAX_PACKAGE_MEMORY_BOUND,
+        limit: MAX_PACKAGE_MEMORY_BOUND,
+        truncated: false,
+        overAdvisoryLimit: result.length > MAX_PACKAGE_MEMORY_BOUND
+      }
     };
   } catch (err) {
     return {
       id: 'memory-bounds-self-test',
-      name: 'Memory Bounds & Package Cap Invariant Probe',
+      name: NAME,
       status: 'FAIL',
-      message: `Memory bounds self-test threw unexpected error: ${err.message}`,
+      message: `Non-truncation self-test threw unexpected error: ${err.message}`,
       details: { error: err.name || 'Error', message: err.message }
     };
   }

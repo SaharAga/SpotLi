@@ -4,8 +4,10 @@ import {
   getCachedTracking, 
   setCachedTracking, 
   fetchLiveCarrierTracking,
-  isLiveTrackingSupported
+  isLiveTrackingSupported,
+  LIVE_TRACKING_CARRIERS
 } from './carrierApiProxy';
+import { CARRIERS, CARRIER_LIST } from '../types/carriers';
 
 describe('carrierApiProxy Service', () => {
   const store = new Map();
@@ -117,6 +119,54 @@ describe('carrierApiProxy Service', () => {
       expect(isLiveTrackingSupported('israel-post')).toBe(true);
       expect(isLiveTrackingSupported('dhl')).toBe(false);
       expect(isLiveTrackingSupported('other')).toBe(false);
+    });
+  });
+
+  describe('live-tracking capability comes from the carrier table', () => {
+    it('treats a carrier as live-trackable exactly when the table gives it a liveTracking config', () => {
+      for (const carrier of CARRIER_LIST) {
+        expect(isLiveTrackingSupported(carrier.id)).toBe(Boolean(carrier.liveTracking));
+      }
+    });
+
+    it('keeps LIVE_TRACKING_CARRIERS derived from the table', () => {
+      expect([...LIVE_TRACKING_CARRIERS]).toEqual(
+        CARRIER_LIST.filter((c) => c.liveTracking).map((c) => c.id)
+      );
+      expect(LIVE_TRACKING_CARRIERS).toContain('israel-post');
+    });
+
+    it('reports unknown carrier ids as unsupported rather than throwing', () => {
+      expect(isLiveTrackingSupported('no-such-carrier')).toBe(false);
+      expect(isLiveTrackingSupported(undefined)).toBe(false);
+    });
+
+    it('gives every live-tracking entry an endpoint builder and a parser', () => {
+      for (const carrier of CARRIER_LIST.filter((c) => c.liveTracking)) {
+        expect(typeof carrier.liveTracking.endpoint).toBe('function');
+        expect(typeof carrier.liveTracking.parse).toBe('function');
+        expect(carrier.liveTracking.endpoint('RS948219481IL')).toContain('RS948219481IL');
+      }
+    });
+
+    it('returns null from a parser when the gateway has nothing, so no data is fabricated', () => {
+      const { parse } = CARRIERS['israel-post'].liveTracking;
+      expect(parse(null, 'RS948219481IL', { inferStageFromText })).toBeNull();
+      expect(parse({}, 'RS948219481IL', { inferStageFromText })).toBeNull();
+    });
+
+    it('builds a tracked record from a real gateway payload', () => {
+      const { parse } = CARRIERS['israel-post'].liveTracking;
+      const record = parse(
+        { itemcode: 'RS948219481IL', laststatus: 'נמסר ליעדו', unitname: 'תל אביב' },
+        'RS948219481IL',
+        { inferStageFromText }
+      );
+      expect(record.tracked).toBe(true);
+      expect(record.carrier).toBe('israel-post');
+      expect(record.status).toBe('delivered');
+      expect(record.location).toBe('תל אביב');
+      expect(record.checkpoints).toHaveLength(1);
     });
   });
 });

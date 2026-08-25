@@ -173,11 +173,11 @@ describe('High-Assurance Property-Based Verification (fast-check)', () => {
   });
 
   describe('List Size & Memory Conservation Invariant', () => {
-    it('Strict Size Bound: validatePackageList never returns more than 1,000 items', () => {
+    it('Non-Truncation: validatePackageList returns every valid entry, however long the list', () => {
       fc.assert(
         fc.property(fc.array(fc.record({ trackingNumber: fc.string() }), { maxLength: 1500 }), (rawList) => {
           const validated = validatePackageList(rawList);
-          expect(validated.length).toBeLessThanOrEqual(1000);
+          expect(validated.length).toBe(rawList.length);
         }),
         { numRuns: 200 }
       );
