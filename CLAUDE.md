@@ -5,9 +5,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## What this is
 
 Deliveree is a bilingual (Hebrew RTL / English LTR) Progressive Web App for tracking packages
-across Israeli couriers and global shipping carriers. It's offline-first (IndexedDB + a sync
-queue), optionally syncs to Firebase for signed-in users, and can ingest tracking numbers from
-pasted text, SMS, or the PWA share target.
+across Israeli couriers and global shipping carriers. It's offline-first (localStorage + a
+service worker + an offline sync queue), optionally syncs to Firebase for signed-in users, and
+can ingest tracking numbers from pasted text, SMS, or the PWA share target.
 
 Live tracking coverage is currently limited to Israel Post (`src/services/carrierApiProxy.js`);
 every other carrier is detected/displayed but shown as "manual tracking" rather than faked.
@@ -35,15 +35,32 @@ accidentally committed secrets (`scripts/pre_commit_secrets_check.js`). Don't by
 
 ## Architecture
 
-- **UI**: React 19 + Tailwind CSS 4, entry point `src/App.jsx`.
-- **Storage — layered**: `src/services/deliveryService.js` (localStorage baseline) →
-  `idbStorageAdapter.js` (offline persistence) → `cloudStorageAdapter.js` (Firestore sync for
-  signed-in users). `syncQueueService.js` queues writes made while offline and replays them with
-  idempotency keys once connectivity returns.
+- **UI**: React 19 + Tailwind CSS 4, entry point `src/App.jsx`. See
+  `src/components/COMPONENTS.md` for what each of the ~40 components does and how the modals are
+  wired (all mounted once in `App.jsx`, each wrapped in its own `ErrorBoundary`).
+- **Storage**: `src/services/deliveryService.js` reads/writes packages to `localStorage`
+  (per-partition key: `deliveree_packages_<userId>` or `deliveree_packages_guest`), through the
+  shared guard/parse/warn helpers in `src/utils/storage.js` (`readJSON`/`writeJSON`, never throw,
+  `writeJSON` reports quota/serialization failure to the caller instead of swallowing it).
+  `cloudStorageAdapter.js` syncs that data to Firestore for signed-in users.
+  `syncQueueService.js` queues mutations made while offline (its own localStorage-backed queue)
+  and replays them with idempotency keys once connectivity returns. There is no IndexedDB layer —
+  a 4-tier `idbStorageAdapter.js` existed but was dead code (zero non-test importers, a live
+  cross-partition TTL bug) and was removed in `0.15.3`; offline *page* availability instead comes
+  from the service worker (`public/sw.js` / `serviceWorkerRegistration.js`), which is a separate
+  concern from package data persistence.
+- **Validation**: `parsePackageList`/`packageSchema.js` (Zod) is the single repairing schema and
+  entry point for both strict validation and repair-on-read (unified in `0.15.6` — there used to
+  be two competing validators reached from different call sites). It preserves unknown fields
+  (only prototype-polluting keys `__proto__`/`constructor`/`prototype` are stripped) rather than
+  rebuilding from a fixed allowlist, and never truncates an over-limit list — an oversized list is
+  reported to callers via an `overflow` flag on the save result instead. Stored records carry a
+  `schemaVersion` field for future migrations.
 - **Tracking**: `carrierApiProxy.js` is the *only* place that talks to a carrier's servers;
   `trackingService.js` layers rate limiting and checkpoint merging on top of it.
-- **Auth**: `src/context/AuthContext.jsx`, backed by Firebase Authentication (Google, Apple,
-  Facebook, email/password).
+- **Auth**: `src/context/AuthContext.jsx`, backed by Firebase Authentication — currently Google
+  OAuth and email/password only (Apple/Facebook sign-in and their unused context exports were
+  removed in `0.15.3`; they were never actually configured).
 - **Data model & validation**: `src/schemas/packageSchema.js` (Zod) is defense-in-depth only —
   `firestore.rules` is the actual enforcement and must be kept in sync with it.
 - **Smart Import**: `src/utils/smartParser.js` is a deterministic regex parser tried first;
