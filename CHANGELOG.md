@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.15.6] - 2026-08-24
+
+### Fixed
+- **Unknown fields on stored packages were silently erased on every read and
+  write.** Package validation rebuilt a fresh object from a fixed 19-key
+  allowlist, so any field outside that list — including data written by a
+  newer client or a partner import — was dropped without warning. Validation
+  now preserves unrecognized fields while still stripping prototype-polluting
+  keys (`__proto__`, `constructor`, `prototype`).
+- **Two competing validators disagreed depending on the code path.** A strict
+  Zod schema (which rejected malformed records) and a hand-rolled validator
+  (which repaired them) both existed and were reached from different call
+  sites. They are unified behind a single repairing schema with one entry
+  point; the repair values (`Untitled Package`, `UNTRACKED`, `in_transit`,
+  `other`, `Israel`) are unchanged. The circular import between the schema and
+  the validator module is also gone.
+- **The 1,000-package ceiling destroyed data.** Package lists were truncated at
+  1,000 items on read, and the truncated list was written back on the next
+  save — so package 1,001 disappeared permanently. Since archived packages
+  never leave the list, this was reachable through ordinary long-term use.
+  Lists are no longer truncated on the read/write path; an over-large list is
+  reported to callers via an overflow flag instead.
+- **Failed saves reported success.** `savePackages` caught the write exception,
+  logged it, and returned the same value it returns on success, so callers
+  believed a write had landed when localStorage was out of quota. Saves now
+  report success or failure, and status updates, tracking refreshes, and data
+  imports propagate that failure instead of claiming success.
+
+### Added
+- `schemaVersion` field on stored package records (defaulted to `1` for
+  existing data), to make future record migrations explicit. This is a
+  per-record data-format marker and is independent of the app version above.
+
 ## [0.15.5] - 2026-08-24
 
 ### Changed

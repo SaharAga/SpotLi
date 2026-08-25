@@ -386,4 +386,142 @@ describe('Delivery Service and Storage Persistence', () => {
       expect(res.error).toBe('Invalid package data');
     });
   });
+
+  describe('P0.1 — unknown fields survive persistence round trips', () => {
+    it('preserves a field that is not part of the known schema', () => {
+      const pkg = {
+        id: 'round-trip-1',
+        title: 'Future Field Package',
+        trackingNumber: 'RR123456789IL',
+        carrier: 'israel-post',
+        status: 'in_transit',
+        futureFeatureFlag: 'keep-me',
+        customMetadata: { source: 'partner-api', priority: 3 }
+      };
+
+      deliveryService.savePackages([pkg]);
+      const [loaded] = deliveryService.getPackages();
+
+      expect(loaded.futureFeatureFlag).toBe('keep-me');
+      expect(loaded.customMetadata).toEqual({ source: 'partner-api', priority: 3 });
+      // Known fields still normalized as before
+      expect(loaded.title).toBe('Future Field Package');
+      expect(loaded.status).toBe('in_transit');
+      expect(loaded.schemaVersion).toBe(1);
+    });
+
+    it('still strips prototype-polluting keys on the round trip', () => {
+      const malicious = JSON.parse('{"id":"poison-1","title":"Poison","trackingNumber":"TRK1","__proto__":{"polluted":true}}');
+
+      deliveryService.savePackages([malicious]);
+      const [loaded] = deliveryService.getPackages();
+
+      expect(loaded.id).toBe('poison-1');
+      expect({}.polluted).toBeUndefined();
+      expect(Object.prototype.polluted).toBeUndefined();
+    });
+  });
+
+  describe('P0.2 — package lists are never silently truncated', () => {
+    it('keeps every item past the 1,000 advisory limit and flags overflow', () => {
+      const big = Array.from({ length: 1200 }, (_, i) => ({
+        id: `pkg-${i}`,
+        title: `Package ${i}`,
+        trackingNumber: `RR${String(i).padStart(9, '0')}IL`,
+        carrier: 'israel-post',
+        status: 'in_transit'
+      }));
+
+      const saved = deliveryService.savePackages(big);
+      expect(saved.length).toBe(1200);
+      expect(saved.ok).toBe(true);
+      expect(saved.overflow).toBe(true);
+
+      // The read-then-write path must not persist a truncated list.
+      const loaded = deliveryService.getPackages();
+      expect(loaded.length).toBe(1200);
+      expect(loaded[1199].id).toBe('pkg-1199');
+
+      deliveryService.savePackages(loaded);
+      expect(deliveryService.getPackages().length).toBe(1200);
+    });
+
+    it('does not flag overflow for ordinary list sizes', () => {
+      const saved = deliveryService.savePackages([
+        { id: 'a', title: 'A', trackingNumber: 'TRKA' }
+      ]);
+      expect(saved.overflow).toBe(false);
+    });
+  });
+
+  describe('P0.3 — failed saves are reported as failures', () => {
+    it('returns ok:false when localStorage throws a quota error', () => {
+      const originalSetItem = globalThis.localStorage.setItem;
+      globalThis.localStorage.setItem = () => {
+        throw Object.assign(new Error('QuotaExceededError'), { name: 'QuotaExceededError' });
+      };
+
+      try {
+        const saved = deliveryService.savePackages([
+          { id: 'quota-1', title: 'Quota', trackingNumber: 'TRKQ' }
+        ]);
+        expect(saved.ok).toBe(false);
+        expect(saved.error).toBeInstanceOf(Error);
+        // Backward compatible: still the validated array
+        expect(Array.isArray(saved)).toBe(true);
+        expect(saved[0].id).toBe('quota-1');
+      } finally {
+        globalThis.localStorage.setItem = originalSetItem;
+      }
+    });
+
+    it('reports ok:true on a successful save', () => {
+      const saved = deliveryService.savePackages([
+        { id: 'ok-1', title: 'Fine', trackingNumber: 'TRKOK' }
+      ]);
+      expect(saved.ok).toBe(true);
+      expect(saved.error).toBeNull();
+    });
+
+    it('surfaces a persistence failure through updatePackageStatus', () => {
+      const packages = [{
+        id: 'st-1',
+        title: 'Status',
+        trackingNumber: 'TRKST',
+        status: 'in_transit',
+        checkpoints: []
+      }];
+
+      const originalSetItem = globalThis.localStorage.setItem;
+      globalThis.localStorage.setItem = () => {
+        throw new Error('QuotaExceededError');
+      };
+
+      try {
+        const res = deliveryService.updatePackageStatus(packages, 'st-1', 'delivered');
+        expect(res.success).toBe(false);
+        expect(res.error).toBe('Failed to persist package status update');
+      } finally {
+        globalThis.localStorage.setItem = originalSetItem;
+      }
+    });
+
+    it('reports a failed import instead of claiming success', () => {
+      const json = JSON.stringify([
+        { id: 'imp-1', title: 'Imported', trackingNumber: 'TRKIMP' }
+      ]);
+
+      const originalSetItem = globalThis.localStorage.setItem;
+      globalThis.localStorage.setItem = () => {
+        throw new Error('QuotaExceededError');
+      };
+
+      try {
+        const res = deliveryService.importData(json);
+        expect(res.success).toBe(false);
+      } finally {
+        globalThis.localStorage.setItem = originalSetItem;
+      }
+    });
+  });
 });

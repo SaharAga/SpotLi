@@ -1,5 +1,28 @@
-import { validatePackageList } from '../utils/packageValidator';
+import { parsePackageList } from '../schemas/packageSchema';
 import { notificationService } from './notificationService';
+
+/**
+ * Builds the result of a save attempt.
+ *
+ * Backward compatible on purpose: the returned value IS the validated package
+ * array (call sites outside this PR still do `saved.find(...)`, `saved.length`,
+ * `toEqual([...])`), with the save status attached as non-enumerable
+ * properties so JSON serialization and deep-equality assertions are unaffected.
+ *
+ * @param {Array<object>} packages
+ * @param {{ ok: boolean, error?: Error|null, overflow?: boolean }} status
+ * @returns {Array<object> & { ok: boolean, packages: Array<object>, error: Error|null, overflow: boolean }}
+ */
+function makeSaveResult(packages, { ok, error = null, overflow = false }) {
+  const result = packages;
+  Object.defineProperties(result, {
+    ok: { value: ok, enumerable: false, configurable: true },
+    packages: { value: packages, enumerable: false, configurable: true },
+    error: { value: error, enumerable: false, configurable: true },
+    overflow: { value: overflow, enumerable: false, configurable: true }
+  });
+  return result;
+}
 
 function getStorageKey(userId) {
   if (userId) {
@@ -63,7 +86,7 @@ export const deliveryService = {
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
-          return validatePackageList(parsed);
+          return parsePackageList(parsed).packages;
         }
       }
     } catch (e) {
@@ -73,17 +96,26 @@ export const deliveryService = {
   },
 
   /**
-   * Saves validated package list to localStorage scoped by userId or guest
+   * Saves the validated package list to localStorage scoped by userId or guest.
+   *
+   * Returns the validated array, carrying `ok` / `error` / `overflow` status so
+   * a failed write (e.g. quota exhaustion) is no longer indistinguishable from
+   * a successful one (P0.3).
+   *
+   * @param {unknown} packages
+   * @param {string|null} [userId=null]
+   * @returns {Array<object> & { ok: boolean, packages: Array<object>, error: Error|null, overflow: boolean }}
    */
   savePackages: (packages, userId = null) => {
-    const validated = validatePackageList(packages);
+    const { packages: validated, overflow } = parsePackageList(packages);
     try {
       const key = getStorageKey(userId);
       localStorage.setItem(key, JSON.stringify(validated));
     } catch (e) {
       console.error('Failed to save packages to localStorage', e);
+      return makeSaveResult(validated, { ok: false, error: e, overflow });
     }
-    return validated;
+    return makeSaveResult(validated, { ok: true, overflow });
   },
 
   /**
@@ -116,7 +148,7 @@ export const deliveryService = {
    * Exports data as JSON string for download using memory-efficient Blob URL
    */
   exportData: (packages) => {
-    const safePackages = validatePackageList(packages);
+    const { packages: safePackages } = parsePackageList(packages);
     const blob = new Blob([JSON.stringify(safePackages, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const downloadAnchor = document.createElement('a');
@@ -148,11 +180,14 @@ export const deliveryService = {
       const parsed = JSON.parse(jsonString);
       if (Array.isArray(parsed)) {
         const limited = parsed.slice(0, MAX_IMPORT_PACKAGES);
-        const validated = validatePackageList(limited);
+        const { packages: validated } = parsePackageList(limited);
         if (validated.length === 0 && limited.length > 0) {
           return { success: false, error: 'Imported items failed schema validation' };
         }
-        deliveryService.savePackages(validated);
+        const saved = deliveryService.savePackages(validated);
+        if (!saved.ok) {
+          return { success: false, error: 'Import could not be persisted (storage write failed)' };
+        }
         return { success: true, packages: validated };
       }
       return { success: false, error: 'Invalid JSON structure (must be an array of packages)' };
@@ -202,6 +237,15 @@ export const deliveryService = {
 
     const updatedList = packages.map(p => (p.id === packageId ? updatedPkg : p));
     const saved = deliveryService.savePackages(updatedList, userId);
+
+    if (!saved.ok) {
+      return {
+        success: false,
+        packages,
+        error: 'Failed to persist package status update'
+      };
+    }
+
     const savedPkg = saved.find(p => p.id === packageId);
 
     if (targetPkg.status !== newStatus) {
@@ -274,6 +318,14 @@ export const deliveryService = {
       : [updated, ...currentList];
 
     const saved = deliveryService.savePackages(updatedList, userId);
+
+    if (!saved.ok) {
+      return {
+        success: false,
+        error: 'Failed to persist refreshed tracking data'
+      };
+    }
+
     const savedPkg = saved.find(p => p.id === pkg.id) || updated;
 
     if (pkg.status !== targetStatus) {
