@@ -12,6 +12,7 @@ import {
   getLocalFeedbackHistory,
   LOCAL_FEEDBACK_HISTORY_KEY
 } from '../services/feedbackService';
+import { fetchAllCrashReports, groupCrashReports } from '../services/crashReportService';
 
 export function AdminFeedbackModal({
   isOpen,
@@ -27,6 +28,11 @@ export function AdminFeedbackModal({
   const [isLoading, setIsLoading] = useState(false);
   const [cloudError, setCloudError] = useState(null);
 
+  const [activeTab, setActiveTab] = useState('feedback');
+  const [crashGroups, setCrashGroups] = useState(null);
+  const [isLoadingCrashes, setIsLoadingCrashes] = useState(false);
+  const [crashError, setCrashError] = useState(null);
+
   const feedbacks = mergeFeedbackSources(cloudFeedbacks, localFeedbacks);
 
   const loadCloudFeedback = useCallback(async () => {
@@ -39,6 +45,16 @@ export function AdminFeedbackModal({
     setIsLoading(false);
   }, [isAdmin]);
 
+  const loadCrashReports = useCallback(async () => {
+    if (!isAdmin) return;
+    setIsLoadingCrashes(true);
+    setCrashError(null);
+    const result = await fetchAllCrashReports();
+    setCrashGroups(result.ok ? groupCrashReports(result.items) : []);
+    setCrashError(result.ok ? null : result.error);
+    setIsLoadingCrashes(false);
+  }, [isAdmin]);
+
   // Pull the cloud log whenever an admin opens the inspector, so feedback from
   // other testers' devices is visible — local history alone only ever shows
   // submissions made in this browser.
@@ -47,6 +63,15 @@ export function AdminFeedbackModal({
       loadCloudFeedback();
     }
   }, [isOpen, isAdmin, loadCloudFeedback]);
+
+  // Crash reports are fetched lazily on first switch to that tab, not on
+  // open — most admin visits are about triaging feedback, so this avoids an
+  // extra Firestore read on every open.
+  useEffect(() => {
+    if (isOpen && isAdmin && activeTab === 'crashes' && crashGroups === null) {
+      loadCrashReports();
+    }
+  }, [isOpen, isAdmin, activeTab, crashGroups, loadCrashReports]);
 
   if (!isOpen) return null;
 
@@ -72,7 +97,7 @@ export function AdminFeedbackModal({
               <h2 className="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
                 <span>{language === 'he' ? 'יומן משובי אלפא' : 'Alpha Feedback Inspector'}</span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/30">
-                  {feedbacks.length}
+                  {activeTab === 'feedback' ? feedbacks.length : (crashGroups?.length ?? 0)}
                 </span>
               </h2>
             </div>
@@ -81,12 +106,12 @@ export function AdminFeedbackModal({
           <div className="flex items-center gap-2">
             {isAdmin && (
               <button
-                onClick={loadCloudFeedback}
-                disabled={isLoading}
+                onClick={activeTab === 'feedback' ? loadCloudFeedback : loadCrashReports}
+                disabled={activeTab === 'feedback' ? isLoading : isLoadingCrashes}
                 className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50"
-                aria-label={language === 'he' ? 'רענן משובים' : 'Refresh feedback'}
+                aria-label={language === 'he' ? 'רענן' : 'Refresh'}
               >
-                <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-5 h-5 ${(activeTab === 'feedback' ? isLoading : isLoadingCrashes) ? 'animate-spin' : ''}`} />
               </button>
             )}
             <button
@@ -99,8 +124,34 @@ export function AdminFeedbackModal({
           </div>
         </div>
 
+        {/* Tab switch — crash reports are kept out of the feedback list
+            entirely (own Firestore collection, own fetch) so a burst of
+            automatic crash reports can never crowd out human feedback. */}
+        {isAdmin && (
+          <div className="px-5 sm:px-6 pt-3 flex items-center gap-2 border-b border-slate-800">
+            <button
+              onClick={() => setActiveTab('feedback')}
+              className={`px-3 py-2 text-xs font-bold rounded-t-lg transition-colors cursor-pointer min-h-[44px] ${
+                activeTab === 'feedback' ? 'text-indigo-300 border-b-2 border-indigo-400' : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              {language === 'he' ? 'משוב' : 'Feedback'}
+            </button>
+            <button
+              onClick={() => setActiveTab('crashes')}
+              className={`px-3 py-2 text-xs font-bold rounded-t-lg transition-colors cursor-pointer min-h-[44px] flex items-center gap-1.5 ${
+                activeTab === 'crashes' ? 'text-orange-300 border-b-2 border-orange-400' : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              <AlertTriangle className="w-3.5 h-3.5" />
+              {language === 'he' ? 'קריסות' : 'Crashes'}
+            </button>
+          </div>
+        )}
+
         {/* Source banner — makes it unambiguous whether this list includes
             other testers' submissions or only this device's. */}
+        {activeTab === 'feedback' && (
         <div className="px-5 sm:px-6 py-2.5 border-b border-slate-800 bg-slate-950/40 flex items-center gap-2 text-[11px]">
           {!isAdmin ? (
             <>
@@ -131,8 +182,21 @@ export function AdminFeedbackModal({
             </>
           )}
         </div>
+        )}
+
+        {activeTab === 'crashes' && crashError && (
+          <div className="px-5 sm:px-6 py-2.5 border-b border-slate-800 bg-slate-950/40 flex items-center gap-2 text-[11px]">
+            <CloudOff className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+            <span className="text-rose-300/90">
+              {language === 'he'
+                ? `טעינת דוחות הקריסה נכשלה (${crashError}).`
+                : `Couldn’t load crash reports (${crashError}).`}
+            </span>
+          </div>
+        )}
 
         {/* Content */}
+        {activeTab === 'feedback' ? (
         <div className="p-5 sm:p-6 text-xs text-slate-200 max-h-[60vh] overflow-y-auto space-y-3">
           {isLoading && feedbacks.length === 0 ? (
             <div className="text-center py-10 space-y-2">
@@ -157,19 +221,16 @@ export function AdminFeedbackModal({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className={`p-1.5 rounded-lg text-xs ${
-                      fb.type === 'crash' ? 'bg-orange-500/10 text-orange-400' :
                       fb.type === 'bug' ? 'bg-rose-500/10 text-rose-400' :
                       fb.type === 'feature' ? 'bg-blue-500/10 text-blue-400' :
                       'bg-emerald-500/10 text-emerald-400'
                     }`}>
-                      {fb.type === 'crash' ? <AlertTriangle className="w-3.5 h-3.5" /> : fb.type === 'bug' ? <Bug className="w-3.5 h-3.5" /> : fb.type === 'feature' ? <Lightbulb className="w-3.5 h-3.5" /> : <Heart className="w-3.5 h-3.5" />}
+                      {fb.type === 'bug' ? <Bug className="w-3.5 h-3.5" /> : fb.type === 'feature' ? <Lightbulb className="w-3.5 h-3.5" /> : <Heart className="w-3.5 h-3.5" />}
                     </span>
                     <span className="font-bold text-slate-200 capitalize">{fb.type}</span>
-                    {fb.type !== 'crash' && (
-                      <span className="text-amber-400 font-bold text-[11px] flex items-center gap-0.5">
-                        <Star className="w-3 h-3 fill-amber-400" /> {fb.rating}/5
-                      </span>
-                    )}
+                    <span className="text-amber-400 font-bold text-[11px] flex items-center gap-0.5">
+                      <Star className="w-3 h-3 fill-amber-400" /> {fb.rating}/5
+                    </span>
                   </div>
                   <span className="text-[10px] text-slate-500 font-mono">
                     {fb.timestamp ? new Date(fb.timestamp).toLocaleString() : ''}
@@ -210,10 +271,66 @@ export function AdminFeedbackModal({
             ))
           )}
         </div>
+        ) : (
+        <div className="p-5 sm:p-6 text-xs text-slate-200 max-h-[60vh] overflow-y-auto space-y-3">
+          {isLoadingCrashes && crashGroups === null ? (
+            <div className="text-center py-10 space-y-2">
+              <RefreshCw className="w-8 h-8 text-slate-600 mx-auto animate-spin" />
+              <p className="text-sm font-semibold text-slate-400">
+                {language === 'he' ? 'טוען דוחות קריסה...' : 'Loading crash reports...'}
+              </p>
+            </div>
+          ) : !crashGroups || crashGroups.length === 0 ? (
+            <div className="text-center py-10 space-y-2">
+              <AlertTriangle className="w-8 h-8 text-slate-600 mx-auto" />
+              <p className="text-sm font-semibold text-slate-400">
+                {language === 'he' ? 'אין דוחות קריסה' : 'No crash reports'}
+              </p>
+              <p className="text-[11px] text-slate-500">
+                {language === 'he'
+                  ? 'שגיאות שלא נתפסו יופיעו כאן אוטומטית, מקובצות לפי סוג התקלה.'
+                  : 'Uncaught errors will appear here automatically, grouped by distinct failure.'}
+              </p>
+            </div>
+          ) : (
+            crashGroups.map((group) => (
+              <div key={group.signature} className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1.5 rounded-lg text-xs bg-orange-500/10 text-orange-400">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                    </span>
+                    {group.componentName && (
+                      <span className="font-bold text-slate-200">{group.componentName}</span>
+                    )}
+                    <span className="text-orange-400 font-bold text-[11px] px-2 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20">
+                      {language === 'he' ? `${group.count} מופעים` : `${group.count}×`}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    {group.lastSeen ? new Date(group.lastSeen).toLocaleString() : ''}
+                  </span>
+                </div>
+
+                <p className="text-xs text-slate-100 bg-slate-900/90 p-3 rounded-xl border border-slate-800/80 leading-relaxed font-mono whitespace-pre-wrap">
+                  {group.message}
+                </p>
+
+                <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1">
+                  <span>
+                    {language === 'he' ? 'נראה לראשונה' : 'First seen'}: {group.firstSeen ? new Date(group.firstSeen).toLocaleString() : '—'}
+                  </span>
+                  <span>v{group.appVersion}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+        )}
 
         {/* Footer */}
         <div className="p-4 sm:p-5 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between">
-          {feedbacks.length > 0 ? (
+          {activeTab === 'feedback' && feedbacks.length > 0 ? (
             <button
               onClick={handleClearHistory}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-rose-400 hover:bg-rose-500/10 transition-colors text-xs font-semibold cursor-pointer min-h-[44px]"

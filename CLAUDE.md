@@ -74,12 +74,17 @@ accidentally committed secrets (`scripts/pre_commit_secrets_check.js`). Don't by
   screenshot images, and deleted immediately if the opt-in is turned off.
 - **Crash reporting**: `crashReportService.js` catches uncaught errors — React render errors via
   every `ErrorBoundary`, plus `window` `error`/`unhandledrejection` for everything outside the
-  render tree — and reports them as anonymous `type: 'crash'` entries through the same
-  `feedbackService.submitFeedback` pipeline as manual feedback (same PII redaction, offline
-  queue, admin-only read). Deduplicated per browser tab session by (component, error name,
-  message) signature, capped at 20 reports/session, so a repeating error can't flood Firestore.
-  Errors already caught and handled elsewhere (a failed `writeJSON`, a rate-limited tracking
-  call) are not "crashes" and aren't reported here.
+  render tree — and reports them anonymously to their own `crashReports` Firestore collection
+  (own offline queue, PII redaction, admin-only read) via `AdminFeedbackModal`'s "Crashes" tab.
+  Deliberately *not* merged into `/feedback`: crash volume is machine-driven and bursty (one bad
+  deploy can generate far more documents than real testers ever submit), which would otherwise
+  crowd out human feedback in the admin inspector's fetch limit. Reports are stored one per
+  occurrence and grouped by (component, error name, message) signature client-side for display —
+  giving anonymous clients Firestore *update* rights to aggregate server-side was judged the
+  worse tradeoff. Deduplicated per browser tab session by the same signature, capped at 20
+  reports/session, so a repeating error can't flood Firestore. Errors already caught and handled
+  elsewhere (a failed `writeJSON`, a rate-limited tracking call) are not "crashes" and aren't
+  reported here.
 - **Legal consent**: `LegalConsentGate` blocks any signed-in user whose stored
   `legalAcceptedVersion` doesn't match `LEGAL_VERSION` (`src/constants/legal.js`). Bump
   `LEGAL_VERSION` whenever the ToU/Privacy Policy substance changes to re-prompt everyone.

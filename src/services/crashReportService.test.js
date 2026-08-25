@@ -1,13 +1,36 @@
 /** @vitest-environment jsdom */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const submitFeedbackMock = vi.fn().mockResolvedValue({ success: true });
+const setDocMock = vi.fn().mockResolvedValue(undefined);
+const getDocsMock = vi.fn();
+const collectionMock = vi.fn((db, name) => ({ db, name }));
+const docMock = vi.fn((col, id) => ({ col, id }));
+const queryMock = vi.fn((...args) => args);
+const orderByMock = vi.fn((...args) => args);
+const limitMock = vi.fn((...args) => args);
 
-vi.mock('./feedbackService', () => ({
-  submitFeedback: (...args) => submitFeedbackMock(...args)
+vi.mock('firebase/firestore', () => ({
+  collection: (...args) => collectionMock(...args),
+  doc: (...args) => docMock(...args),
+  setDoc: (...args) => setDocMock(...args),
+  getDocs: (...args) => getDocsMock(...args),
+  query: (...args) => queryMock(...args),
+  orderBy: (...args) => orderByMock(...args),
+  limit: (...args) => limitMock(...args)
 }));
 
-const { buildCrashReport, reportCrash, initGlobalCrashReporting } = await import('./crashReportService');
+vi.mock('./firebase', () => ({
+  db: { fake: 'db' },
+  isFirebaseConfigured: true
+}));
+
+const {
+  buildCrashReport,
+  reportCrash,
+  initGlobalCrashReporting,
+  groupCrashReports,
+  OFFLINE_CRASH_QUEUE_KEY
+} = await import('./crashReportService');
 
 describe('buildCrashReport', () => {
   it('includes the component name, error name, and message', () => {
@@ -38,38 +61,71 @@ describe('buildCrashReport', () => {
 
 describe('reportCrash', () => {
   beforeEach(() => {
-    submitFeedbackMock.mockClear();
+    setDocMock.mockClear().mockResolvedValue(undefined);
     sessionStorage.clear();
+    localStorage.clear();
   });
 
-  it('submits a crash report with type crash', async () => {
+  it('uploads a crash report to the crashReports collection', async () => {
     await reportCrash(new Error('boom'), { componentName: 'PackageCard' });
-    expect(submitFeedbackMock).toHaveBeenCalledTimes(1);
-    expect(submitFeedbackMock.mock.calls[0][0]).toMatchObject({ type: 'crash' });
+    expect(collectionMock).toHaveBeenCalledWith(expect.anything(), 'crashReports');
+    expect(setDocMock).toHaveBeenCalledTimes(1);
   });
 
   it('does not submit the same error signature twice in one session', async () => {
     await reportCrash(new Error('boom'), { componentName: 'PackageCard' });
     await reportCrash(new Error('boom'), { componentName: 'PackageCard' });
-    expect(submitFeedbackMock).toHaveBeenCalledTimes(1);
+    expect(setDocMock).toHaveBeenCalledTimes(1);
   });
 
   it('still submits a different error after a first one', async () => {
     await reportCrash(new Error('boom'), { componentName: 'PackageCard' });
     await reportCrash(new Error('bang'), { componentName: 'PackageCard' });
-    expect(submitFeedbackMock).toHaveBeenCalledTimes(2);
+    expect(setDocMock).toHaveBeenCalledTimes(2);
   });
 
-  it('never throws even if submitFeedback rejects', async () => {
-    submitFeedbackMock.mockRejectedValueOnce(new Error('network down'));
+  it('never throws even if the Firestore write rejects, and queues offline instead', async () => {
+    setDocMock.mockRejectedValueOnce(new Error('network down'));
     await expect(reportCrash(new Error('boom'))).resolves.toBeUndefined();
+    const queue = JSON.parse(localStorage.getItem(OFFLINE_CRASH_QUEUE_KEY) || '[]');
+    expect(queue.length).toBe(1);
   });
 
   it('caps total reports per session', async () => {
     for (let i = 0; i < 25; i++) {
       await reportCrash(new Error(`boom-${i}`), { componentName: 'Loop' });
     }
-    expect(submitFeedbackMock).toHaveBeenCalledTimes(20);
+    expect(setDocMock).toHaveBeenCalledTimes(20);
+  });
+});
+
+describe('groupCrashReports', () => {
+  it('groups occurrences by signature and counts them', () => {
+    const items = [
+      { signature: 'a', message: 'm1', timestamp: '2026-01-01T00:00:00.000Z', appVersion: '1.0' },
+      { signature: 'a', message: 'm1', timestamp: '2026-01-02T00:00:00.000Z', appVersion: '1.1' },
+      { signature: 'b', message: 'm2', timestamp: '2026-01-01T00:00:00.000Z', appVersion: '1.0' }
+    ];
+    const groups = groupCrashReports(items);
+    expect(groups).toHaveLength(2);
+    const a = groups.find(g => g.signature === 'a');
+    expect(a.count).toBe(2);
+    expect(a.lastSeen).toBe('2026-01-02T00:00:00.000Z');
+    expect(a.firstSeen).toBe('2026-01-01T00:00:00.000Z');
+  });
+
+  it('sorts groups by most recently seen first', () => {
+    const items = [
+      { signature: 'old', message: 'm', timestamp: '2026-01-01T00:00:00.000Z' },
+      { signature: 'new', message: 'm', timestamp: '2026-06-01T00:00:00.000Z' }
+    ];
+    const groups = groupCrashReports(items);
+    expect(groups[0].signature).toBe('new');
+  });
+
+  it('handles an empty or non-array input', () => {
+    expect(groupCrashReports([])).toEqual([]);
+    expect(groupCrashReports(undefined)).toEqual([]);
   });
 });
 
