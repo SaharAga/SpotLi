@@ -115,13 +115,28 @@ a different, subagent-driven workflow with its own skills under `.agents/skills/
 change any of the commands or architecture above, but if you're operating as one of those named
 subagent roles, `AGENTS.md` is the fuller spec.
 
+## Versioning & releases
+
+A PR that changes shipped code (`src/`, `functions/`, or `firestore.rules`) must declare that
+change — either a changeset file under `.changes/` (preferred; see `.changes/README.md`) or a
+direct `package.json` version bump. CI's "Require Version Bump" check enforces this and rejects a
+version that isn't a legal successor (`scripts/version-utils.mjs` — from `0.6.4` only `0.6.5`,
+`0.7.0`, or `1.0.0` are legal, never a skipped minor or an arbitrary patch number). Changesets are
+preferred because two parallel PRs editing the same `CHANGELOG.md`/`package.json` lines guarantee
+a conflict; new changeset files never conflict with each other.
+
+`npm run release [<version>]` collects pending changesets, writes `CHANGELOG.md`, bumps
+`package.json`, and deletes the consumed changeset files — that commit *is* the release.
+
 ## CI/Deployment
 
-`.github/workflows/ci.yml`: lint → test → build on every push/PR to `main`; on `main` only, and
-gated behind the `FIREBASE_HOSTING_ENABLED` repo variable, deploys to Firebase Hosting and pushes
-`firestore.rules`. `VITE_FIREBASE_*` values come from repository variables (public client
-identifiers, not secrets). `functions/` deploy is manual (`firebase deploy --only functions`) —
-not yet wired into CI, since it needs the Gemini secret and Blaze plan set up first.
+`.github/workflows/ci.yml`: lint → test → build on every push/PR to `main`. Deploys to Firebase
+Hosting and pushes `firestore.rules` only on a push to `main` that changes `package.json`'s
+version (i.e. a release commit, per above) — an ordinary merge lands without deploying — and only
+when the `FIREBASE_HOSTING_ENABLED` repo variable is set. `VITE_FIREBASE_*` values come from
+repository variables (public client identifiers, not secrets). `functions/` deploy is manual
+(`firebase deploy --only functions`) — not yet wired into CI, since it needs the Gemini secret and
+Blaze plan set up first.
 
 `.github/workflows/health-check.yml` runs daily: verifies the deployed site matches `main`'s
 `package.json` version and that `firestore.rules` deploys idempotently.
