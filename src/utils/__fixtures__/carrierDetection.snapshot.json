@@ -694,6 +694,21 @@
     "confidence": "none",
     "isValidChecksum": null
   },
+  "9400100000000000000006": {
+    "carrierId": "usps",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "9205590164917312345615": {
+    "carrierId": "usps",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
+  "RN123456785GB": {
+    "carrierId": "royal-mail",
+    "confidence": "high",
+    "isValidChecksum": true
+  },
   "UY894729184YP": {
     "carrierId": "yanwen",
     "confidence": "high",
