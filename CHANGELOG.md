@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.15.13] - 2026-08-25
+
+### Changed
+- **Version bumps are no longer required in every PR.** The `require-version-bump`
+  CI job became `require-change-declaration`: a PR that changes shipped code
+  declares itself either with a changeset under `.changes/` (preferred) or with
+  a direct version bump. `npm run release` collects the changesets, applies the
+  highest bump they ask for, writes the changelog entry, and deletes the files
+  it consumed — so a version marks a release again rather than counting pull
+  requests.
+
+  The old rule forced every PR to touch the same four files (`package.json`,
+  both version-asserting tests, and `CHANGELOG.md`), which meant merging any one
+  PR immediately conflicted every sibling PR in all four. Across a four-PR wave
+  that cost a rebase round-trip per merge.
+
+### Fixed
+- **The version gate could let a PR move the version backwards.** It compared
+  head and base only for inequality, so a PR carrying a *lower* version passed
+  and would have regressed `main` on merge. It now rejects any bump that does
+  not move forwards. This was hit for real when pre-allocated versions merged
+  out of order, and was caught by hand rather than by CI.
+- **The gate ignored `functions/` and `firestore.rules`.** Both change deployed
+  behaviour and neither required a declaration. Both are now covered.
+- **Two tests asserted a hardcoded version string** (`src/constants/version.test.js`,
+  `src/components/AboutModal.test.jsx`), so every release had to edit them. They
+  could only fail when someone bumped and forgot to update the test — which the
+  CI gate already caught. They now compare `APP_VERSION` against `package.json`,
+  which catches the failure that actually matters: the injected value drifting
+  from the single place the version is defined.
+
 ## [0.15.12] - 2026-08-25
 
 ### Fixed

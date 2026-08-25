@@ -1,7 +1,7 @@
 {
   "name": "deliveree",
   "private": true,
-  "version": "0.15.12",
+  "version": "0.15.13",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,7 +14,8 @@
     "feedback:sync": "python3 scripts/feedback_sync.py",
     "feedback:triage": "python3 scripts/feedback_triage.py --once",
     "feedback:daemon": "python3 scripts/feedback_daemon.py",
-    "prepare": "git config core.hooksPath .githooks || true"
+    "prepare": "git config core.hooksPath .githooks || true",
+    "release": "node scripts/release.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",

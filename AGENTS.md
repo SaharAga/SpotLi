@@ -135,35 +135,53 @@ Ground truth about this repository's toolchain, gathered by hitting each of thes
 the hard way. Prefer this section over inference — several items contradict what
 a reasonable person would assume from reading the source.
 
-### 7.1 Pre-submit CI is seven jobs, and one of them is not about code
+### 7.1 Pre-submit CI, and how to declare a change
 
-`.github/workflows/ci.yml` runs: **Require Version Bump**, **Lint Check**,
+`.github/workflows/ci.yml` runs: **Require Change Declaration**, **Lint Check**,
 **Automated Unit & Integration Tests**, **Cloud Functions Lint & Tests**,
 **Production Build Verification**, **Deploy to Firebase Hosting** (skipped on
 PRs), and **GitGuardian Security Checks**.
 
-**Any PR that changes a file under `src/**` MUST bump the `version` field in
-`package.json`, or `Require Version Bump` fails.** This is the single most
-common way a correct PR goes red. Running lint and tests locally does not tell
-you this — the job compares your `package.json` version against the base
-branch's.
+**A PR that changes shipped code must declare the change.** "Shipped code" means
+`src/`, `functions/`, or `firestore.rules` — all three change deployed
+behaviour. Two ways to satisfy it:
 
-Bumping the version requires **four** file edits, not one:
+1. **Add a changeset** (preferred) — a new `.changes/<slug>.md` file with
+   `type: major|minor|patch` front matter and a one-or-two-sentence description.
+   See `.changes/README.md`. New files never conflict between parallel PRs.
+2. **Bump `package.json`'s version** directly. Still valid, and fine for a
+   one-off hotfix that ships immediately.
 
-| File | What to change |
-|---|---|
-| `package.json` | the `version` field |
-| `src/constants/version.test.js` | the `expect(APP_VERSION).toBe(...)` literal |
-| `src/components/AboutModal.test.jsx` | the same assertion |
-| `CHANGELOG.md` | a new `## [x.y.z] - YYYY-MM-DD` entry |
+If a bump is present it **must move forwards**; a version lower than the base
+branch's fails the gate.
 
-`src/constants/version.js` does **not** hardcode the version — it reads
+`npm run release` then collects the changesets, applies the highest bump they
+ask for, writes the `CHANGELOG.md` entry, and deletes the files it consumed.
+That commit is the release.
+
+**Do not hardcode the version anywhere.** `src/constants/version.js` reads
 `__APP_VERSION__`, injected from `package.json` by `vite.config.js` and
-`vitest.config.js`. Those two test files are the only places carrying a literal
-version string. Bumping `package.json` alone turns the test job red.
+`vitest.config.js`, and the two tests that check it compare against
+`package.json` rather than a literal. There is exactly one place the version is
+defined.
 
-Version convention is in `CHANGELOG.md`: PATCH for fixes and internal work,
-MINOR for user-facing capability, MAJOR stays `0` during alpha.
+#### Why this replaced "every src/ PR must bump"
+
+The previous gate required a version bump in every PR touching `src/`. It was
+miscalibrated in both directions: too strict for internal refactors that ship
+identical behaviour, and too loose because it ignored `functions/` and
+`firestore.rules` entirely.
+
+Worse, it forced every PR to touch the same four files — `package.json`, both
+version-asserting tests, and `CHANGELOG.md` — so **merging any PR immediately
+conflicted every sibling PR in all four**. In a four-PR wave that cost a rebase
+round-trip per merge. It also turned the version into a PR counter: `0.15.3` to
+`0.15.7` in a single session, none of which was a release.
+
+It additionally tested only that head and base versions *differed*, so a PR
+carrying a lower version passed and would have regressed `main` on merge. That
+happened once, with pre-allocated versions merged out of order, and was caught
+by hand rather than by CI.
 
 ### 7.2 A conflicted PR produces no CI run at all
 
@@ -239,19 +257,19 @@ and branch from it itself, rather than accepting a base commit named in its
 brief. Before pushing, fetch again and rebase if the base moved, then **re-run
 lint and tests after the rebase** — a green suite from before proves nothing.
 
-### 8.3 Version bumps guarantee conflicts between sibling PRs
+### 8.3 Declare changes with changesets, not version bumps
 
-Because §7.1 forces every `src/` PR to touch the same four files, **merging any
-PR in a wave immediately conflicts every sibling PR** in all four. This is
-structural, not a mistake by any agent.
+Use a `.changes/<slug>.md` changeset (§7.1) rather than bumping `package.json`.
+Name the slug after your branch so parallel agents cannot collide.
 
-Mitigations, in order of preference:
-1. Allocate a **distinct version per PR up front** (e.g. `0.15.4`, `0.15.5`,
-   `0.15.6`) so all siblings pass the gate simultaneously, and fix a merge
-   order. Each still needs a rebase after each merge; resolve by keeping your
-   own version and preserving **both** CHANGELOG entries.
-2. Serialize merges within a wave.
-3. Reconsider whether internal-only `src/` changes should require a bump.
+This removes what used to be the largest coordination cost in a wave: because
+the old gate forced every PR to edit the same four files, merging one PR
+conflicted every sibling in all four, every time. Changesets are new files, so
+they never conflict with each other.
+
+If you do bump directly, allocate versions in the intended **merge order** and
+make sure yours stays above the base — and re-check after each sibling merges,
+since a pre-allocated number goes stale the moment merge order changes.
 
 ### 8.4 Agents cannot see CI
 

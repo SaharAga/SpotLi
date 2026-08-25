@@ -11,8 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  require-version-bump:
-    name: Require Version Bump
+  require-change-declaration:
+    name: Require Change Declaration
     runs-on: ubuntu-latest
     # Only meaningful for a PR diff against its base — a push to main is the
     # merge itself, already covered by the PR that produced it.
@@ -23,22 +23,56 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check package.json version changed
+      # A PR that changes shipped code must declare the change, satisfied
+      # EITHER by adding a `.changes/*.md` changeset (preferred — new files
+      # never conflict between parallel PRs) OR by bumping package.json
+      # directly. Requiring a bump in every PR made the version a PR counter
+      # and guaranteed a four-file conflict in every sibling PR each time one
+      # merged. See .changes/README.md.
+      #
+      # "Shipped code" deliberately includes functions/ and firestore.rules,
+      # not just src/ — both change deployed behaviour and neither was covered
+      # by the previous src/-only check.
+      - name: Check the PR declares its change
         env:
           BASE_REF: ${{ github.base_ref }}
         run: |
           git fetch origin "$BASE_REF" --depth=1
           BASE_VERSION=$(git show "origin/$BASE_REF:package.json" | node -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(0,"utf8")).version)')
           HEAD_VERSION=$(node -e 'process.stdout.write(require("./package.json").version)')
-          CHANGED_SRC=$(git diff --name-only "origin/$BASE_REF...HEAD" -- src/ | wc -l | tr -d ' ')
+          CHANGED_SHIPPED=$(git diff --name-only "origin/$BASE_REF...HEAD" -- src/ functions/ firestore.rules | wc -l | tr -d ' ')
+          NEW_CHANGESETS=$(git diff --name-only --diff-filter=A "origin/$BASE_REF...HEAD" -- .changes/ | grep -v 'README.md' | wc -l | tr -d ' ')
+
           echo "Base ($BASE_REF): $BASE_VERSION"
-          echo "Head: $HEAD_VERSION"
-          echo "Changed src/ files: $CHANGED_SRC"
-          if [ "$CHANGED_SRC" -gt 0 ] && [ "$BASE_VERSION" = "$HEAD_VERSION" ]; then
-            echo "::error::This PR changes src/** but package.json's version ($HEAD_VERSION) is unchanged from $BASE_REF. Bump package.json's \"version\" field — src/constants/version.js and index.html now derive from it automatically. See CHANGELOG.md for the MAJOR.MINOR.PATCH convention."
+          echo "Head:             $HEAD_VERSION"
+          echo "Changed shipped files: $CHANGED_SHIPPED"
+          echo "New changesets:        $NEW_CHANGESETS"
+
+          # When a bump IS present it must move forwards. The previous check
+          # tested only inequality, so a PR carrying a version lower than its
+          # base passed and silently regressed main on merge — which happened
+          # once, with pre-allocated versions merged out of order.
+          if [ "$BASE_VERSION" != "$HEAD_VERSION" ]; then
+            LOWEST=$(printf '%s\n%s\n' "$BASE_VERSION" "$HEAD_VERSION" | sort -V | head -n1)
+            if [ "$LOWEST" != "$BASE_VERSION" ]; then
+              echo "::error::package.json version $HEAD_VERSION is LOWER than $BASE_REF's $BASE_VERSION. Merging would move the version backwards. Bump above $BASE_VERSION."
+              exit 1
+            fi
+            echo "OK — version moves forwards ($BASE_VERSION -> $HEAD_VERSION)."
+            exit 0
+          fi
+
+          if [ "$NEW_CHANGESETS" -gt 0 ]; then
+            echo "OK — change declared via changeset."
+            exit 0
+          fi
+
+          if [ "$CHANGED_SHIPPED" -gt 0 ]; then
+            echo "::error::This PR changes shipped code (src/, functions/ or firestore.rules) but declares no change. Add a changeset under .changes/ (see .changes/README.md) or bump package.json's version."
             exit 1
           fi
-          echo "OK — version bumped ($BASE_VERSION -> $HEAD_VERSION), or no src/ changes in this PR."
+
+          echo "OK — no shipped-code changes in this PR."
 
   lint:
     name: Lint Check
