@@ -1,4 +1,26 @@
 import { validatePackageList } from './packageValidator';
+import { todayISO } from './dateUtils';
+
+/**
+ * Triggers a browser download of `content` using the memory-efficient Blob +
+ * object URL path (no giant data: URIs). No-op outside a DOM environment.
+ *
+ * @param {string} content
+ * @param {string} mime
+ * @param {string} filename
+ */
+export function downloadBlob(content, mime, filename) {
+  if (typeof document === 'undefined') return;
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const downloadAnchor = document.createElement('a');
+  downloadAnchor.setAttribute('href', url);
+  downloadAnchor.setAttribute('download', filename);
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+  URL.revokeObjectURL(url);
+}
 
 /**
  * Escapes a cell value according to RFC 4180 rules:
@@ -73,16 +95,8 @@ export function exportToCSV(packages, triggerDownload = false, filename = '') {
   const csvContentWithBOM = '\uFEFF' + csvBody;
 
   if (triggerDownload && typeof document !== 'undefined') {
-    const blob = new Blob([csvContentWithBOM], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const downloadAnchor = document.createElement('a');
-    const defaultName = filename || `deliveree_export_${new Date().toISOString().slice(0, 10)}.csv`;
-    downloadAnchor.setAttribute('href', url);
-    downloadAnchor.setAttribute('download', defaultName);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-    URL.revokeObjectURL(url);
+    const defaultName = filename || `deliveree_export_${todayISO()}.csv`;
+    downloadBlob(csvContentWithBOM, 'text/csv;charset=utf-8;', defaultName);
   }
 
   return csvContentWithBOM;
@@ -101,16 +115,8 @@ export function exportToJSON(packages, triggerDownload = false, filename = '') {
   const jsonString = JSON.stringify(safeList, null, 2);
 
   if (triggerDownload && typeof document !== 'undefined') {
-    const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const downloadAnchor = document.createElement('a');
-    const defaultName = filename || `deliveree_backup_${new Date().toISOString().slice(0, 10)}.json`;
-    downloadAnchor.setAttribute('href', url);
-    downloadAnchor.setAttribute('download', defaultName);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-    URL.revokeObjectURL(url);
+    const defaultName = filename || `deliveree_backup_${todayISO()}.json`;
+    downloadBlob(jsonString, 'application/json;charset=utf-8;', defaultName);
   }
 
   return jsonString;
@@ -369,6 +375,7 @@ function getStatusBadgeStyle(status) {
 }
 
 export const exportUtils = {
+  downloadBlob,
   escapeCSVCell,
   formatPackageCSVRow,
   exportToCSV,
