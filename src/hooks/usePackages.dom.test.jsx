@@ -127,4 +127,80 @@ describe('usePackages', () => {
     expect(enqueueSpy).not.toHaveBeenCalled();
     expect(result.current.packages).toEqual([]);
   });
+
+  describe('local save failures reach the UI', () => {
+    const quotaThrower = () => {
+      throw Object.assign(new Error('QuotaExceededError'), { name: 'QuotaExceededError' });
+    };
+
+    it('exposes saveError and invokes onSaveError when the write is rejected', () => {
+      const onSaveError = vi.fn();
+      const { result } = renderHook(() => usePackages(null, vi.fn(), onSaveError));
+      expect(result.current.saveError).toBeNull();
+
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(quotaThrower);
+
+      act(() => {
+        result.current.updatePackagesState([
+          { id: 'q1', title: 'Quota', trackingNumber: 'TRKQ' }
+        ]);
+      });
+
+      expect(result.current.saveError).not.toBeNull();
+      expect(result.current.saveError.message).toMatch(/could not be saved/i);
+      expect(result.current.saveError.cause).toBeInstanceOf(Error);
+      expect(onSaveError).toHaveBeenCalledTimes(1);
+      // In-memory state still updates so the user does not lose their edit.
+      expect(result.current.packages).toHaveLength(1);
+    });
+
+    it('reports the failure for single-package mutations too', () => {
+      const onSaveError = vi.fn();
+      const { result } = renderHook(() => usePackages(null, vi.fn(), onSaveError));
+
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(quotaThrower);
+
+      act(() => {
+        result.current.upsertSinglePackage(
+          [{ id: 'q2', title: 'One', trackingNumber: 'TRK2' }],
+          { id: 'q2' }
+        );
+      });
+      expect(result.current.saveError).not.toBeNull();
+
+      act(() => {
+        result.current.removeSinglePackage([], 'q2');
+      });
+      expect(onSaveError).toHaveBeenCalledTimes(2);
+    });
+
+    it('clears saveError once a later save succeeds', () => {
+      const { result } = renderHook(() => usePackages(null, vi.fn()));
+
+      const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(quotaThrower);
+      act(() => {
+        result.current.updatePackagesState([{ id: 'q3', title: 'X', trackingNumber: 'TRK3' }]);
+      });
+      expect(result.current.saveError).not.toBeNull();
+
+      setItem.mockRestore();
+      act(() => {
+        result.current.updatePackagesState([{ id: 'q3', title: 'X', trackingNumber: 'TRK3' }]);
+      });
+      expect(result.current.saveError).toBeNull();
+    });
+
+    it('clearSaveError dismisses the banner', () => {
+      const { result } = renderHook(() => usePackages(null, vi.fn()));
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(quotaThrower);
+
+      act(() => {
+        result.current.updatePackagesState([{ id: 'q4', title: 'Y', trackingNumber: 'TRK4' }]);
+      });
+      expect(result.current.saveError).not.toBeNull();
+
+      act(() => result.current.clearSaveError());
+      expect(result.current.saveError).toBeNull();
+    });
+  });
 });

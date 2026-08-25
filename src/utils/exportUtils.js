@@ -1,5 +1,24 @@
-import { validatePackageList } from './packageValidator';
+import { parsePackageList } from '../schemas/packageSchema';
 import { todayISO } from './dateUtils';
+
+/**
+ * Canonical CSV column order, shared by the validated export and the raw backup
+ * so a backup file is readable by the same importer.
+ */
+export const CSV_HEADERS = Object.freeze([
+  'ID',
+  'Title',
+  'TrackingNumber',
+  'Carrier',
+  'Status',
+  'OrderDate',
+  'ExpectedDeliveryDate',
+  'Origin',
+  'Destination',
+  'Notes'
+]);
+
+const CSV_HEADER_LINE = CSV_HEADERS.map(h => `"${h}"`).join(',');
 
 /**
  * Triggers a browser download of `content` using the memory-efficient Blob +
@@ -66,8 +85,46 @@ export function formatPackageCSVRow(pkg) {
 }
 
 /**
+ * Formats a package record into a CSV row array WITHOUT any repair pass and
+ * without the Hebrew-first column preference.
+ *
+ * This is the backup formatter: every cell is whatever is actually stored, so
+ * the file can reconstruct the user's data exactly. `formatPackageCSVRow`
+ * prefers `titleHe || title`, which flips Title/Notes to Hebrew for any record
+ * validatePackage has touched (it always populates `titleHe`). A backup must
+ * not make that substitution either.
+ *
+ * @param {object} pkg
+ * @returns {string[]}
+ */
+export function formatRawPackageCSVRow(pkg) {
+  if (!pkg || typeof pkg !== 'object') {
+    return Array(CSV_HEADERS.length).fill('""');
+  }
+
+  return [
+    escapeCSVCell(pkg.id ?? ''),
+    escapeCSVCell(pkg.title ?? ''),
+    escapeCSVCell(pkg.trackingNumber ?? ''),
+    escapeCSVCell(pkg.carrier ?? ''),
+    escapeCSVCell(pkg.status ?? ''),
+    escapeCSVCell(pkg.orderDate ?? ''),
+    escapeCSVCell(pkg.expectedDeliveryDate ?? ''),
+    escapeCSVCell(pkg.origin ?? ''),
+    escapeCSVCell(pkg.destination ?? ''),
+    escapeCSVCell(pkg.notes ?? '')
+  ];
+}
+
+/**
  * Exports package list to a RFC 4180-compliant CSV string with UTF-8 BOM (\uFEFF)
  * for seamless Hebrew & Arabic display in Microsoft Excel.
+ *
+ * Routes through `parsePackageList` — the single validation entry point — not
+ * `validatePackageList`: the latter's `ALLOWED_PACKAGE_KEYS` whitelist erases
+ * any field outside the known set, which is exactly what the schema's
+ * `.catchall()` exists to preserve. `parsePackageList` repairs the same fields
+ * and never truncates.
  *
  * @param {import('../types/deliveree').Package[]} packages
  * @param {boolean} [triggerDownload=false]
@@ -75,27 +132,45 @@ export function formatPackageCSVRow(pkg) {
  * @returns {string}
  */
 export function exportToCSV(packages, triggerDownload = false, filename = '') {
-  const safeList = validatePackageList(packages);
-
-  const headers = [
-    'ID',
-    'Title',
-    'TrackingNumber',
-    'Carrier',
-    'Status',
-    'OrderDate',
-    'ExpectedDeliveryDate',
-    'Origin',
-    'Destination',
-    'Notes'
-  ].map(h => `"${h}"`);
+  const { packages: safeList } = parsePackageList(packages);
 
   const rows = safeList.map(pkg => formatPackageCSVRow(pkg).join(','));
-  const csvBody = [headers.join(','), ...rows].join('\r\n');
+  const csvBody = [CSV_HEADER_LINE, ...rows].join('\r\n');
   const csvContentWithBOM = '\uFEFF' + csvBody;
 
   if (triggerDownload && typeof document !== 'undefined') {
     const defaultName = filename || `deliveree_export_${todayISO()}.csv`;
+    downloadBlob(csvContentWithBOM, 'text/csv;charset=utf-8;', defaultName);
+  }
+
+  return csvContentWithBOM;
+}
+
+/**
+ * Exports package list to CSV **verbatim** - no validation, no repair, no cap.
+ *
+ * This is the Account tab's backup path. `exportToCSV` routes through
+ * `validatePackageList`, which rewrites unknown carriers/statuses, fills empty
+ * dates and titles, rewrites or blanks tracking numbers to `UNTRACKED`, and
+ * truncates notes and titles. Those repairs are right for a report and wrong
+ * for a backup: a file that cannot reconstruct what the user had is not a
+ * backup. Only the CSV *formatting* primitives (RFC 4180 quoting, the UTF-8
+ * BOM, `downloadBlob`) are shared.
+ *
+ * @param {object[]} packages
+ * @param {boolean} [triggerDownload=false]
+ * @param {string} [filename]
+ * @returns {string}
+ */
+export function exportRawToCSV(packages, triggerDownload = false, filename = '') {
+  const list = Array.isArray(packages) ? packages : [];
+
+  const rows = list.map(pkg => formatRawPackageCSVRow(pkg).join(','));
+  const csvBody = [CSV_HEADER_LINE, ...rows].join('\r\n');
+  const csvContentWithBOM = '\uFEFF' + csvBody;
+
+  if (triggerDownload && typeof document !== 'undefined') {
+    const defaultName = filename || `deliveree_backup_${todayISO()}.csv`;
     downloadBlob(csvContentWithBOM, 'text/csv;charset=utf-8;', defaultName);
   }
 
@@ -111,7 +186,7 @@ export function exportToCSV(packages, triggerDownload = false, filename = '') {
  * @returns {string}
  */
 export function exportToJSON(packages, triggerDownload = false, filename = '') {
-  const safeList = validatePackageList(packages);
+  const { packages: safeList } = parsePackageList(packages);
   const jsonString = JSON.stringify(safeList, null, 2);
 
   if (triggerDownload && typeof document !== 'undefined') {
@@ -132,7 +207,7 @@ export function exportToJSON(packages, triggerDownload = false, filename = '') {
  * @returns {string} Clean HTML string
  */
 export function generatePrintableSummary(packages, language = 'he', triggerPrint = false) {
-  const safeList = validatePackageList(packages);
+  const { packages: safeList } = parsePackageList(packages);
   const isRTL = language === 'he';
 
   const statusTranslations = {
@@ -378,7 +453,9 @@ export const exportUtils = {
   downloadBlob,
   escapeCSVCell,
   formatPackageCSVRow,
+  formatRawPackageCSVRow,
   exportToCSV,
+  exportRawToCSV,
   exportToJSON,
   generatePrintableSummary
 };

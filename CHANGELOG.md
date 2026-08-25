@@ -7,6 +7,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.15.12] - 2026-08-25
+
+### Fixed
+- **The Account-tab backup now exports raw stored data (#42).** `#37` deduped
+  the hand-rolled CSV onto the shared `exportToCSV`, which routes through
+  `validatePackageList` — so the *backup* was repaired and capped: unknown
+  carriers became `other`, unknown statuses became `in_transit`, empty dates
+  became today, empty titles became `Untitled Package`, tracking numbers were
+  uppercased/stripped or blanked to `UNTRACKED`, notes and titles were
+  truncated, and the file stopped at 1,000 rows. A backup that cannot
+  reconstruct what the user had is not a backup. Added
+  `exportRawToCSV`/`formatRawPackageCSVRow`, which share the CSV formatting
+  primitives (RFC 4180 quoting, UTF-8 BOM, `downloadBlob`, the `CSV_HEADERS`
+  column order) but apply no repair pass and no row limit. The Hebrew/English
+  column flip goes away with it: the raw formatter reads `title`/`notes`
+  directly instead of `titleHe || title`.
+- **Local save failures now reach the UI (#43).** `deliveryService.savePackages`
+  returns a plain `{ ok, packages, error, overflow }` object instead of the
+  validated array with non-enumerable status properties attached — those flags
+  did not survive spread, `.map`, `JSON.stringify`, or a Firestore round trip,
+  and because the signal was the *absence* of `ok`, a transformed array read as
+  a failure on a **successful** save. `usePackages` now reads that status: it
+  exposes `saveError`/`clearSaveError` and calls an optional `onSaveError`
+  callback, and `App.jsx` consumes `saveError` to raise a bilingual error toast
+  through the existing `showToast`/`Toast` path — so a quota-exceeded write is
+  no longer indistinguishable from a successful one *on screen*, not merely in
+  the hook's return value.
+- **`notificationService.savePreferences` no longer reports false success
+  (#43).** It ignored `writeJSON`'s `false` return and logged at `warn`, which
+  was *less* failure visibility than before `#37`. Added
+  `savePreferencesWithStatus` returning `{ ok, preferences, error }`, restored
+  `console.error` on failure, and wired `AccountModal`'s notification toggles
+  to show an error toast when the write is rejected.
+
+- **Exports no longer strip unknown fields (#41, export half).** The three
+  validated export paths in `exportUtils.js` (`exportToCSV`, `exportToJSON`,
+  `generatePrintableSummary`) went through `validatePackageList`, whose
+  `ALLOWED_PACKAGE_KEYS` whitelist erases any field outside the known set —
+  exactly what the schema's `.catchall()` exists to preserve. They now use
+  `parsePackageList`, the single validation entry point, which repairs the same
+  fields and never truncates.
+
+### Tests
+- `AccountModal.test.jsx` rewritten: it now renders the real component and
+  asserts which exporter the backup button calls. The previous version never
+  imported, rendered, or mocked `AccountModal` — it called `exportToCSV`
+  directly and asserted its own header list, so it would have passed
+  identically against the pre-`#37` code. The stale test asserting inline
+  row-building logic that no longer exists in the source was removed.
+- New coverage for an unrepaired backup round trip, an uncapped export, and a
+  simulated quota failure surfacing through `usePackages` and the
+  notification-preferences path.
+
+- New `src/App.saveFailure.dom.test.jsx` renders the real dashboard, rejects a
+  `localStorage` write, and asserts the rendered `role="alert"` toast — an
+  end-to-end check rather than a callback assertion, which would have passed
+  while nothing consumed the signal. Verified against a negative control: with
+  the `App.jsx` effect removed, the test fails.
+
 ## [0.15.10] - 2026-08-25
 
 ### Fixed
@@ -32,7 +91,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   three validators and would not have caught a validator inversion. Added two
   valid IMpb numbers and one valid GB S10 with computed check digits, and
   regenerated the snapshot — every pre-existing entry is byte-identical.
-
 ## [0.15.8] - 2026-08-25
 
 ### Fixed
