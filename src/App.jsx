@@ -33,7 +33,7 @@ import { CARRIERS } from './types/carriers';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { usePackages } from './hooks/usePackages';
 
-function DashboardContent() {
+export function DashboardContent() {
 
   const { t, language, isRTL } = useLanguage();
   const { user, loading, triggerCloudSync } = useAuth();
@@ -45,7 +45,9 @@ function DashboardContent() {
     startDemoMode,
     updatePackagesState,
     upsertSinglePackage,
-    removeSinglePackage
+    removeSinglePackage,
+    saveError,
+    clearSaveError
   } = usePackages(user, triggerCloudSync);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -174,6 +176,23 @@ function DashboardContent() {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     };
   }, []);
+
+  // A rejected localStorage write (quota exhausted, private mode) used to be
+  // indistinguishable from a successful one: state updated, nothing reached
+  // disk, and the user was never told. usePackages reports the failure; this
+  // is the only place it becomes visible. The error is cleared as soon as it
+  // is shown, so a later failure raises a fresh toast.
+  useEffect(() => {
+    if (!saveError) return;
+    showToast(
+      language === 'he'
+        ? 'השמירה במכשיר נכשלה — האחסון מלא. השינוי מוצג אך לא נשמר.'
+        : 'Could not save to this device — storage is full. Your change is shown but not saved.',
+      'error'
+    );
+    clearSaveError();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saveError]);
 
   // Handlers
   const handleAddOrUpdatePackage = (pkgData) => {

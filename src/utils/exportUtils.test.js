@@ -2,7 +2,9 @@ import { describe, it, expect, vi } from 'vitest';
 import {
   escapeCSVCell,
   formatPackageCSVRow,
+  formatRawPackageCSVRow,
   exportToCSV,
+  exportRawToCSV,
   exportToJSON,
   generatePrintableSummary,
   exportUtils,
@@ -229,5 +231,100 @@ describe('exportUtils Unit Tests', () => {
       expect(typeof document).toBe('undefined');
       expect(() => downloadBlob('x', 'text/csv;charset=utf-8;', 'a.csv')).not.toThrow();
     });
+  });
+});
+
+describe('exportRawToCSV — the backup path', () => {
+  const raw = {
+    id: 'raw-1',
+    title: 'Widget',
+    titleHe: 'ווידג׳ט',
+    trackingNumber: 'lower case/tracking#',
+    carrier: 'not_a_known_carrier',
+    status: 'not_a_known_status',
+    orderDate: '',
+    expectedDeliveryDate: '',
+    origin: '',
+    destination: '',
+    notes: 'a'.repeat(2000),
+    notesHe: 'הערות'
+  };
+
+  const rowOf = (csv) => csv.replace(/^\uFEFF/, '').split('\r\n')[1];
+
+  it('shares the header row with the validated exporter', () => {
+    const rawHeader = exportRawToCSV([]).replace(/^\uFEFF/, '').split('\r\n')[0];
+    const validatedHeader = exportToCSV([]).replace(/^\uFEFF/, '').split('\r\n')[0];
+    expect(rawHeader).toBe(validatedHeader);
+  });
+
+  it('keeps the UTF-8 BOM and CRLF line endings', () => {
+    const csv = exportRawToCSV([raw]);
+    expect(csv.startsWith('\uFEFF')).toBe(true);
+    expect(csv).toContain('\r\n');
+  });
+
+  it('applies no repair pass to carrier, status, dates or tracking number', () => {
+    const row = rowOf(exportRawToCSV([raw]));
+    expect(row).toContain('"not_a_known_carrier"');
+    expect(row).toContain('"not_a_known_status"');
+    expect(row).toContain('"lower case/tracking#"');
+    expect(row).not.toContain('UNTRACKED');
+    expect(row).not.toContain('"other"');
+    expect(row).not.toContain('"in_transit"');
+  });
+
+  it('does not truncate long notes the way sanitizeString does', () => {
+    const row = rowOf(exportRawToCSV([raw]));
+    expect(row).toContain('a'.repeat(2000));
+  });
+
+  it('prefers the English title/notes, unlike formatPackageCSVRow', () => {
+    const row = rowOf(exportRawToCSV([raw]));
+    expect(row).toContain('"Widget"');
+    expect(row).not.toContain('ווידג׳ט');
+    expect(formatPackageCSVRow(raw)[1]).toBe('"ווידג׳ט"');
+    expect(formatRawPackageCSVRow(raw)[1]).toBe('"Widget"');
+  });
+
+  it('still escapes quotes per RFC 4180', () => {
+    const row = rowOf(exportRawToCSV([{ id: 'x', title: 'He said "hi"' }]));
+    expect(row).toContain('"He said ""hi"""');
+  });
+
+  it('emits one row per item with no cap', () => {
+    const many = Array.from({ length: 2500 }, (_, i) => ({ id: `p${i}` }));
+    const lines = exportRawToCSV(many).replace(/^\uFEFF/, '').split('\r\n');
+    expect(lines.length).toBe(2501);
+  });
+
+  it('tolerates non-array and malformed input', () => {
+    expect(exportRawToCSV(null).replace(/^\uFEFF/, '').split('\r\n')).toHaveLength(1);
+    const row = rowOf(exportRawToCSV([null]));
+    expect(row).toBe(Array(10).fill('""').join(','));
+  });
+});
+
+describe('validated exports preserve unknown fields (#41)', () => {
+  const withUnknown = {
+    id: 'unk-1',
+    title: 'Has extras',
+    trackingNumber: 'RR123456789IL',
+    carrier: 'israel_post',
+    status: 'in_transit',
+    schemaVersion: 3,
+    customerReference: 'PO-9981',
+    someFutureField: { nested: true }
+  };
+
+  it('exportToJSON keeps fields outside the known key set', () => {
+    const parsed = JSON.parse(exportToJSON([withUnknown]));
+    expect(parsed[0].customerReference).toBe('PO-9981');
+    expect(parsed[0].someFutureField).toEqual({ nested: true });
+  });
+
+  it('the raw backup never validates, so nothing can be stripped', () => {
+    const csv = exportRawToCSV([withUnknown]);
+    expect(csv).toContain('unk-1');
   });
 });

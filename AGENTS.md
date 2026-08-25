@@ -126,3 +126,217 @@ The specialized skills governing this workspace are located in `.agents/skills/`
 * [`remote-notifications-and-chat`](.agents/skills/remote-notifications-and-chat/SKILL.md)
 * [`feedback-triage-and-action-items`](.agents/skills/feedback-triage-and-action-items/SKILL.md)
 * [`project-release-tracking`](.agents/skills/project-release-tracking/SKILL.md)
+
+---
+
+## 7. Operational Facts (verified 2026-08-24)
+
+Ground truth about this repository's toolchain, gathered by hitting each of these
+the hard way. Prefer this section over inference — several items contradict what
+a reasonable person would assume from reading the source.
+
+### 7.1 Pre-submit CI, and how to declare a change
+
+`.github/workflows/ci.yml` runs: **Require Change Declaration**, **Lint Check**,
+**Automated Unit & Integration Tests**, **Cloud Functions Lint & Tests**,
+**Production Build Verification**, **Deploy to Firebase Hosting** (skipped on
+PRs), and **GitGuardian Security Checks**.
+
+**A PR that changes shipped code must declare the change.** "Shipped code" means
+`src/`, `functions/`, or `firestore.rules` — all three change deployed
+behaviour. Two ways to satisfy it:
+
+1. **Add a changeset** (preferred) — a new `.changes/<slug>.md` file with
+   `type: major|minor|patch` front matter and a one-or-two-sentence description.
+   See `.changes/README.md`. New files never conflict between parallel PRs.
+2. **Bump `package.json`'s version** directly. Still valid, and fine for a
+   one-off hotfix that ships immediately.
+
+If a bump is present it must be a **legal successor** of the base branch's
+version, not merely larger — the same three-option rule the release script
+applies.
+
+`npm run release` then collects the changesets, writes the `CHANGELOG.md`
+entry, updates `package.json`, and deletes the files it consumed. That commit
+is the release — and **only the release commit deploys**: CI ships a push to
+`main` only when it changes the version, so an ordinary merge lands without
+deploying.
+
+The release version may be derived (`npm run release`) or stated
+(`npm run release 0.16.0`). A stated version must be a **legal successor** —
+from `0.6.4` only `0.6.5`, `0.7.0` or `1.0.0`; never `0.6.99` or `0.9.0` — and
+at least as large as the changesets imply. `scripts/version-utils.mjs` holds
+that rule once and is shared by the release script and the pre-submit gate, so
+the two cannot disagree.
+
+**Do not hardcode the version anywhere.** `src/constants/version.js` reads
+`__APP_VERSION__`, injected from `package.json` by `vite.config.js` and
+`vitest.config.js`, and the two tests that check it compare against
+`package.json` rather than a literal. There is exactly one place the version is
+defined.
+
+#### Why this replaced "every src/ PR must bump"
+
+The previous gate required a version bump in every PR touching `src/`. It was
+miscalibrated in both directions: too strict for internal refactors that ship
+identical behaviour, and too loose because it ignored `functions/` and
+`firestore.rules` entirely.
+
+Worse, it forced every PR to touch the same four files — `package.json`, both
+version-asserting tests, and `CHANGELOG.md` — so **merging any PR immediately
+conflicted every sibling PR in all four**. In a four-PR wave that cost a rebase
+round-trip per merge. It also turned the version into a PR counter: `0.15.3` to
+`0.15.7` in a single session, none of which was a release.
+
+It additionally tested only that head and base versions *differed*, so a PR
+carrying a lower version passed and would have regressed `main` on merge. That
+happened once, with pre-allocated versions merged out of order, and was caught
+by hand rather than by CI.
+
+### 7.2 A conflicted PR produces no CI run at all
+
+`pull_request` events build against the **merge commit** (`refs/pull/N/merge`),
+not your branch tip. When a PR conflicts with its base, GitHub cannot compute
+that ref, so **zero workflow jobs are created**. The PR shows as failing but
+nothing ran.
+
+The tell: only **GitGuardian Security Checks** reports green. It is a GitHub App
+that scans pushed commits directly, bypassing the merge ref. One lone green
+check means "conflicted", not "partially passed". Resolve the conflict and CI
+runs.
+
+### 7.3 Check runs appear progressively — do not read an early snapshot
+
+`Production Build Verification` declares `needs: [lint, test]`, and the deploy
+job needs the build. Query check runs too early and you get four or five jobs
+and none of the ones that gate on others. **Wait for all seven to reach a
+terminal state** before calling a PR green.
+
+### 7.4 The production build cannot run locally
+
+`npm run build` requires `VITE_FIREBASE_API_KEY`, `..._AUTH_DOMAIN`,
+`..._PROJECT_ID`, `..._STORAGE_BUCKET`, `..._MESSAGING_SENDER_ID`, and
+`..._APP_ID`. `vite.config.js` deliberately fails the production build when any
+is missing or contains whitespace (this guard exists because a trailing CRLF in
+`authDomain` once broke Google sign-in in production while email/password kept
+working). CI supplies them as repository variables. Locally, `npm run build`
+fails identically on unmodified `main` — that failure is not caused by your
+change. Rely on CI for build verification.
+
+### 7.5 Known-flaky tests — wall-clock assertions
+
+`src/utils/adversarialStress.test.js:33,297,308,329` and
+`src/utils/adversarialP0Audit.test.js:40` assert elapsed duration
+(`expect(duration).toBeLessThan(100)`). Under a loaded runner these fail
+intermittently and the failure looks like it belongs to whoever's PR was
+running.
+
+If you see exactly one failure in an otherwise-green suite **and** the run took
+far longer than the usual ~25s, check whether it is one of these before
+investigating your own diff. Do not use this as a general licence to dismiss
+failures: any other test failing is real.
+
+---
+
+## 8. Parallel-Agent Protocol
+
+When several agents work concurrently, coordination failures — not coding
+mistakes — are the dominant cost. These rules come from a four-agent wave.
+
+### 8.1 Group work by file ownership, never by subject
+
+Assign each agent an **exclusive** file list. One file has exactly one owner per
+wave. Where two tasks need the same file, either merge them into one agent or
+put them in different waves.
+
+Subject-based grouping fails here because the hot files are shared across
+concerns: `App.jsx`, `packageValidator.js`, `usePackages.js`,
+`cloudStorageAdapter.js`, and `AuthContext.jsx` are each touched by several
+otherwise-unrelated tasks.
+
+Instruct agents: **if a fix seems to require a file you do not own, stop and
+report it — do not reach outside your list.** A gap reported is cheaper than a
+merge conflict. Note the corollary risk: a bug spanning two owners can fall
+between them and survive both PRs. Assign such fixes at their *source* (the
+shared function) rather than at each call site.
+
+### 8.2 Always re-derive the base; never trust a handed-down SHA
+
+`main` moves during a wave. Instruct every agent to run `git fetch origin main`
+and branch from it itself, rather than accepting a base commit named in its
+brief. Before pushing, fetch again and rebase if the base moved, then **re-run
+lint and tests after the rebase** — a green suite from before proves nothing.
+
+### 8.3 Declare changes with changesets, not version bumps
+
+Use a `.changes/<slug>.md` changeset (§7.1) rather than bumping `package.json`.
+Name the slug after your branch so parallel agents cannot collide.
+
+This removes what used to be the largest coordination cost in a wave: because
+the old gate forced every PR to edit the same four files, merging one PR
+conflicted every sibling in all four, every time. Changesets are new files, so
+they never conflict with each other.
+
+If you do bump directly, allocate versions in the intended **merge order** and
+make sure yours stays above the base — and re-check after each sibling merges,
+since a pre-allocated number goes stale the moment merge order changes.
+
+### 8.4 Agents cannot see CI
+
+Agent environments have no `gh` CLI. An agent can push but cannot observe
+whether what it pushed passed. **Verification is the orchestrator's job** — make
+it explicit rather than assuming the agent will confirm.
+
+### 8.5 Review must be independent, and must not be given the plan
+
+Use a separate reviewer that receives the PR and the repository but **not** the
+plan, the task IDs, the rationale, or the orchestrator's expectations. Anchoring
+a reviewer on intent turns it into a checker of compliance rather than of
+correctness.
+
+Give the reviewer three standing instructions:
+* Judge the diff, not the PR description.
+* Treat a green suite as weak evidence — the tests were written by the same
+  party that wrote the code. Look for deleted, skipped, weakened, or
+  self-asserting tests.
+* Assess claimed evidence rather than accepting it (e.g. verify a
+  characterization corpus actually reaches the branches it claims to cover).
+
+One reviewer across all PRs in a wave beats one per PR: it applies a consistent
+standard and catches interactions that only appear when several PRs merge
+together.
+
+---
+
+## 9. Codebase Gotchas
+
+Non-obvious facts that have already caused, or nearly caused, incorrect changes.
+
+* **`src/types/stages.js` is not the source of valid statuses.** `STAGES`
+  defines six ids and omits both `exception` and `archived`. Deriving
+  `VALID_STATUSES` from it silently narrows validation and corrupts packages in
+  those states. The canonical list lives in `src/utils/packageValidator.js`.
+
+* **`CARRIERS[id]` is unsafe for untrusted ids.** `CARRIERS['constructor']`
+  returns `Object.prototype.constructor` — truthy — so the common
+  `CARRIERS[id] || CARRIERS['other']` fallback is skipped. Use the `getCarrier()`
+  accessor in `src/types/carriers.js`, which does an own-property check. The
+  unsafe pattern still exists at roughly twelve call sites across components and
+  utils, plus `src/App.jsx:279` which has no fallback at all.
+
+* **Archived packages never leave the list.** Archiving flips `isArchived`; the
+  record stays in the same array and the same storage blob, and there is no
+  retention or eviction policy anywhere. Every cost — validation sweeps, storage
+  size, sync volume — scales with *lifetime* packages created, not active ones.
+
+* **`src/services/idbStorageAdapter.js` no longer exists** (removed in `0.15.3`;
+  it had zero non-test importers). Do not reintroduce it or cite it. `README.md`
+  and `PROJECT_STATE.md` may still reference it — those references are stale.
+
+* **Apple and Facebook auth are not wired up.** The UI was deliberately removed;
+  `src/services/firebase.js` may still construct the providers, but no reachable
+  path uses them.
+
+* **`package-lock.json`'s `version` field has drifted** from `package.json`
+  across many releases. It is cosmetic (npm does not read it for resolution) but
+  is a recurring source of confusion.

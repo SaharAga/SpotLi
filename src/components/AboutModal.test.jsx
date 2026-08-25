@@ -1,10 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { CARRIER_LIST, CARRIERS } from '../types/carriers';
 import { APP_VERSION, RELEASE_DATE, BUILD_CHANNEL } from '../constants/version';
+import pkg from '../../package.json';
 
 describe('AboutModal Logic & Specifications', () => {
   it('exposes correct version constants and metadata', () => {
-    expect(APP_VERSION).toBe('0.15.6');
+    // Tracks package.json (see src/constants/version.test.js) so a release
+    // does not require editing this assertion.
+    expect(APP_VERSION).toBe(pkg.version);
     expect(RELEASE_DATE).toBe('2026-08-23');
     expect(BUILD_CHANNEL).toBe('alpha');
   });

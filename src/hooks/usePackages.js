@@ -17,8 +17,12 @@ import { INITIAL_PACKAGES } from '../data/initialMockData';
  * @param {{ id: string } | null | undefined} user
  * @param {() => void} triggerCloudSync - called after any write this hook
  *   makes, so the caller's sync-status UI stays accurate.
+ * @param {(error: { message: string, cause: Error|null }) => void} [onSaveError] -
+ *   called when a local persist attempt fails (quota exceeded, private mode).
+ *   The same failure is exposed as the `saveError` field of the hook's return
+ *   value, so a consumer can either react imperatively (toast) or render it.
  */
-export function usePackages(user, triggerCloudSync) {
+export function usePackages(user, triggerCloudSync, onSaveError) {
   const isDemoUrl = useMemo(() => {
     if (typeof window === 'undefined') return false;
     const urlParams = new URLSearchParams(window.location.search);
@@ -26,6 +30,12 @@ export function usePackages(user, triggerCloudSync) {
   }, []);
 
   const [isDemoMode, setIsDemoMode] = useState(isDemoUrl);
+
+  // Last local-persist failure, or null. deliveryService.savePackages reports
+  // failure via { ok, packages, error }; before this, the hook discarded that
+  // return entirely and a quota-exceeded write looked identical to a
+  // successful one — state updated, nothing on disk, no user-visible signal.
+  const [saveError, setSaveError] = useState(null);
 
   const [packages, setPackages] = useState(() => {
     if (isDemoUrl) {
@@ -102,9 +112,26 @@ export function usePackages(user, triggerCloudSync) {
   // a tight synchronous loop of N enqueue() calls only picks up the first item's replay pass (the
   // queue snapshot is captured before the loop's later calls land) — bulk writes go straight to
   // cloudAdapter's own batched Firestore write instead, which handles the whole list atomically.
+  const persistLocally = (list) => {
+    const result = deliveryService.savePackages(list, user?.id || null);
+    if (result && result.ok) {
+      setSaveError(null);
+      return true;
+    }
+    const failure = {
+      message: 'Changes could not be saved to this device (storage is full).',
+      cause: (result && result.error) || null
+    };
+    setSaveError(failure);
+    if (onSaveError) onSaveError(failure);
+    return false;
+  };
+
+  const clearSaveError = () => setSaveError(null);
+
   const updatePackagesState = (newPackages) => {
     setPackages(newPackages);
-    deliveryService.savePackages(newPackages, user?.id || null);
+    persistLocally(newPackages);
     if (user?.id && cloudAdapter.isFirestoreActive?.()) {
       cloudAdapter.savePackages(newPackages);
     }
@@ -117,7 +144,7 @@ export function usePackages(user, triggerCloudSync) {
   // logging a console.warn.
   const upsertSinglePackage = (updatedPackages, changedPkg) => {
     setPackages(updatedPackages);
-    deliveryService.savePackages(updatedPackages, user?.id || null);
+    persistLocally(updatedPackages);
     if (user?.id && cloudAdapter.isFirestoreActive?.()) {
       syncQueueService.enqueue(MUTATION_TYPES.UPDATE, changedPkg, user.id);
     }
@@ -126,7 +153,7 @@ export function usePackages(user, triggerCloudSync) {
 
   const removeSinglePackage = (updatedPackages, packageId) => {
     setPackages(updatedPackages);
-    deliveryService.savePackages(updatedPackages, user?.id || null);
+    persistLocally(updatedPackages);
     if (user?.id && cloudAdapter.isFirestoreActive?.()) {
       syncQueueService.enqueue(MUTATION_TYPES.DELETE, { id: packageId }, user.id);
     }
@@ -147,6 +174,8 @@ export function usePackages(user, triggerCloudSync) {
     startDemoMode,
     updatePackagesState,
     upsertSinglePackage,
-    removeSinglePackage
+    removeSinglePackage,
+    saveError,
+    clearSaveError
   };
 }

@@ -7,6 +7,200 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.15.13] - 2026-08-25
+
+### Changed
+- **Version bumps are no longer required in every PR.** The `require-version-bump`
+  CI job became `require-change-declaration`: a PR that changes shipped code
+  declares itself either with a changeset under `.changes/` (preferred) or with
+  a direct version bump. `npm run release` collects the changesets, applies the
+  highest bump they ask for, writes the changelog entry, and deletes the files
+  it consumed — so a version marks a release again rather than counting pull
+  requests.
+
+  The old rule forced every PR to touch the same four files (`package.json`,
+  both version-asserting tests, and `CHANGELOG.md`), which meant merging any one
+  PR immediately conflicted every sibling PR in all four. Across a four-PR wave
+  that cost a rebase round-trip per merge.
+
+### Fixed
+- **The version gate could let a PR move the version backwards.** It compared
+  head and base only for inequality, so a PR carrying a *lower* version passed
+  and would have regressed `main` on merge. It now rejects any bump that does
+  not move forwards. This was hit for real when pre-allocated versions merged
+  out of order, and was caught by hand rather than by CI.
+- **The gate ignored `functions/` and `firestore.rules`.** Both change deployed
+  behaviour and neither required a declaration. Both are now covered.
+- **Two tests asserted a hardcoded version string** (`src/constants/version.test.js`,
+  `src/components/AboutModal.test.jsx`), so every release had to edit them. They
+  could only fail when someone bumped and forgot to update the test — which the
+  CI gate already caught. They now compare `APP_VERSION` against `package.json`,
+  which catches the failure that actually matters: the injected value drifting
+  from the single place the version is defined.
+
+### Added
+- **Releases are now the only thing that deploys.** CI ships a push to `main`
+  only when it changes `package.json`'s version, so an ordinary merge lands
+  without deploying. Deploying every merge meant several deploys could share
+  one version number, so "I'm on 0.15.12" stopped identifying a build — the
+  property the version gate exists to protect in the first place.
+- **`npm run release` accepts an explicit version and checks it twice.**
+  `npm run release 0.16.0` must name a legal successor of the current version —
+  from `0.6.4` only `0.6.5`, `0.7.0` or `1.0.0` — and must be at least as large
+  as the changesets imply, naming the changesets that force a larger bump when
+  it refuses. Deriving alone cannot catch a breaking change mislabelled
+  `type: patch`; stating alone cannot catch a typo. Nothing is written when it
+  refuses. Omitting the argument still derives the version from the changesets.
+- **The pre-submit gate enforces the same successor rule.** A manual bump must
+  be one of the three legal next versions, not merely larger — `0.6.4` to
+  `0.9.0` skips minors and leaves a gap that means nothing.
+  `scripts/version-utils.mjs` holds the rule once and is shared by the release
+  script and CI, so the two cannot drift apart.
+
+## [0.15.12] - 2026-08-25
+
+### Fixed
+- **The Account-tab backup now exports raw stored data (#42).** `#37` deduped
+  the hand-rolled CSV onto the shared `exportToCSV`, which routes through
+  `validatePackageList` — so the *backup* was repaired and capped: unknown
+  carriers became `other`, unknown statuses became `in_transit`, empty dates
+  became today, empty titles became `Untitled Package`, tracking numbers were
+  uppercased/stripped or blanked to `UNTRACKED`, notes and titles were
+  truncated, and the file stopped at 1,000 rows. A backup that cannot
+  reconstruct what the user had is not a backup. Added
+  `exportRawToCSV`/`formatRawPackageCSVRow`, which share the CSV formatting
+  primitives (RFC 4180 quoting, UTF-8 BOM, `downloadBlob`, the `CSV_HEADERS`
+  column order) but apply no repair pass and no row limit. The Hebrew/English
+  column flip goes away with it: the raw formatter reads `title`/`notes`
+  directly instead of `titleHe || title`.
+- **Local save failures now reach the UI (#43).** `deliveryService.savePackages`
+  returns a plain `{ ok, packages, error, overflow }` object instead of the
+  validated array with non-enumerable status properties attached — those flags
+  did not survive spread, `.map`, `JSON.stringify`, or a Firestore round trip,
+  and because the signal was the *absence* of `ok`, a transformed array read as
+  a failure on a **successful** save. `usePackages` now reads that status: it
+  exposes `saveError`/`clearSaveError` and calls an optional `onSaveError`
+  callback, and `App.jsx` consumes `saveError` to raise a bilingual error toast
+  through the existing `showToast`/`Toast` path — so a quota-exceeded write is
+  no longer indistinguishable from a successful one *on screen*, not merely in
+  the hook's return value.
+- **`notificationService.savePreferences` no longer reports false success
+  (#43).** It ignored `writeJSON`'s `false` return and logged at `warn`, which
+  was *less* failure visibility than before `#37`. Added
+  `savePreferencesWithStatus` returning `{ ok, preferences, error }`, restored
+  `console.error` on failure, and wired `AccountModal`'s notification toggles
+  to show an error toast when the write is rejected.
+
+- **Exports no longer strip unknown fields (#41, export half).** The three
+  validated export paths in `exportUtils.js` (`exportToCSV`, `exportToJSON`,
+  `generatePrintableSummary`) went through `validatePackageList`, whose
+  `ALLOWED_PACKAGE_KEYS` whitelist erases any field outside the known set —
+  exactly what the schema's `.catchall()` exists to preserve. They now use
+  `parsePackageList`, the single validation entry point, which repairs the same
+  fields and never truncates.
+
+### Tests
+- `AccountModal.test.jsx` rewritten: it now renders the real component and
+  asserts which exporter the backup button calls. The previous version never
+  imported, rendered, or mocked `AccountModal` — it called `exportToCSV`
+  directly and asserted its own header list, so it would have passed
+  identically against the pre-`#37` code. The stale test asserting inline
+  row-building logic that no longer exists in the source was removed.
+- New coverage for an unrepaired backup round trip, an uncapped export, and a
+  simulated quota failure surfacing through `usePackages` and the
+  notification-preferences path.
+
+- New `src/App.saveFailure.dom.test.jsx` renders the real dashboard, rejects a
+  `localStorage` write, and asserts the rendered `role="alert"` toast — an
+  end-to-end check rather than a callback assertion, which would have passed
+  while nothing consumed the signal. Verified against a negative control: with
+  the `App.jsx` effect removed, the test fails.
+
+## [0.15.10] - 2026-08-25
+
+### Fixed
+- **Restored the parser → detector integration coverage** deleted in `0.15.3`.
+  `src/tests/integration/ingestionPipeline.integration.test.js` was removed
+  wholesale because the dead IndexedDB adapter was its terminal sink, but only
+  its last two steps used that adapter. Steps 1–3 were the repo's only
+  assertion that `parseSmartText` → `detectCarrier` → `detectStore` compose on
+  raw share text; the surviving unit suites feed each module hand-built inputs,
+  so a change to `parseSmartText`'s output shape that broke `detectCarrier`'s
+  input contract passed CI. The test is back with `deliveryService` as the
+  sink, keeping the original Hebrew Israel Post SMS case.
+- **De-flaked the wall-clock assertions** in `adversarialStress.test.js` and
+  `adversarialP0Audit.test.js`. Tight per-iteration bounds (50–250ms) failed
+  intermittently on loaded runners, training everyone to re-run red CI. The
+  loops now assert behaviour per input and carry a single generous whole-loop
+  ceiling; catastrophic backtracking costs seconds to minutes on these inputs,
+  so the pathological-input protection is preserved while scheduler noise no
+  longer trips it.
+- **Closed the checksum corpus gap.** `carrierDetectorCorpus.js` had no input
+  yielding `isValidChecksum: true` for USPS `mod10-31` or Royal Mail
+  `upu-s10`, so the committed snapshot pinned only the failing branch of two of
+  three validators and would not have caught a validator inversion. Added two
+  valid IMpb numbers and one valid GB S10 with computed check digits, and
+  regenerated the snapshot — every pre-existing entry is byte-identical.
+## [0.15.8] - 2026-08-25
+
+### Fixed
+- **Exports no longer silently truncate at 1,000 packages** (#40).
+  `validatePackageList` hard-sliced its input at 1,000 items while the storage
+  path had already dropped its cap, so a user holding 1,200 packages had all
+  1,200 persisted and every CSV/JSON/print export quietly cut to 1,000 rows.
+  The slice is gone: the function now returns every valid record it is given.
+  The 1,000 figure survives only as `PACKAGE_LIST_ADVISORY_LIMIT`, exposed via
+  the new `isPackageListOverflowing()` helper for callers that want to warn.
+  Fixed in the shared function rather than at each export call site, so every
+  consumer inherits it.
+- **The built-in diagnostics no longer certify a guarantee the app lost** (#40).
+  `runMemoryBoundsSelfTest` asserted that lists were capped at 1,000 and passed
+  by testing `validatePackageList` directly, certifying a property the
+  application no longer had. It now asserts the opposite and true property —
+  that a list of any size comes back in full — and reports `truncated` /
+  `overAdvisoryLimit` in its details.
+- **Live-tracking refreshes no longer erase `schemaVersion` and unknown fields**
+  (#41). `trackingService.batchRefreshTracking` validated each refreshed record
+  through `validatePackageSafe`, a `.strip()` schema that does not list
+  `schemaVersion`, and wrote the stripped result back — so every refresh
+  reverted a record to the 19 known keys. It now routes through `parsePackage`,
+  the single repairing entry point, which preserves unknown fields and stamps
+  `schemaVersion`.
+- `validatePackage` (the legacy hand-rolled validator, still used by the export
+  path) now carries `schemaVersion` through instead of dropping it.
+
+## [0.15.7] - 2026-08-24
+
+### Changed
+- **Carrier detection now reads the carrier config table instead of restating it.**
+  `detectCarrier` carried 21 hardcoded `if` branches whose regexes duplicated
+  the `patterns` arrays in `src/types/carriers.js` verbatim, with the table's
+  own patterns reached only as a fallback. The branches did encode three things
+  the table couldn't express, so the table now expresses them: `patterns`
+  entries are rules (`{ re, confidence, checksum, priority }`), giving
+  per-rule confidence, explicit cross-carrier priority (Aramex's 11-digit rule
+  still beats FedEx's 12-digit one), and per-pattern checksum selection via a
+  named registry (`upu-s10`, `mod10-31`, `assume-valid`). All 21 branches are
+  gone. Behavior-preserving: pinned by a committed 782-entry characterization
+  snapshot generated from the previous implementation, byte-identical after the
+  refactor, plus an offline differential run over 200k generated tracking
+  numbers with zero divergences.
+- **Live-tracking capability moved into the carrier table.** A hardcoded
+  `LIVE_TRACKING_CARRIERS` array plus a per-carrier `queryIsraelPostLive`
+  function became an optional `liveTracking: { endpoint, parse }` entry per
+  carrier; adding a second live carrier is now a table entry rather than a new
+  function and an array edit. The `tracked: false` / `UNTRACKED_REASONS`
+  contract is unchanged — no failure path fabricates checkpoints.
+- Added `getCarrier(id)`, encapsulating the `CARRIERS[x] || CARRIERS['other']`
+  fallback repeated across the codebase, using an own-property lookup so a
+  user-influenced carrier id can't reach `Object.prototype`.
+
+### Performance
+- `inferStageFromText` lowercased the entire status-keyword table on every
+  call — once per checkpoint of every tracking response — though the table is a
+  module-level literal that never changes. It is now pre-lowercased once at
+  module scope.
+
 ## [0.15.6] - 2026-08-24
 
 ### Fixed

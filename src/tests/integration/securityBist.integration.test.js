@@ -46,9 +46,10 @@ describe('Integration Testbench: Security & BIST (Burst queries -> throttleGuard
     expect(bistReport.summary.passed).toBe(5);
     expect(bistReport.summary.failed).toBe(0);
 
-    // 5. Verify memory bounds are strictly enforced
+    // 5. Verify package lists are reported in full rather than truncated
     const memTest = runMemoryBoundsSelfTest(1500);
     expect(memTest.status).toBe('PASS');
-    expect(memTest.details.outputSize).toBe(1000);
+    expect(memTest.details.outputSize).toBe(1500);
+    expect(memTest.details.truncated).toBe(false);
   });
 });

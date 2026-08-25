@@ -433,7 +433,7 @@ describe('Delivery Service and Storage Persistence', () => {
       }));
 
       const saved = deliveryService.savePackages(big);
-      expect(saved.length).toBe(1200);
+      expect(saved.packages.length).toBe(1200);
       expect(saved.ok).toBe(true);
       expect(saved.overflow).toBe(true);
 
@@ -467,9 +467,10 @@ describe('Delivery Service and Storage Persistence', () => {
         ]);
         expect(saved.ok).toBe(false);
         expect(saved.error).toBeInstanceOf(Error);
-        // Backward compatible: still the validated array
-        expect(Array.isArray(saved)).toBe(true);
-        expect(saved[0].id).toBe('quota-1');
+        // Plain result object: the validated list lives on `.packages`.
+        expect(Array.isArray(saved)).toBe(false);
+        expect(Array.isArray(saved.packages)).toBe(true);
+        expect(saved.packages[0].id).toBe('quota-1');
       } finally {
         globalThis.localStorage.setItem = originalSetItem;
       }
