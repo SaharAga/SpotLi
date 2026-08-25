@@ -72,6 +72,14 @@ accidentally committed secrets (`scripts/pre_commit_secrets_check.js`). Don't by
   opt into AI training (separate, unchecked-by-default consent) additionally get actual
   before/after values logged to `trainingExamples` via `trainingDataService.js` — never
   screenshot images, and deleted immediately if the opt-in is turned off.
+- **Crash reporting**: `crashReportService.js` catches uncaught errors — React render errors via
+  every `ErrorBoundary`, plus `window` `error`/`unhandledrejection` for everything outside the
+  render tree — and reports them as anonymous `type: 'crash'` entries through the same
+  `feedbackService.submitFeedback` pipeline as manual feedback (same PII redaction, offline
+  queue, admin-only read). Deduplicated per browser tab session by (component, error name,
+  message) signature, capped at 20 reports/session, so a repeating error can't flood Firestore.
+  Errors already caught and handled elsewhere (a failed `writeJSON`, a rate-limited tracking
+  call) are not "crashes" and aren't reported here.
 - **Legal consent**: `LegalConsentGate` blocks any signed-in user whose stored
   `legalAcceptedVersion` doesn't match `LEGAL_VERSION` (`src/constants/legal.js`). Bump
   `LEGAL_VERSION` whenever the ToU/Privacy Policy substance changes to re-prompt everyone.

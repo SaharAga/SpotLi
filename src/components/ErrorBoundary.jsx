@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
+import { reportCrash } from '../services/crashReportService';
 
 export class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -14,6 +15,7 @@ export class ErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     console.error('Deliveree Error caught by ErrorBoundary:', error, errorInfo);
     this.setState({ errorInfo });
+    reportCrash(error, { componentName: this.props.componentName });
     if (typeof this.props.onError === 'function') {
       this.props.onError(error, errorInfo);
     }

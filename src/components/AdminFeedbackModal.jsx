@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   X, MessageSquare, Star, Trash2,
-  Bug, Lightbulb, Heart, RefreshCw, CloudOff, Cloud
+  Bug, Lightbulb, Heart, RefreshCw, CloudOff, Cloud, AlertTriangle
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -157,16 +157,19 @@ export function AdminFeedbackModal({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className={`p-1.5 rounded-lg text-xs ${
+                      fb.type === 'crash' ? 'bg-orange-500/10 text-orange-400' :
                       fb.type === 'bug' ? 'bg-rose-500/10 text-rose-400' :
                       fb.type === 'feature' ? 'bg-blue-500/10 text-blue-400' :
                       'bg-emerald-500/10 text-emerald-400'
                     }`}>
-                      {fb.type === 'bug' ? <Bug className="w-3.5 h-3.5" /> : fb.type === 'feature' ? <Lightbulb className="w-3.5 h-3.5" /> : <Heart className="w-3.5 h-3.5" />}
+                      {fb.type === 'crash' ? <AlertTriangle className="w-3.5 h-3.5" /> : fb.type === 'bug' ? <Bug className="w-3.5 h-3.5" /> : fb.type === 'feature' ? <Lightbulb className="w-3.5 h-3.5" /> : <Heart className="w-3.5 h-3.5" />}
                     </span>
                     <span className="font-bold text-slate-200 capitalize">{fb.type}</span>
-                    <span className="text-amber-400 font-bold text-[11px] flex items-center gap-0.5">
-                      <Star className="w-3 h-3 fill-amber-400" /> {fb.rating}/5
-                    </span>
+                    {fb.type !== 'crash' && (
+                      <span className="text-amber-400 font-bold text-[11px] flex items-center gap-0.5">
+                        <Star className="w-3 h-3 fill-amber-400" /> {fb.rating}/5
+                      </span>
+                    )}
                   </div>
                   <span className="text-[10px] text-slate-500 font-mono">
                     {fb.timestamp ? new Date(fb.timestamp).toLocaleString() : ''}

@@ -67,12 +67,15 @@ service cloud.firestore {
       }
     }
 
-    // Alpha Tester Feedback Collection
+    // Alpha Tester Feedback Collection. Also receives automatic, anonymous
+    // 'crash' reports from src/services/crashReportService.js (ErrorBoundary
+    // + window error/unhandledrejection handlers) — same shape, same
+    // validation, same admin-only read.
     match /feedback/{feedbackId} {
       allow create: if request.resource.data.message is string &&
         request.resource.data.message.size() > 0 &&
         request.resource.data.message.size() <= 1500 &&
-        request.resource.data.type in ['bug', 'feature', 'praise'] &&
+        request.resource.data.type in ['bug', 'feature', 'praise', 'crash'] &&
         request.resource.data.rating is number &&
         request.resource.data.rating >= 1 &&
         request.resource.data.rating <= 5 &&

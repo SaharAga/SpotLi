@@ -8,7 +8,7 @@ export const LOCAL_FEEDBACK_HISTORY_KEY = 'deliveree_tester_feedback';
 const MAX_LOCAL_HISTORY_ITEMS = 50;
 
 /**
- * @typedef {'bug' | 'feature' | 'praise'} FeedbackType
+ * @typedef {'bug' | 'feature' | 'praise' | 'crash'} FeedbackType
  * 
  * @typedef {Object} FeedbackPayload
  * @property {string} id
@@ -63,7 +63,7 @@ export function validateAndSanitizeFeedback(input) {
   }
 
   const rawType = typeof input.type === 'string' ? input.type.toLowerCase().trim() : 'bug';
-  const type = (rawType === 'bug' || rawType === 'feature' || rawType === 'praise') ? rawType : 'bug';
+  const type = (rawType === 'bug' || rawType === 'feature' || rawType === 'praise' || rawType === 'crash') ? rawType : 'bug';
 
   const rawMessage = typeof input.message === 'string' ? input.message : '';
   const sanitizedStringMessage = sanitizeString(rawMessage, 1500).trim();
