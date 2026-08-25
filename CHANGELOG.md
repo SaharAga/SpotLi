@@ -7,6 +7,101 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.15.7] - 2026-08-24
+
+### Changed
+- **Carrier detection now reads the carrier config table instead of restating it.**
+  `detectCarrier` carried 21 hardcoded `if` branches whose regexes duplicated
+  the `patterns` arrays in `src/types/carriers.js` verbatim, with the table's
+  own patterns reached only as a fallback. The branches did encode three things
+  the table couldn't express, so the table now expresses them: `patterns`
+  entries are rules (`{ re, confidence, checksum, priority }`), giving
+  per-rule confidence, explicit cross-carrier priority (Aramex's 11-digit rule
+  still beats FedEx's 12-digit one), and per-pattern checksum selection via a
+  named registry (`upu-s10`, `mod10-31`, `assume-valid`). All 21 branches are
+  gone. Behavior-preserving: pinned by a committed 782-entry characterization
+  snapshot generated from the previous implementation, byte-identical after the
+  refactor, plus an offline differential run over 200k generated tracking
+  numbers with zero divergences.
+- **Live-tracking capability moved into the carrier table.** A hardcoded
+  `LIVE_TRACKING_CARRIERS` array plus a per-carrier `queryIsraelPostLive`
+  function became an optional `liveTracking: { endpoint, parse }` entry per
+  carrier; adding a second live carrier is now a table entry rather than a new
+  function and an array edit. The `tracked: false` / `UNTRACKED_REASONS`
+  contract is unchanged — no failure path fabricates checkpoints.
+- Added `getCarrier(id)`, encapsulating the `CARRIERS[x] || CARRIERS['other']`
+  fallback repeated across the codebase, using an own-property lookup so a
+  user-influenced carrier id can't reach `Object.prototype`.
+
+### Performance
+- `inferStageFromText` lowercased the entire status-keyword table on every
+  call — once per checkpoint of every tracking response — though the table is a
+  module-level literal that never changes. It is now pre-lowercased once at
+  module scope.
+
+## [0.15.6] - 2026-08-24
+
+### Fixed
+- **Unknown fields on stored packages were silently erased on every read and
+  write.** Package validation rebuilt a fresh object from a fixed 19-key
+  allowlist, so any field outside that list — including data written by a
+  newer client or a partner import — was dropped without warning. Validation
+  now preserves unrecognized fields while still stripping prototype-polluting
+  keys (`__proto__`, `constructor`, `prototype`).
+- **Two competing validators disagreed depending on the code path.** A strict
+  Zod schema (which rejected malformed records) and a hand-rolled validator
+  (which repaired them) both existed and were reached from different call
+  sites. They are unified behind a single repairing schema with one entry
+  point; the repair values (`Untitled Package`, `UNTRACKED`, `in_transit`,
+  `other`, `Israel`) are unchanged. The circular import between the schema and
+  the validator module is also gone.
+- **The 1,000-package ceiling destroyed data.** Package lists were truncated at
+  1,000 items on read, and the truncated list was written back on the next
+  save — so package 1,001 disappeared permanently. Since archived packages
+  never leave the list, this was reachable through ordinary long-term use.
+  Lists are no longer truncated on the read/write path; an over-large list is
+  reported to callers via an overflow flag instead.
+- **Failed saves reported success.** `savePackages` caught the write exception,
+  logged it, and returned the same value it returns on success, so callers
+  believed a write had landed when localStorage was out of quota. Saves now
+  report success or failure, and status updates, tracking refreshes, and data
+  imports propagate that failure instead of claiming success.
+
+### Added
+- `schemaVersion` field on stored package records (defaulted to `1` for
+  existing data), to make future record migrations explicit. This is a
+  per-record data-format marker and is independent of the app version above.
+
+## [0.15.5] - 2026-08-24
+
+### Changed
+- **Account tab's CSV backup now uses the shared, validated exporter.** The
+  Account tab hand-rolled its own copy of the CSV writer, which had drifted
+  from `exportUtils`. It now calls the shared `exportToCSV`, so the file it
+  produces changes in three user-visible ways: rows end with RFC 4180 `\r\n`
+  instead of `\n` (correct for Excel and strict CSV parsers), the export runs
+  through the same validation as every other export, and the Title/Notes
+  columns now prefer the Hebrew field (`titleHe`/`notesHe`) over the English
+  one, matching the rest of the app instead of the reverse. The filename,
+  the UTF-8 BOM for Hebrew in Excel, and the confirmation toasts are
+  unchanged. Any column added to the shared schema from now on appears in
+  this export automatically.
+
+### Fixed
+- **Date formatters were rebuilt on every render.** `formatDate` and
+  `formatDateTime` constructed a fresh `Intl.DateTimeFormat` on each call —
+  once per package card, table row, and checkpoint — so a list of 50
+  packages re-created 50 formatters on every keystroke. Formatters are now
+  cached per locale at module scope. Displayed dates are identical.
+
+### Internal
+- Added `todayISO()` in `dateUtils` and `readJSON`/`writeJSON` in a new
+  `utils/storage.js`, replacing repeated `localStorage` guard/parse/warn
+  boilerplate in `notificationService` and `ThemeContext`; extracted a
+  single `downloadBlob()` used by both the CSV and JSON exporters. Stored
+  values and fallback behavior are unchanged; `writeJSON` reports failure
+  (e.g. quota exceeded) to its caller rather than discarding it silently.
+
 ## [0.15.3] - 2026-08-24
 
 ### Removed

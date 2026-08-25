@@ -1,4 +1,49 @@
 /**
+ * Cached Intl.DateTimeFormat instances.
+ *
+ * Constructing an Intl formatter is one of the most expensive operations in the
+ * JS runtime relative to calling .format(). These helpers are invoked once per
+ * package card / table row / checkpoint, so a re-render of 50 packages would
+ * otherwise build 50 formatters. Cache them at module scope, keyed by locale.
+ */
+const DATE_FORMAT_OPTIONS = {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric'
+};
+
+const DATE_TIME_FORMAT_OPTIONS = {
+  ...DATE_FORMAT_OPTIONS,
+  hour: '2-digit',
+  minute: '2-digit'
+};
+
+const dateFormatterCache = new Map();
+const dateTimeFormatterCache = new Map();
+
+function resolveIntlLocale(locale) {
+  return locale === 'he' ? 'he-IL' : 'en-US';
+}
+
+function getCachedFormatter(cache, locale, options) {
+  const intlLocale = resolveIntlLocale(locale);
+  let formatter = cache.get(intlLocale);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(intlLocale, options);
+    cache.set(intlLocale, formatter);
+  }
+  return formatter;
+}
+
+/**
+ * Returns today's date as an ISO date-only string (YYYY-MM-DD).
+ * @returns {string}
+ */
+export function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/**
  * Formats a date string into a friendly localized display
  */
 export function formatDate(dateString, locale = 'en') {
@@ -6,11 +51,7 @@ export function formatDate(dateString, locale = 'en') {
   try {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return dateString;
-    return new Intl.DateTimeFormat(locale === 'he' ? 'he-IL' : 'en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    }).format(date);
+    return getCachedFormatter(dateFormatterCache, locale, DATE_FORMAT_OPTIONS).format(date);
   } catch {
     return dateString;
   }
@@ -24,13 +65,7 @@ export function formatDateTime(dateString, locale = 'en') {
   try {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return dateString;
-    return new Intl.DateTimeFormat(locale === 'he' ? 'he-IL' : 'en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
+    return getCachedFormatter(dateTimeFormatterCache, locale, DATE_TIME_FORMAT_OPTIONS).format(date);
   } catch {
     return dateString;
   }

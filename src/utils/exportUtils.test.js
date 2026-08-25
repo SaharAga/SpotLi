@@ -5,7 +5,8 @@ import {
   exportToCSV,
   exportToJSON,
   generatePrintableSummary,
-  exportUtils
+  exportUtils,
+  downloadBlob
 } from './exportUtils';
 
 describe('exportUtils Unit Tests', () => {
@@ -219,6 +220,14 @@ describe('exportUtils Unit Tests', () => {
       expect(exportUtils.exportToCSV).toBe(exportToCSV);
       expect(exportUtils.exportToJSON).toBe(exportToJSON);
       expect(exportUtils.generatePrintableSummary).toBe(generatePrintableSummary);
+      expect(exportUtils.downloadBlob).toBe(downloadBlob);
+    });
+  });
+
+  describe('downloadBlob', () => {
+    it('is a no-op outside a DOM environment', () => {
+      expect(typeof document).toBe('undefined');
+      expect(() => downloadBlob('x', 'text/csv;charset=utf-8;', 'a.csv')).not.toThrow();
     });
   });
 });

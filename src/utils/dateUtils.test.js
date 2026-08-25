@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatDate, getDaysRemaining } from './dateUtils';
+import { formatDate, formatDateTime, getDaysRemaining, todayISO } from './dateUtils';
 
 describe('Date Utilities', () => {
   it('formats dates consistently in EN and HE locales', () => {
@@ -34,5 +34,26 @@ describe('Date Utilities', () => {
     expect(info.isLate).toBe(true);
     expect(info.isUrgent).toBe(true);
     expect(info.text).toContain('overdue');
+  });
+
+  it('reuses cached Intl formatters across calls (identical output, stable locale mapping)', () => {
+    const iso = '2026-08-25T12:00:00.000Z';
+    expect(formatDate(iso, 'en')).toBe(formatDate(iso, 'en'));
+    expect(formatDateTime(iso, 'he')).toBe(formatDateTime(iso, 'he'));
+    expect(formatDate(iso, 'he')).not.toBe(formatDate(iso, 'en'));
+    // date-only vs date-time caches must stay separate
+    expect(formatDateTime(iso, 'en')).not.toBe(formatDate(iso, 'en'));
+  });
+
+  it('preserves invalid-date and empty guards after caching', () => {
+    expect(formatDate('')).toBe('');
+    expect(formatDate('not-a-date')).toBe('not-a-date');
+    expect(formatDateTime('')).toBe('');
+    expect(formatDateTime('not-a-date')).toBe('not-a-date');
+  });
+
+  it('todayISO() returns a YYYY-MM-DD string equal to the inlined expression', () => {
+    expect(todayISO()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(todayISO()).toBe(new Date().toISOString().slice(0, 10));
   });
 });
