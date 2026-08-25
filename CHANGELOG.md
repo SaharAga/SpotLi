@@ -7,6 +7,106 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.15.6] - 2026-08-24
+
+### Fixed
+- **Unknown fields on stored packages were silently erased on every read and
+  write.** Package validation rebuilt a fresh object from a fixed 19-key
+  allowlist, so any field outside that list — including data written by a
+  newer client or a partner import — was dropped without warning. Validation
+  now preserves unrecognized fields while still stripping prototype-polluting
+  keys (`__proto__`, `constructor`, `prototype`).
+- **Two competing validators disagreed depending on the code path.** A strict
+  Zod schema (which rejected malformed records) and a hand-rolled validator
+  (which repaired them) both existed and were reached from different call
+  sites. They are unified behind a single repairing schema with one entry
+  point; the repair values (`Untitled Package`, `UNTRACKED`, `in_transit`,
+  `other`, `Israel`) are unchanged. The circular import between the schema and
+  the validator module is also gone.
+- **The 1,000-package ceiling destroyed data.** Package lists were truncated at
+  1,000 items on read, and the truncated list was written back on the next
+  save — so package 1,001 disappeared permanently. Since archived packages
+  never leave the list, this was reachable through ordinary long-term use.
+  Lists are no longer truncated on the read/write path; an over-large list is
+  reported to callers via an overflow flag instead.
+- **Failed saves reported success.** `savePackages` caught the write exception,
+  logged it, and returned the same value it returns on success, so callers
+  believed a write had landed when localStorage was out of quota. Saves now
+  report success or failure, and status updates, tracking refreshes, and data
+  imports propagate that failure instead of claiming success.
+
+### Added
+- `schemaVersion` field on stored package records (defaulted to `1` for
+  existing data), to make future record migrations explicit. This is a
+  per-record data-format marker and is independent of the app version above.
+
+## [0.15.5] - 2026-08-24
+
+### Changed
+- **Account tab's CSV backup now uses the shared, validated exporter.** The
+  Account tab hand-rolled its own copy of the CSV writer, which had drifted
+  from `exportUtils`. It now calls the shared `exportToCSV`, so the file it
+  produces changes in three user-visible ways: rows end with RFC 4180 `\r\n`
+  instead of `\n` (correct for Excel and strict CSV parsers), the export runs
+  through the same validation as every other export, and the Title/Notes
+  columns now prefer the Hebrew field (`titleHe`/`notesHe`) over the English
+  one, matching the rest of the app instead of the reverse. The filename,
+  the UTF-8 BOM for Hebrew in Excel, and the confirmation toasts are
+  unchanged. Any column added to the shared schema from now on appears in
+  this export automatically.
+
+### Fixed
+- **Date formatters were rebuilt on every render.** `formatDate` and
+  `formatDateTime` constructed a fresh `Intl.DateTimeFormat` on each call —
+  once per package card, table row, and checkpoint — so a list of 50
+  packages re-created 50 formatters on every keystroke. Formatters are now
+  cached per locale at module scope. Displayed dates are identical.
+
+### Internal
+- Added `todayISO()` in `dateUtils` and `readJSON`/`writeJSON` in a new
+  `utils/storage.js`, replacing repeated `localStorage` guard/parse/warn
+  boilerplate in `notificationService` and `ThemeContext`; extracted a
+  single `downloadBlob()` used by both the CSV and JSON exporters. Stored
+  values and fallback behavior are unchanged; `writeJSON` reports failure
+  (e.g. quota exceeded) to its caller rather than discarding it silently.
+
+## [0.15.3] - 2026-08-24
+
+### Removed
+- **Unused 4-tier IndexedDB storage adapter (`src/services/idbStorageAdapter.js`, 362 lines) and its test suites.**
+  It had zero non-test importers. It also did not relieve localStorage quota
+  pressure — `getPackages()` shadow-wrote the full package list back to
+  localStorage on every read — and adopting it would have forced
+  `deliveryService.getPackages()` from sync to async, breaking the `useState`
+  lazy initializer in `usePackages.js`. It additionally carried a live bug:
+  `memoryCache` was a per-partition `Map` while its TTL timestamp was a single
+  module-global scalar shared across all partitions. Recoverable from git
+  history as a design sketch.
+- **Six zero-consumer values from the `AuthContext` context value**:
+  `isGuestMode`, `authError`/`setAuthError`, `sendVerificationEmail`,
+  `loginWithApple`, `loginWithFacebook`, and the re-export of
+  `migrateGuestDataToUser`. The leftover `appleProvider`/`facebookProvider`
+  plumbing went with them — Apple sign-in was deliberately dropped from the UI
+  earlier because it was never configured. Error propagation is unchanged:
+  `sanitizeAuthError` still wraps every thrown auth error. The module-level
+  `migrateGuestDataToUser` export is untouched; only its context re-export was
+  removed.
+
+## [0.15.2] - 2026-08-24
+
+### Fixed
+- **Accent color hardcoded outside the theme system, silently breaking on any accent change.**
+  Components mixed the themed `--color-blue-*` accent with Tailwind's
+  stock, un-themed `indigo`/`purple` in gradients and glows (e.g.
+  `from-blue-600 via-indigo-500 to-purple-600`), assuming all three sat in
+  the same hue family. That assumption broke invisibly — `indigo`/`purple`
+  never moved when the accent did, since they were never wired into
+  `index.css`'s theme tokens. `--color-indigo-*` and `--color-purple-*` are
+  now overridden per theme, coordinated with the accent, so every existing
+  gradient/glow class stays one family with no JSX changes needed.
+- Light and dark now share one accent hue (indigo, H~284) instead of two
+  independent brand colors, each tuned per theme for contrast.
+
 ## [0.15.1] - 2026-08-24
 
 ### Fixed

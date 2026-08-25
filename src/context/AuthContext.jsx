@@ -6,7 +6,6 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
-  sendEmailVerification,
   updateProfile,
   deleteUser,
   signOut as firebaseSignOut,
@@ -17,8 +16,6 @@ import {
   auth,
   db,
   googleProvider,
-  appleProvider,
-  facebookProvider,
   isFirebaseConfigured
 } from '../services/firebase';
 import { cloudAdapter } from '../services/cloudStorageAdapter';
@@ -491,7 +488,6 @@ export function AuthProvider({ children }) {
   });
 
   const [loading, setLoading] = useState(true);
-  const [authError, setAuthError] = useState(null);
   const [syncStatus, setSyncStatus] = useState('synced');
   const [lastSyncTime, setLastSyncTime] = useState(new Date());
   const syncTimerRef = useRef(null);
@@ -591,14 +587,6 @@ export function AuthProvider({ children }) {
       .catch((err) => {
         if (!isMountedRef.current) return;
         console.warn('[AuthContext] getRedirectResult warning:', err?.message);
-        const isCancelled =
-          err?.code === 'auth/redirect-cancelled-by-user' ||
-          err?.code === 'auth/popup-closed-by-user' ||
-          err?.code === 'auth/cancelled-popup-request' ||
-          /redirect-cancelled|popup-closed/i.test(err?.message || '');
-        if (!isCancelled) {
-          setAuthError(sanitizeAuthError(err));
-        }
         setLoading(false);
       });
 
@@ -680,7 +668,6 @@ export function AuthProvider({ children }) {
         } catch (redirectErr) {
           if (!isMountedRef.current) return null;
           const cleanErr = sanitizeAuthError(redirectErr);
-          setAuthError(cleanErr);
           throw new Error(cleanErr);
         }
       } else if (
@@ -691,7 +678,6 @@ export function AuthProvider({ children }) {
         return null;
       } else {
         const cleanErr = sanitizeAuthError(err);
-        setAuthError(cleanErr);
         throw new Error(cleanErr);
       }
     }
@@ -699,25 +685,11 @@ export function AuthProvider({ children }) {
 
   const loginWithGoogle = useCallback(async () => {
     isExplicitLogoutRef.current = false;
-    setAuthError(null);
     return executeOAuthSignIn(googleProvider);
-  }, [executeOAuthSignIn]);
-
-  const loginWithApple = useCallback(async () => {
-    isExplicitLogoutRef.current = false;
-    setAuthError(null);
-    return executeOAuthSignIn(appleProvider);
-  }, [executeOAuthSignIn]);
-
-  const loginWithFacebook = useCallback(async () => {
-    isExplicitLogoutRef.current = false;
-    setAuthError(null);
-    return executeOAuthSignIn(facebookProvider);
   }, [executeOAuthSignIn]);
 
   const loginWithEmail = useCallback(async (email, password) => {
     isExplicitLogoutRef.current = false;
-    setAuthError(null);
     if (!isFirebaseConfigured || !auth) {
       throw new Error('Firebase Authentication is not configured.');
     }
@@ -736,14 +708,12 @@ export function AuthProvider({ children }) {
     } catch (err) {
       if (!isMountedRef.current) return null;
       const cleanErr = sanitizeAuthError(err, 'he');
-      setAuthError(cleanErr);
       throw new Error(cleanErr);
     }
   }, [triggerCloudSync]);
 
   const registerWithEmail = useCallback(async (email, password, name = '', legalConsent = null) => {
     isExplicitLogoutRef.current = false;
-    setAuthError(null);
     if (!isFirebaseConfigured || !auth) {
       throw new Error('Firebase Authentication is not configured.');
     }
@@ -777,13 +747,11 @@ export function AuthProvider({ children }) {
     } catch (err) {
       if (!isMountedRef.current) return null;
       const cleanErr = sanitizeAuthError(err, 'he');
-      setAuthError(cleanErr);
       throw new Error(cleanErr);
     }
   }, [triggerCloudSync]);
 
   const resetPassword = useCallback(async (email) => {
-    setAuthError(null);
     if (!isFirebaseConfigured || !auth) {
       throw new Error('Firebase Authentication is not configured.');
     }
@@ -793,22 +761,6 @@ export function AuthProvider({ children }) {
     } catch (err) {
       if (!isMountedRef.current) return false;
       const cleanErr = sanitizeAuthError(err, 'he');
-      setAuthError(cleanErr);
-      throw new Error(cleanErr);
-    }
-  }, []);
-
-  const sendVerificationEmail = useCallback(async () => {
-    setAuthError(null);
-    if (!isFirebaseConfigured || !auth || !auth.currentUser) {
-      throw new Error('No authenticated user found to send verification email.');
-    }
-    try {
-      await sendEmailVerification(auth.currentUser);
-      return true;
-    } catch (err) {
-      const cleanErr = sanitizeAuthError(err, 'he');
-      setAuthError(cleanErr);
       throw new Error(cleanErr);
     }
   }, []);
@@ -955,21 +907,13 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const isGuestMode = !user;
-
   const contextValue = useMemo(() => ({
     user,
-    isGuestMode,
     loading,
-    authError,
     loginWithGoogle,
-    loginWithApple,
-    loginWithFacebook,
     loginWithEmail,
     registerWithEmail,
     resetPassword,
-    sendVerificationEmail,
-    migrateGuestDataToUser,
     updateUserPreferences,
     acceptLegalTerms,
     updateAiTrainingOptIn,
@@ -980,16 +924,11 @@ export function AuthProvider({ children }) {
     triggerCloudSync
   }), [
     user,
-    isGuestMode,
     loading,
-    authError,
     loginWithGoogle,
-    loginWithApple,
-    loginWithFacebook,
     loginWithEmail,
     registerWithEmail,
     resetPassword,
-    sendVerificationEmail,
     updateUserPreferences,
     acceptLegalTerms,
     updateAiTrainingOptIn,

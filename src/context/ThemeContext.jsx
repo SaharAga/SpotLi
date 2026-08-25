@@ -1,6 +1,9 @@
+import { readString, writeString } from '../utils/storage';
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 
 const ThemeContext = createContext();
+
+const THEME_STORAGE_KEY = 'deliveree_theme';
 
 function getSystemPrefersDark() {
   try {
@@ -12,13 +15,7 @@ function getSystemPrefersDark() {
 
 export function ThemeProvider({ children }) {
   // theme is the user's stored PREFERENCE: 'light' | 'dark' | 'system' (default — respects the OS/browser setting)
-  const [theme, setTheme] = useState(() => {
-    try {
-      return localStorage.getItem('deliveree_theme') || 'system';
-    } catch {
-      return 'system';
-    }
-  });
+  const [theme, setTheme] = useState(() => readString(THEME_STORAGE_KEY) || 'system');
 
   const [systemPrefersDark, setSystemPrefersDark] = useState(getSystemPrefersDark);
 
@@ -33,11 +30,7 @@ export function ThemeProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('deliveree_theme', theme);
-    } catch {
-      // Ignore in strict private mode
-    }
+    writeString(THEME_STORAGE_KEY, theme);
   }, [theme]);
 
   useEffect(() => {

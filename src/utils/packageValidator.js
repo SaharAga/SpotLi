@@ -1,6 +1,26 @@
 import { CARRIERS } from '../types/carriers';
 import { STAGES, CATEGORIES } from '../types/stages';
-import { VALID_STATUSES } from '../schemas/packageSchema';
+// NOTE: this module deliberately does NOT import from '../schemas/packageSchema'.
+// packageSchema imports `sanitizeString` from here; importing back created a
+// circular dependency. The canonical status list therefore lives here and is
+// re-exported by packageSchema, keeping the dependency one-directional.
+
+/**
+ * Valid delivery status identifiers matching DeliveryStageId.
+ * Note: `STAGES` covers only the visual pipeline, so it is not a substitute
+ * for this list (it omits `exception`).
+ * @type {readonly [import('../types/deliveree').DeliveryStageId, ...import('../types/deliveree').DeliveryStageId[]]}
+ */
+export const VALID_STATUSES = /** @type {const} */ ([
+  'ordered',
+  'shipped',
+  'in_transit',
+  'customs',
+  'out_for_delivery',
+  'delivered',
+  'exception',
+  'archived'
+]);
 
 const VALID_CARRIER_IDS = new Set(Object.keys(CARRIERS));
 const VALID_STAGE_IDS = new Set(VALID_STATUSES || STAGES.map(s => s.id));

@@ -1,3 +1,5 @@
+import { readJSON, writeJSON } from '../utils/storage';
+
 export const NOTIFICATION_PREFS_KEY = 'deliveree_notification_prefs';
 export const PUSH_SUBSCRIPTION_KEY = 'deliveree_push_subscription';
 
@@ -107,17 +109,12 @@ export const notificationService = {
    * @returns {typeof DEFAULT_NOTIFICATION_PREFS}
    */
   getPreferences: () => {
-    try {
-      if (typeof localStorage === 'undefined') return { ...DEFAULT_NOTIFICATION_PREFS };
-      const stored = localStorage.getItem(NOTIFICATION_PREFS_KEY);
-      if (stored) {
-        return {
-          ...DEFAULT_NOTIFICATION_PREFS,
-          ...JSON.parse(stored)
-        };
-      }
-    } catch (e) {
-      console.warn('[NotificationService] Failed to parse preferences from storage:', e);
+    const stored = readJSON(NOTIFICATION_PREFS_KEY, null);
+    if (stored && typeof stored === 'object') {
+      return {
+        ...DEFAULT_NOTIFICATION_PREFS,
+        ...stored
+      };
     }
     return { ...DEFAULT_NOTIFICATION_PREFS };
   },
@@ -131,9 +128,7 @@ export const notificationService = {
     try {
       const current = notificationService.getPreferences();
       const updated = { ...current, ...prefs };
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(NOTIFICATION_PREFS_KEY, JSON.stringify(updated));
-      }
+      writeJSON(NOTIFICATION_PREFS_KEY, updated);
       return updated;
     } catch (e) {
       console.error('[NotificationService] Failed to save preferences to storage:', e);
@@ -204,8 +199,8 @@ export const notificationService = {
         });
       }
 
-      if (subscription && typeof localStorage !== 'undefined') {
-        localStorage.setItem(PUSH_SUBSCRIPTION_KEY, JSON.stringify(subscription));
+      if (subscription) {
+        writeJSON(PUSH_SUBSCRIPTION_KEY, subscription);
       }
       return subscription;
     } catch (e) {
