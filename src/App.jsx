@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Plus, Inbox, ShieldCheck, Sparkles, LogIn, UserPlus, PlayCircle, MessageSquarePlus, RefreshCw } from 'lucide-react';
 import { Navbar } from './components/Navbar';
 import { StatsCards } from './components/StatsCards';
@@ -30,6 +30,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { useAuth, AuthProvider } from './context/AuthContext';
 import { isAdminUser } from './constants/admin';
 import { CARRIERS } from './types/carriers';
+import { getTabPredicate, ARCHIVED_TAB } from './types/stages';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { usePackages } from './hooks/usePackages';
@@ -81,6 +82,15 @@ export function DashboardContent() {
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
   const [smartImportInitialText, setSmartImportInitialText] = useState('');
 
+  // Mutable mirrors of state that handlers need to *read* but must not be
+  // re-created for. Keeping them out of the dependency arrays below is what
+  // lets the memoized list components see stable props across a keystroke or
+  // a package mutation.
+  const packagesRef = useRef(packages);
+  packagesRef.current = packages;
+  const selectedDetailIdRef = useRef(null);
+  selectedDetailIdRef.current = selectedDetailPackage?.id ?? null;
+
   // Handle PWA App Shortcuts, Web Share Target & Query Parameters on mount
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -121,7 +131,7 @@ export function DashboardContent() {
       // 4. Notification routing parameter: ?packageId=...
       const pkgIdParam = params.get('packageId');
       if (pkgIdParam) {
-        const found = packages.find(p => p.id === pkgIdParam || p.trackingNumber === pkgIdParam);
+        const found = packagesRef.current.find(p => p.id === pkgIdParam || p.trackingNumber === pkgIdParam);
         if (found) {
           setSelectedDetailPackage(found);
         }
@@ -143,7 +153,12 @@ export function DashboardContent() {
     } catch (e) {
       console.warn('[App] Failed to parse URL parameters:', e);
     }
-  }, [packages]);
+    // Startup-only: the URL is read once and then scrubbed. It used to depend
+    // on `packages`, so every add/edit/archive re-parsed the URL, re-read six
+    // query params and re-ran a find. The one thing it needs from packages —
+    // the ?packageId= lookup — comes from a ref instead.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Listen for PWA Service Worker instant updates
   useEffect(() => {
@@ -165,14 +180,14 @@ export function DashboardContent() {
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(null);
 
-  const showToast = (message, type = 'info') => {
+  const showToast = useCallback((message, type = 'info') => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToast({ message, type });
     toastTimerRef.current = setTimeout(() => {
       setToast(null);
       toastTimerRef.current = null;
     }, 3500);
-  };
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -198,7 +213,11 @@ export function DashboardContent() {
   }, [saveError]);
 
   // Helper to check user auto-archive setting and prompting status
-  const getAutoArchiveSetting = () => {
+  // useCallback, not a plain function expression: this feeds
+  // checkAndHandleAutoArchive, which is a dependency of handleStatusChange,
+  // which is a prop of the memoized PackageCard. An unstable identity here
+  // invalidates that whole chain on every keystroke.
+  const getAutoArchiveSetting = useCallback(() => {
     if (user?.preferences && typeof user.preferences.autoArchiveDelivered === 'boolean') {
       return user.preferences.autoArchiveDelivered;
     }
@@ -208,9 +227,9 @@ export function DashboardContent() {
       if (val === 'false') return false;
     }
     return null; // not decided yet
-  };
+  }, [user?.preferences]);
 
-  const checkAndHandleAutoArchive = (pkgId, isNewlyDelivered) => {
+  const checkAndHandleAutoArchive = useCallback((pkgId, isNewlyDelivered) => {
     if (!isNewlyDelivered) return;
     const currentPref = getAutoArchiveSetting();
     if (currentPref === true) {
@@ -229,7 +248,7 @@ export function DashboardContent() {
         setIsAutoArchivePromptOpen(true);
       }
     }
-  };
+  }, [getAutoArchiveSetting, setPackages, upsertSinglePackage]);
 
   const handleConfirmAutoArchive = () => {
     if (user) {
@@ -346,8 +365,8 @@ export function DashboardContent() {
     showToast(language === 'he' ? 'החבילה נמחקה' : 'Package deleted', 'info');
   };
 
-  const handleTogglePin = (id) => {
-    const updated = packages.map(p => {
+  const handleTogglePin = useCallback((id) => {
+    const updated = packagesRef.current.map(p => {
       if (p.id === id) {
         return { ...p, isPinned: !p.isPinned };
       }
@@ -355,10 +374,10 @@ export function DashboardContent() {
     });
     const changedPkg = updated.find(p => p.id === id);
     if (changedPkg) upsertSinglePackage(updated, changedPkg);
-  };
+  }, [upsertSinglePackage]);
 
-  const handleToggleArchive = (id) => {
-    const updated = packages.map(p => {
+  const handleToggleArchive = useCallback((id) => {
+    const updated = packagesRef.current.map(p => {
       if (p.id === id) {
         const nextArchived = !p.isArchived;
         showToast(
@@ -373,10 +392,10 @@ export function DashboardContent() {
     });
     const changedPkg = updated.find(p => p.id === id);
     if (changedPkg) upsertSinglePackage(updated, changedPkg);
-  };
+  }, [language, showToast, upsertSinglePackage]);
 
-  const handleStatusChange = (id, newStatus) => {
-    const existingPkg = packages.find(p => p.id === id);
+  const handleStatusChange = useCallback((id, newStatus) => {
+    const existingPkg = packagesRef.current.find(p => p.id === id);
     if (existingPkg && existingPkg.status !== newStatus && !deliveryService.canTransition(existingPkg.status, newStatus)) {
       showToast(
         language === "he"
@@ -389,7 +408,11 @@ export function DashboardContent() {
 
     const isNewlyDelivered = newStatus === "delivered" && existingPkg?.status !== "delivered";
 
-    const updated = packages.map(p => {
+    // packagesRef, not `packages`: reading the list through the ref is what
+    // keeps this handler referentially stable for the memoized PackageCard.
+    // (The status-change notification used to be fired from here; it now
+    // lives in deliveryService, which is why there is no call left.)
+    const updated = packagesRef.current.map(p => {
       if (p.id === id) {
         return { ...p, status: newStatus, updatedAt: new Date().toISOString() };
       }
@@ -397,23 +420,23 @@ export function DashboardContent() {
     });
     const changedPkg = updated.find(p => p.id === id);
     if (changedPkg) upsertSinglePackage(updated, changedPkg);
-    if (selectedDetailPackage?.id === id) {
+    if (selectedDetailIdRef.current === id) {
       setSelectedDetailPackage(prev => ({ ...prev, status: newStatus, updatedAt: new Date().toISOString() }));
     }
 
     if (isNewlyDelivered) {
       checkAndHandleAutoArchive(id, true);
     }
-  };
+  }, [checkAndHandleAutoArchive, language, showToast, upsertSinglePackage]);
 
   // Display name for a carrier, in the active language.
-  const carrierLabel = (pkg) => {
+  const carrierLabel = useCallback((pkg) => {
     const def = CARRIERS[pkg?.carrier];
     if (!def) return pkg?.carrierName || pkg?.carrier || '';
     return language === 'he' ? (def.hebrewName || def.name) : def.name;
-  };
+  }, [language]);
 
-  const handleRefreshSinglePackage = async (pkg) => {
+  const handleRefreshSinglePackage = useCallback(async (pkg) => {
     const res = await deliveryService.refreshPackageTracking(pkg, user?.id || null);
 
     // Lookup worked, but this carrier has no live feed. Say so plainly rather
@@ -427,9 +450,9 @@ export function DashboardContent() {
     }
 
     if (res.success && res.updatedPackage) {
-      const updatedList = packages.map(p => (p.id === pkg.id ? res.updatedPackage : p));
+      const updatedList = packagesRef.current.map(p => (p.id === pkg.id ? res.updatedPackage : p));
       upsertSinglePackage(updatedList, res.updatedPackage);
-      if (selectedDetailPackage?.id === pkg.id) {
+      if (selectedDetailIdRef.current === pkg.id) {
         setSelectedDetailPackage(res.updatedPackage);
       }
       showToast(t('tracking.refreshSuccessSingle'), 'success');
@@ -438,7 +461,19 @@ export function DashboardContent() {
     } else {
       showToast(res.error || 'Failed to refresh tracking', 'error');
     }
-  };
+  }, [carrierLabel, showToast, t, upsertSinglePackage, user?.id]);
+
+  // Passed straight into the memoized list components, so they must be
+  // referentially stable — an inline arrow here re-rendered every card on
+  // every keystroke.
+  const handleOpenDetails = useCallback((p) => setSelectedDetailPackage(p), []);
+
+  const handleEditFromList = useCallback((p) => {
+    setEditPackage(p);
+    setIsAddModalOpen(true);
+  }, []);
+
+  const handleRequestDelete = useCallback((id) => setDeletePackageId(id), []);
 
   const [isBatchRefreshing, setIsBatchRefreshing] = useState(false);
 
@@ -513,10 +548,19 @@ export function DashboardContent() {
   };
 
   // Filter & Sort Logic (Optimized ISO date comparison without new Date() churn)
+  // The KPI row only ever counts live packages. Allocating this inline in the
+  // JSX handed StatsCards a brand-new array on every render, defeating memo.
+  const nonArchivedPackages = useMemo(
+    () => packages.filter(p => !p.isArchived),
+    [packages]
+  );
+
   const filteredPackages = useMemo(() => {
+    // Normalised once for the whole pass, not once per package per keystroke.
+    const q = searchQuery.trim().toLowerCase();
+
     return packages.filter((pkg) => {
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
+      if (q) {
         const matchesTitle = pkg.title?.toLowerCase().includes(q) || pkg.titleHe?.toLowerCase().includes(q);
         const matchesTrack = pkg.trackingNumber?.toLowerCase().includes(q);
         const matchesCarrier = pkg.carrier?.toLowerCase().includes(q) || pkg.carrierName?.toLowerCase().includes(q);
@@ -532,7 +576,9 @@ export function DashboardContent() {
         return false;
       }
 
-      if (activeTab === 'archived') {
+      // `archived` is a flag, not a status, so it is the one bucket that is
+      // not in the predicate table.
+      if (activeTab === ARCHIVED_TAB) {
         return pkg.isArchived;
       }
 
@@ -540,15 +586,11 @@ export function DashboardContent() {
         return false;
       }
 
-      if (activeTab === 'all') return true;
-      if (activeTab === 'active') return pkg.status !== 'delivered';
-      if (activeTab === 'transit') return pkg.status !== 'delivered' && pkg.status !== 'customs' && pkg.status !== 'exception';
-      if (activeTab === 'in_transit') return pkg.status === 'in_transit' || pkg.status === 'shipped' || pkg.status === 'ordered';
-      if (activeTab === 'out_for_delivery') return pkg.status === 'out_for_delivery';
-      if (activeTab === 'delivered') return pkg.status === 'delivered';
-      if (activeTab === 'customs') return pkg.status === 'customs' || pkg.status === 'exception';
-
-      return true;
+      // Every other bucket is one lookup in the shared table (the same one the
+      // FilterBar and StatsCards counters use). An unrecognised tab id — they
+      // can arrive from the ?tab= shortcut param — shows everything, as before.
+      const predicate = getTabPredicate(activeTab);
+      return predicate ? predicate(pkg) : true;
     }).sort((a, b) => {
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
@@ -701,9 +743,9 @@ export function DashboardContent() {
           <>
             {/* Metric Cards */}
             <StatsCards
-              packages={packages.filter(p => !p.isArchived)}
+              packages={nonArchivedPackages}
               activeFilter={activeTab}
-              onSelectFilter={(tabId) => setActiveTab(tabId)}
+              onSelectFilter={setActiveTab}
             />
 
             {/* Filter & View Controls */}
@@ -766,12 +808,9 @@ export function DashboardContent() {
                   <PackageCard
                     key={pkg.id}
                     pkg={pkg}
-                    onOpenDetails={(p) => setSelectedDetailPackage(p)}
-                    onEdit={(p) => {
-                      setEditPackage(p);
-                      setIsAddModalOpen(true);
-                    }}
-                    onDelete={(id) => setDeletePackageId(id)}
+                    onOpenDetails={handleOpenDetails}
+                    onEdit={handleEditFromList}
+                    onDelete={handleRequestDelete}
                     onTogglePin={handleTogglePin}
                     onToggleArchive={handleToggleArchive}
                     onStatusChange={handleStatusChange}
@@ -784,12 +823,9 @@ export function DashboardContent() {
               <div className="animate-fade-in">
                 <PackageTable
                   packages={filteredPackages}
-                  onOpenDetails={(p) => setSelectedDetailPackage(p)}
-                  onEdit={(p) => {
-                    setEditPackage(p);
-                    setIsAddModalOpen(true);
-                  }}
-                  onDelete={(id) => setDeletePackageId(id)}
+                  onOpenDetails={handleOpenDetails}
+                  onEdit={handleEditFromList}
+                  onDelete={handleRequestDelete}
                   onTogglePin={handleTogglePin}
                   onStatusChange={handleStatusChange}
                   onShowToast={showToast}

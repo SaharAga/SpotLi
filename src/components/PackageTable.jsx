@@ -7,7 +7,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { formatDate, getDaysRemaining } from '../utils/dateUtils';
 import confetti from 'canvas-confetti';
 
-export function PackageTable({
+function PackageTableImpl({
   packages = [],
   onOpenDetails,
   onEdit,
@@ -183,3 +183,7 @@ export function PackageTable({
     </div>
   );
 }
+
+// Same reasoning as PackageCard: the table body is the whole list, and it
+// only needs to re-render when the list or its handlers actually change.
+export const PackageTable = React.memo(PackageTableImpl);

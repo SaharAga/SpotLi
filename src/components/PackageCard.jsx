@@ -13,7 +13,7 @@ import { formatDate, getDaysRemaining } from '../utils/dateUtils';
 import { triggerHapticFeedback } from '../utils/haptics';
 import { checkRateLimit } from '../services/trackingService';
 
-export function PackageCard({
+function PackageCardImpl({
   pkg,
   onOpenDetails,
   onEdit,
@@ -357,3 +357,7 @@ export function PackageCard({
   );
 }
 
+// Rendered once per package. Without memo every keystroke in the search box
+// re-rendered every card; App now passes stable useCallback handlers so the
+// props actually compare equal.
+export const PackageCard = React.memo(PackageCardImpl);

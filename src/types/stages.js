@@ -78,3 +78,44 @@ export const CATEGORIES = [
   { id: 'gifts', label: 'Gifts & Toys', hebrewLabel: 'מתנות וצעצועים', icon: 'Gift', color: '#06b6d4' },
   { id: 'other', label: 'Other', hebrewLabel: 'כללי / אחר', icon: 'Package', color: '#64748b' }
 ];
+
+// ---------------------------------------------------------------------------
+// Tab / bucket predicates
+//
+// The same "which bucket does this status belong to" rules used to be written
+// out three times — an if-chain in App.jsx, a nested counter in FilterBar.jsx
+// and a reduce in StatsCards.jsx — and they had drifted apart. This table is
+// the single definition: App filters with it, both counters map over it.
+//
+// These predicates deliberately do NOT derive from STAGES. STAGES omits both
+// `exception` and `archived` (see AGENTS.md §9), so anything built from it
+// silently loses those packages.
+//
+// `archived` is not in this table on purpose: it is a boolean flag on the
+// package (`isArchived`), not a status. Every predicate below describes a
+// *non-archived* package; callers exclude archived rows before applying them.
+export const TAB_PREDICATES = {
+  all: () => true,
+  active: (pkg) => pkg.status !== 'delivered',
+  transit: (pkg) =>
+    pkg.status !== 'delivered' && pkg.status !== 'customs' && pkg.status !== 'exception',
+  in_transit: (pkg) =>
+    pkg.status === 'in_transit' || pkg.status === 'shipped' || pkg.status === 'ordered',
+  out_for_delivery: (pkg) => pkg.status === 'out_for_delivery',
+  delivered: (pkg) => pkg.status === 'delivered',
+  customs: (pkg) => pkg.status === 'customs' || pkg.status === 'exception'
+};
+
+export const TAB_IDS = Object.keys(TAB_PREDICATES);
+
+// The archived bucket, keyed off the flag rather than the status.
+export const ARCHIVED_TAB = 'archived';
+
+// Safe lookup — `TAB_PREDICATES[tab]` with an untrusted tab id (they arrive
+// from the `?tab=` shortcut param) would happily return `Object.prototype`
+// members such as `constructor`, which are truthy and callable.
+export function getTabPredicate(tabId) {
+  return Object.prototype.hasOwnProperty.call(TAB_PREDICATES, tabId)
+    ? TAB_PREDICATES[tabId]
+    : null;
+}

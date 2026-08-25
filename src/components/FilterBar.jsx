@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Search, X, LayoutGrid, List, RefreshCw, Loader2, SlidersHorizontal } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { CARRIER_LIST } from '../types/carriers';
+import { TAB_PREDICATES, TAB_IDS, ARCHIVED_TAB } from '../types/stages';
 
 export function FilterBar({
   searchQuery,
@@ -29,43 +30,23 @@ export function FilterBar({
     return () => document.removeEventListener('keydown', handleKey);
   }, [filtersOpen]);
 
-  // Single-pass O(N) tab count reduction instead of per-tab filter passes
+  // One pass over the packages, counting each bucket with the shared
+  // TAB_PREDICATES table so these counts cannot drift from what App's filter
+  // actually shows. `archived` is a flag, not a status, so it is counted
+  // separately and excluded from every other bucket.
   const tabCounts = useMemo(() => {
     const safePackages = Array.isArray(packages) ? packages : [];
-    const counts = {
-      all: 0,
-      active: 0,
-      transit: 0,
-      in_transit: 0,
-      out_for_delivery: 0,
-      delivered: 0,
-      customs: 0,
-      archived: 0
-    };
+    const counts = { [ARCHIVED_TAB]: 0 };
+    for (const id of TAB_IDS) counts[id] = 0;
 
-    for (let i = 0; i < safePackages.length; i++) {
-      const p = safePackages[i];
+    for (const p of safePackages) {
       if (!p) continue;
-
       if (p.isArchived) {
-        counts.archived++;
-      } else {
-        counts.all++;
-        const st = p.status;
-        if (st === 'delivered') {
-          counts.delivered++;
-        } else if (st === 'customs' || st === 'exception') {
-          counts.active++;
-          counts.customs++;
-        } else {
-          counts.active++;
-          counts.transit++;
-          if (st === 'in_transit' || st === 'shipped' || st === 'ordered') {
-            counts.in_transit++;
-          } else if (st === 'out_for_delivery') {
-            counts.out_for_delivery++;
-          }
-        }
+        counts[ARCHIVED_TAB]++;
+        continue;
+      }
+      for (const id of TAB_IDS) {
+        if (TAB_PREDICATES[id](p)) counts[id]++;
       }
     }
     return counts;
