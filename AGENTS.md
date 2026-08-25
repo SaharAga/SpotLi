@@ -340,3 +340,59 @@ Non-obvious facts that have already caused, or nearly caused, incorrect changes.
 * **`package-lock.json`'s `version` field has drifted** from `package.json`
   across many releases. It is cosmetic (npm does not read it for resolution) but
   is a recurring source of confusion.
+
+### 9.1 Module layering, and what actually enforces it
+
+The layering below used to be convention only, and it eroded: `packageSchema`
+and `packageValidator` imported each other (a real cycle, since fixed), and
+`README.md` described a storage hierarchy that did not exist at runtime. A
+convention nothing checks is a convention that decays silently, so `.oxlintrc.json`
+now enforces the parts oxlint can express. No new dependency was added — oxlint
+v1.75 does all of this natively.
+
+**The layers.** Each may import the ones below it and third-party code, never
+the ones above:
+
+```
+components/ · hooks/ · context/     (presentation & React state)
+services/                           (Firebase, network, adapters)
+utils/ · types/ · schemas/ · constants/ · i18n/   (leaves)
+```
+
+**Enforced (`error`, fails CI):**
+
+* `import/no-cycle` — repo-wide. It reported zero violations when enabled, so
+  this is a free ratchet: it costs nothing today and prevents recurrence of a
+  bug this codebase actually had.
+* `no-restricted-imports` in `src/utils|types|schemas|constants|i18n/**` —
+  cannot import `services/`, `components/`, `hooks/` or `context/`.
+* `no-restricted-imports` in `src/services/**` — cannot import `components/`,
+  `hooks/` or `context/`.
+* `no-restricted-imports` in `src/components|hooks|context/**` — cannot reach
+  into a nested path under `services/`, `utils/`, `types/` or `schemas/`
+  (import a module's public surface, not a file inside it).
+
+All of these were already clean on `main`; they lock in the status quo rather
+than demanding a migration. Test files are excluded from the layering
+overrides — a test legitimately reaches across layers to build fixtures.
+
+**Documented only, not enforced:** "a component must not import another
+component's internals." oxlint has no `import/no-restricted-paths`, and
+`no-restricted-imports` matches the import *specifier*, not the importing
+file's position relative to it — so a rule of the form "A may not import B's
+private files" is not expressible. It is also currently moot: every component
+is a single flat file with no internals to reach into. **Do not add ESLint as a
+second linter to close this gap.** Two linters, two configs and a second CI step
+is a large standing cost for one rule that no code currently violates.
+
+**`react-perf` is a worklist, not a gate.** The four `react-perf/jsx-no-new-*`
+rules run at `"warn"` (265 findings at the time of writing, all react-perf; no
+other rule warns). `npm run lint` — what CI runs — exits `0` with warnings
+present, so these do not block a merge, deliberately: a warning here is a
+*candidate*, not a defect. An inline arrow passed to a memoized list item
+rendered 200 times is worth fixing; the same arrow on a single button is noise,
+and "fixing" it with a `useCallback` makes the code worse. Judge each one.
+
+For the same reason, **do not run `oxlint -D warnings` as a blanket gate**
+(§2 Stage 6 predates these rules). CI's real static-analysis gate is
+`npm run lint`.
