@@ -94,9 +94,16 @@ export const deliveryService = {
    *
    * `getPackages` runs every record through `parsePackageList`, which rewrites
    * unknown carriers and statuses, fills empty titles and dates and normalises
-   * tracking numbers. That is right for the running app (it must not crash on
-   * corrupt stored data) and wrong for a backup, which has to reproduce what is
-   * actually stored. This accessor is the backup path's source of truth.
+   * tracking numbers.
+   *
+   * Note what this does and does not buy. `savePackages` is the only writer of
+   * a package key and it validates before writing (the cloud adapter routes
+   * through it too), so for anything *this* version wrote the two readers
+   * return identical content. The difference appears only for a blob written
+   * by an older version or modified outside the app: there, this accessor
+   * hands the backup path the stored bytes rather than a repaired copy of
+   * them. Repair-on-read stays exactly as it was — the app must not crash on
+   * corrupt stored data.
    *
    * @param {string|null} [userId=null]
    * @returns {Array<object>} The stored array as-is, or `[]` if absent/unreadable.

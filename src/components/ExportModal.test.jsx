@@ -73,7 +73,7 @@ describe('ExportModal Component Logic & State Specifications', () => {
       if (format === 'csv') {
         exportUtils.exportToCSV(packages, true, `deliveree_export_all_${today}.csv`);
       } else if (format === 'json') {
-        exportUtils.exportToJSON(packages, true, `deliveree_backup_all_${today}.json`);
+        exportUtils.exportToJSON(packages, true, `deliveree_export_all_${today}.json`);
       } else if (format === 'print') {
         exportUtils.generatePrintableSummary(packages, language, true);
       }

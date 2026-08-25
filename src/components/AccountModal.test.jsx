@@ -112,9 +112,10 @@ afterEach(() => {
 });
 
 describe('AccountModal — backup export path', () => {
-  it('reads the persisted blob rather than the already-repaired prop (#53)', async () => {
-    // The prop is what the app holds in memory: repaired on read. Storage
-    // holds the user's actual bytes. Only the latter can back anything up.
+  it('backs up the stored blob, not the in-memory prop', async () => {
+    // The two agree in normal operation (savePackages validates before
+    // writing). They diverge for a legacy or externally-written blob, which is
+    // what this asserts: the stored bytes reach the file, not App state.
     const repairedProp = [{ ...UNREPAIRED_PACKAGE, carrier: 'other', status: 'in_transit', trackingNumber: 'RR123456789IL' }];
     localStorage.setItem(STORAGE_KEY, JSON.stringify([UNREPAIRED_PACKAGE]));
 
@@ -129,7 +130,7 @@ describe('AccountModal — backup export path', () => {
     expect(passedPackages).not.toEqual(repairedProp);
   });
 
-  it('writes the user’s stored values verbatim — no repair pass', async () => {
+  it('applies no repair pass of its own to what it was handed', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify([UNREPAIRED_PACKAGE]));
     renderModal();
     await clickBackup();

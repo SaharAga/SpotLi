@@ -163,20 +163,18 @@ export function AccountModal({
   };
 
   const handleBackupJSON = () => {
-    // A backup must be able to reconstruct what the user actually has, which
-    // rules out both the in-memory list and CSV.
-    //
-    // The `packages` prop has already been through the repair pass — every
-    // source (getPackages, the storage event, the cloud subscribe path) runs
-    // parsePackageList on read — so unknown carriers, empty titles and messy
-    // tracking numbers were rewritten before they ever reached this button.
-    // Reading the persisted blob directly is what makes the file faithful,
-    // and it leaves the repair-on-read behaviour (which stops the app dying on
-    // corrupt data) exactly as it was.
-    //
-    // JSON rather than CSV because ten flat columns cannot carry checkpoints,
-    // titleHe/notesHe, category, the flags or schemaVersion — and because
+    // A backup must be able to reconstruct what the user has, which is what
+    // the format change buys: ten flat CSV columns cannot carry checkpoints,
+    // titleHe/notesHe, category, the flags or schemaVersion, and no CSV
+    // importer exists — so the previous "backup" could not be restored at all.
     // deliveryService.importData reads JSON, so this file actually restores.
+    //
+    // Read from storage rather than the `packages` prop. In normal operation
+    // the two match (savePackages validates before writing, so the blob is
+    // already repaired); the raw read matters for a legacy or
+    // externally-modified blob, where it backs up the stored bytes instead of
+    // a repaired copy. Repair-on-read is deliberately left alone — it is what
+    // stops the app dying on corrupt data.
     const rawPackages = deliveryService.getRawPackages(user.id);
 
     if (rawPackages.length === 0) {

@@ -148,17 +148,22 @@ export function exportToCSV(packages, triggerDownload = false, filename = '') {
 /**
  * Exports packages **verbatim** as JSON — no validation, no repair, no cap.
  *
- * This is the Account tab's backup path. It is handed the blob read straight
- * from storage (`deliveryService.getRawPackages`), not the in-memory list,
- * which the app has already repaired on read (`getPackages` →
- * `parsePackageList`, and likewise the storage-event and cloud-subscribe
- * paths). Reading the source of truth is what makes the file faithful; the
- * repair-on-read behaviour is left untouched, because it is what keeps the app
- * from crashing on corrupt stored data.
+ * This is the Account tab's backup path, and the format is what makes it a
+ * backup: JSON is what `deliveryService.importData` reads, and it carries
+ * every field — `checkpoints`, `titleHe`, `notesHe`, `category`, the flags,
+ * `schemaVersion` — that reconstructing a package needs. The CSV it replaced
+ * could not restore at all: ten flat columns, and no CSV importer exists.
  *
- * JSON rather than CSV because JSON is what `deliveryService.importData`
- * reads, and because it carries every field — `checkpoints`, `titleHe`,
- * `notesHe`, `category`, flags, `schemaVersion` — that a restore needs.
+ * It is handed the blob from `deliveryService.getRawPackages` rather than the
+ * in-memory list. In normal operation the two agree — everything this version
+ * writes goes through `savePackages`, which validates first — so the raw read
+ * is not what buys fidelity. It matters only for a legacy or
+ * externally-modified blob, where it passes the stored bytes through untouched
+ * instead of repairing them into the backup.
+ *
+ * Output is compact, not pretty-printed: a backup is machine-read, and the
+ * ~26% inflation from indentation comes straight off the restore ceiling,
+ * since `MAX_IMPORT_SIZE_BYTES` is measured on the exported file.
  *
  * @param {object[]} packages
  * @param {boolean} [triggerDownload=false]
@@ -167,7 +172,7 @@ export function exportToCSV(packages, triggerDownload = false, filename = '') {
  */
 export function exportRawToJSON(packages, triggerDownload = false, filename = '') {
   const list = Array.isArray(packages) ? packages : [];
-  const jsonString = JSON.stringify(list, null, 2);
+  const jsonString = JSON.stringify(list);
 
   if (triggerDownload && typeof document !== 'undefined') {
     const defaultName = filename || `deliveree_backup_${todayISO()}.json`;

@@ -101,7 +101,10 @@ describe('Delivery Service and Storage Persistence', () => {
     expect(result.packages[0].status).toBe('in_transit');
   });
 
-  it('getRawPackages returns the stored blob verbatim, unlike getPackages', () => {
+  it('getRawPackages passes a legacy/externally-written blob through unrepaired', () => {
+    // savePackages validates before writing, so this version cannot produce
+    // such a blob. It is reachable from an older release or from storage
+    // edited outside the app, and that is the case this accessor exists for.
     const unrepaired = [
       {
         id: 'unrepaired-1',
