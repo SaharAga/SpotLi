@@ -38,6 +38,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   which catches the failure that actually matters: the injected value drifting
   from the single place the version is defined.
 
+### Added
+- **Releases are now the only thing that deploys.** CI ships a push to `main`
+  only when it changes `package.json`'s version, so an ordinary merge lands
+  without deploying. Deploying every merge meant several deploys could share
+  one version number, so "I'm on 0.15.12" stopped identifying a build — the
+  property the version gate exists to protect in the first place.
+- **`npm run release` accepts an explicit version and checks it twice.**
+  `npm run release 0.16.0` must name a legal successor of the current version —
+  from `0.6.4` only `0.6.5`, `0.7.0` or `1.0.0` — and must be at least as large
+  as the changesets imply, naming the changesets that force a larger bump when
+  it refuses. Deriving alone cannot catch a breaking change mislabelled
+  `type: patch`; stating alone cannot catch a typo. Nothing is written when it
+  refuses. Omitting the argument still derives the version from the changesets.
+- **The pre-submit gate enforces the same successor rule.** A manual bump must
+  be one of the three legal next versions, not merely larger — `0.6.4` to
+  `0.9.0` skips minors and leaves a gap that means nothing.
+  `scripts/version-utils.mjs` holds the rule once and is shared by the release
+  script and CI, so the two cannot drift apart.
+
 ## [0.15.12] - 2026-08-25
 
 ### Fixed

@@ -34,9 +34,30 @@ Use a slug that will not collide with a sibling PR — the branch name works wel
 
 ## Releasing
 
-`npm run release` collects every changeset, picks the highest bump type, writes
-the entry into `CHANGELOG.md`, updates `package.json`, and deletes the consumed
-files. That commit is the release.
+```bash
+npm run release            # version derived from the changesets
+npm run release 0.16.0     # version stated explicitly, then checked
+npm run release 0.16.0 --dry-run
+```
+
+It collects every changeset, writes the entry into `CHANGELOG.md`, updates
+`package.json`, and deletes the files it consumed. That commit is the release.
+
+**A stated version is checked twice.** It must be a legal successor of the
+current one — from `0.6.4` that is only `0.6.5`, `0.7.0` or `1.0.0`, never
+`0.6.99` or `0.9.0` — and it must be at least as large as the changesets imply.
+If two changesets ask for `minor` and you ask for a patch, it refuses and names
+the changesets forcing the minor. Nothing is written when it refuses.
+
+Deriving alone cannot catch a breaking change mislabelled `type: patch`.
+Stating alone cannot catch a typo. Requiring both closes each other's gap.
+
+## Deploying
+
+**Only the release commit deploys.** CI deploys a push to `main` only when it
+changes `package.json`'s version, so an ordinary merge lands without shipping.
+This is what keeps a version identifying a specific build — deploying every
+merge meant several deploys shared one version number.
 
 ## Still bumping directly?
 

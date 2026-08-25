@@ -152,12 +152,22 @@ behaviour. Two ways to satisfy it:
 2. **Bump `package.json`'s version** directly. Still valid, and fine for a
    one-off hotfix that ships immediately.
 
-If a bump is present it **must move forwards**; a version lower than the base
-branch's fails the gate.
+If a bump is present it must be a **legal successor** of the base branch's
+version, not merely larger — the same three-option rule the release script
+applies.
 
-`npm run release` then collects the changesets, applies the highest bump they
-ask for, writes the `CHANGELOG.md` entry, and deletes the files it consumed.
-That commit is the release.
+`npm run release` then collects the changesets, writes the `CHANGELOG.md`
+entry, updates `package.json`, and deletes the files it consumed. That commit
+is the release — and **only the release commit deploys**: CI ships a push to
+`main` only when it changes the version, so an ordinary merge lands without
+deploying.
+
+The release version may be derived (`npm run release`) or stated
+(`npm run release 0.16.0`). A stated version must be a **legal successor** —
+from `0.6.4` only `0.6.5`, `0.7.0` or `1.0.0`; never `0.6.99` or `0.9.0` — and
+at least as large as the changesets imply. `scripts/version-utils.mjs` holds
+that rule once and is shared by the release script and the pre-submit gate, so
+the two cannot disagree.
 
 **Do not hardcode the version anywhere.** `src/constants/version.js` reads
 `__APP_VERSION__`, injected from `package.json` by `vite.config.js` and

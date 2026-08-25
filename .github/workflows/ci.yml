@@ -53,12 +53,22 @@ jobs:
           # base passed and silently regressed main on merge — which happened
           # once, with pre-allocated versions merged out of order.
           if [ "$BASE_VERSION" != "$HEAD_VERSION" ]; then
-            LOWEST=$(printf '%s\n%s\n' "$BASE_VERSION" "$HEAD_VERSION" | sort -V | head -n1)
-            if [ "$LOWEST" != "$BASE_VERSION" ]; then
-              echo "::error::package.json version $HEAD_VERSION is LOWER than $BASE_REF's $BASE_VERSION. Merging would move the version backwards. Bump above $BASE_VERSION."
+            # From any version exactly three successors are legal: patch, minor,
+            # major. Merely "larger" is not enough — 0.6.4 -> 0.9.0 skips minors
+            # and leaves a gap that means nothing. scripts/version-utils.mjs is
+            # the single source of this rule, shared with `npm run release`.
+            if ! node -e '
+              import("./scripts/version-utils.mjs").then(({ successors, bumpBetween }) => {
+                const [from, to] = process.argv.slice(1);
+                const bump = bumpBetween(from, to);
+                if (bump) { console.log(`OK — ${from} -> ${to} (${bump}).`); process.exit(0); }
+                const legal = successors(from);
+                console.error(`::error::package.json version ${to} is not a legal successor of ${from}. Valid next versions: ${legal.patch} (patch), ${legal.minor} (minor), ${legal.major} (major).`);
+                process.exit(1);
+              }).catch((e) => { console.error(`::error::${e.message}`); process.exit(1); });
+            ' "$BASE_VERSION" "$HEAD_VERSION"; then
               exit 1
             fi
-            echo "OK — version moves forwards ($BASE_VERSION -> $HEAD_VERSION)."
             exit 0
           fi
 
@@ -183,13 +193,45 @@ jobs:
           path: dist
           retention-days: 1
 
+  # A merge to main is not a release. Deploying every merge meant several
+  # deploys could share one version, so "I'm on 0.15.12" stopped identifying a
+  # build — the exact property the version gate exists to protect. Deploy now
+  # happens only on the commit that changes package.json's version, i.e. the
+  # release commit produced by `npm run release`.
+  detect-release:
+    name: Detect Release Commit
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    outputs:
+      is_release: ${{ steps.check.outputs.is_release }}
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - id: check
+        run: |
+          HEAD_VERSION=$(node -e 'process.stdout.write(require("./package.json").version)')
+          PREV_VERSION=$(git show HEAD~1:package.json 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).version))' || echo "")
+          echo "version=$HEAD_VERSION" >> "$GITHUB_OUTPUT"
+          if [ "$HEAD_VERSION" != "$PREV_VERSION" ]; then
+            echo "Release commit: $PREV_VERSION -> $HEAD_VERSION"
+            echo "is_release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Not a release commit (version unchanged at $HEAD_VERSION) — skipping deploy."
+            echo "is_release=false" >> "$GITHUB_OUTPUT"
+          fi
+
   deploy-firebase:
     name: Deploy to Firebase Hosting (production)
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [build, detect-release]
     # Skips cleanly (instead of failing CI) until FIREBASE_SERVICE_ACCOUNT_DELIVEREE is added as a repo secret.
     if: |
       github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+      needs.detect-release.outputs.is_release == 'true' &&
       vars.FIREBASE_HOSTING_ENABLED == 'true'
     steps:
       - name: Checkout Code
