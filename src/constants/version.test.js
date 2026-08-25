@@ -3,7 +3,7 @@ import { APP_VERSION, RELEASE_DATE, BUILD_CHANNEL, FIREBASE_SCHEMA_VERSION } fro
 
 describe('Version Constants Baseline', () => {
   it('should export correct APP_VERSION semver format', () => {
-    expect(APP_VERSION).toBe('0.15.6');
+    expect(APP_VERSION).toBe('0.15.7');
     expect(APP_VERSION).toMatch(/^\d+\.\d+\.\d+(\.\d+)?(-[a-zA-Z0-9.]+)?$/);
   });
 

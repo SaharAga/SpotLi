@@ -1,4 +1,4 @@
-import { CARRIERS } from '../types/carriers';
+import { DETECTION_RULES, getCarrier } from '../types/carriers';
 
 /**
  * Universal Tracking Number Sanitizer
@@ -101,172 +101,57 @@ export function validateMod11Generic(digits) {
 }
 
 /**
+ * Named checksum validators referenced by `checksum` in the carrier rule table.
+ *
+ * Keeping the registry here (rather than putting functions in the table) lets
+ * `carriers.js` stay a plain data module with no imports.
+ *
+ * - `upu-s10`      UPU S10 mod-11 check digit (IL / GB / US / CN registered mail)
+ * - `mod10-31`     USPS IMpb weighted mod-10 check digit
+ * - `assume-valid` the format carries no verifiable check digit, so a match
+ *                  reports a passing checksum
+ */
+export const CHECKSUM_VALIDATORS = Object.freeze({
+  'upu-s10': (value) => validateUPUS10Mod11(value),
+  'mod10-31': (value) => validateMod10(value, [3, 1]),
+  'assume-valid': () => true
+});
+
+/**
  * Automatically inspects a tracking number string and detects the most likely carrier,
  * with checksum verification and confidence scoring.
- * 
+ *
+ * Detection is driven entirely by the rule table in `types/carriers.js`: rules
+ * are evaluated in priority order and the first match wins, contributing its
+ * confidence and (optionally) its named checksum validator.
+ *
  * @param {string} trackingNumber - Raw tracking string
  * @returns {{ carrierId: string, confidence: 'high' | 'medium' | 'none', carrier: Object, isValidChecksum?: boolean }}
  */
 export function detectCarrier(trackingNumber) {
-  if (!trackingNumber || typeof trackingNumber !== 'string') {
-    return { carrierId: 'other', confidence: 'none', carrier: CARRIERS['other'] };
-  }
+  const noMatch = { carrierId: 'other', confidence: 'none', carrier: getCarrier('other') };
+
+  if (!trackingNumber || typeof trackingNumber !== 'string') return noMatch;
 
   const cleaned = sanitizeTrackingNumber(trackingNumber);
-  if (!cleaned) {
-    return { carrierId: 'other', confidence: 'none', carrier: CARRIERS['other'] };
-  }
+  if (!cleaned) return noMatch;
 
-  // 1. Israel Post (Standard UPU S10 ending in IL, e.g. RS123456789IL, or other IL postal formats)
-  if (/^[A-Z]{2}\d{9}IL$/i.test(cleaned)) {
-    const isUpuValid = validateUPUS10Mod11(cleaned);
-    return { 
-      carrierId: 'israel-post', 
-      confidence: 'high', 
-      carrier: CARRIERS['israel-post'],
-      isValidChecksum: isUpuValid
+  for (const detectionRule of DETECTION_RULES) {
+    if (!detectionRule.test(cleaned)) continue;
+
+    const result = {
+      carrierId: detectionRule.carrier.id,
+      confidence: detectionRule.confidence,
+      carrier: detectionRule.carrier
     };
-  }
-  if (cleaned.length >= 9 && cleaned.endsWith('IL') && /^[A-Z0-9]+$/i.test(cleaned)) {
-    return { carrierId: 'israel-post', confidence: 'high', carrier: CARRIERS['israel-post'] };
-  }
 
-  // 2. Chita Delivery (CH..., CT..., CHT...)
-  if (/^(CH|CT)\d{8,12}$/i.test(cleaned) || /^CHT[A-Z0-9]{8,12}$/i.test(cleaned)) {
-    return { carrierId: 'chita', confidence: 'high', carrier: CARRIERS['chita'] };
-  }
-
-  // 3. BoxIt (BOX..., BX...)
-  if (/^BOX[0-9A-Z]{6,12}$/i.test(cleaned) || /^BX\d{7,10}$/i.test(cleaned)) {
-    return { carrierId: 'boxit', confidence: 'high', carrier: CARRIERS['boxit'] };
-  }
-
-  // 4. HFD Delivery / E-Post (HFD..., EP..., 5...)
-  if (/^HFD\d{8,12}$/i.test(cleaned) || /^EP\d{8,12}$/i.test(cleaned)) {
-    return { carrierId: 'hfd', confidence: 'high', carrier: CARRIERS['hfd'] };
-  }
-
-  // 5. Tapuz / YDM
-  if (/^(TPZ|YDM)\d{7,12}$/i.test(cleaned)) {
-    return { carrierId: 'tapuz', confidence: 'high', carrier: CARRIERS['tapuz'] };
-  }
-
-  // 6. Cargo Express
-  if (/^CRG\d{7,12}$/i.test(cleaned) || /^CARGO\d{6,10}$/i.test(cleaned)) {
-    return { carrierId: 'cargo', confidence: 'high', carrier: CARRIERS['cargo'] };
-  }
-
-  // 7. GetPackage
-  if (/^GP[A-Z0-9]{8,12}$/i.test(cleaned) || /^GET\d{8,10}$/i.test(cleaned)) {
-    return { carrierId: 'getpackage', confidence: 'high', carrier: CARRIERS['getpackage'] };
-  }
-
-  // 8. Flying Cargo / FedEx Israel
-  if (/^FC\d{8,12}$/i.test(cleaned)) {
-    return { carrierId: 'flying-cargo', confidence: 'high', carrier: CARRIERS['flying-cargo'] };
-  }
-
-  // 9. Orian / UPS Israel
-  if (/^(OR|ORN)\d{8,12}$/i.test(cleaned)) {
-    return { carrierId: 'orian', confidence: 'high', carrier: CARRIERS['orian'] };
-  }
-
-  // 10. Bar Distribution
-  if (/^BAR\d{7,12}$/i.test(cleaned)) {
-    return { carrierId: 'bar', confidence: 'high', carrier: CARRIERS['bar'] };
-  }
-
-  // 11. ZigZag
-  if (/^ZZ\d{7,12}$/i.test(cleaned) || /^ZIG\d{6,10}$/i.test(cleaned)) {
-    return { carrierId: 'zigzag', confidence: 'high', carrier: CARRIERS['zigzag'] };
-  }
-
-  // 12. YunExpress (YT...)
-  if (/^YT\d{16,18}$/i.test(cleaned)) {
-    return { carrierId: 'yunexpress', confidence: 'high', carrier: CARRIERS['yunexpress'] };
-  }
-
-  // 13. Cainiao / AliExpress (LP..., CAINIAO..., CN..., AE...)
-  if (/^(LP|CAINIAO)\d+/i.test(cleaned) || /^[A-Z]{2}\d{9}CN$/i.test(cleaned) || /^AE[A-Z0-9]{10,18}$/i.test(cleaned) || /^CN\d{10,}$/i.test(cleaned)) {
-    const isUpuValid = /^[A-Z]{2}\d{9}CN$/i.test(cleaned) ? validateUPUS10Mod11(cleaned) : true;
-    return { 
-      carrierId: 'cainiao', 
-      confidence: 'high', 
-      carrier: CARRIERS['cainiao'],
-      isValidChecksum: isUpuValid 
-    };
-  }
-
-  // 14. 4PX
-  if (/^4PX\d+/i.test(cleaned) || /^FPX\d+/i.test(cleaned)) {
-    return { carrierId: '4px', confidence: 'high', carrier: CARRIERS['4px'] };
-  }
-
-  // 15. UPS (1Z...)
-  if (/^1Z[0-9A-Z]{16}$/i.test(cleaned)) {
-    return { carrierId: 'ups', confidence: 'high', carrier: CARRIERS['ups'] };
-  }
-
-  // 16. Royal Mail (UK - ends with GB)
-  if (/^[A-Z]{2}\d{9}GB$/i.test(cleaned)) {
-    const isUpuValid = validateUPUS10Mod11(cleaned);
-    return { 
-      carrierId: 'royal-mail', 
-      confidence: 'high', 
-      carrier: CARRIERS['royal-mail'],
-      isValidChecksum: isUpuValid
-    };
-  }
-
-  // 17. USPS (9400..., 9200..., 9300..., ends with US)
-  if (/^9[234]\d{20}$/.test(cleaned)) {
-    const isMod10Valid = validateMod10(cleaned, [3, 1]);
-    return { 
-      carrierId: 'usps', 
-      confidence: 'high', 
-      carrier: CARRIERS['usps'],
-      isValidChecksum: isMod10Valid
-    };
-  }
-  if (/^[A-Z]{2}\d{9}US$/i.test(cleaned)) {
-    const isUpuValid = validateUPUS10Mod11(cleaned);
-    return { 
-      carrierId: 'usps', 
-      confidence: 'high', 
-      carrier: CARRIERS['usps'],
-      isValidChecksum: isUpuValid 
-    };
-  }
-
-  // 18. Yanwen (e.g. UY894729184YP, VR...YP, LP...YP)
-  if (/^U[A-Z]\d{9}YP$/i.test(cleaned) || /^VR\d{9}YP$/i.test(cleaned) || /^LP\d{14}YP$/i.test(cleaned) || (cleaned.length >= 10 && cleaned.endsWith('YP'))) {
-    return { carrierId: 'yanwen', confidence: 'high', carrier: CARRIERS['yanwen'] };
-  }
-
-  // 19. Aramex (10-11 digits starting with 3, or standard 11 digits)
-  if (/^3\d{9}$/.test(cleaned) || /^\d{11}$/.test(cleaned)) {
-    return { carrierId: 'aramex', confidence: 'high', carrier: CARRIERS['aramex'] };
-  }
-
-  // 20. DHL (10 numeric digits, or JJD prefix, GM...)
-  if (/^\d{10}$/.test(cleaned) || /^JJD\d+/i.test(cleaned) || /^GM\d{16,18}$/i.test(cleaned)) {
-    return { carrierId: 'dhl', confidence: 'high', carrier: CARRIERS['dhl'] };
-  }
-
-  // 21. FedEx (12 or 15 digits)
-  if (/^\d{12}$/.test(cleaned) || /^\d{15}$/.test(cleaned) || /^\d{20}$/.test(cleaned) || /^\d{22}$/.test(cleaned)) {
-    return { carrierId: 'fedex', confidence: 'high', carrier: CARRIERS['fedex'] };
-  }
-
-  // 22. Check carrier patterns loop for any remaining
-  for (const carrier of Object.values(CARRIERS)) {
-    if (carrier.id === 'other') continue;
-    for (const pattern of carrier.patterns) {
-      if (pattern.test(cleaned)) {
-        return { carrierId: carrier.id, confidence: 'medium', carrier };
-      }
+    if (detectionRule.checksum) {
+      const validate = CHECKSUM_VALIDATORS[detectionRule.checksum];
+      result.isValidChecksum = validate ? validate(cleaned) : false;
     }
+
+    return result;
   }
 
-  return { carrierId: 'other', confidence: 'none', carrier: CARRIERS['other'] };
+  return noMatch;
 }

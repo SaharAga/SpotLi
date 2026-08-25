@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.15.7] - 2026-08-24
+
+### Changed
+- **Carrier detection now reads the carrier config table instead of restating it.**
+  `detectCarrier` carried 21 hardcoded `if` branches whose regexes duplicated
+  the `patterns` arrays in `src/types/carriers.js` verbatim, with the table's
+  own patterns reached only as a fallback. The branches did encode three things
+  the table couldn't express, so the table now expresses them: `patterns`
+  entries are rules (`{ re, confidence, checksum, priority }`), giving
+  per-rule confidence, explicit cross-carrier priority (Aramex's 11-digit rule
+  still beats FedEx's 12-digit one), and per-pattern checksum selection via a
+  named registry (`upu-s10`, `mod10-31`, `assume-valid`). All 21 branches are
+  gone. Behavior-preserving: pinned by a committed 782-entry characterization
+  snapshot generated from the previous implementation, byte-identical after the
+  refactor, plus an offline differential run over 200k generated tracking
+  numbers with zero divergences.
+- **Live-tracking capability moved into the carrier table.** A hardcoded
+  `LIVE_TRACKING_CARRIERS` array plus a per-carrier `queryIsraelPostLive`
+  function became an optional `liveTracking: { endpoint, parse }` entry per
+  carrier; adding a second live carrier is now a table entry rather than a new
+  function and an array edit. The `tracked: false` / `UNTRACKED_REASONS`
+  contract is unchanged — no failure path fabricates checkpoints.
+- Added `getCarrier(id)`, encapsulating the `CARRIERS[x] || CARRIERS['other']`
+  fallback repeated across the codebase, using an own-property lookup so a
+  user-influenced carrier id can't reach `Object.prototype`.
+
+### Performance
+- `inferStageFromText` lowercased the entire status-keyword table on every
+  call — once per checkpoint of every tracking response — though the table is a
+  module-level literal that never changes. It is now pre-lowercased once at
+  module scope.
+
 ## [0.15.6] - 2026-08-24
 
 ### Fixed
