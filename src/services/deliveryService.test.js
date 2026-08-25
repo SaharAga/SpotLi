@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, beforeAll } from 'vitest';
 import { deliveryService, canTransition, TRANSITION_MATRIX } from './deliveryService';
+import { exportToJSON, exportRawToJSON } from '../utils/exportUtils';
 
 describe('Delivery Service and Storage Persistence', () => {
   let mockStore = {};
@@ -100,6 +101,36 @@ describe('Delivery Service and Storage Persistence', () => {
     expect(result.packages[0].status).toBe('in_transit');
   });
 
+  it('getRawPackages passes a legacy/externally-written blob through unrepaired', () => {
+    // savePackages validates before writing, so this version cannot produce
+    // such a blob. It is reachable from an older release or from storage
+    // edited outside the app, and that is the case this accessor exists for.
+    const unrepaired = [
+      {
+        id: 'unrepaired-1',
+        title: '',
+        trackingNumber: 'lower case/tracking#',
+        carrier: 'not_a_known_carrier',
+        status: 'not_a_known_status'
+      }
+    ];
+    localStorage.setItem('deliveree_packages_guest', JSON.stringify(unrepaired));
+
+    expect(deliveryService.getRawPackages()).toEqual(unrepaired);
+
+    // The repairing read is deliberately left alone.
+    const repaired = deliveryService.getPackages();
+    expect(repaired[0].carrier).not.toBe('not_a_known_carrier');
+  });
+
+  it('getRawPackages returns [] for absent or malformed storage', () => {
+    expect(deliveryService.getRawPackages()).toEqual([]);
+    localStorage.setItem('deliveree_packages_guest', '{not json');
+    expect(deliveryService.getRawPackages()).toEqual([]);
+    localStorage.setItem('deliveree_packages_guest', '{"a":1}');
+    expect(deliveryService.getRawPackages()).toEqual([]);
+  });
+
   it('rejects non-array and empty invalid import payloads', () => {
     const nonArrayJson = JSON.stringify({ title: 'Single Object' });
     const result = deliveryService.importData(nonArrayJson);
@@ -119,7 +150,7 @@ describe('Delivery Service and Storage Persistence', () => {
     expect(result.error).toContain('2MB');
   });
 
-  it('limits imported packages to MAX_IMPORT_PACKAGES (1000 items)', () => {
+  it('imports the full list without a silent 1,000-item truncation (#52)', () => {
     const manyPackages = Array.from({ length: 1200 }, (_, i) => ({
       id: `pkg-${i}`,
       title: `Package ${i}`,
@@ -130,7 +161,58 @@ describe('Delivery Service and Storage Persistence', () => {
 
     const result = deliveryService.importData(JSON.stringify(manyPackages));
     expect(result.success).toBe(true);
-    expect(result.packages.length).toBe(1000);
+    expect(result.packages.length).toBe(1200);
+    expect(result.packages[1199].id).toBe('pkg-1199');
+  });
+
+  it('round-trips the REAL export path: exportToJSON -> importData (#52)', () => {
+    // Not a synthetic stringify/parse cycle: this is the exporter the app
+    // ships and the importer App.jsx calls, back to back.
+    const originals = Array.from({ length: 1200 }, (_, i) => ({
+      id: `rt-${i}`,
+      title: `Round Trip ${i}`,
+      titleHe: `הלוך ושוב ${i}`,
+      trackingNumber: `RT${i}`,
+      carrier: 'other',
+      status: 'in_transit'
+    }));
+
+    const json = exportToJSON(originals);
+    const result = deliveryService.importData(json);
+
+    expect(result.success).toBe(true);
+    expect(result.packages.length).toBe(originals.length);
+    expect(result.packages[1199].id).toBe('rt-1199');
+    expect(result.packages[1199].titleHe).toBe('הלוך ושוב 1199');
+
+    // And the restore is what actually landed in storage.
+    expect(deliveryService.getPackages().length).toBe(originals.length);
+  });
+
+  it('round-trips the backup path: getRawPackages -> exportRawToJSON -> importData', () => {
+    const stored = [
+      {
+        id: 'raw-rt-1',
+        title: 'Widget',
+        titleHe: 'ווידג׳ט',
+        notes: 'plain',
+        notesHe: 'הערות',
+        trackingNumber: 'RR123456789IL',
+        carrier: 'israel_post',
+        status: 'in_transit',
+        checkpoints: [{ id: 'cp-1', status: 'in_transit', location: 'Haifa', timestamp: '2026-08-01T00:00:00.000Z' }]
+      }
+    ];
+    localStorage.setItem('deliveree_packages_guest', JSON.stringify(stored));
+
+    const backup = exportRawToJSON(deliveryService.getRawPackages());
+    expect(JSON.parse(backup)).toEqual(stored);
+
+    const result = deliveryService.importData(backup);
+    expect(result.success).toBe(true);
+    expect(result.packages[0].titleHe).toBe('ווידג׳ט');
+    expect(result.packages[0].notesHe).toBe('הערות');
+    expect(result.packages[0].checkpoints).toHaveLength(1);
   });
 
   it('exports packages using URL.createObjectURL and cleans up with revokeObjectURL', () => {
