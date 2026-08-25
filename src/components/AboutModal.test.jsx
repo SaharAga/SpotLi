@@ -4,7 +4,11 @@ import { APP_VERSION, RELEASE_DATE, BUILD_CHANNEL } from '../constants/version';
 
 describe('AboutModal Logic & Specifications', () => {
   it('exposes correct version constants and metadata', () => {
+<<<<<<< HEAD
     expect(APP_VERSION).toBe('0.15.10');
+=======
+    expect(APP_VERSION).toBe('0.15.9');
+>>>>>>> d0981e1 (fix: raw Account backup + visible save failures (#42, #43))
     expect(RELEASE_DATE).toBe('2026-08-23');
     expect(BUILD_CHANNEL).toBe('alpha');
   });

@@ -121,18 +121,46 @@ export const notificationService = {
 
   /**
    * Saves updated user notification preferences to localStorage
+   * Returns the merged preferences only. Callers that need to know whether the
+   * write actually landed should use `savePreferencesWithStatus`.
+   *
    * @param {Partial<typeof DEFAULT_NOTIFICATION_PREFS>} prefs
    * @returns {typeof DEFAULT_NOTIFICATION_PREFS}
    */
-  savePreferences: (prefs) => {
+  savePreferences: (prefs) => notificationService.savePreferencesWithStatus(prefs).preferences,
+
+  /**
+   * Saves preferences and reports whether they reached storage.
+   *
+   * `writeJSON` catches storage failures internally and signals them by
+   * returning false. Ignoring that return made a quota-exceeded write
+   * indistinguishable from a successful one: the caller got the merged object
+   * back and rendered a preference that was never persisted. The status is a
+   * plain field on a plain object deliberately - a flag hidden on the returned
+   * preferences would not survive spread, `.map`, or a JSON round trip.
+   *
+   * @param {Partial<typeof DEFAULT_NOTIFICATION_PREFS>} prefs
+   * @returns {{ ok: boolean, preferences: typeof DEFAULT_NOTIFICATION_PREFS, error: Error|null }}
+   */
+  savePreferencesWithStatus: (prefs) => {
     try {
       const current = notificationService.getPreferences();
       const updated = { ...current, ...prefs };
-      writeJSON(NOTIFICATION_PREFS_KEY, updated);
-      return updated;
+      const persisted = writeJSON(NOTIFICATION_PREFS_KEY, updated);
+      if (!persisted) {
+        console.error(
+          '[NotificationService] Failed to persist notification preferences (storage write rejected)'
+        );
+        return {
+          ok: false,
+          preferences: updated,
+          error: new Error('Notification preferences could not be written to storage')
+        };
+      }
+      return { ok: true, preferences: updated, error: null };
     } catch (e) {
       console.error('[NotificationService] Failed to save preferences to storage:', e);
-      return { ...DEFAULT_NOTIFICATION_PREFS, ...prefs };
+      return { ok: false, preferences: { ...DEFAULT_NOTIFICATION_PREFS, ...prefs }, error: e };
     }
   },
 

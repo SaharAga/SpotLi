@@ -12,7 +12,7 @@ import { CARRIERS, CARRIER_LIST } from '../types/carriers';
 import { APP_VERSION, RELEASE_DATE, BUILD_CHANNEL } from '../constants/version';
 import { notificationService } from '../services/notificationService';
 import { LegalDocumentModal } from './LegalDocumentModal';
-import { exportToCSV } from '../utils/exportUtils';
+import { exportRawToCSV } from '../utils/exportUtils';
 import { todayISO } from '../utils/dateUtils';
 
 const ACCOUNT_SECTIONS = [
@@ -89,10 +89,20 @@ export function AccountModal({
   }, [isOpen]);
 
   const handleUpdateNotifPref = (key, value) => {
-    const updated = notificationService.savePreferences({ [key]: value });
-    setNotificationPrefs(updated);
-    if (onShowToast) {
+    // A rejected storage write (quota, private mode) used to be reported as a
+    // success; the toggle moved and nothing was persisted.
+    const { ok, preferences } = notificationService.savePreferencesWithStatus({ [key]: value });
+    setNotificationPrefs(preferences);
+    if (!onShowToast) return;
+    if (ok) {
       onShowToast(t('notifications.preferencesSaved') || 'Preferences saved', 'success');
+    } else {
+      onShowToast(
+        language === 'he'
+          ? 'שמירת הגדרות ההתראות נכשלה — אחסון המכשיר מלא'
+          : 'Could not save notification settings — device storage is full',
+        'error'
+      );
     }
   };
 
@@ -157,9 +167,13 @@ export function AccountModal({
       return;
     }
 
-    // Delegate to the shared, validated, RFC 4180-compliant exporter so this tab
-    // never drifts from the canonical CSV schema.
-    exportToCSV(packages, true, `deliveree_backup_${user.id}_${todayISO()}.csv`);
+    // A backup must reconstruct what the user actually has, so this path uses
+    // the raw exporter: same RFC 4180 formatting and UTF-8 BOM as the shared
+    // exporter, but no validatePackageList repair pass and no row cap. Routing
+    // a backup through validation rewrote unknown carriers/statuses, filled
+    // empty dates and titles, blanked tracking numbers to UNTRACKED and
+    // truncated notes.
+    exportRawToCSV(packages, true, `deliveree_backup_${user.id}_${todayISO()}.csv`);
 
     if (onShowToast) onShowToast(language === 'he' ? 'קובץ CSV הורד בהצלחה' : 'CSV backup downloaded', 'success');
   };

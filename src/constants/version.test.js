@@ -3,7 +3,11 @@ import { APP_VERSION, RELEASE_DATE, BUILD_CHANNEL, FIREBASE_SCHEMA_VERSION } fro
 
 describe('Version Constants Baseline', () => {
   it('should export correct APP_VERSION semver format', () => {
+<<<<<<< HEAD
     expect(APP_VERSION).toBe('0.15.10');
+=======
+    expect(APP_VERSION).toBe('0.15.9');
+>>>>>>> d0981e1 (fix: raw Account backup + visible save failures (#42, #43))
     expect(APP_VERSION).toMatch(/^\d+\.\d+\.\d+(\.\d+)?(-[a-zA-Z0-9.]+)?$/);
   });
 

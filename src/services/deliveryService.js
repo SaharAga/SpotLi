@@ -4,24 +4,19 @@ import { notificationService } from './notificationService';
 /**
  * Builds the result of a save attempt.
  *
- * Backward compatible on purpose: the returned value IS the validated package
- * array (call sites outside this PR still do `saved.find(...)`, `saved.length`,
- * `toEqual([...])`), with the save status attached as non-enumerable
- * properties so JSON serialization and deep-equality assertions are unaffected.
+ * A plain object — NOT the array itself. An earlier revision returned the
+ * validated array with non-enumerable status properties attached; those flags
+ * do not survive spread, `.map`, `.filter`, `JSON.parse(JSON.stringify(...))`,
+ * `structuredClone`, or a Firestore round trip. Because the signal was the
+ * *absence* of `ok`, any caller that transformed the array first read a
+ * successful save as a failure. This shape fails in neither direction.
  *
  * @param {Array<object>} packages
  * @param {{ ok: boolean, error?: Error|null, overflow?: boolean }} status
- * @returns {Array<object> & { ok: boolean, packages: Array<object>, error: Error|null, overflow: boolean }}
+ * @returns {{ ok: boolean, packages: Array<object>, error: Error|null, overflow: boolean }}
  */
 function makeSaveResult(packages, { ok, error = null, overflow = false }) {
-  const result = packages;
-  Object.defineProperties(result, {
-    ok: { value: ok, enumerable: false, configurable: true },
-    packages: { value: packages, enumerable: false, configurable: true },
-    error: { value: error, enumerable: false, configurable: true },
-    overflow: { value: overflow, enumerable: false, configurable: true }
-  });
-  return result;
+  return { ok, packages, error, overflow };
 }
 
 function getStorageKey(userId) {
@@ -246,7 +241,7 @@ export const deliveryService = {
       };
     }
 
-    const savedPkg = saved.find(p => p.id === packageId);
+    const savedPkg = saved.packages.find(p => p.id === packageId);
 
     if (targetPkg.status !== newStatus) {
       notificationService.notifyStatusChange(savedPkg || updatedPkg, targetPkg.status, newStatus);
@@ -254,7 +249,7 @@ export const deliveryService = {
 
     return {
       success: true,
-      packages: saved,
+      packages: saved.packages,
       package: savedPkg
     };
   },
@@ -326,7 +321,7 @@ export const deliveryService = {
       };
     }
 
-    const savedPkg = saved.find(p => p.id === pkg.id) || updated;
+    const savedPkg = saved.packages.find(p => p.id === pkg.id) || updated;
 
     if (pkg.status !== targetStatus) {
       notificationService.notifyStatusChange(savedPkg, pkg.status, targetStatus);

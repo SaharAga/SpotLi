@@ -1,7 +1,11 @@
 {
   "name": "deliveree",
   "private": true,
+<<<<<<< HEAD
   "version": "0.15.10",
+=======
+  "version": "0.15.9",
+>>>>>>> d0981e1 (fix: raw Account backup + visible save failures (#42, #43))
   "type": "module",
   "scripts": {
     "dev": "vite",

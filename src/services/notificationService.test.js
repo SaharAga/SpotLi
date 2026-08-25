@@ -249,3 +249,40 @@ describe('notificationService', () => {
     });
   });
 });
+
+describe('savePreferences — failed writes are reported', () => {
+  it('returns ok:false and an error when the storage write is rejected', () => {
+    const originalSetItem = globalThis.localStorage.setItem;
+    globalThis.localStorage.setItem = () => {
+      throw Object.assign(new Error('QuotaExceededError'), { name: 'QuotaExceededError' });
+    };
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const result = notificationService.savePreferencesWithStatus({ pushEnabled: true });
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toBeInstanceOf(Error);
+    // The merged preferences still come back so the caller can keep the
+    // in-memory value while telling the user it was not persisted.
+    expect(result.preferences.pushEnabled).toBe(true);
+    expect(errorSpy).toHaveBeenCalled();
+
+    globalThis.localStorage.setItem = originalSetItem;
+    warnSpy.mockRestore();
+    errorSpy.mockRestore();
+  });
+
+  it('returns ok:true and no error on a successful write', () => {
+    const result = notificationService.savePreferencesWithStatus({ pushEnabled: true });
+    expect(result.ok).toBe(true);
+    expect(result.error).toBeNull();
+    expect(notificationService.getPreferences().pushEnabled).toBe(true);
+  });
+
+  it('savePreferences keeps returning just the merged preferences object', () => {
+    const prefs = notificationService.savePreferences({ notifyOnException: false });
+    expect(prefs.notifyOnException).toBe(false);
+    expect(prefs.ok).toBeUndefined();
+  });
+});
