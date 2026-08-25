@@ -218,4 +218,119 @@ describe('SyncQueueService Unit Tests', () => {
       expect(syncQueue.getDeadLetterQueue().length).toBe(0);
     });
   });
+  describe('replay concurrency and ordering', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('replays mutations for independent packages without serializing them', async () => {
+      const releases = [];
+      let maxInFlight = 0;
+      let inFlight = 0;
+
+      vi.spyOn(cloudAdapter, 'upsertPackageRemote').mockImplementation(() => {
+        inFlight += 1;
+        maxInFlight = Math.max(maxInFlight, inFlight);
+        return new Promise((resolve) => {
+          releases.push(() => {
+            inFlight -= 1;
+            resolve({ ok: true });
+          });
+        });
+      });
+
+      syncQueue.isOnline = false;
+      for (let i = 0; i < 5; i += 1) {
+        syncQueue.enqueue(MUTATION_TYPES.ADD, {
+          id: `pkg-parallel-${i}`,
+          title: `Parallel ${i}`,
+          trackingNumber: `RS94821948${i}IL`,
+          carrier: 'israel-post',
+          status: 'ordered'
+        }, 'user-parallel');
+      }
+
+      syncQueue.isOnline = true;
+      const replay = syncQueue.replayQueue();
+
+      // Let the five independent chains all reach their awaited cloud write.
+      await Promise.resolve();
+      expect(maxInFlight).toBe(5);
+
+      releases.forEach((release) => release());
+      const result = await replay;
+      expect(result.processed).toBe(5);
+      expect(result.remaining).toBe(0);
+    });
+
+    it('keeps mutations for the same package strictly in queue order', async () => {
+      const started = [];
+      let resolveCurrent = null;
+
+      vi.spyOn(cloudAdapter, 'upsertPackageRemote').mockImplementation((pkg) => {
+        started.push(pkg.status);
+        return new Promise((resolve) => {
+          resolveCurrent = () => resolve({ ok: true });
+        });
+      });
+
+      const pkg = {
+        id: 'pkg-ordered-1',
+        title: 'Ordered Item',
+        trackingNumber: 'RS948219481IL',
+        carrier: 'israel-post',
+        status: 'ordered'
+      };
+      deliveryService.savePackages([pkg], 'user-ordered');
+
+      syncQueue.isOnline = false;
+      syncQueue.enqueue(MUTATION_TYPES.STATUS_CHANGE, { packageId: pkg.id, newStatus: 'shipped' }, 'user-ordered');
+      syncQueue.enqueue(MUTATION_TYPES.STATUS_CHANGE, { packageId: pkg.id, newStatus: 'in_transit' }, 'user-ordered');
+
+      syncQueue.isOnline = true;
+      const replay = syncQueue.replayQueue();
+
+      await Promise.resolve();
+      // Only the first status change may be in flight; the second waits on it.
+      expect(started).toEqual(['shipped']);
+      resolveCurrent();
+      await Promise.resolve();
+      await Promise.resolve();
+      resolveCurrent();
+
+      await replay;
+      expect(started).toEqual(['shipped', 'in_transit']);
+      expect(deliveryService.getPackages('user-ordered')[0].status).toBe('in_transit');
+    });
+
+    it('reads and writes the local package list once for a batch of status changes', async () => {
+      vi.spyOn(cloudAdapter, 'upsertPackageRemote').mockResolvedValue({ ok: true });
+
+      const packages = Array.from({ length: 4 }, (_, i) => ({
+        id: `pkg-batch-${i}`,
+        title: `Batch ${i}`,
+        trackingNumber: `RS94821948${i}IL`,
+        carrier: 'israel-post',
+        status: 'ordered'
+      }));
+      deliveryService.savePackages(packages, 'user-batch');
+
+      syncQueue.isOnline = false;
+      for (const pkg of packages) {
+        syncQueue.enqueue(MUTATION_TYPES.STATUS_CHANGE, { packageId: pkg.id, newStatus: 'shipped' }, 'user-batch');
+      }
+
+      const getSpy = vi.spyOn(deliveryService, 'getPackages');
+      const saveSpy = vi.spyOn(deliveryService, 'savePackages');
+
+      syncQueue.isOnline = true;
+      await syncQueue.replayQueue();
+
+      expect(getSpy).toHaveBeenCalledTimes(1);
+      expect(saveSpy).toHaveBeenCalledTimes(1);
+
+      getSpy.mockRestore();
+      expect(deliveryService.getPackages('user-batch').every(p => p.status === 'shipped')).toBe(true);
+    });
+  });
 });

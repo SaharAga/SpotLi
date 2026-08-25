@@ -221,4 +221,65 @@ describe('FeedbackService Unit & Resilience Test Suite', () => {
       expect(getOfflineFeedbackCount()).toBe(1);
     });
   });
+  describe('offline backlog flush', () => {
+    const buildQueue = (n) => Array.from({ length: n }, (_, i) => ({
+      id: `fb-batch-${i}`,
+      status: 'pending',
+      type: 'bug',
+      message: `Queued item ${i}`,
+      rating: 3,
+      timestamp: new Date(2026, 0, 1, 0, i).toISOString()
+    }));
+
+    it('writes the local history once for the whole batch, not once per item', async () => {
+      const queue = buildQueue(25);
+      mockStorage[OFFLINE_FEEDBACK_QUEUE_KEY] = JSON.stringify(queue);
+      vi.stubGlobal('navigator', { onLine: true });
+
+      const result = await flushOfflineFeedbackQueue();
+      expect(result.flushed).toBe(25);
+      expect(result.remaining).toBe(0);
+
+      const historyWrites = localStorage.setItem.mock.calls.filter(
+        ([key]) => key === feedbackService.LOCAL_FEEDBACK_HISTORY_KEY
+      );
+      expect(historyWrites).toHaveLength(1);
+    });
+
+    it('produces the same history order the per-item loop produced', async () => {
+      const queue = buildQueue(3);
+      mockStorage[OFFLINE_FEEDBACK_QUEUE_KEY] = JSON.stringify(queue);
+      vi.stubGlobal('navigator', { onLine: true });
+
+      await flushOfflineFeedbackQueue();
+
+      const history = getLocalFeedbackHistory();
+      // Each item was unshifted in queue order, so the last queued item ends up first.
+      expect(history.map(item => item.id)).toEqual(['fb-batch-2', 'fb-batch-1', 'fb-batch-0']);
+      expect(history.every(item => item.syncedToCloud === true)).toBe(true);
+    });
+
+    it('replaces an existing history entry in place rather than duplicating it', async () => {
+      mockStorage[feedbackService.LOCAL_FEEDBACK_HISTORY_KEY] = JSON.stringify([
+        { id: 'fb-batch-0', message: 'stale', syncedToCloud: false }
+      ]);
+      mockStorage[OFFLINE_FEEDBACK_QUEUE_KEY] = JSON.stringify(buildQueue(2));
+      vi.stubGlobal('navigator', { onLine: true });
+
+      await flushOfflineFeedbackQueue();
+
+      const history = getLocalFeedbackHistory();
+      expect(history.filter(item => item.id === 'fb-batch-0')).toHaveLength(1);
+      expect(history.find(item => item.id === 'fb-batch-0').syncedToCloud).toBe(true);
+    });
+
+    it('caps the history at its maximum after a large drain', async () => {
+      mockStorage[OFFLINE_FEEDBACK_QUEUE_KEY] = JSON.stringify(buildQueue(80));
+      vi.stubGlobal('navigator', { onLine: true });
+
+      await flushOfflineFeedbackQueue();
+
+      expect(getLocalFeedbackHistory()).toHaveLength(50);
+    });
+  });
 });

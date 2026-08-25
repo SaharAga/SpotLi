@@ -206,15 +206,55 @@ export function getLocalFeedbackHistory() {
  * @param {FeedbackPayload} payload
  */
 export function recordLocalHistory(payload) {
+  recordLocalHistoryBatch([payload]);
+}
+
+/**
+ * Appends several feedback payloads to the client's local history in one pass.
+ *
+ * Draining an offline backlog used to call `recordLocalHistory` per item, and
+ * each call re-read and re-parsed the *entire* stored history, then re-stringified
+ * and rewrote it — O(N^2) bytes through JSON for a queue of N. Reading once,
+ * merging in memory and writing once makes it linear. The resulting history is
+ * byte-identical to what the per-item loop produced: payloads are applied in the
+ * same order, an existing id is replaced in place, and a new id is unshifted to
+ * the front.
+ *
+ * @param {FeedbackPayload[]} payloads
+ */
+export function recordLocalHistoryBatch(payloads) {
   if (typeof localStorage === 'undefined') return;
+  if (!Array.isArray(payloads) || payloads.length === 0) return;
   try {
     const history = getLocalFeedbackHistory();
-    const existingIndex = history.findIndex(item => item.id === payload.id);
-    if (existingIndex >= 0) {
-      history[existingIndex] = payload;
-    } else {
-      history.unshift(payload);
+    // Index by id so repeated writes do not each cost a linear findIndex.
+    const indexById = new Map();
+    history.forEach((item, i) => {
+      if (item && !indexById.has(item.id)) indexById.set(item.id, i);
+    });
+
+    for (const payload of payloads) {
+      const existingIndex = indexById.has(payload.id) ? indexById.get(payload.id) : -1;
+      if (existingIndex >= 0) {
+        history[existingIndex] = payload;
+      } else {
+        history.unshift(payload);
+        // Every prior entry shifted one place to the right.
+        for (const [id, i] of indexById) indexById.set(id, i + 1);
+        indexById.set(payload.id, 0);
+      }
+
+      // The per-item loop this replaces truncated after every write, so an entry
+      // pushed past the cap by an earlier payload was already gone when a later
+      // one looked for it. Truncating here too keeps that behaviour exactly.
+      if (history.length > MAX_LOCAL_HISTORY_ITEMS) {
+        history.length = MAX_LOCAL_HISTORY_ITEMS;
+        for (const [id, i] of indexById) {
+          if (i >= MAX_LOCAL_HISTORY_ITEMS) indexById.delete(id);
+        }
+      }
     }
+
     localStorage.setItem(
       LOCAL_FEEDBACK_HISTORY_KEY,
       JSON.stringify(history.slice(0, MAX_LOCAL_HISTORY_ITEMS))
@@ -309,32 +349,40 @@ export async function flushOfflineFeedbackQueue() {
     return { flushed: 0, remaining: 0 };
   }
 
+  const isOnline = typeof navigator === 'undefined' || navigator.onLine !== false;
+  if (!isOnline) {
+    // Nothing can be uploaded; the queue is rewritten unchanged, as before.
+    setOfflineQueue(queue);
+    return { flushed: 0, remaining: queue.length };
+  }
+
+  // Each queued item is an independent Firestore document write keyed by its own
+  // id, so there is no ordering constraint between them. Issuing them together
+  // turns N sequential round trips into one — this path runs the moment a user
+  // comes back online with a backlog. `allSettled`, not `all`: one rejection must
+  // not abandon the rest of the queue.
+  const results = await Promise.allSettled(queue.map(item => uploadToFirestore(item)));
+
   const remaining = [];
-  let flushedCount = 0;
+  const flushedPayloads = [];
 
-  for (const item of queue) {
-    try {
-      const isOnline = typeof navigator === 'undefined' || navigator.onLine !== false;
-      if (!isOnline) {
-        remaining.push(item);
-        continue;
-      }
+  for (let i = 0; i < queue.length; i += 1) {
+    const item = queue[i];
+    const result = results[i];
+    const firestoreSuccess = result.status === 'fulfilled' && result.value === true;
 
-      const firestoreSuccess = await uploadToFirestore(item);
-
-      if (firestoreSuccess || !isFirebaseConfigured) {
-        flushedCount += 1;
-        recordLocalHistory({ ...item, syncedToCloud: true });
-      } else {
-        remaining.push(item);
-      }
-    } catch {
+    if (result.status === 'rejected' || (!firestoreSuccess && isFirebaseConfigured)) {
       remaining.push(item);
+    } else {
+      flushedPayloads.push({ ...item, syncedToCloud: true });
     }
   }
 
+  // One read-modify-write for the whole batch instead of one per item.
+  recordLocalHistoryBatch(flushedPayloads);
+
   setOfflineQueue(remaining);
-  return { flushed: flushedCount, remaining: remaining.length };
+  return { flushed: flushedPayloads.length, remaining: remaining.length };
 }
 
 /**

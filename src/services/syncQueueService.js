@@ -238,7 +238,40 @@ export class SyncQueueService {
   }
 
   /**
-   * Replays pending mutations sequentially against local & cloud adapters.
+   * The package a mutation acts on. Mutations sharing a key must replay in queue
+   * order relative to each other; mutations with different keys are independent.
+   *
+   * @param {object} mutation
+   * @returns {string}
+   */
+  static orderingKey(mutation) {
+    const { type, payload, userId } = mutation;
+    let packageId;
+    if (type === MUTATION_TYPES.DELETE) {
+      packageId = payload?.id ?? payload;
+    } else if (type === MUTATION_TYPES.STATUS_CHANGE) {
+      packageId = payload?.packageId;
+    } else {
+      packageId = payload?.id;
+    }
+    // Scope by user too: the same package id under two users is two documents.
+    return `${userId ?? ''}::${String(packageId ?? mutation.id)}`;
+  }
+
+  /**
+   * Replays pending mutations against local & cloud adapters.
+   *
+   * Mutations touching the *same* package replay strictly in queue order — an
+   * UPDATE must not overtake the ADD that created the row, and two
+   * STATUS_CHANGEs must go through the transition matrix in the order the user
+   * made them. Mutations touching *different* packages are independent writes to
+   * distinct documents, so those chains run concurrently rather than paying one
+   * network round trip each. This is the path a user hits the instant they come
+   * back online with a backlog.
+   *
+   * The local package list is read once per user and written once at the end,
+   * instead of a read+parse+validate+stringify per STATUS_CHANGE.
+   *
    * @returns {Promise<{ processed: number, failed: number, remaining: number }>}
    */
   async replayQueue() {
@@ -257,42 +290,76 @@ export class SyncQueueService {
     const settledIds = new Set();
     const retriedMutations = new Map();
 
-    for (const mutation of queue) {
-      try {
-        const { type, payload, userId } = mutation;
-
-        if (type === MUTATION_TYPES.ADD || type === MUTATION_TYPES.UPDATE) {
-          await cloudAdapter.upsertPackageRemote(payload, userId);
-        } else if (type === MUTATION_TYPES.DELETE) {
-          await cloudAdapter.deletePackageRemote(payload.id || payload, userId);
-        } else if (type === MUTATION_TYPES.STATUS_CHANGE) {
-          const pkgs = deliveryService.getPackages(userId);
-          const target = pkgs.find(p => p.id === payload.packageId);
-          if (target && deliveryService.canTransition(target.status, payload.newStatus)) {
-            const updated = {
-              ...target,
-              status: payload.newStatus,
-              updatedAt: new Date().toISOString()
-            };
-            const updatedList = pkgs.map((p) => (p.id === updated.id ? updated : p));
-            deliveryService.savePackages(updatedList, userId);
-            await cloudAdapter.upsertPackageRemote(updated, userId);
-          }
-        }
-
-        processed++;
-        settledIds.add(mutation.id);
-      } catch (err) {
-        console.warn(`[SyncQueueService] Failed to replay mutation ${mutation.id}:`, err);
-        mutation.retryCount = (mutation.retryCount || 0) + 1;
-        if (mutation.retryCount < MAX_RETRY_COUNT) {
-          retriedMutations.set(mutation.id, mutation);
-        } else {
-          this.moveToDeadLetter(mutation, err);
-          settledIds.add(mutation.id);
-        }
-        failed++;
+    // Local package lists, read once per user and mutated in memory. JS runs these
+    // chains on one thread, so concurrent chains cannot interleave mid-update.
+    /** @type {Map<string|null, Array<object>>} */
+    const localLists = new Map();
+    /** @type {Set<string|null>} */
+    const dirtyUsers = new Set();
+    const readLocalList = (userId) => {
+      if (!localLists.has(userId)) {
+        localLists.set(userId, deliveryService.getPackages(userId));
       }
+      return localLists.get(userId);
+    };
+
+    const applyMutation = async (mutation) => {
+      const { type, payload, userId } = mutation;
+
+      if (type === MUTATION_TYPES.ADD || type === MUTATION_TYPES.UPDATE) {
+        await cloudAdapter.upsertPackageRemote(payload, userId);
+      } else if (type === MUTATION_TYPES.DELETE) {
+        await cloudAdapter.deletePackageRemote(payload.id || payload, userId);
+      } else if (type === MUTATION_TYPES.STATUS_CHANGE) {
+        const pkgs = readLocalList(userId);
+        const target = pkgs.find(p => p.id === payload.packageId);
+        if (target && deliveryService.canTransition(target.status, payload.newStatus)) {
+          const updated = {
+            ...target,
+            status: payload.newStatus,
+            updatedAt: new Date().toISOString()
+          };
+          localLists.set(userId, pkgs.map((p) => (p.id === updated.id ? updated : p)));
+          dirtyUsers.add(userId);
+          await cloudAdapter.upsertPackageRemote(updated, userId);
+        }
+      }
+    };
+
+    // Group by target package, preserving queue order inside each group.
+    /** @type {Map<string, Array<object>>} */
+    const chains = new Map();
+    for (const mutation of queue) {
+      const key = SyncQueueService.orderingKey(mutation);
+      const chain = chains.get(key);
+      if (chain) chain.push(mutation);
+      else chains.set(key, [mutation]);
+    }
+
+    await Promise.allSettled(Array.from(chains.values()).map(async (chain) => {
+      for (const mutation of chain) {
+        try {
+          await applyMutation(mutation);
+          processed++;
+          settledIds.add(mutation.id);
+        } catch (err) {
+          console.warn(`[SyncQueueService] Failed to replay mutation ${mutation.id}:`, err);
+          mutation.retryCount = (mutation.retryCount || 0) + 1;
+          if (mutation.retryCount < MAX_RETRY_COUNT) {
+            retriedMutations.set(mutation.id, mutation);
+          } else {
+            this.moveToDeadLetter(mutation, err);
+            settledIds.add(mutation.id);
+          }
+          failed++;
+        }
+      }
+    }));
+
+    // One write per user instead of one per STATUS_CHANGE. `savePackages` validates
+    // the list exactly as it did before, so the persisted result is unchanged.
+    for (const userId of dirtyUsers) {
+      deliveryService.savePackages(localLists.get(userId), userId);
     }
 
     const remainingQueue = this.getQueue()
