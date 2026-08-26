@@ -7,6 +7,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.17.0] - 2026-08-26
+
+### Added
+- Added automatic, anonymous crash reporting: uncaught React render errors and unhandled
+window/promise errors are now reported to their own `crashReports` Firestore collection (kept
+separate from tester `/feedback` so a burst of automatic reports can never crowd it out), visible
+grouped by distinct failure in the Alpha Feedback Inspector's new "Crashes" tab.
+
+- Add dedicated Admin Dashboard & Telemetry Center with quality scorecard KPIs, version-by-version issue reduction trends, crash grouping monitor, smart parser telemetry, feedback screenshot lightbox viewer, and CSV/JSON export tools.
+
+- Add 1-Click Gmail automated email forwarding connector, interactive visual setup guides for Gmail, Outlook, iCloud, and Yahoo, and inbound email webhook Cloud Function for real-time package ingestion.
+
+- Enhanced Israeli & Global courier SMS intelligence, short URL unshortening support, and live ingestion UI badges.
+- Expanded carrier definitions, detection rules, brand colors, and URL templates for Bar Distribution (`bar-distribution`), LionWheel (`lionwheel`), Buzzr (`buzzr`), Tapuz (`tapuz`), Cheetah (`chita`), and SHEIN (`shein`).
+- Expanded store detection with bilingual Hebrew & English keywords for AliExpress, SHEIN, Amazon, iHerb, Temu, Zara, ASOS, KSP, and Ivory.
+- Created `urlUnshortenerService` with short URL extraction and network resolution helpers.
+- Added live detection badges (Store, Pickup Location, Locker PIN) and a 1-tap quick auto-fill action in `AddEditPackageModal`.
+- Added a comprehensive 40-sample SMS corpus (`smsCorpus.js`) and characterization test suite with 100% precision.
+
+### Fixed
+- Stopped the analytics modal recomputing its metrics while closed, and made the
+delivered-package transit duration shared between the two aggregators that need
+it instead of derived twice. Offline backlogs now replay their independent
+writes concurrently — feedback uploads under a bounded pool, and sync-queue
+mutations for distinct packages — while mutations touching the same package
+still replay strictly in queue order and the local feedback history is written
+once per drain rather than once per item.
+
+- Added `src/components/COMPONENTS.md`, a reference map of all components and how the modals are
+wired in `App.jsx`, and refreshed the top-level `CLAUDE.md` to match the current codebase.
+
+- Split every dialog out of the initial bundle with `React.lazy`, so the fourteen
+modals in `App.jsx` are downloaded the first time one is opened rather than
+before the package list can paint. The entry chunk drops from 538 kB to 179 kB
+(144 kB to 52 kB gzipped), and the total JavaScript fetched on a cold load
+falls by about 212 kB (46 kB gzipped).
+
+- Wrap raw JSON backup in an export manifest with full scope ('all') and omit undeclared scope on filtered JSON reports.
+
+- Made the Account tab's backup a raw JSON snapshot instead of a CSV, so it carries every field (including `titleHe`/`notesHe`, `checkpoints`, category and flags) and can actually be restored — the CSV it replaced had no importer at all. Renamed the Export Center's JSON option from "JSON Backup" to a scope-filtered export, since restoring a filtered file would have deleted every package outside that filter. Restore no longer truncates silently at 1,000 packages, and every CSV path now neutralises leading `=`, `+`, `-`, `@` and tab characters that spreadsheets would evaluate as formulas.
+
+- Threaded `userId` through `deliveryService.importData` so imports under an authenticated user persist into the user's storage partition rather than the guest key (#56). Wrapped `exportToJSON` in a self-describing manifest containing schemaVersion, exportedAt, appVersion, scope, and packageCount, and updated `importData` to reject partial scope exports while preserving legacy bare-array restore compatibility (#57).
+
+- Enforced module layering in lint: `import/no-cycle` is now an error, `utils/`,
+`types/`, `schemas/`, `constants/` and `i18n/` may no longer import
+`services/`, `components/`, `hooks/` or `context/`, and `services/` may no
+longer import `components/`, `hooks/` or `context/`. Enabled the `react-perf`
+rules at `warn` as a standing worklist.
+
+- Scoped `importData` to the signed-in user at its call site. The service half shipped in #67, but `App.jsx` still called it with one argument, so `userId` defaulted to `null` and every restore landed in the guest partition regardless of who was signed in — leaving #56 closed while the bug was still live.
+
+- Made every modal dismissable and navigable from the keyboard. A new shared
+`Modal` primitive owns the portal, backdrop, Escape, focus trap, initial focus
+and focus restore, body scroll lock, ARIA and the z-layer stack for all sixteen
+dialogs, and a single `useModalRouter` `activeModal` stack replaced the dozen
+`isXOpen` booleans and their companion state in `App.jsx`.
+
+- Cut dashboard re-render work: the package list, table and KPI tiles are now
+memoized behind stable handlers — including the mutators `usePackages` returns —
+so typing in the search box no longer re-renders every card. The Web Share
+Target handler runs once at startup rather than on every package change, which
+also stops a `?tab=` shortcut from snapping the user back to that tab after
+every edit. Status bucketing moved into a single `TAB_PREDICATES` table shared
+by the filter and both counters, which had drifted apart.
+
 ## [0.15.13] - 2026-08-25
 
 ### Changed
