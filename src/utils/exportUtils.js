@@ -1,3 +1,4 @@
+import { APP_VERSION } from '../constants/version';
 import { parsePackageList } from '../schemas/packageSchema';
 import { todayISO } from './dateUtils';
 
@@ -183,19 +184,45 @@ export function exportRawToJSON(packages, triggerDownload = false, filename = ''
 }
 
 /**
- * Exports package list to clean, indented JSON string with optional direct download.
+ * Exports package list wrapped in a self-describing manifest as a clean, indented JSON string.
+ *
+ * Emits a manifest object with metadata (schemaVersion, exportedAt, appVersion, scope, packageCount)
+ * so that importers (deliveryService.importData) can distinguish a deliberately scope-filtered export
+ * from a full backup and avoid accidental data truncation on restore (#57).
  *
  * @param {import('../types/deliveree').Package[]} packages
  * @param {boolean} [triggerDownload=false]
  * @param {string} [filename]
+ * @param {object|string} [options={}] - Options or scope string ('all' | 'active' | 'delivered')
  * @returns {string}
  */
-export function exportToJSON(packages, triggerDownload = false, filename = '') {
+export function exportToJSON(packages, triggerDownload = false, filename = '', options = {}) {
   const { packages: safeList } = parsePackageList(packages);
-  const jsonString = JSON.stringify(safeList, null, 2);
+
+  let scope = typeof options === 'string' ? options : options?.scope;
+  if (!scope && filename) {
+    const match = filename.match(/deliveree_export_([a-z0-9_-]+)_/i);
+    if (match && ['all', 'active', 'delivered'].includes(match[1].toLowerCase())) {
+      scope = match[1].toLowerCase();
+    }
+  }
+  if (!scope) {
+    scope = 'all';
+  }
+
+  const manifest = {
+    schemaVersion: 1,
+    exportedAt: new Date().toISOString(),
+    appVersion: APP_VERSION,
+    scope,
+    packageCount: safeList.length,
+    packages: safeList
+  };
+
+  const jsonString = JSON.stringify(manifest, null, 2);
 
   if (triggerDownload && typeof document !== 'undefined') {
-    const defaultName = filename || `deliveree_backup_${todayISO()}.json`;
+    const defaultName = filename || `deliveree_export_${scope}_${todayISO()}.json`;
     downloadBlob(jsonString, 'application/json;charset=utf-8;', defaultName);
   }
 

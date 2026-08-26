@@ -126,13 +126,26 @@ describe('exportUtils Unit Tests', () => {
   });
 
   describe('exportToJSON', () => {
-    it('generates a valid formatted JSON string representing the packages', () => {
+    it('generates a valid formatted JSON manifest string representing the packages', () => {
       const jsonStr = exportToJSON(samplePackages);
       const parsed = JSON.parse(jsonStr);
-      expect(Array.isArray(parsed)).toBe(true);
-      expect(parsed.length).toBe(2);
-      expect(parsed[0].id).toBe('pkg-1');
-      expect(parsed[1].id).toBe('pkg-2');
+      expect(parsed).toHaveProperty('schemaVersion', 1);
+      expect(parsed).toHaveProperty('exportedAt');
+      expect(parsed).toHaveProperty('appVersion');
+      expect(parsed).toHaveProperty('scope', 'all');
+      expect(parsed).toHaveProperty('packageCount', 2);
+      expect(Array.isArray(parsed.packages)).toBe(true);
+      expect(parsed.packages.length).toBe(2);
+      expect(parsed.packages[0].id).toBe('pkg-1');
+      expect(parsed.packages[1].id).toBe('pkg-2');
+    });
+
+    it('sets scope from options or infers from filename', () => {
+      const explicitStr = exportToJSON(samplePackages, false, '', { scope: 'delivered' });
+      expect(JSON.parse(explicitStr).scope).toBe('delivered');
+
+      const inferredStr = exportToJSON(samplePackages, false, 'deliveree_export_active_2026-08-26.json');
+      expect(JSON.parse(inferredStr).scope).toBe('active');
     });
 
     it('triggers JSON blob download when requested', () => {
@@ -345,8 +358,8 @@ describe('validated exports preserve unknown fields (#41)', () => {
 
   it('exportToJSON keeps fields outside the known key set', () => {
     const parsed = JSON.parse(exportToJSON([withUnknown]));
-    expect(parsed[0].customerReference).toBe('PO-9981');
-    expect(parsed[0].someFutureField).toEqual({ nested: true });
+    expect(parsed.packages[0].customerReference).toBe('PO-9981');
+    expect(parsed.packages[0].someFutureField).toEqual({ nested: true });
   });
 
   it('the raw backup never validates, so nothing can be stripped', () => {
