@@ -165,6 +165,25 @@ were affected:
    trap `firestore.rules` auto-deploy fell into earlier; add it to
    `ci.yml`'s `deploy-firebase` job once 1–3 above are done.
 
+## Automated feedback/crash triage
+
+A Claude Code agent, run on a schedule, reads new `/feedback` and `/crashReports` documents and
+files GitHub issues for genuinely new, actionable problems — see
+`.agents/skills/feedback-triage-and-action-items/SKILL.md` section 3 for the full protocol. It
+never opens a PR on its own; a fix it judges safe and scoped is described in the issue for a human
+to act on, since both collections accept anonymous, unauthenticated writes and that content must
+never be able to drive a code change by itself.
+
+**Setup**:
+1. Firebase Console → Project Settings → Service Accounts → Generate new private key.
+2. Set the resulting JSON as `FIREBASE_SERVICE_ACCOUNT_JSON` (the whole file, as one string) in
+   the environment the triage Routine runs in — this is a real secret, not a repo variable.
+3. `npm run triage:fetch` to sanity-check locally (prints untriaged documents from both
+   collections as JSON, or a clear error if the credential is missing/invalid).
+
+This bypasses `firestore.rules` via the Admin SDK by design — the client-facing rules stay
+untouched (still create-only, admin-read, no client update) regardless.
+
 ## Legal consent & AI-training opt-in
 
 Registration (email/password) requires checking a mandatory box to accept
