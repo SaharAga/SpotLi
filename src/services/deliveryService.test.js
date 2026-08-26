@@ -206,7 +206,10 @@ describe('Delivery Service and Storage Persistence', () => {
     localStorage.setItem('deliveree_packages_guest', JSON.stringify(stored));
 
     const backup = exportRawToJSON(deliveryService.getRawPackages());
-    expect(JSON.parse(backup)).toEqual(stored);
+    const parsedBackup = JSON.parse(backup);
+    expect(parsedBackup.packages).toEqual(stored);
+    expect(parsedBackup.scope).toBe('all');
+    expect(parsedBackup.schemaVersion).toBe(1);
 
     const result = deliveryService.importData(backup);
     expect(result.success).toBe(true);

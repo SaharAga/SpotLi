@@ -162,6 +162,10 @@ export function exportToCSV(packages, triggerDownload = false, filename = '') {
  * externally-modified blob, where it passes the stored bytes through untouched
  * instead of repairing them into the backup.
  *
+ * Emits a manifest object with metadata (schemaVersion, exportedAt, appVersion,
+ * scope: 'all', packageCount) so that importers (deliveryService.importData)
+ * can verify rather than assume a genuine full backup (#57, #69).
+ *
  * Output is compact, not pretty-printed: a backup is machine-read, and the
  * ~26% inflation from indentation comes straight off the restore ceiling,
  * since `MAX_IMPORT_SIZE_BYTES` is measured on the exported file.
@@ -173,7 +177,15 @@ export function exportToCSV(packages, triggerDownload = false, filename = '') {
  */
 export function exportRawToJSON(packages, triggerDownload = false, filename = '') {
   const list = Array.isArray(packages) ? packages : [];
-  const jsonString = JSON.stringify(list);
+  const manifest = {
+    schemaVersion: 1,
+    exportedAt: new Date().toISOString(),
+    appVersion: APP_VERSION,
+    scope: 'all',
+    packageCount: list.length,
+    packages: list
+  };
+  const jsonString = JSON.stringify(manifest);
 
   if (triggerDownload && typeof document !== 'undefined') {
     const defaultName = filename || `deliveree_backup_${todayISO()}.json`;
@@ -190,6 +202,9 @@ export function exportRawToJSON(packages, triggerDownload = false, filename = ''
  * so that importers (deliveryService.importData) can distinguish a deliberately scope-filtered export
  * from a full backup and avoid accidental data truncation on restore (#57).
  *
+ * If scope is not provided in options, scope is omitted (absent) from the manifest rather than
+ * defaulting to 'all', preventing unstated or filtered exports from masquerading as full backups (#69).
+ *
  * @param {import('../types/deliveree').Package[]} packages
  * @param {boolean} [triggerDownload=false]
  * @param {string} [filename]
@@ -199,22 +214,13 @@ export function exportRawToJSON(packages, triggerDownload = false, filename = ''
 export function exportToJSON(packages, triggerDownload = false, filename = '', options = {}) {
   const { packages: safeList } = parsePackageList(packages);
 
-  let scope = typeof options === 'string' ? options : options?.scope;
-  if (!scope && filename) {
-    const match = filename.match(/deliveree_export_([a-z0-9_-]+)_/i);
-    if (match && ['all', 'active', 'delivered'].includes(match[1].toLowerCase())) {
-      scope = match[1].toLowerCase();
-    }
-  }
-  if (!scope) {
-    scope = 'all';
-  }
+  const scope = typeof options === 'string' ? options : options?.scope;
 
   const manifest = {
     schemaVersion: 1,
     exportedAt: new Date().toISOString(),
     appVersion: APP_VERSION,
-    scope,
+    ...(scope ? { scope } : {}),
     packageCount: safeList.length,
     packages: safeList
   };
@@ -222,7 +228,7 @@ export function exportToJSON(packages, triggerDownload = false, filename = '', o
   const jsonString = JSON.stringify(manifest, null, 2);
 
   if (triggerDownload && typeof document !== 'undefined') {
-    const defaultName = filename || `deliveree_export_${scope}_${todayISO()}.json`;
+    const defaultName = filename || `deliveree_export_${scope ? `${scope}_` : ''}${todayISO()}.json`;
     downloadBlob(jsonString, 'application/json;charset=utf-8;', defaultName);
   }
 

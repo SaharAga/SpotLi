@@ -137,7 +137,7 @@ describe('AccountModal — backup export path', () => {
 
     const { exportRawToJSON } = await import('../utils/exportUtils');
     exportSpies.raw.mockClear();
-    const [out] = JSON.parse(exportRawToJSON([UNREPAIRED_PACKAGE]));
+    const [out] = JSON.parse(exportRawToJSON([UNREPAIRED_PACKAGE])).packages;
 
     expect(out.carrier).toBe('some_carrier_we_never_heard_of'); // not 'other'
     expect(out.status).toBe('lost_in_the_post'); // not 'in_transit'
@@ -150,7 +150,7 @@ describe('AccountModal — backup export path', () => {
 
   it('keeps the Hebrew fields the CSV backup dropped (#53)', async () => {
     const { exportRawToJSON } = await import('../utils/exportUtils');
-    const [out] = JSON.parse(exportRawToJSON([UNREPAIRED_PACKAGE]));
+    const [out] = JSON.parse(exportRawToJSON([UNREPAIRED_PACKAGE])).packages;
 
     expect(out.title).toBe('Sneakers "Air"');
     expect(out.titleHe).toBe('נעלי ספורט');
@@ -197,7 +197,7 @@ describe('AccountModal — backup export path', () => {
     const [passedPackages] = exportSpies.raw.mock.calls[0];
     expect(passedPackages).toHaveLength(1200);
     const { exportRawToJSON } = await import('../utils/exportUtils');
-    expect(JSON.parse(exportRawToJSON(passedPackages))).toHaveLength(1200);
+    expect(JSON.parse(exportRawToJSON(passedPackages)).packages).toHaveLength(1200);
   });
 
   it('preserves the filename convention and the success toast', async () => {
