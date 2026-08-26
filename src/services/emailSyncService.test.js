@@ -3,6 +3,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   getIngestionEmailAddress,
   getConnectedServices,
+  getConnectedAccounts,
+  addConnectedAccount,
+  removeConnectedAccount,
   setConnectedService,
   setupGmailAutoForward
 } from './emailSyncService';
@@ -31,18 +34,42 @@ describe('emailSyncService Unit Tests', () => {
   describe('getConnectedServices & setConnectedService', () => {
     it('defaults to false for all services', () => {
       const state = getConnectedServices();
-      expect(state).toEqual({ gmail: false, outlook: false });
+      expect(state).toEqual({ gmail: false, outlook: false, accounts: [] });
     });
 
     it('persists connected state across calls', () => {
       setConnectedService('gmail', true);
-      expect(getConnectedServices()).toEqual({ gmail: true, outlook: false });
+      expect(getConnectedServices()).toEqual({ gmail: true, outlook: false, accounts: [] });
 
       setConnectedService('outlook', true);
-      expect(getConnectedServices()).toEqual({ gmail: true, outlook: true });
+      expect(getConnectedServices()).toEqual({ gmail: true, outlook: true, accounts: [] });
 
       setConnectedService('gmail', false);
-      expect(getConnectedServices()).toEqual({ gmail: false, outlook: true });
+      expect(getConnectedServices()).toEqual({ gmail: false, outlook: true, accounts: [] });
+    });
+  });
+
+  describe('Multi-Email Accounts Management', () => {
+    it('adds, lists, and removes connected accounts', () => {
+      expect(getConnectedAccounts()).toEqual([]);
+
+      addConnectedAccount({ email: 'sahar@gmail.com', service: 'gmail' });
+      addConnectedAccount({ email: 'work@company.com', service: 'gmail' });
+
+      const accounts = getConnectedAccounts();
+      expect(accounts.length).toBe(2);
+      expect(accounts.map((a) => a.email)).toEqual(['sahar@gmail.com', 'work@company.com']);
+      expect(getConnectedServices().gmail).toBe(true);
+
+      removeConnectedAccount('sahar@gmail.com');
+      const remaining = getConnectedAccounts();
+      expect(remaining.length).toBe(1);
+      expect(remaining[0].email).toBe('work@company.com');
+      expect(getConnectedServices().gmail).toBe(true);
+
+      removeConnectedAccount('work@company.com');
+      expect(getConnectedAccounts().length).toBe(0);
+      expect(getConnectedServices().gmail).toBe(false);
     });
   });
 
@@ -129,6 +156,14 @@ describe('emailSyncService Unit Tests', () => {
       const res = await setupGmailAutoForward('mock-google-token', 'usr_123@in.deliveree.app');
       expect(res.ok).toBe(false);
       expect(res.error).toBe('Invalid query criteria');
+    });
+  });
+
+  describe('requestGmailForwardingSetup', () => {
+    it('returns error when firebase is not configured', async () => {
+      const { requestGmailForwardingSetup: requestSetup } = await import('./emailSyncService');
+      const res = await requestSetup('usr_123@in.deliveree.app');
+      expect(res.ok).toBe(false);
     });
   });
 });
