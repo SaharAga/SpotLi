@@ -16,11 +16,14 @@ This skill defines the automated quality gates, lint/type checks, and build vali
 
 ## 1. Quality Gate Commands
 
-Execute these commands in sequence (all must exit with status 0):
+Execute these commands in sequence (all must exit with status 0). Exit status
+is the gate — warnings are expected output, not a failure: the `react-perf`
+rules are enabled at `warn` as a worklist (`AGENTS.md` §9.1).
 
 ```bash
-# 1. Linting & Static Analysis
-npx oxlint -D warnings --deny-warnings
+# 1. Linting & Static Analysis (this is the gate CI runs; do NOT add
+#    `-D warnings` — react-perf runs at warn on purpose, see AGENTS.md §9.1)
+npm run lint
 
 # 2. Type Checking
 npx tsc --noEmit --strict

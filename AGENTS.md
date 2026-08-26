@@ -73,7 +73,10 @@ flowchart LR
   * **Secrets Check**: Zero hardcoded credentials or API keys in source files or client bundles.
 
 ### Stage 6: QA & Build Verification (QA Verifier Subagent)
-* Static analysis: `oxlint -D warnings --deny-warnings`
+* Static analysis: `npm run lint` (exit 0). **Not** `oxlint -D warnings` — the
+  `react-perf` rules run at `warn` deliberately, as a worklist rather than a
+  gate, so a blanket warning-denial reports another agent's backlog as your
+  failure. See §9.1.
 * Typecheck: `tsc --noEmit --strict`
 * 5-Tier Testbench: `npm test` (100% pass rate)
 * Anti-facade scan: Verify zero dummy assertions (`expect(true).toBe(true)`) or skipped tests (`it.skip`).
@@ -356,7 +359,7 @@ the ones above:
 ```
 components/ · hooks/ · context/     (presentation & React state)
 services/                           (Firebase, network, adapters)
-utils/ · types/ · schemas/ · constants/ · i18n/   (leaves)
+utils/ · types/ · schemas/ · constants/ · i18n/ · data/   (leaves)
 ```
 
 **Enforced (`error`, fails CI):**
@@ -364,13 +367,17 @@ utils/ · types/ · schemas/ · constants/ · i18n/   (leaves)
 * `import/no-cycle` — repo-wide. It reported zero violations when enabled, so
   this is a free ratchet: it costs nothing today and prevents recurrence of a
   bug this codebase actually had.
-* `no-restricted-imports` in `src/utils|types|schemas|constants|i18n/**` —
+* `no-restricted-imports` in `src/utils|types|schemas|constants|i18n|data/**` —
   cannot import `services/`, `components/`, `hooks/` or `context/`.
 * `no-restricted-imports` in `src/services/**` — cannot import `components/`,
   `hooks/` or `context/`.
-* `no-restricted-imports` in `src/components|hooks|context/**` — cannot reach
-  into a nested path under `services/`, `utils/`, `types/` or `schemas/`
-  (import a module's public surface, not a file inside it).
+* `no-restricted-imports` in `src/components|hooks|context/**` plus `App.jsx`
+  and `main.jsx` — cannot reach into a nested path under `services/`, `utils/`,
+  `types/`, `schemas/`, `constants/`, `i18n/` or `data/` (import a module's
+  public surface, not a file inside it).
+
+The bans match the directory form too (`'../services'`, not just
+`'../services/x'`), so introducing a barrel file is not a way around them.
 
 All of these were already clean on `main`; they lock in the status quo rather
 than demanding a migration. Test files are excluded from the layering
@@ -393,6 +400,35 @@ present, so these do not block a merge, deliberately: a warning here is a
 rendered 200 times is worth fixing; the same arrow on a single button is noise,
 and "fixing" it with a `useCallback` makes the code worse. Judge each one.
 
-For the same reason, **do not run `oxlint -D warnings` as a blanket gate**
-(§2 Stage 6 predates these rules). CI's real static-analysis gate is
-`npm run lint`.
+For the same reason, **do not run `oxlint -D warnings` as a blanket gate.**
+It exits 1 on this tree. Every gate description that used to prescribe it —
+§2 Stage 6, `.agents/rules/sdlc_pipeline.md` Gate 4, and the
+`software-verification-and-qa` and `project-release-tracking` skills — now says
+`npm run lint`, which is what CI actually runs. Otherwise the next agent
+running the QA skill on an unrelated PR reports FAIL on a backlog that is not
+theirs.
+
+**Every directory under `src/` is assigned to a layer**, deliberately, so a new
+one cannot appear unconstrained. Two decisions worth stating:
+
+* `src/App.jsx` and `src/main.jsx` are the **composition root**. They are the
+  one place allowed to reach into every layer at once — that is their job — so
+  they are exempt from the layer bans, but they *are* covered by the
+  public-surface rule.
+* `src/data/**` is a **leaf** (static seed data), grouped with `utils/`.
+
+**The enforcement is tested, because it fails open.** The tree is 100%
+compliant, so a config that has silently stopped working looks exactly like a
+clean tree: `npm run lint` exits 0 either way. Renaming `regex` to `regexp`
+makes a real violation lint clean with no diagnostic anywhere.
+`.agents/lint/lintBoundaries.test.js` therefore lints deliberately-broken
+fixtures in `.agents/lint/fixtures/` with the real rules and fails if they come
+back clean. It runs in `npm test`. If you change `.oxlintrc.json`'s layering
+rules, that test is what proves the change still enforces something.
+
+Two mechanics that are easy to get wrong and are guarded by that test: oxlint
+resolves an override's `files` globs **relative to the config file's own
+directory** (a config in a temp dir matches nothing and skips every override
+silently), and the patterns are anchored to the relative form `^(\.\.?/)+` so
+that a third-party subpath like `some-lib/hooks/useX` is not mistaken for a
+layer violation.

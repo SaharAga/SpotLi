@@ -1,6 +1,7 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["react", "oxc", "import", "react-perf"],
+  "ignorePatterns": [".agents/lint/fixtures/**"],
   "rules": {
     "react/rules-of-hooks": "error",
     "react/only-export-components": "off",
@@ -14,7 +15,7 @@
   },
   "overrides": [
     {
-      "files": ["src/utils/**", "src/types/**", "src/schemas/**", "src/constants/**", "src/i18n/**"],
+      "files": ["src/utils/**", "src/types/**", "src/schemas/**", "src/constants/**", "src/i18n/**", "src/data/**"],
       "excludeFiles": ["**/*.test.js", "**/*.test.jsx", "**/__fixtures__/**"],
       "rules": {
         "no-restricted-imports": [
@@ -22,8 +23,8 @@
           {
             "patterns": [
               {
-                "regex": "(^|/)(services|components|hooks|context)/",
-                "message": "Leaf layer: utils/, types/, schemas/, constants/ and i18n/ may import each other and third-party code, but never services/, components/, hooks/ or context/. Invert the dependency — pass what you need in as an argument."
+                "regex": "^(\\.\\.?/)+(services|components|hooks|context)(/|$)",
+                "message": "Leaf layer: utils/, types/, schemas/, constants/, i18n/ and data/ may import each other and third-party code, but never services/, components/, hooks/ or context/. Invert the dependency — pass what you need in as an argument."
               }
             ]
           }
@@ -39,7 +40,7 @@
           {
             "patterns": [
               {
-                "regex": "(^|/)(components|hooks|context)/",
+                "regex": "^(\\.\\.?/)+(components|hooks|context)(/|$)",
                 "message": "Service layer: services/ may import utils/, types/ and schemas/, but never components/, hooks/ or context/. A service that needs React state should receive it as an argument."
               }
             ]
@@ -48,7 +49,7 @@
       }
     },
     {
-      "files": ["src/components/**", "src/hooks/**", "src/context/**"],
+      "files": ["src/components/**", "src/hooks/**", "src/context/**", "src/App.jsx", "src/main.jsx"],
       "excludeFiles": ["**/*.test.js", "**/*.test.jsx"],
       "rules": {
         "no-restricted-imports": [
@@ -56,7 +57,7 @@
           {
             "patterns": [
               {
-                "regex": "(^|/)(services|utils|types|schemas)/[^/]+/",
+                "regex": "^(\\.\\.?/)+(services|utils|types|schemas|constants|i18n|data)/[^/]+/",
                 "message": "Import a module's public surface, not a path inside it."
               }
             ]
