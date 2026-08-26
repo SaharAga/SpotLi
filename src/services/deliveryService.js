@@ -30,15 +30,45 @@ function getStorageKey(userId) {
  * State machine transition matrix governing allowed package status transitions.
  */
 export const TRANSITION_MATRIX = Object.freeze({
-  ordered: ['ordered', 'shipped', 'in_transit', 'exception', 'archived'],
-  shipped: ['shipped', 'in_transit', 'customs', 'out_for_delivery', 'exception', 'archived'],
+  ordered: ['ordered', 'shipped', 'in_transit', 'delivered', 'exception', 'archived'],
+  shipped: ['shipped', 'in_transit', 'customs', 'out_for_delivery', 'delivered', 'exception', 'archived'],
   in_transit: ['in_transit', 'customs', 'out_for_delivery', 'delivered', 'exception', 'archived'],
-  customs: ['customs', 'in_transit', 'out_for_delivery', 'exception', 'archived'],
+  customs: ['customs', 'in_transit', 'out_for_delivery', 'delivered', 'exception', 'archived'],
   out_for_delivery: ['out_for_delivery', 'delivered', 'exception', 'archived'],
   delivered: ['delivered', 'archived'],
   exception: ['exception', 'in_transit', 'out_for_delivery', 'delivered', 'archived'],
   archived: ['archived', 'ordered', 'shipped', 'in_transit', 'customs', 'out_for_delivery', 'delivered', 'exception']
 });
+
+/**
+ * Normalizes a tracking number by stripping all whitespace, hyphens, and converting to uppercase.
+ *
+ * @param {string|null|undefined} trackingNumber
+ * @returns {string} Normalized tracking number
+ */
+export function normalizeTrackingNumber(trackingNumber) {
+  if (typeof trackingNumber !== 'string') return '';
+  return trackingNumber.replace(/[\s-]+/g, '').toUpperCase();
+}
+
+/**
+ * Finds an existing package by normalized tracking number, optionally excluding a specific package ID.
+ *
+ * @param {Array<object>} packages - List of package objects
+ * @param {string} trackingNumber - Tracking number to look for
+ * @param {string|null} [excludeId=null] - Optional ID to exclude from search (e.g. self when editing)
+ * @returns {object|null} Matching package or null
+ */
+export function findPackageByTrackingNumber(packages, trackingNumber, excludeId = null) {
+  if (!Array.isArray(packages) || !trackingNumber) return null;
+  const canonical = normalizeTrackingNumber(trackingNumber);
+  if (!canonical) return null;
+
+  return packages.find(pkg => {
+    if (!pkg || (excludeId && pkg.id === excludeId)) return false;
+    return normalizeTrackingNumber(pkg.trackingNumber) === canonical;
+  }) || null;
+}
 
 /**
  * Checks whether transitioning from `fromStatus` to `toStatus` is permitted by the state machine.
@@ -65,6 +95,8 @@ export const deliveryService = {
    */
   canTransition,
   TRANSITION_MATRIX,
+  normalizeTrackingNumber,
+  findPackageByTrackingNumber,
   /**
    * Helper to derive the storage key for a user or guest
    */
