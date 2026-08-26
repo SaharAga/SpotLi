@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { IngestionGuideModal } from './IngestionGuideModal.jsx';
 import { LanguageProvider } from '../context/LanguageContext';
 
@@ -11,6 +11,17 @@ vi.mock('../context/AuthContext', () => ({
   }),
   AuthProvider: ({ children }) => <div>{children}</div>
 }));
+
+vi.mock('../services/emailSyncService', async () => {
+  const actual = await vi.importActual('../services/emailSyncService');
+  return {
+    ...actual,
+    requestGmailForwardingSetup: vi.fn().mockImplementation(async () => {
+      actual.setConnectedService('gmail', true);
+      return { ok: true };
+    })
+  };
+});
 
 describe('IngestionGuideModal Component Tests', () => {
   beforeEach(() => {
@@ -59,15 +70,17 @@ describe('IngestionGuideModal Component Tests', () => {
     expect(screen.getByText(/פתחו את Yahoo Mail|Open Yahoo Mail/i)).toBeTruthy();
   });
 
-  it('handles 1-Click Gmail sync button click', () => {
+  it('handles 1-Click Gmail sync button click', async () => {
     const handleToast = vi.fn();
     renderModal({ onShowToast: handleToast });
 
     const enableSyncBtn = screen.getByText(/Enable Gmail Sync|הפעל סנכרון Gmail/i);
     fireEvent.click(enableSyncBtn);
 
-    expect(handleToast).toHaveBeenCalledTimes(1);
-    expect(screen.getByText(/Sync Active ✓|סנכרון מופעל ✓/i)).toBeTruthy();
+    await waitFor(() => {
+      expect(handleToast).toHaveBeenCalledTimes(1);
+      expect(screen.getByText(/Connect Another Gmail|חבר חשבון Gmail נוסף/i)).toBeTruthy();
+    });
   });
 
   it('calls onClose when close button is clicked', () => {
