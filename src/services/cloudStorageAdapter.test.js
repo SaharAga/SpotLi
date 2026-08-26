@@ -61,6 +61,24 @@ describe('CloudStorageAdapter', () => {
     expect(remaining.some(p => p.id === 'pkg-delete-123')).toBe(false);
   });
 
+
+  it('records a tombstone when deleting a package and filters tombstoned packages on getPackages', async () => {
+    const pkg1 = { id: 'pkg-101', trackingNumber: 'TRK101', title: 'P1', carrier: 'other', status: 'in_transit' };
+    const pkg2 = { id: 'pkg-102', trackingNumber: 'TRK102', title: 'P2', carrier: 'other', status: 'in_transit' };
+
+    await adapter.upsertPackage(pkg1);
+    await adapter.upsertPackage(pkg2);
+
+    expect((await adapter.getPackages()).length).toBe(2);
+
+    await adapter.deletePackage('pkg-101');
+    expect(adapter.isDeleted('pkg-101')).toBe(true);
+
+    const afterDelete = await adapter.getPackages();
+    expect(afterDelete.length).toBe(1);
+    expect(afterDelete[0].id).toBe('pkg-102');
+  });
+
   describe('upsertPackageRemote / deletePackageRemote (SYNC-08 replay path)', () => {
     it('throws rather than silently no-op-ing when userId is missing, so a caller (e.g. the sync queue replay loop) sees a real failure instead of a false success', async () => {
       await expect(adapter.upsertPackageRemote({ id: 'pkg-1', title: 'X', trackingNumber: 'T1' }, undefined))

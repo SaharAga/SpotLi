@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Sparkles, Package } from 'lucide-react';
 import { CARRIERS, CARRIER_LIST } from '../types/carriers';
 import { STAGES, CATEGORIES } from '../types/stages';
+import { findPackageByTrackingNumber } from '../services/deliveryService';
+import { AlertTriangle, ExternalLink } from 'lucide-react';
 import { detectCarrier } from '../utils/carrierDetector';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -20,7 +22,9 @@ export function AddEditPackageModal({
   onClose,
   onSave,
   editPackage = null,
-  initialValues = null
+  initialValues = null,
+  packages = [],
+  onOpenExisting = null
 }) {
   const { t, language } = useLanguage();
   const { user } = useAuth();
@@ -42,6 +46,13 @@ export function AddEditPackageModal({
   // mis-parse detection signal. Null outside a fresh Smart Import prefill
   // (editing an existing package is not a "correction" of anything).
   const autoFillSnapshotRef = useRef(null);
+
+
+  // Check for duplicate tracking number against existing package list
+  const duplicatePackage = React.useMemo(() => {
+    if (!trackingNumber || !trackingNumber.trim()) return null;
+    return findPackageByTrackingNumber(packages, trackingNumber, editPackage?.id || null);
+  }, [packages, trackingNumber, editPackage?.id]);
 
   // Auto-detect carrier on tracking number typing
   useEffect(() => {
@@ -262,8 +273,34 @@ export function AddEditPackageModal({
               value={trackingNumber}
               onChange={(e) => setTrackingNumber(e.target.value)}
               placeholder={t('modal.trackingNumPlaceholder')}
-              className="w-full font-mono bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all min-h-[44px]"
+              className={`w-full font-mono bg-slate-950 border ${
+                duplicatePackage ? 'border-amber-500/50 focus:border-amber-500 focus:ring-amber-500' : 'border-slate-800 focus:border-blue-500 focus:ring-blue-500'
+              } text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-1 transition-all min-h-[44px]`}
             />
+            {duplicatePackage && (
+              <div className="mt-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between gap-2 text-xs text-amber-400 animate-fade-in">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>
+                    {t('modal.duplicateTrackingWarning')}
+                    {duplicatePackage.title ? ` ("${duplicatePackage.title}")` : ''}
+                  </span>
+                </div>
+                {onOpenExisting && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onOpenExisting(duplicatePackage);
+                      onClose();
+                    }}
+                    className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg font-medium transition-colors shrink-0 flex items-center gap-1 min-h-[32px]"
+                  >
+                    <span>{t('modal.openExistingPackage')}</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Carrier & Category Row */}

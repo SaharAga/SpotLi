@@ -24,6 +24,13 @@ function validateList(packages) {
   return parsePackageList(packages).packages;
 }
 
+function getTombstonesStorageKey(userId) {
+  if (userId) {
+    return `deliveree_deleted_tombstones_${userId}`;
+  }
+  return "deliveree_deleted_tombstones_guest";
+}
+
 /**
  * Unified Cloud Storage Adapter
  * Provides real-time synchronization with Cloud Firestore under `users/{uid}/packages`
@@ -31,15 +38,72 @@ function validateList(packages) {
  */
 export class CloudStorageAdapter {
   constructor(options = {}) {
-    this.mode = options.mode || (isFirebaseConfigured ? 'firestore' : 'local');
+    this.mode = options.mode || (isFirebaseConfigured ? "firestore" : "local");
     this.userId = options.userId || null;
     this.listeners = new Set();
     this.firestoreUnsubscribe = null;
+    this.tombstones = new Set(this.loadTombstones(this.userId));
+  }
+
+  loadTombstones(userId) {
+    try {
+      if (typeof localStorage === "undefined") return [];
+      const raw = localStorage.getItem(getTombstonesStorageKey(userId));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.warn("[CloudStorageAdapter] Failed to load tombstones:", e);
+    }
+    return [];
+  }
+
+  saveTombstones(userId) {
+    try {
+      if (typeof localStorage === "undefined") return;
+      localStorage.setItem(
+        getTombstonesStorageKey(userId),
+        JSON.stringify(Array.from(this.tombstones))
+      );
+    } catch (e) {
+      console.warn("[CloudStorageAdapter] Failed to save tombstones:", e);
+    }
+  }
+
+  recordTombstone(packageId, userId = this.userId) {
+    if (!packageId) return;
+    this.tombstones.add(packageId);
+    this.saveTombstones(userId);
+  }
+
+  removeTombstone(packageId, userId = this.userId) {
+    if (!packageId) return;
+    if (this.tombstones.has(packageId)) {
+      this.tombstones.delete(packageId);
+      this.saveTombstones(userId);
+    }
+  }
+
+  isDeleted(packageId) {
+    return this.tombstones.has(packageId);
+  }
+
+  clearTombstones(userId = this.userId) {
+    this.tombstones.clear();
+    try {
+      if (typeof localStorage !== "undefined") {
+        localStorage.removeItem(getTombstonesStorageKey(userId));
+      }
+    } catch (e) {
+      console.warn("[CloudStorageAdapter] Failed to clear tombstones:", e);
+    }
   }
 
   setUserId(userId) {
     if (this.userId === userId) return;
     this.userId = userId;
+    this.tombstones = new Set(this.loadTombstones(userId));
     
     // Clean up existing listener if user changes
     if (this.firestoreUnsubscribe) {
@@ -57,7 +121,7 @@ export class CloudStorageAdapter {
   }
 
   isFirestoreActive() {
-    return isFirebaseConfigured && this.mode === 'firestore' && Boolean(this.userId) && Boolean(db);
+    return isFirebaseConfigured && this.mode === "firestore" && Boolean(this.userId) && Boolean(db);
   }
 
   initFirestoreListener() {
@@ -70,18 +134,24 @@ export class CloudStorageAdapter {
     }
 
     try {
-      const packagesRef = collection(db, 'users', this.userId, 'packages');
-      const q = query(packagesRef, orderBy('updatedAt', 'desc'));
+      const packagesRef = collection(db, "users", this.userId, "packages");
+      const q = query(packagesRef, orderBy("updatedAt", "desc"));
 
       this.firestoreUnsubscribe = onSnapshot(
         q,
         (snapshot) => {
           const remotePackages = [];
           snapshot.forEach((docSnap) => {
-            remotePackages.push({ ...docSnap.data(), id: docSnap.id });
+            const pkgId = docSnap.id;
+            // Ignore any package marked as deleted / tombstoned
+            if (!this.tombstones.has(pkgId)) {
+              remotePackages.push({ ...docSnap.data(), id: pkgId });
+            }
           });
 
-          const localPackages = deliveryService.getPackages(this.userId);
+          const localPackages = deliveryService.getPackages(this.userId).filter(
+            (p) => !this.tombstones.has(p.id)
+          );
 
           // If remote is empty but local has packages, sync local up to cloud
           if (remotePackages.length === 0 && localPackages.length > 0) {
@@ -91,7 +161,9 @@ export class CloudStorageAdapter {
 
           // Merge remote with local unsynced packages to prevent data loss
           const remoteIds = new Set(remotePackages.map(p => p.id || p.trackingNumber));
-          const unsyncedLocal = localPackages.filter(p => !remoteIds.has(p.id || p.trackingNumber));
+          const unsyncedLocal = localPackages.filter(
+            p => !remoteIds.has(p.id || p.trackingNumber) && !this.tombstones.has(p.id)
+          );
           const merged = [...remotePackages, ...unsyncedLocal];
 
           const validated = validateList(merged);
@@ -101,21 +173,21 @@ export class CloudStorageAdapter {
           // Upload any unsynced local packages to Firestore so they persist in the cloud
           if (unsyncedLocal.length > 0 && db && this.userId) {
             for (const pkg of unsyncedLocal) {
-              if (pkg && pkg.id) {
-                const docRef = doc(db, 'users', this.userId, 'packages', pkg.id);
+              if (pkg && pkg.id && !this.tombstones.has(pkg.id)) {
+                const docRef = doc(db, "users", this.userId, "packages", pkg.id);
                 setDoc(docRef, { ...pkg, userId: this.userId }, { merge: true }).catch((err) => {
-                  console.warn('[CloudStorageAdapter] Firestore background sync error for local package:', err);
+                  console.warn("[CloudStorageAdapter] Firestore background sync error for local package:", err);
                 });
               }
             }
           }
         },
         (error) => {
-          console.warn('[CloudStorageAdapter] Firestore onSnapshot warning:', error.message);
+          console.warn("[CloudStorageAdapter] Firestore onSnapshot warning:", error.message);
         }
       );
     } catch (err) {
-      console.warn('[CloudStorageAdapter] Failed to initialize Firestore listener:', err);
+      console.warn("[CloudStorageAdapter] Failed to initialize Firestore listener:", err);
     }
   }
 
@@ -124,14 +196,14 @@ export class CloudStorageAdapter {
    */
   async getPackages() {
     if (!this.isFirestoreActive()) {
-      return deliveryService.getPackages(this.userId);
+      return deliveryService.getPackages(this.userId).filter(p => !this.tombstones.has(p.id));
     }
 
     try {
-      const packagesRef = collection(db, 'users', this.userId, 'packages');
+      const packagesRef = collection(db, "users", this.userId, "packages");
       const snapshot = await getDocs(packagesRef);
       if (snapshot.empty) {
-        const local = deliveryService.getPackages(this.userId);
+        const local = deliveryService.getPackages(this.userId).filter(p => !this.tombstones.has(p.id));
         if (local.length > 0) {
           this.savePackages(local);
           return local;
@@ -141,15 +213,17 @@ export class CloudStorageAdapter {
 
       const remotePackages = [];
       snapshot.forEach((docSnap) => {
-        remotePackages.push({ ...docSnap.data(), id: docSnap.id });
+        if (!this.tombstones.has(docSnap.id)) {
+          remotePackages.push({ ...docSnap.data(), id: docSnap.id });
+        }
       });
 
       const validated = validateList(remotePackages);
       deliveryService.savePackages(validated, this.userId);
       return validated;
     } catch (err) {
-      console.warn('[CloudStorageAdapter] Firestore getPackages error, falling back to local:', err);
-      return deliveryService.getPackages(this.userId);
+      console.warn("[CloudStorageAdapter] Firestore getPackages error, falling back to local:", err);
+      return deliveryService.getPackages(this.userId).filter(p => !this.tombstones.has(p.id));
     }
   }
 
@@ -157,7 +231,8 @@ export class CloudStorageAdapter {
    * Saves/Syncs full package list
    */
   async savePackages(packages) {
-    const validated = validateList(packages);
+    const filtered = (packages || []).filter(p => !this.tombstones.has(p?.id));
+    const validated = validateList(filtered);
     deliveryService.savePackages(validated, this.userId);
     this.notifyListeners(validated);
 
@@ -169,13 +244,13 @@ export class CloudStorageAdapter {
           const chunk = validated.slice(i, i + BATCH_LIMIT);
           const batch = writeBatch(db);
           for (const pkg of chunk) {
-            const docRef = doc(db, 'users', this.userId, 'packages', pkg.id);
+            const docRef = doc(db, "users", this.userId, "packages", pkg.id);
             batch.set(docRef, { ...pkg, userId: this.userId }, { merge: true });
           }
           await batch.commit();
         }
       } catch (err) {
-        console.warn('[CloudStorageAdapter] Firestore savePackages sync error:', err);
+        console.warn("[CloudStorageAdapter] Firestore savePackages sync error:", err);
       }
     }
 
@@ -189,7 +264,10 @@ export class CloudStorageAdapter {
     const validatedPkg = parsePackage(pkg);
     if (!validatedPkg) return deliveryService.getPackages(this.userId);
 
-    const existing = deliveryService.getPackages(this.userId);
+    // If previously deleted, un-tombstone since user is re-adding / updating
+    this.removeTombstone(validatedPkg.id);
+
+    const existing = deliveryService.getPackages(this.userId).filter(p => !this.tombstones.has(p.id));
     const index = existing.findIndex((p) => p.id === validatedPkg.id);
 
     let updated;
@@ -205,10 +283,10 @@ export class CloudStorageAdapter {
 
     if (this.isFirestoreActive()) {
       try {
-        const docRef = doc(db, 'users', this.userId, 'packages', validatedPkg.id);
+        const docRef = doc(db, "users", this.userId, "packages", validatedPkg.id);
         await setDoc(docRef, { ...validatedPkg, userId: this.userId }, { merge: true });
       } catch (err) {
-        console.warn('[CloudStorageAdapter] Firestore upsert error:', err);
+        console.warn("[CloudStorageAdapter] Firestore upsert error:", err);
       }
     }
 
@@ -216,9 +294,11 @@ export class CloudStorageAdapter {
   }
 
   /**
-   * Deletes a package by ID
+   * Deletes a package by ID and records a tombstone
    */
   async deletePackage(packageId) {
+    this.recordTombstone(packageId);
+
     const existing = deliveryService.getPackages(this.userId);
     const updated = existing.filter((p) => p.id !== packageId);
 
@@ -227,10 +307,10 @@ export class CloudStorageAdapter {
 
     if (this.isFirestoreActive()) {
       try {
-        const docRef = doc(db, 'users', this.userId, 'packages', packageId);
+        const docRef = doc(db, "users", this.userId, "packages", packageId);
         await deleteDoc(docRef);
       } catch (err) {
-        console.warn('[CloudStorageAdapter] Firestore delete error:', err);
+        console.warn("[CloudStorageAdapter] Firestore delete error:", err);
       }
     }
 
@@ -254,6 +334,7 @@ export class CloudStorageAdapter {
     if (!isFirebaseConfigured || !db) throw new Error('Firestore is not configured');
     const validatedPkg = parsePackage(pkg);
     if (!validatedPkg) throw new Error('Invalid package payload');
+    this.removeTombstone(validatedPkg.id, userId);
     const docRef = doc(db, 'users', userId, 'packages', validatedPkg.id);
     await setDoc(docRef, { ...validatedPkg, userId }, { merge: true });
   }
@@ -263,9 +344,10 @@ export class CloudStorageAdapter {
    * on the explicit `userId` parameter.
    */
   async deletePackageRemote(packageId, userId) {
-    if (!userId) throw new Error('deletePackageRemote requires a userId');
-    if (!isFirebaseConfigured || !db) throw new Error('Firestore is not configured');
-    const docRef = doc(db, 'users', userId, 'packages', packageId);
+    if (!userId) throw new Error("deletePackageRemote requires a userId");
+    if (!isFirebaseConfigured || !db) throw new Error("Firestore is not configured");
+    this.recordTombstone(packageId, userId);
+    const docRef = doc(db, "users", userId, "packages", packageId);
     await deleteDoc(docRef);
   }
 
@@ -284,7 +366,7 @@ export class CloudStorageAdapter {
       try {
         cb(data);
       } catch (e) {
-        console.error('[CloudStorageAdapter] Listener callback error:', e);
+        console.error("[CloudStorageAdapter] Listener callback error:", e);
       }
     });
   }
