@@ -1,29 +1,30 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Package, Truck, CheckCircle2, AlertOctagon } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { TAB_PREDICATES } from '../types/stages';
 
-export function StatsCards({ packages = [], activeFilter, onSelectFilter }) {
+function StatsCardsImpl({ packages = [], activeFilter, onSelectFilter }) {
   const { t } = useLanguage();
 
-  const safePackages = Array.isArray(packages) ? packages : [];
-
-  // Single-pass O(N) aggregation to prevent redundant array scans. Four
-  // top-level buckets only — in_transit/out_for_delivery collapse into one
-  // "transit" tile and customs/exception into one "attention" tile so the
+  // Four top-level buckets only — in_transit/out_for_delivery collapse into
+  // one "transit" tile and customs/exception into one "attention" tile so the
   // KPI row stays a clean 4-up grid; the finer-grained status still shows
   // per-package (card badge, detail-modal stepper), just not promoted here.
-  const { total, transit, delivered, attention } = safePackages.reduce(
-    (acc, p) => {
-      if (!p) return acc;
-      acc.total += 1;
-      const s = p.status;
-      if (s === 'delivered') acc.delivered += 1;
-      else if (s === 'customs' || s === 'exception') acc.attention += 1;
-      else acc.transit += 1; // in_transit, out_for_delivery, shipped, ordered
-      return acc;
-    },
-    { total: 0, transit: 0, delivered: 0, attention: 0 }
-  );
+  // The bucket rules themselves live in TAB_PREDICATES so this tile row, the
+  // FilterBar counters and App's filter cannot drift apart again.
+  const { total, transit, delivered, attention } = useMemo(() => {
+    const safePackages = Array.isArray(packages) ? packages : [];
+    const counts = { total: 0, transit: 0, delivered: 0, attention: 0 };
+
+    for (const p of safePackages) {
+      if (!p) continue;
+      counts.total += 1;
+      if (TAB_PREDICATES.delivered(p)) counts.delivered += 1;
+      else if (TAB_PREDICATES.customs(p)) counts.attention += 1;
+      else if (TAB_PREDICATES.transit(p)) counts.transit += 1;
+    }
+    return counts;
+  }, [packages]);
 
   const stats = [
     {
@@ -111,3 +112,8 @@ export function StatsCards({ packages = [], activeFilter, onSelectFilter }) {
     </div>
   );
 }
+
+// The KPI row re-rendered on every keystroke in the search box because App
+// passed it a freshly-allocated `packages.filter(...)` and a fresh arrow.
+// Both are stable now, so memo actually bites.
+export const StatsCards = React.memo(StatsCardsImpl);
