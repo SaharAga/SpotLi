@@ -150,13 +150,57 @@ export function calculatePackageTransitDays(pkg) {
 }
 
 /**
+ * Computes transit days once for every delivered package and returns a lookup
+ * keyed by the package object itself.
+ *
+ * `calculateDeliveryMetrics` and `calculateCarrierTurnaroundLeaderboard` both
+ * need the same number for the same packages. Computing it here once and
+ * handing the map to both spares a second checkpoint scan and a second round of
+ * `Date` parsing per delivered package. Only delivered packages are computed,
+ * exactly matching the set the two aggregators ask for.
+ *
+ * The key is the package object reference rather than `pkg.id`, so duplicate or
+ * missing ids cannot collide.
+ *
+ * @param {Array<object>} packages
+ * @returns {Map<object, number | null>}
+ */
+export function buildTransitDaysMap(packages = []) {
+  const map = new Map();
+  if (!Array.isArray(packages)) return map;
+  for (const pkg of packages) {
+    if (!pkg || typeof pkg !== 'object') continue;
+    if (pkg.status !== 'delivered') continue;
+    if (map.has(pkg)) continue;
+    map.set(pkg, calculatePackageTransitDays(pkg));
+  }
+  return map;
+}
+
+/**
+ * Reads a package's transit days from a prepared map, falling back to computing
+ * it when no map (or no entry) was supplied.
+ *
+ * @param {object} pkg
+ * @param {Map<object, number | null> | null | undefined} transitDays
+ * @returns {number | null}
+ */
+function resolveTransitDays(pkg, transitDays) {
+  if (transitDays instanceof Map && transitDays.has(pkg)) {
+    return transitDays.get(pkg);
+  }
+  return calculatePackageTransitDays(pkg);
+}
+
+/**
  * Calculates Courier Turnaround Leaderboard:
  * Average transit duration (days) grouped by carrier, ranked fastest to slowest.
  * 
  * @param {Array<object>} packages
+ * @param {Map<object, number | null>} [transitDays] Optional precomputed transit-day lookup (see buildTransitDaysMap)
  * @returns {Array<{ carrierId: string, carrierName: string, carrierHebrewName: string, avgDays: number, totalDelivered: number, totalActive: number, totalPackages: number, color: string }>}
  */
-export function calculateCarrierTurnaroundLeaderboard(packages = []) {
+export function calculateCarrierTurnaroundLeaderboard(packages = [], transitDays = null) {
   if (!Array.isArray(packages) || packages.length === 0) return [];
 
   /** @type {Record<string, { totalDays: number, deliveredCount: number, activeCount: number }>} */
@@ -172,7 +216,7 @@ export function calculateCarrierTurnaroundLeaderboard(packages = []) {
 
     if (pkg.status === 'delivered') {
       carrierMap[cid].deliveredCount += 1;
-      const days = calculatePackageTransitDays(pkg);
+      const days = resolveTransitDays(pkg, transitDays);
       if (days !== null) {
         carrierMap[cid].totalDays += days;
       }
@@ -257,6 +301,7 @@ export function calculateMultiCurrencyBreakdown(packages = []) {
  * Calculates Delivery Success & Performance Metrics (on-time rate, success rate, stage distribution)
  * 
  * @param {Array<object>} packages
+ * @param {Map<object, number | null>} [transitDays] Optional precomputed transit-day lookup (see buildTransitDaysMap)
  * @returns {{
  *   totalCount: number,
  *   deliveredCount: number,
@@ -270,7 +315,7 @@ export function calculateMultiCurrencyBreakdown(packages = []) {
  *   stageDistribution: Record<string, number>
  * }}
  */
-export function calculateDeliveryMetrics(packages = []) {
+export function calculateDeliveryMetrics(packages = [], transitDays = null) {
   if (!Array.isArray(packages) || packages.length === 0) {
     return {
       totalCount: 0,
@@ -310,7 +355,7 @@ export function calculateDeliveryMetrics(packages = []) {
 
     if (status === 'delivered') {
       deliveredCount += 1;
-      const days = calculatePackageTransitDays(pkg);
+      const days = resolveTransitDays(pkg, transitDays);
       if (days !== null) transitTimes.push(days);
 
       // On-time calculation against expectedDeliveryDate

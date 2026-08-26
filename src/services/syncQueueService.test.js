@@ -218,4 +218,167 @@ describe('SyncQueueService Unit Tests', () => {
       expect(syncQueue.getDeadLetterQueue().length).toBe(0);
     });
   });
+  describe('replay concurrency and ordering', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('replays mutations for independent packages without serializing them', async () => {
+      const releases = [];
+      let maxInFlight = 0;
+      let inFlight = 0;
+
+      vi.spyOn(cloudAdapter, 'upsertPackageRemote').mockImplementation(() => {
+        inFlight += 1;
+        maxInFlight = Math.max(maxInFlight, inFlight);
+        return new Promise((resolve) => {
+          releases.push(() => {
+            inFlight -= 1;
+            resolve({ ok: true });
+          });
+        });
+      });
+
+      syncQueue.isOnline = false;
+      for (let i = 0; i < 5; i += 1) {
+        syncQueue.enqueue(MUTATION_TYPES.ADD, {
+          id: `pkg-parallel-${i}`,
+          title: `Parallel ${i}`,
+          trackingNumber: `RS94821948${i}IL`,
+          carrier: 'israel-post',
+          status: 'ordered'
+        }, 'user-parallel');
+      }
+
+      syncQueue.isOnline = true;
+      const replay = syncQueue.replayQueue();
+
+      // Let the five independent chains all reach their awaited cloud write.
+      await Promise.resolve();
+      expect(maxInFlight).toBe(5);
+
+      releases.forEach((release) => release());
+      const result = await replay;
+      expect(result.processed).toBe(5);
+      expect(result.remaining).toBe(0);
+    });
+
+    it('keeps mutations for the same package strictly in queue order', async () => {
+      const started = [];
+      let resolveCurrent = null;
+
+      vi.spyOn(cloudAdapter, 'upsertPackageRemote').mockImplementation((pkg) => {
+        started.push(pkg.status);
+        return new Promise((resolve) => {
+          resolveCurrent = () => resolve({ ok: true });
+        });
+      });
+
+      const pkg = {
+        id: 'pkg-ordered-1',
+        title: 'Ordered Item',
+        trackingNumber: 'RS948219481IL',
+        carrier: 'israel-post',
+        status: 'ordered'
+      };
+      deliveryService.savePackages([pkg], 'user-ordered');
+
+      syncQueue.isOnline = false;
+      syncQueue.enqueue(MUTATION_TYPES.STATUS_CHANGE, { packageId: pkg.id, newStatus: 'shipped' }, 'user-ordered');
+      syncQueue.enqueue(MUTATION_TYPES.STATUS_CHANGE, { packageId: pkg.id, newStatus: 'in_transit' }, 'user-ordered');
+
+      syncQueue.isOnline = true;
+      const replay = syncQueue.replayQueue();
+
+      await Promise.resolve();
+      // Only the first status change may be in flight; the second waits on it.
+      expect(started).toEqual(['shipped']);
+      resolveCurrent();
+      await Promise.resolve();
+      await Promise.resolve();
+      resolveCurrent();
+
+      await replay;
+      expect(started).toEqual(['shipped', 'in_transit']);
+      expect(deliveryService.getPackages('user-ordered')[0].status).toBe('in_transit');
+    });
+
+    it('does not clobber a package written by someone else mid-replay', async () => {
+      // The cloud adapter's onSnapshot handler and every add/edit in the app write
+      // the same localStorage list that replay writes. Replay must never overwrite
+      // a write it did not observe.
+      let releaseUpsert = null;
+      vi.spyOn(cloudAdapter, 'upsertPackageRemote').mockImplementation(() => new Promise((resolve) => {
+        releaseUpsert = () => resolve({ ok: true });
+      }));
+
+      const existing = {
+        id: 'pkg-local-1',
+        title: 'Local Item',
+        trackingNumber: 'RS948219481IL',
+        carrier: 'israel-post',
+        status: 'ordered'
+      };
+      deliveryService.savePackages([existing], 'user-clobber');
+
+      syncQueue.isOnline = false;
+      syncQueue.enqueue(MUTATION_TYPES.STATUS_CHANGE, { packageId: existing.id, newStatus: 'shipped' }, 'user-clobber');
+
+      syncQueue.isOnline = true;
+      const replay = syncQueue.replayQueue();
+      await Promise.resolve();
+
+      // An external writer lands while replay is awaiting its network call.
+      const external = {
+        id: 'pkg-external-1',
+        title: 'Arrived From Another Device',
+        trackingNumber: 'RS948219482IL',
+        carrier: 'dhl',
+        status: 'in_transit'
+      };
+      deliveryService.savePackages(
+        [...deliveryService.getPackages('user-clobber'), external],
+        'user-clobber'
+      );
+
+      releaseUpsert();
+      await replay;
+
+      const stored = deliveryService.getPackages('user-clobber');
+      expect(stored.map(p => p.id).sort()).toEqual(['pkg-external-1', 'pkg-local-1']);
+      expect(stored.find(p => p.id === 'pkg-local-1').status).toBe('shipped');
+    });
+
+    it('serialises mutations whose target package cannot be identified', async () => {
+      const started = [];
+      let resolveCurrent = null;
+      vi.spyOn(cloudAdapter, 'upsertPackageRemote').mockImplementation((pkg) => {
+        started.push(pkg?.title);
+        return new Promise((resolve) => { resolveCurrent = () => resolve({ ok: true }); });
+      });
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      // Written straight to storage: enqueue()'s dedup would collapse two ADDs
+      // that both lack an id into one.
+      syncQueue.saveQueue([
+        { id: 'mut-a', type: MUTATION_TYPES.ADD, payload: { title: 'No Id A' }, userId: 'user-unkeyed', retryCount: 0 },
+        { id: 'mut-b', type: MUTATION_TYPES.ADD, payload: { title: 'No Id B' }, userId: 'user-unkeyed', retryCount: 0 }
+      ]);
+
+      syncQueue.isOnline = true;
+      const replay = syncQueue.replayQueue();
+      await Promise.resolve();
+
+      // Both share the unkeyed chain, so only the first may be in flight.
+      expect(started).toEqual(['No Id A']);
+      expect(console.warn).toHaveBeenCalled();
+
+      resolveCurrent();
+      await Promise.resolve();
+      await Promise.resolve();
+      resolveCurrent();
+      await replay;
+      expect(started).toEqual(['No Id A', 'No Id B']);
+    });
+  });
 });

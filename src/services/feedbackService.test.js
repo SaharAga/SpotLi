@@ -221,4 +221,114 @@ describe('FeedbackService Unit & Resilience Test Suite', () => {
       expect(getOfflineFeedbackCount()).toBe(1);
     });
   });
+  describe('offline backlog flush', () => {
+    const buildQueue = (n) => Array.from({ length: n }, (_, i) => ({
+      id: `fb-batch-${i}`,
+      status: 'pending',
+      type: 'bug',
+      message: `Queued item ${i}`,
+      rating: 3,
+      timestamp: new Date(2026, 0, 1, 0, i).toISOString()
+    }));
+
+    it('writes the local history once for the whole batch, not once per item', async () => {
+      const queue = buildQueue(25);
+      mockStorage[OFFLINE_FEEDBACK_QUEUE_KEY] = JSON.stringify(queue);
+      vi.stubGlobal('navigator', { onLine: true });
+
+      const result = await flushOfflineFeedbackQueue();
+      expect(result.flushed).toBe(25);
+      expect(result.remaining).toBe(0);
+
+      const historyWrites = localStorage.setItem.mock.calls.filter(
+        ([key]) => key === feedbackService.LOCAL_FEEDBACK_HISTORY_KEY
+      );
+      expect(historyWrites).toHaveLength(1);
+    });
+
+    it('produces the same history order the per-item loop produced', async () => {
+      const queue = buildQueue(3);
+      mockStorage[OFFLINE_FEEDBACK_QUEUE_KEY] = JSON.stringify(queue);
+      vi.stubGlobal('navigator', { onLine: true });
+
+      await flushOfflineFeedbackQueue();
+
+      const history = getLocalFeedbackHistory();
+      // Each item was unshifted in queue order, so the last queued item ends up first.
+      expect(history.map(item => item.id)).toEqual(['fb-batch-2', 'fb-batch-1', 'fb-batch-0']);
+      expect(history.every(item => item.syncedToCloud === true)).toBe(true);
+    });
+
+    it('replaces an existing history entry in place rather than duplicating it', async () => {
+      mockStorage[feedbackService.LOCAL_FEEDBACK_HISTORY_KEY] = JSON.stringify([
+        { id: 'fb-batch-0', message: 'stale', syncedToCloud: false }
+      ]);
+      mockStorage[OFFLINE_FEEDBACK_QUEUE_KEY] = JSON.stringify(buildQueue(2));
+      vi.stubGlobal('navigator', { onLine: true });
+
+      await flushOfflineFeedbackQueue();
+
+      const history = getLocalFeedbackHistory();
+      expect(history.filter(item => item.id === 'fb-batch-0')).toHaveLength(1);
+      expect(history.find(item => item.id === 'fb-batch-0').syncedToCloud).toBe(true);
+    });
+
+    it('caps the history at its maximum after a large drain', async () => {
+      mockStorage[OFFLINE_FEEDBACK_QUEUE_KEY] = JSON.stringify(buildQueue(80));
+      vi.stubGlobal('navigator', { onLine: true });
+
+      await flushOfflineFeedbackQueue();
+
+      expect(getLocalFeedbackHistory()).toHaveLength(50);
+    });
+  });
+  describe('bounded upload concurrency', () => {
+    const { mapWithConcurrency, FLUSH_CONCURRENCY } = feedbackService;
+
+    it('overlaps work but never exceeds the bound', async () => {
+      let inFlight = 0;
+      let maxInFlight = 0;
+      const items = Array.from({ length: 20 }, (_, i) => i);
+
+      const results = await mapWithConcurrency(items, FLUSH_CONCURRENCY, async (item) => {
+        inFlight += 1;
+        maxInFlight = Math.max(maxInFlight, inFlight);
+        await new Promise((resolve) => setTimeout(resolve, 1));
+        inFlight -= 1;
+        return item * 2;
+      });
+
+      // The serial loop this replaces never had more than one in flight; firing
+      // all 20 at once would make uploadToFirestore's single 2.5s budget cover
+      // the whole queue and push every payload's bytes out in one tick.
+      expect(maxInFlight).toBeGreaterThan(1);
+      expect(maxInFlight).toBe(FLUSH_CONCURRENCY);
+      expect(FLUSH_CONCURRENCY).toBeLessThan(items.length);
+      expect(results).toHaveLength(20);
+      expect(results.map(r => r.value)).toEqual(items.map(i => i * 2));
+    });
+
+    it('keeps results in input order regardless of completion order', async () => {
+      const items = [30, 10, 20];
+      const results = await mapWithConcurrency(items, 3, async (delay) => {
+        await new Promise((resolve) => setTimeout(resolve, delay / 10));
+        return delay;
+      });
+      expect(results.map(r => r.value)).toEqual([30, 10, 20]);
+    });
+
+    it('isolates a rejection instead of abandoning the rest', async () => {
+      const results = await mapWithConcurrency([1, 2, 3], 2, async (n) => {
+        if (n === 2) throw new Error('boom');
+        return n;
+      });
+      expect(results.map(r => r.status)).toEqual(['fulfilled', 'rejected', 'fulfilled']);
+      expect(results[1].reason).toBeInstanceOf(Error);
+      expect(results[2].value).toBe(3);
+    });
+
+    it('handles an empty input without hanging', async () => {
+      await expect(mapWithConcurrency([], 4, async () => 1)).resolves.toEqual([]);
+    });
+  });
 });

@@ -8,6 +8,7 @@ import { CARRIERS } from '../types/carriers';
 import { STAGES } from '../types/stages';
 import { useLanguage } from '../context/LanguageContext';
 import {
+  buildTransitDaysMap,
   calculateCarrierTurnaroundLeaderboard,
   calculateMultiCurrencyBreakdown,
   calculateDeliveryMetrics
@@ -20,11 +21,24 @@ export function AnalyticsModal({
 }) {
   const { t, language } = useLanguage();
 
-  const metrics = useMemo(() => calculateDeliveryMetrics(packages), [packages]);
-  const leaderboard = useMemo(() => calculateCarrierTurnaroundLeaderboard(packages), [packages]);
-  const currencyBreakdown = useMemo(() => calculateMultiCurrencyBreakdown(packages), [packages]);
+  // Gated on `isOpen`: the modal stays mounted for the life of the app, so
+  // without this every add, edit and status change would recompute the whole
+  // analytics set for a dialog nobody is looking at — the common case by far.
+  // The transit-day lookup is built once here and shared by both aggregators
+  // that need it, instead of each one re-deriving it per delivered package.
+  const analytics = useMemo(() => {
+    if (!isOpen) return null;
+    const transitDays = buildTransitDaysMap(packages);
+    return {
+      metrics: calculateDeliveryMetrics(packages, transitDays),
+      leaderboard: calculateCarrierTurnaroundLeaderboard(packages, transitDays),
+      currencyBreakdown: calculateMultiCurrencyBreakdown(packages)
+    };
+  }, [isOpen, packages]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !analytics) return null;
+
+  const { metrics, leaderboard, currencyBreakdown } = analytics;
 
   // Fastest carrier from turnaround leaderboard
   const fastestCarrier = leaderboard.find(c => c.avgDays > 0);
