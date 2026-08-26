@@ -3,6 +3,7 @@ import fc from 'fast-check';
 import {
   extractPackageValue,
   calculatePackageTransitDays,
+  buildTransitDaysMap,
   calculateCarrierTurnaroundLeaderboard,
   calculateMultiCurrencyBreakdown,
   calculateDeliveryMetrics,
@@ -213,5 +214,90 @@ describe('analyticsUtils - Multi-Currency & Turnaround Calculations', () => {
         { numRuns: 200 }
       );
     });
+  });
+});
+
+describe('shared transit-day computation', () => {
+  // `checkpoints` is read only by calculatePackageTransitDays, so counting reads
+  // of it counts how many times the transit duration was derived.
+  const makeCountedPackage = () => {
+    const state = { reads: 0 };
+    const checkpoints = [
+      { title: 'Shipped', timestamp: '2026-08-01T00:00:00Z' },
+      { title: 'Delivered', timestamp: '2026-08-09T00:00:00Z' }
+    ];
+    const pkg = {
+      id: 'pkg-counted',
+      title: 'Counted',
+      trackingNumber: 'RS948219481IL',
+      carrier: 'israel-post',
+      status: 'delivered',
+      orderDate: '2026-08-01T00:00:00Z',
+      updatedAt: '2026-08-09T00:00:00Z',
+      get checkpoints() {
+        state.reads += 1;
+        return checkpoints;
+      }
+    };
+    return { pkg, state };
+  };
+
+  it('derives a delivered package\'s transit days exactly once for both aggregators', () => {
+    const probe = makeCountedPackage();
+    calculatePackageTransitDays(probe.pkg);
+    const readsPerComputation = probe.state.reads;
+    expect(readsPerComputation).toBeGreaterThan(0);
+
+    const shared = makeCountedPackage();
+    const packages = [shared.pkg];
+    const transitDays = buildTransitDaysMap(packages);
+    calculateDeliveryMetrics(packages, transitDays);
+    calculateCarrierTurnaroundLeaderboard(packages, transitDays);
+
+    expect(shared.state.reads).toBe(readsPerComputation);
+  });
+
+  it('only maps delivered packages, whose value is the standalone result', () => {
+    const delivered = {
+      id: 'd1', status: 'delivered',
+      orderDate: '2026-08-01T00:00:00Z', updatedAt: '2026-08-06T00:00:00Z'
+    };
+    const inTransit = { id: 't1', status: 'in_transit', orderDate: '2026-08-01T00:00:00Z' };
+
+    const map = buildTransitDaysMap([delivered, inTransit, null, 'nonsense']);
+    expect(map.size).toBe(1);
+    expect(map.get(delivered)).toBe(calculatePackageTransitDays(delivered));
+    expect(map.has(inTransit)).toBe(false);
+  });
+
+  it('returns identical results with and without a prepared map', () => {
+    const packages = [
+      {
+        id: 'a', carrier: 'israel-post', status: 'delivered',
+        orderDate: '2026-08-01T00:00:00Z', updatedAt: '2026-08-05T00:00:00Z',
+        expectedDeliveryDate: '2026-08-04T00:00:00Z'
+      },
+      {
+        id: 'b', carrier: 'dhl', status: 'delivered',
+        orderDate: '2026-07-20T00:00:00Z', updatedAt: '2026-08-02T00:00:00Z'
+      },
+      { id: 'c', carrier: 'dhl', status: 'in_transit', orderDate: '2026-08-10T00:00:00Z' },
+      { id: 'd', carrier: 'ups', status: 'exception', orderDate: '2026-08-10T00:00:00Z' }
+    ];
+    const transitDays = buildTransitDaysMap(packages);
+
+    expect(calculateDeliveryMetrics(packages, transitDays)).toEqual(calculateDeliveryMetrics(packages));
+    expect(calculateCarrierTurnaroundLeaderboard(packages, transitDays))
+      .toEqual(calculateCarrierTurnaroundLeaderboard(packages));
+  });
+
+  it('falls back to computing when a package is missing from the map', () => {
+    const pkg = {
+      id: 'late', carrier: 'ups', status: 'delivered',
+      orderDate: '2026-08-01T00:00:00Z', updatedAt: '2026-08-04T00:00:00Z'
+    };
+    const emptyMap = new Map();
+    expect(calculateDeliveryMetrics([pkg], emptyMap).avgTransitDays)
+      .toBe(calculateDeliveryMetrics([pkg]).avgTransitDays);
   });
 });
