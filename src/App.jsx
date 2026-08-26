@@ -1,26 +1,45 @@
-import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { Plus, Inbox, ShieldCheck, Sparkles, LogIn, UserPlus, PlayCircle, MessageSquarePlus, RefreshCw } from 'lucide-react';
 import { Navbar } from './components/Navbar';
 import { StatsCards } from './components/StatsCards';
 import { FilterBar } from './components/FilterBar';
 import { PackageCard } from './components/PackageCard';
 import { PackageTable } from './components/PackageTable';
-import { PackageDetailModal } from './components/PackageDetailModal';
-import { AddEditPackageModal } from './components/AddEditPackageModal';
-import { SmartImportModal } from './components/SmartImportModal';
-import { AnalyticsModal } from './components/AnalyticsModal';
-import { IngestionGuideModal } from './components/IngestionGuideModal';
-import { AuthModal } from './components/AuthModal';
 import { LegalConsentGate } from './components/LegalConsentGate';
-import { AccountModal } from './components/AccountModal';
-import { AboutModal } from './components/AboutModal';
-import { FeedbackModal } from './components/FeedbackModal';
-import { AdminFeedbackModal } from './components/AdminFeedbackModal';
-import { ExportModal } from './components/ExportModal';
-import { LockerMapModal } from './components/LockerMapModal';
-import { DeleteConfirmDialog } from './components/DeleteConfirmDialog';
-import { AutoArchivePromptModal } from './components/AutoArchivePromptModal';
+import { ModalLoadingFallback } from './components/ModalLoadingFallback';
 import { findPackageByTrackingNumber } from './services/deliveryService';
+
+/**
+ * Every dialog is loaded on demand.
+ *
+ * Sixteen modals — several over five hundred lines — used to be static
+ * imports, so the entry bundle carried all of them plus everything they pull
+ * in (chart code, the locker map, the legal document viewer) before the
+ * package list could paint. Most sessions open none of them.
+ *
+ * `React.lazy` wants a module whose *default* export is the component; these
+ * are all named exports, so each loader re-shapes the namespace object.
+ * The `import()` specifier stays a string literal in every case, which is
+ * what lets Rollup see the edge and split the chunk — a computed specifier
+ * would silently fall back to bundling everything.
+ */
+const lazyModal = (loader, exportName) =>
+  lazy(() => loader().then((mod) => ({ default: mod[exportName] })));
+
+const PackageDetailModal = lazyModal(() => import('./components/PackageDetailModal'), 'PackageDetailModal');
+const AddEditPackageModal = lazyModal(() => import('./components/AddEditPackageModal'), 'AddEditPackageModal');
+const SmartImportModal = lazyModal(() => import('./components/SmartImportModal'), 'SmartImportModal');
+const AnalyticsModal = lazyModal(() => import('./components/AnalyticsModal'), 'AnalyticsModal');
+const IngestionGuideModal = lazyModal(() => import('./components/IngestionGuideModal'), 'IngestionGuideModal');
+const AuthModal = lazyModal(() => import('./components/AuthModal'), 'AuthModal');
+const AccountModal = lazyModal(() => import('./components/AccountModal'), 'AccountModal');
+const AboutModal = lazyModal(() => import('./components/AboutModal'), 'AboutModal');
+const FeedbackModal = lazyModal(() => import('./components/FeedbackModal'), 'FeedbackModal');
+const AdminFeedbackModal = lazyModal(() => import('./components/AdminFeedbackModal'), 'AdminFeedbackModal');
+const ExportModal = lazyModal(() => import('./components/ExportModal'), 'ExportModal');
+const LockerMapModal = lazyModal(() => import('./components/LockerMapModal'), 'LockerMapModal');
+const DeleteConfirmDialog = lazyModal(() => import('./components/DeleteConfirmDialog'), 'DeleteConfirmDialog');
+const AutoArchivePromptModal = lazyModal(() => import('./components/AutoArchivePromptModal'), 'AutoArchivePromptModal');
 
 import { Toast } from './components/Toast';
 import { InstallPwaBanner } from './components/InstallPwaBanner';
@@ -148,6 +167,35 @@ export function DashboardContent() {
     isModalOpen,
     getModalPayload
   } = useModalRouter();
+
+  /**
+   * Which dialogs have been opened at least once this session.
+   *
+   * Before code splitting, all fourteen were mounted from the first render
+   * with `isOpen={false}` and each one returned null. That is now the wrong
+   * shape: rendering a `React.lazy` element mounts it, and mounting it fires
+   * its `import()` — so keeping the closed ones rendered would download every
+   * chunk on load and split nothing.
+   *
+   * So a dialog is not rendered until it is first opened, and from then on it
+   * stays rendered exactly as before, toggling on `isOpen`. That preserves the
+   * two properties that matter:
+   *
+   * - Nothing observable changes while a dialog is closed. Every mount-time
+   *   effect in all fourteen is already guarded on `isOpen` (checked one by
+   *   one), so none of them did anything before its first open anyway.
+   * - Re-opening never remounts. AddEditPackageModal and SmartImportModal
+   *   both hold in-progress form state in `useState`; unmounting them on
+   *   close — or re-suspending on re-open — would silently discard a
+   *   half-typed package. Once the chunk has resolved, `React.lazy` returns
+   *   it synchronously and Suspense never fires again for that dialog.
+   *
+   * A ref rather than state on purpose: this must not schedule a render of
+   * its own. `openModal` has already caused the render that reads it, and an
+   * extra pass here would churn the memoized card list that #60 pinned down.
+   */
+  const everOpenedRef = useRef(null);
+  if (everOpenedRef.current === null) everOpenedRef.current = new Set();
 
   // The payloads a few handlers still read directly, named as they were.
   const selectedDetailPackage = getModalPayload(MODAL.DETAIL);
@@ -1136,16 +1184,33 @@ export function DashboardContent() {
           focus trap, focus restore, scroll lock, ARIA) lives in <Modal>;
           the crash boundary that used to be copied around thirteen of these
           blocks now appears exactly once, below. */}
-      {MODALS.map(({ id, componentName, render }) => (
-        <ErrorBoundary
-          key={id}
-          compact
-          componentName={componentName}
-          onReset={() => closeModal(id)}
-        >
-          {render(isModalOpen(id), getModalPayload(id))}
-        </ErrorBoundary>
-      ))}
+      {MODALS.map(({ id, componentName, render }) => {
+        const isOpen = isModalOpen(id);
+        if (isOpen) everOpenedRef.current.add(id);
+        // Never opened: render nothing at all, so its chunk is never fetched.
+        if (!isOpen && !everOpenedRef.current.has(id)) return null;
+
+        return (
+          <ErrorBoundary
+            key={id}
+            compact
+            componentName={componentName}
+            onReset={() => closeModal(id)}
+          >
+            {/* Suspense sits *inside* the boundary, so a chunk that fails to
+                download (offline, a stale hashed filename after a deploy)
+                throws into the same ErrorBoundary #66 established rather than
+                past it — the lazy edge widens that coverage instead of
+                bypassing it. The fallback is a backdrop and a spinner, not an
+                empty modal shell: the shell would re-lay-out the moment the
+                content arrived. It is suppressed while the dialog is closed,
+                where there is nothing to wait for. */}
+            <Suspense fallback={isOpen ? <ModalLoadingFallback /> : null}>
+              {render(isOpen, getModalPayload(id))}
+            </Suspense>
+          </ErrorBoundary>
+        );
+      })}
 
       {/* Blocking gate for any signed-in user who hasn't accepted the
           current Terms of Use / Privacy Policy version — new OAuth

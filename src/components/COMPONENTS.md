@@ -6,6 +6,13 @@ reading `App.jsx` each time. All components are function components; every modal
 registered once in `App.jsx`'s `MODALS` array — which renders each of them inside a single
 `<ErrorBoundary compact>` so one modal crashing doesn't take down the rest of the app.
 
+Every modal is loaded on demand: `App.jsx` reaches each one through `React.lazy` and a
+`Suspense` boundary inside its `ErrorBoundary`, and does not render it at all until it is first
+opened. A modal is therefore *not* mounted while closed — it used to be, with `isOpen={false}` —
+so any effect a modal wants to run must be guarded on `isOpen` (they all already are). Once
+opened it stays mounted for the rest of the session, so re-opening never re-suspends and never
+discards in-progress form state.
+
 ## Shell / always-mounted
 
 - **`Navbar`** — top bar: search, add/import/connect actions, language & theme toggles, opens
@@ -31,6 +38,10 @@ registered once in `App.jsx`'s `MODALS` array — which renders each of them ins
   that replaced hand-picked z-indexes. Per-dialog appearance comes in as `className` /
   `overlayClassName` and is composed over the shared shell with `clsx` + `tailwind-merge`, so a
   caller's `bg-black/60` replaces the default backdrop rather than stacking on top of it.
+- **`ModalLoadingFallback`** — the `Suspense` fallback for a dialog whose chunk is still in
+  flight: a portalled backdrop and a spinner, and deliberately *not* a `<Modal>`. A `Modal` here
+  would capture and then release focus a frame before the real dialog captured it again, and
+  would drop the shared scroll-lock refcount to zero in between.
 - **`InstallPwaBanner`** — PWA install prompt banner, self-contained (owns its own
   dismissal/storage state).
 - **`LegalConsentGate`** — blocking overlay for any signed-in user whose stored
@@ -79,12 +90,16 @@ registered once in `App.jsx`'s `MODALS` array — which renders each of them ins
 
 ## Adding a new modal
 
+0. Keep every side effect guarded on `isOpen`. The component is not mounted until its first
+   open, and code that assumed a mount-on-load will not run when it expects to.
 1. Write an `isOpen`/`onClose` component whose top-level element is `<Modal>`, passing the panel's
    own classes as `className` and any backdrop deviation as `overlayClassName`. Do not hand-roll a
    `fixed inset-0` overlay, a z-index, an Escape handler, or a focus trap — `Modal` owns all of
    those, and a second copy is how they drifted apart in the first place.
-2. Give it an id in `MODAL` in `App.jsx` and an entry in the `MODALS` array there. The array's
-   order is render order, and therefore the stacking order for two dialogs open at once.
+2. Give it an id in `MODAL` in `App.jsx`, a `lazyModal(() => import('./components/X'), 'X')`
+   binding beside the others (the `import()` specifier must stay a string literal or Rollup
+   cannot split it), and an entry in the `MODALS` array. The array's order is render order, and
+   therefore the stacking order for two dialogs open at once.
 3. Open it with `openModal(MODAL.X, payload)` and close it with `closeModal(MODAL.X)` — the modal
    router (`useModalRouter`) is the single source of truth for what is open, replacing the
    per-modal `isXOpen` booleans and their companion state.
