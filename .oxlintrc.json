@@ -1,8 +1,78 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "oxc"],
+  "plugins": ["react", "oxc", "import", "react-perf"],
+  "ignorePatterns": [".agents/lint/fixtures/**"],
   "rules": {
     "react/rules-of-hooks": "error",
-    "react/only-export-components": "off"
-  }
+    "react/only-export-components": "off",
+
+    "import/no-cycle": "error",
+
+    "react-perf/jsx-no-new-function-as-prop": "warn",
+    "react-perf/jsx-no-new-object-as-prop": "warn",
+    "react-perf/jsx-no-new-array-as-prop": "warn",
+    "react-perf/jsx-no-jsx-as-prop": "warn"
+  },
+  "overrides": [
+    {
+      "files": ["src/utils/**", "src/types/**", "src/schemas/**", "src/constants/**", "src/i18n/**", "src/data/**"],
+      "excludeFiles": ["**/*.test.js", "**/*.test.jsx", "**/__fixtures__/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "^(\\.\\.?/)+(services|components|hooks|context)(/|$)",
+                "message": "Leaf layer: utils/, types/, schemas/, constants/, i18n/ and data/ may import each other and third-party code, but never services/, components/, hooks/ or context/. Invert the dependency — pass what you need in as an argument."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/services/**"],
+      "excludeFiles": ["**/*.test.js", "**/*.test.jsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "^(\\.\\.?/)+(components|hooks|context)(/|$)",
+                "message": "Service layer: services/ may import utils/, types/ and schemas/, but never components/, hooks/ or context/. A service that needs React state should receive it as an argument."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/components/**", "src/hooks/**", "src/context/**", "src/App.jsx", "src/main.jsx"],
+      "excludeFiles": ["**/*.test.js", "**/*.test.jsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "^(\\.\\.?/)+(services|utils|types|schemas|constants|i18n|data)/[^/]+/",
+                "message": "Import a module's public surface, not a path inside it."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["**/*.test.js", "**/*.test.jsx", "src/test-utils/**", "src/tests/**"],
+      "rules": {
+        "react-perf/jsx-no-new-function-as-prop": "off",
+        "react-perf/jsx-no-new-object-as-prop": "off",
+        "react-perf/jsx-no-new-array-as-prop": "off",
+        "react-perf/jsx-no-jsx-as-prop": "off"
+      }
+    }
+  ]
 }

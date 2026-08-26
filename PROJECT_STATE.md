@@ -67,7 +67,8 @@ To balance deep specialization with clean communication boundaries, agents are o
 
 ```
 [Quality Gate Pipeline — v0.6.0-alpha]
-├─ 1. Static Linting & Syntax: 0 warnings, 0 errors (oxlint across 109 files)
+├─ 1. Static Linting & Syntax: 0 errors (`npm run lint` exits 0). react-perf
+│     runs at `warn` as a standing worklist, so warnings are expected output.
 ├─ 2. Type & Contract Verification: 100% compliant schemas (Zod + TypeScript)
 ├─ 3. Automated Testbench Suite: 339 / 339 Tests Passing (46/46 Suites)
 ├─ 4. Property-Based Invariants: 20 Formal Theorems Proven (fast-check across 6,000+ iterations)
@@ -79,7 +80,10 @@ To balance deep specialization with clean communication boundaries, agents are o
 * **Active Test Suites**: 46 suites.
 * **Total Executed Tests**: 339 tests.
 * **Test Pass Rate**: **100.0% (339 passed, 0 failed, 0 skipped)**.
-* **Lint Violations**: **0 errors, 0 warnings** across all 109 JS/JSX files.
+* **Lint Violations**: **0 errors**; `npm run lint` exits 0. Warnings are not
+  zero and are not meant to be — the four `react-perf/jsx-no-new-*` rules are
+  enabled at `warn` as a worklist (265 findings across 24 files at the time of
+  writing). See `AGENTS.md` §9.1.
 * **Red Team & Chaos Assessment**: 0.0 CVSS Vulnerability Score; XSS, ReDoS, prototype pollution, quota exhaustion, and credential stuffing immunities verified.
 * **Build Verification**: Vite 8 clean client production build passed with code-splitting in ~595ms.
 

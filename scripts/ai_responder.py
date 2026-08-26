@@ -272,7 +272,7 @@ class AIResponder:
             return (
                 "🚀 <b>Deliveree Project Status (v0.2.1-alpha):</b>\n\n"
                 "• <b>Quality Gates:</b> 100% Passed (122/122 Unit & Invariant Tests)\n"
-                "• <b>Linter (oxlint):</b> 0 errors, 0 warnings\n"
+                "• <b>Linter (oxlint):</b> 0 errors (react-perf warnings are a tracked worklist)\n"
                 "• <b>Architecture:</b> 3-Squad Autonomous Topology active\n"
                 f"• <b>Git State:</b> <code>{git_status}</code>\n"
                 f"• <b>Recent Commits:</b>\n<code>{git_log}</code>\n\n"
