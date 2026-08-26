@@ -241,6 +241,27 @@ failures: any other test failing is real.
 
 ---
 
+## 7.6 Coordinating with agents outside this system
+
+More than one agentic system may be working in this repository at the same
+time, with no shared context between them. **Issue #64 is the ownership
+ledger — read it before touching any file, and update it when you claim or
+release files.**
+
+Claim before you start, not when you open the PR. If a file you need is
+already claimed, comment on #64 rather than editing it. If a fix turns out to
+need a file you do not own, say so there instead of reaching for it.
+
+Announce interface changes on #64 before they merge — a changed return shape
+or exported signature reaches whoever consumes it, and they have no way to see
+it coming. `src/hooks/usePackages.js` is the most likely instance: its
+internals and its consumers sit on opposite sides of the usual split.
+
+To report a defect in code another owner shipped, open a normal issue and link
+it from #64. It is theirs to fix; finding it is not the same as owning it.
+
+---
+
 ## 8. Parallel-Agent Protocol
 
 When several agents work concurrently, coordination failures — not coding
