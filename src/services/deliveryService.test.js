@@ -215,6 +215,126 @@ describe('Delivery Service and Storage Persistence', () => {
     expect(result.packages[0].checkpoints).toHaveLength(1);
   });
 
+  it('restores into the user storage partition when userId is provided (#56)', () => {
+    const userPackages = [
+      {
+        id: 'user-pkg-1',
+        title: 'User Secret Item',
+        trackingNumber: 'USR123456',
+        carrier: 'dhl',
+        status: 'in_transit'
+      }
+    ];
+    const guestPackages = [
+      {
+        id: 'guest-pkg-1',
+        title: 'Guest Existing Item',
+        trackingNumber: 'GST123456',
+        carrier: 'fedex',
+        status: 'ordered'
+      }
+    ];
+
+    // Seed guest partition
+    localStorage.setItem('deliveree_packages_guest', JSON.stringify(guestPackages));
+
+    const json = JSON.stringify(userPackages);
+    const result = deliveryService.importData(json, 'user-42');
+
+    expect(result.success).toBe(true);
+    // User key contains the restored item
+    expect(deliveryService.getPackages('user-42')).toHaveLength(1);
+    expect(deliveryService.getPackages('user-42')[0].id).toBe('user-pkg-1');
+
+    // Guest partition is completely untouched and was NOT overwritten
+    expect(deliveryService.getPackages(null)).toHaveLength(1);
+    expect(deliveryService.getPackages(null)[0].id).toBe('guest-pkg-1');
+  });
+
+  describe('export manifest validation and scope rejection (#57)', () => {
+    it('successfully imports a full manifest backup (scope: all)', () => {
+      const manifest = {
+        schemaVersion: 1,
+        exportedAt: '2026-08-26T20:00:00.000Z',
+        appVersion: '0.16.0',
+        scope: 'all',
+        packageCount: 1,
+        packages: [
+          {
+            id: 'manifest-pkg-1',
+            title: 'Manifest Package',
+            trackingNumber: 'MNF123',
+            carrier: 'cainiao',
+            status: 'shipped'
+          }
+        ]
+      };
+
+      const result = deliveryService.importData(JSON.stringify(manifest));
+      expect(result.success).toBe(true);
+      expect(result.packages).toHaveLength(1);
+      expect(result.packages[0].id).toBe('manifest-pkg-1');
+    });
+
+    it('rejects partial export manifests with scope delivered', () => {
+      const partialManifest = {
+        schemaVersion: 1,
+        exportedAt: '2026-08-26T20:00:00.000Z',
+        appVersion: '0.16.0',
+        scope: 'delivered',
+        packageCount: 1,
+        packages: [
+          {
+            id: 'partial-pkg-1',
+            title: 'Delivered Item Only',
+            trackingNumber: 'DEL123',
+            carrier: 'israel_post',
+            status: 'delivered'
+          }
+        ]
+      };
+
+      const result = deliveryService.importData(JSON.stringify(partialManifest));
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Cannot restore partial export (scope: "delivered")');
+    });
+
+    it('rejects partial export manifests with scope active', () => {
+      const partialManifest = {
+        schemaVersion: 1,
+        exportedAt: '2026-08-26T20:00:00.000Z',
+        appVersion: '0.16.0',
+        scope: 'active',
+        packageCount: 1,
+        packages: [
+          {
+            id: 'partial-pkg-2',
+            title: 'Active Item Only',
+            trackingNumber: 'ACT123',
+            carrier: 'israel_post',
+            status: 'in_transit'
+          }
+        ]
+      };
+
+      const result = deliveryService.importData(JSON.stringify(partialManifest));
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Cannot restore partial export (scope: "active")');
+    });
+
+    it('rejects manifest without packages array', () => {
+      const invalidManifest = {
+        schemaVersion: 1,
+        scope: 'all',
+        packages: 'not-an-array'
+      };
+
+      const result = deliveryService.importData(JSON.stringify(invalidManifest));
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('packages must be an array');
+    });
+  });
+
   it('exports packages using URL.createObjectURL and cleans up with revokeObjectURL', () => {
     let createdUrl = null;
     let revokedUrl = null;

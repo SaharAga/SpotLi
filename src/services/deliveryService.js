@@ -224,10 +224,17 @@ export const deliveryService = {
   },
 
   /**
-   * Imports data from a JSON file with a strict payload-size limit and
-   * validation. The full list is honoured - nothing is truncated silently.
+   * Imports data from a JSON string with a strict payload-size limit, manifest inspection,
+   * and schema validation. Scoped by userId to ensure user-scoped persistence (#56).
+   *
+   * Accepts both manifest objects ({ schemaVersion, scope, packages, ... }) and legacy
+   * bare arrays. Rejects partial export scopes to prevent accidental data loss (#57).
+   *
+   * @param {string} jsonString - JSON payload
+   * @param {string|null} [userId=null] - Scoped user ID
+   * @returns {{ success: boolean, packages?: Array<object>, error?: string }}
    */
-  importData: (jsonString) => {
+  importData: (jsonString, userId = null) => {
     if (typeof jsonString !== 'string') {
       return { success: false, error: 'Invalid input (must be a JSON string)' };
     }
@@ -242,21 +249,39 @@ export const deliveryService = {
 
     try {
       const parsed = JSON.parse(jsonString);
+      let rawPackages;
+
       if (Array.isArray(parsed)) {
-        // No count cap. Exports are uncapped, so capping here silently turned a
-        // complete backup into an incomplete restore with nothing said about
-        // it. The 2MB payload limit above is the only bound, and it reports.
-        const { packages: validated } = parsePackageList(parsed);
-        if (validated.length === 0 && parsed.length > 0) {
-          return { success: false, error: 'Imported items failed schema validation' };
+        // Legacy bare array format
+        rawPackages = parsed;
+      } else if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        // Manifest format
+        if (parsed.scope && parsed.scope !== 'all') {
+          return {
+            success: false,
+            error: `Cannot restore partial export (scope: "${parsed.scope}"). Only full backups ("all") can be imported.`
+          };
         }
-        const saved = deliveryService.savePackages(validated);
-        if (!saved.ok) {
-          return { success: false, error: 'Import could not be persisted (storage write failed)' };
+        if (!Array.isArray(parsed.packages)) {
+          return { success: false, error: 'Invalid JSON structure (packages must be an array)' };
         }
-        return { success: true, packages: validated };
+        rawPackages = parsed.packages;
+      } else {
+        return { success: false, error: 'Invalid JSON structure (must be an array of packages or an export manifest)' };
       }
-      return { success: false, error: 'Invalid JSON structure (must be an array of packages)' };
+
+      // No count cap. Exports are uncapped, so capping here silently turned a
+      // complete backup into an incomplete restore with nothing said about
+      // it. The 2MB payload limit above is the only bound, and it reports.
+      const { packages: validated } = parsePackageList(rawPackages);
+      if (validated.length === 0 && rawPackages.length > 0) {
+        return { success: false, error: 'Imported items failed schema validation' };
+      }
+      const saved = deliveryService.savePackages(validated, userId);
+      if (!saved.ok) {
+        return { success: false, error: 'Import could not be persisted (storage write failed)' };
+      }
+      return { success: true, packages: validated };
     } catch (e) {
       return { success: false, error: e.message };
     }
