@@ -127,7 +127,7 @@ describe('exportUtils Unit Tests', () => {
 
   describe('exportToJSON', () => {
     it('generates a valid formatted JSON manifest string representing the packages', () => {
-      const jsonStr = exportToJSON(samplePackages);
+      const jsonStr = exportToJSON(samplePackages, false, '', { scope: 'all' });
       const parsed = JSON.parse(jsonStr);
       expect(parsed).toHaveProperty('schemaVersion', 1);
       expect(parsed).toHaveProperty('exportedAt');
@@ -140,12 +140,20 @@ describe('exportUtils Unit Tests', () => {
       expect(parsed.packages[1].id).toBe('pkg-2');
     });
 
-    it('sets scope from options or infers from filename', () => {
-      const explicitStr = exportToJSON(samplePackages, false, '', { scope: 'delivered' });
-      expect(JSON.parse(explicitStr).scope).toBe('delivered');
+    it('leaves scope absent when undeclared in options', () => {
+      const jsonStr = exportToJSON(samplePackages);
+      const parsed = JSON.parse(jsonStr);
+      expect(parsed).not.toHaveProperty('scope');
+      expect(parsed.scope).toBeUndefined();
+      expect(parsed.packageCount).toBe(2);
+    });
 
-      const inferredStr = exportToJSON(samplePackages, false, 'deliveree_export_active_2026-08-26.json');
-      expect(JSON.parse(inferredStr).scope).toBe('active');
+    it('sets scope from options (object or string)', () => {
+      const explicitObj = exportToJSON(samplePackages, false, '', { scope: 'delivered' });
+      expect(JSON.parse(explicitObj).scope).toBe('delivered');
+
+      const explicitStr = exportToJSON(samplePackages, false, '', 'active');
+      expect(JSON.parse(explicitStr).scope).toBe('active');
     });
 
     it('triggers JSON blob download when requested', () => {
@@ -269,8 +277,19 @@ describe('exportRawToJSON — the backup path', () => {
     checkpoints: [{ id: 'cp-1', status: 'in_transit', location: 'Haifa', timestamp: '2026-08-01T00:00:00.000Z' }]
   };
 
+  it('wraps the backup in a manifest with schemaVersion, appVersion, and scope: all', () => {
+    const parsed = JSON.parse(exportRawToJSON([raw]));
+    expect(parsed.schemaVersion).toBe(1);
+    expect(parsed).toHaveProperty('exportedAt');
+    expect(parsed).toHaveProperty('appVersion');
+    expect(parsed.scope).toBe('all');
+    expect(parsed.packageCount).toBe(1);
+    expect(Array.isArray(parsed.packages)).toBe(true);
+  });
+
   it('applies no repair pass to carrier, status, dates or tracking number', () => {
-    const [out] = JSON.parse(exportRawToJSON([raw]));
+    const parsed = JSON.parse(exportRawToJSON([raw]));
+    const [out] = parsed.packages;
     expect(out.carrier).toBe('not_a_known_carrier');
     expect(out.status).toBe('not_a_known_status');
     expect(out.trackingNumber).toBe('lower case/tracking#');
@@ -279,19 +298,22 @@ describe('exportRawToJSON — the backup path', () => {
   });
 
   it('does not truncate long notes the way sanitizeString does', () => {
-    const [out] = JSON.parse(exportRawToJSON([raw]));
+    const parsed = JSON.parse(exportRawToJSON([raw]));
+    const [out] = parsed.packages;
     expect(out.notes).toBe('a'.repeat(2000));
   });
 
   it('keeps the Hebrew fields the CSV backup dropped (#53)', () => {
-    const [out] = JSON.parse(exportRawToJSON([raw]));
+    const parsed = JSON.parse(exportRawToJSON([raw]));
+    const [out] = parsed.packages;
     expect(out.title).toBe('Widget');
     expect(out.titleHe).toBe('ווידג׳ט');
     expect(out.notesHe).toBe('הערות');
   });
 
   it('carries the fields no CSV column set can represent', () => {
-    const [out] = JSON.parse(exportRawToJSON([raw]));
+    const parsed = JSON.parse(exportRawToJSON([raw]));
+    const [out] = parsed.packages;
     expect(out.checkpoints).toEqual(raw.checkpoints);
     expect(out.category).toBe('electronics');
     expect(out.isPinned).toBe(true);
@@ -300,18 +322,21 @@ describe('exportRawToJSON — the backup path', () => {
     expect(out.schemaVersion).toBe(3);
   });
 
-  it('reproduces the input array exactly', () => {
-    expect(JSON.parse(exportRawToJSON([raw]))).toEqual([raw]);
+  it('reproduces the input array in packages exactly', () => {
+    const parsed = JSON.parse(exportRawToJSON([raw]));
+    expect(parsed.packages).toEqual([raw]);
   });
 
   it('emits every item with no cap', () => {
     const many = Array.from({ length: 2500 }, (_, i) => ({ id: `p${i}` }));
-    expect(JSON.parse(exportRawToJSON(many))).toHaveLength(2500);
+    const parsed = JSON.parse(exportRawToJSON(many));
+    expect(parsed.packages).toHaveLength(2500);
+    expect(parsed.packageCount).toBe(2500);
   });
 
   it('tolerates non-array input', () => {
-    expect(JSON.parse(exportRawToJSON(null))).toEqual([]);
-    expect(JSON.parse(exportRawToJSON(undefined))).toEqual([]);
+    expect(JSON.parse(exportRawToJSON(null)).packages).toEqual([]);
+    expect(JSON.parse(exportRawToJSON(undefined)).packages).toEqual([]);
   });
 });
 
@@ -363,6 +388,8 @@ describe('validated exports preserve unknown fields (#41)', () => {
   });
 
   it('the raw backup never validates, so nothing can be stripped', () => {
-    expect(JSON.parse(exportRawToJSON([withUnknown]))).toEqual([withUnknown]);
+    const parsed = JSON.parse(exportRawToJSON([withUnknown]));
+    expect(parsed.packages).toEqual([withUnknown]);
   });
 });
+
