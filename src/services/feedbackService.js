@@ -145,9 +145,10 @@ export const MAX_SCREENSHOT_CHARS = 750_000;
  */
 export function validateScreenshot(value) {
   if (typeof value !== 'string' || !value) return null;
-  if (!/^data:image\/(png|jpeg|webp|gif);base64,/i.test(value)) return null;
-  if (value.length > MAX_SCREENSHOT_CHARS) return null;
-  return value;
+  const trimmed = value.trim();
+  if (!/^data:image\/(png|jpe?g|webp|gif)(;[a-z0-9=_-]+)*;base64,/i.test(trimmed)) return null;
+  if (trimmed.length > MAX_SCREENSHOT_CHARS) return null;
+  return trimmed;
 }
 
 /**
@@ -511,5 +512,151 @@ export async function submitFeedback(rawFeedback) {
     success: true,
     syncedToCloud: firestoreSuccess,
     feedback: finalPayload
+  };
+}
+
+/**
+ * Computes analytics and time-series trends from an array of feedback items.
+ *
+ * @param {Array<object>} feedbacks
+ * @returns {{
+ *   total: number,
+ *   bugCount: number,
+ *   featureCount: number,
+ *   praiseCount: number,
+ *   averageRating: number,
+ *   ratingDistribution: Record<number, number>,
+ *   weeklyTrends: Array<{ week: string, label: string, bug: number, feature: number, praise: number, total: number, avgRating: number }>,
+ *   versionTrends: Array<{ version: string, total: number, bug: number, feature: number, praise: number, avgRating: number }>
+ * }}
+ */
+export function computeFeedbackAnalytics(feedbacks) {
+  const items = Array.isArray(feedbacks) ? feedbacks : [];
+  const total = items.length;
+
+  if (total === 0) {
+    return {
+      total: 0,
+      bugCount: 0,
+      featureCount: 0,
+      praiseCount: 0,
+      averageRating: 0,
+      ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+      weeklyTrends: [],
+      versionTrends: []
+    };
+  }
+
+  let bugCount = 0;
+  let featureCount = 0;
+  let praiseCount = 0;
+  let sumRating = 0;
+  let ratedCount = 0;
+  const ratingDistribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+
+  const weeklyBuckets = new Map();
+  const versionBuckets = new Map();
+
+  for (const item of items) {
+    if (!item) continue;
+    const type = item.type === 'feature' ? 'feature' : item.type === 'praise' ? 'praise' : 'bug';
+    if (type === 'bug') bugCount++;
+    else if (type === 'feature') featureCount++;
+    else if (type === 'praise') praiseCount++;
+
+    const rating = typeof item.rating === 'number' && item.rating >= 1 && item.rating <= 5 ? Math.round(item.rating) : null;
+    if (rating !== null) {
+      sumRating += rating;
+      ratedCount++;
+      ratingDistribution[rating] = (ratingDistribution[rating] || 0) + 1;
+    }
+
+    // Weekly trend grouping
+    const date = item.timestamp ? new Date(item.timestamp) : null;
+    const weekKey = date && !isNaN(date.getTime())
+      ? (() => {
+          const d = new Date(date);
+          d.setHours(0, 0, 0, 0);
+          d.setDate(d.getDate() - d.getDay()); // Sunday start
+          return d.toISOString().slice(0, 10);
+        })()
+      : 'unknown';
+
+    if (!weeklyBuckets.has(weekKey)) {
+      weeklyBuckets.set(weekKey, {
+        week: weekKey,
+        label: weekKey === 'unknown' ? 'Unknown' : new Date(weekKey).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        bug: 0,
+        feature: 0,
+        praise: 0,
+        total: 0,
+        ratingSum: 0,
+        ratingCount: 0
+      });
+    }
+    const wb = weeklyBuckets.get(weekKey);
+    wb.total += 1;
+    wb[type] += 1;
+    if (rating !== null) {
+      wb.ratingSum += rating;
+      wb.ratingCount += 1;
+    }
+
+    // Version trend grouping
+    const version = (typeof item.appVersion === 'string' && item.appVersion) ? item.appVersion : 'unknown';
+    if (!versionBuckets.has(version)) {
+      versionBuckets.set(version, {
+        version,
+        total: 0,
+        bug: 0,
+        feature: 0,
+        praise: 0,
+        ratingSum: 0,
+        ratingCount: 0
+      });
+    }
+    const vb = versionBuckets.get(version);
+    vb.total += 1;
+    vb[type] += 1;
+    if (rating !== null) {
+      vb.ratingSum += rating;
+      vb.ratingCount += 1;
+    }
+  }
+
+  const weeklyTrends = Array.from(weeklyBuckets.values())
+    .sort((a, b) => a.week.localeCompare(b.week))
+    .map(w => ({
+      week: w.week,
+      label: w.label,
+      bug: w.bug,
+      feature: w.feature,
+      praise: w.praise,
+      total: w.total,
+      avgRating: w.ratingCount > 0 ? Number((w.ratingSum / w.ratingCount).toFixed(1)) : 0
+    }));
+
+  const versionTrends = Array.from(versionBuckets.values())
+    .sort((a, b) => a.version.localeCompare(b.version, undefined, { numeric: true }))
+    .map(v => ({
+      version: v.version,
+      total: v.total,
+      bug: v.bug,
+      feature: v.feature,
+      praise: v.praise,
+      avgRating: v.ratingCount > 0 ? Number((v.ratingSum / v.ratingCount).toFixed(1)) : 0
+    }));
+
+  const averageRating = ratedCount > 0 ? Number((sumRating / ratedCount).toFixed(1)) : 0;
+
+  return {
+    total,
+    bugCount,
+    featureCount,
+    praiseCount,
+    averageRating,
+    ratingDistribution,
+    weeklyTrends,
+    versionTrends
   };
 }

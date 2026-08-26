@@ -5,7 +5,11 @@ const collectionMock = vi.fn((db, name) => ({ db, name }));
 
 vi.mock('firebase/firestore', () => ({
   collection: (...args) => collectionMock(...args),
-  addDoc: (...args) => addDocMock(...args)
+  addDoc: (...args) => addDocMock(...args),
+  getDocs: vi.fn().mockResolvedValue({ docs: [] }),
+  query: vi.fn((...args) => args),
+  orderBy: vi.fn((...args) => args),
+  limit: vi.fn((...args) => args)
 }));
 
 vi.mock('./firebase', () => ({
@@ -13,7 +17,7 @@ vi.mock('./firebase', () => ({
   isFirebaseConfigured: true
 }));
 
-const { recordParseCorrection } = await import('./parseCorrectionService');
+const { recordParseCorrection, computeParseCorrectionStats } = await import('./parseCorrectionService');
 
 describe('recordParseCorrection', () => {
   beforeEach(() => {
@@ -72,5 +76,39 @@ describe('recordParseCorrection when Firebase is not configured', () => {
 
     await recordUnconfigured({ source: 'ai', confidence: 'high', editedFields: ['trackingNumber'] });
     expect(addDocMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('computeParseCorrectionStats', () => {
+  it('returns zeroes on empty input', () => {
+    const stats = computeParseCorrectionStats([]);
+    expect(stats.total).toBe(0);
+    expect(stats.sourceBreakdown).toEqual({ regex: 0, ai: 0 });
+    expect(stats.fieldBreakdown).toEqual({});
+    expect(stats.confidenceBreakdown).toEqual({ high: 0, medium: 0, low: 0, none: 0 });
+  });
+
+  it('aggregates source, fields, and confidence correctly', () => {
+    const sample = [
+      { source: 'regex', confidence: 'high', editedFields: ['carrier', 'trackingNumber'] },
+      { source: 'ai', confidence: 'medium', editedFields: ['carrier'] },
+      { source: 'ai', confidence: 'low', editedFields: ['deliveryDate'] },
+      { source: 'regex', confidence: null, editedFields: ['title'] }
+    ];
+
+    const stats = computeParseCorrectionStats(sample);
+    expect(stats.total).toBe(4);
+    expect(stats.sourceBreakdown.regex).toBe(2);
+    expect(stats.sourceBreakdown.ai).toBe(2);
+
+    expect(stats.fieldBreakdown.carrier).toBe(2);
+    expect(stats.fieldBreakdown.trackingNumber).toBe(1);
+    expect(stats.fieldBreakdown.deliveryDate).toBe(1);
+    expect(stats.fieldBreakdown.title).toBe(1);
+
+    expect(stats.confidenceBreakdown.high).toBe(1);
+    expect(stats.confidenceBreakdown.medium).toBe(1);
+    expect(stats.confidenceBreakdown.low).toBe(1);
+    expect(stats.confidenceBreakdown.none).toBe(1);
   });
 });

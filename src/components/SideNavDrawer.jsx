@@ -239,17 +239,17 @@ export function SideNavDrawer({
             <span className="font-semibold">{language === 'he' ? 'משוב ודיווח באגים' : 'Alpha Feedback'}</span>
           </button>
 
-          {/* Admin Feedback Inspector */}
+          {/* Admin Dashboard & Telemetry */}
           {onOpenAdminFeedback && (
             <button
               onClick={() => {
                 onClose();
                 onOpenAdminFeedback();
               }}
-              className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-800 text-indigo-300 text-start cursor-pointer transition-colors min-h-[48px]"
+              className="w-full flex items-center gap-3 p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-300 text-start cursor-pointer transition-colors min-h-[48px]"
             >
               <ShieldCheck className="w-4 h-4 text-indigo-400 shrink-0" />
-              <span className="font-semibold">{language === 'he' ? 'יומן משובי אלפא (מנהל)' : 'Admin Feedback Inspector'}</span>
+              <span className="font-semibold">{language === 'he' ? 'מרכז ניהול ומדדים (מנהל)' : 'Admin Dashboard & Telemetry'}</span>
             </button>
           )}
 
