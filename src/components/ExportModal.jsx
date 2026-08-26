@@ -61,7 +61,7 @@ export function ExportModal({
         // the storage key wholesale rather than merging. A file named "backup"
         // holding only `delivered` would delete every active package on
         // restore. The restorable backup is the Account tab's Full Backup.
-        exportToJSON(filteredExportPackages, true, `deliveree_export_${selectedScope}_${today}.json`);
+        exportToJSON(filteredExportPackages, true, `deliveree_export_${selectedScope}_${today}.json`, { scope: selectedScope });
         if (onShowToast) {
           onShowToast(
             language === 'he' 
