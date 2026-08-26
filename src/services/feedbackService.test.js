@@ -1,4 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+vi.mock('./firebase', () => ({
+  db: null,
+  isFirebaseConfigured: false
+}));
+
 import * as feedbackService from './feedbackService';
 
 const {
@@ -329,6 +335,66 @@ describe('FeedbackService Unit & Resilience Test Suite', () => {
 
     it('handles an empty input without hanging', async () => {
       await expect(mapWithConcurrency([], 4, async () => 1)).resolves.toEqual([]);
+    });
+  });
+
+  describe('validateScreenshot format tolerance', () => {
+    it('accepts standard base64 png, jpeg, jpg, and webp images', () => {
+      expect(feedbackService.validateScreenshot('data:image/png;base64,iVBORw0KGgo=')).toBe('data:image/png;base64,iVBORw0KGgo=');
+      expect(feedbackService.validateScreenshot('data:image/jpeg;base64,/9j/4AAQSkZJRg==')).toBe('data:image/jpeg;base64,/9j/4AAQSkZJRg==');
+      expect(feedbackService.validateScreenshot('data:image/jpg;base64,/9j/4AAQSkZJRg==')).toBe('data:image/jpg;base64,/9j/4AAQSkZJRg==');
+      expect(feedbackService.validateScreenshot('data:image/webp;base64,UklGRg==')).toBe('data:image/webp;base64,UklGRg==');
+      expect(feedbackService.validateScreenshot('  data:image/png;base64,iVBORw0KGgo=  ')).toBe('data:image/png;base64,iVBORw0KGgo=');
+    });
+
+    it('rejects invalid MIME types and non-data URLs', () => {
+      expect(feedbackService.validateScreenshot('data:text/plain;base64,SGVsbG8=')).toBeNull();
+      expect(feedbackService.validateScreenshot('https://example.com/image.png')).toBeNull();
+      expect(feedbackService.validateScreenshot(null)).toBeNull();
+      expect(feedbackService.validateScreenshot(12345)).toBeNull();
+    });
+  });
+
+  describe('computeFeedbackAnalytics', () => {
+    it('returns empty schema when given empty or invalid input', () => {
+      const stats = feedbackService.computeFeedbackAnalytics([]);
+      expect(stats.total).toBe(0);
+      expect(stats.bugCount).toBe(0);
+      expect(stats.featureCount).toBe(0);
+      expect(stats.praiseCount).toBe(0);
+      expect(stats.averageRating).toBe(0);
+      expect(stats.weeklyTrends).toEqual([]);
+      expect(stats.versionTrends).toEqual([]);
+    });
+
+    it('computes aggregated counts, ratings, and breakdowns accurately', () => {
+      const feedbacks = [
+        { id: '1', type: 'bug', rating: 3, appVersion: '0.15.0', timestamp: '2026-08-01T12:00:00Z' },
+        { id: '2', type: 'bug', rating: 2, appVersion: '0.15.0', timestamp: '2026-08-02T12:00:00Z' },
+        { id: '3', type: 'feature', rating: 5, appVersion: '0.16.0', timestamp: '2026-08-10T12:00:00Z' },
+        { id: '4', type: 'praise', rating: 5, appVersion: '0.16.0', timestamp: '2026-08-11T12:00:00Z' }
+      ];
+
+      const stats = feedbackService.computeFeedbackAnalytics(feedbacks);
+      expect(stats.total).toBe(4);
+      expect(stats.bugCount).toBe(2);
+      expect(stats.featureCount).toBe(1);
+      expect(stats.praiseCount).toBe(1);
+      expect(stats.averageRating).toBe(3.8); // (3+2+5+5)/4 = 3.75 -> 3.8
+      expect(stats.ratingDistribution[5]).toBe(2);
+      expect(stats.ratingDistribution[3]).toBe(1);
+      expect(stats.ratingDistribution[2]).toBe(1);
+
+      // Version trends
+      expect(stats.versionTrends).toHaveLength(2);
+      const v15 = stats.versionTrends.find(v => v.version === '0.15.0');
+      const v16 = stats.versionTrends.find(v => v.version === '0.16.0');
+      expect(v15.bug).toBe(2);
+      expect(v15.avgRating).toBe(2.5);
+      expect(v16.bug).toBe(0);
+      expect(v16.feature).toBe(1);
+      expect(v16.praise).toBe(1);
+      expect(v16.avgRating).toBe(5);
     });
   });
 });

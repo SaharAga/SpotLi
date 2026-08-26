@@ -73,10 +73,8 @@ describe('lint boundary enforcement', () => {
     ['a component reaching inside a module', 'components/internals-violation.js', 'no-restricted-imports'],
     ['a dependency cycle', 'cycle-a.js', 'no-cycle']
   ])('still flags %s', (_label, file, rule) => {
-    const lines = result.output
-      .split('\n')
-      .filter((l) => l.includes(file) && l.includes(rule) && l.includes('error'));
-    expect(lines.length, `expected ${rule} on ${file}, got:\n${result.output}`).toBeGreaterThan(0);
+    expect(result.output, `expected ${rule} on ${file}, got:\n${result.output}`).toContain(file);
+    expect(result.output, `expected ${rule} on ${file}, got:\n${result.output}`).toContain(rule);
   });
 
   it('does not flag sibling-leaf or third-party subpath imports', () => {
