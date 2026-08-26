@@ -87,9 +87,11 @@ export function DashboardContent() {
   // lets the memoized list components see stable props across a keystroke or
   // a package mutation.
   const packagesRef = useRef(packages);
-  packagesRef.current = packages;
-  const selectedDetailIdRef = useRef(null);
-  selectedDetailIdRef.current = selectedDetailPackage?.id ?? null;
+  const selectedDetailIdRef = useRef(selectedDetailPackage?.id ?? null);
+  useEffect(() => {
+    packagesRef.current = packages;
+    selectedDetailIdRef.current = selectedDetailPackage?.id ?? null;
+  });
 
   // Handle PWA App Shortcuts, Web Share Target & Query Parameters on mount
   useEffect(() => {
@@ -555,11 +557,18 @@ export function DashboardContent() {
     [packages]
   );
 
+  // A keystroke that does not change *which* packages match still produced a
+  // brand-new array from the memo below, and a new array is a new prop for the
+  // memoized PackageTable. This cache hands back the previous array whenever
+  // the result is element-for-element identical, so the table only re-renders
+  // when the list really changed.
+  const lastFilteredRef = useRef([]);
+
   const filteredPackages = useMemo(() => {
     // Normalised once for the whole pass, not once per package per keystroke.
     const q = searchQuery.trim().toLowerCase();
 
-    return packages.filter((pkg) => {
+    const next = packages.filter((pkg) => {
       if (q) {
         const matchesTitle = pkg.title?.toLowerCase().includes(q) || pkg.titleHe?.toLowerCase().includes(q);
         const matchesTrack = pkg.trackingNumber?.toLowerCase().includes(q);
@@ -615,6 +624,13 @@ export function DashboardContent() {
       }
       return 0;
     });
+
+    const prev = lastFilteredRef.current;
+    if (prev.length === next.length && prev.every((pkg, i) => pkg === next[i])) {
+      return prev;
+    }
+    lastFilteredRef.current = next;
+    return next;
   }, [packages, searchQuery, selectedCarrier, activeTab, sortBy, language]);
 
   return (

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { deliveryService } from '../services/deliveryService';
 import { cloudAdapter } from '../services/cloudStorageAdapter';
 import { syncQueueService, MUTATION_TYPES } from '../services/syncQueueService';
@@ -36,6 +36,14 @@ export function usePackages(user, triggerCloudSync, onSaveError) {
   // return entirely and a quota-exceeded write looked identical to a
   // successful one — state updated, nothing on disk, no user-visible signal.
   const [saveError, setSaveError] = useState(null);
+
+  // `onSaveError` is a plain callback prop; a caller that re-creates it every
+  // render would otherwise re-create every mutator below with it. The mutators
+  // read it through this ref instead, so their identity does not depend on it.
+  const onSaveErrorRef = useRef(onSaveError);
+  useEffect(() => {
+    onSaveErrorRef.current = onSaveError;
+  }, [onSaveError]);
 
   const [packages, setPackages] = useState(() => {
     if (isDemoUrl) {
@@ -112,7 +120,14 @@ export function usePackages(user, triggerCloudSync, onSaveError) {
   // a tight synchronous loop of N enqueue() calls only picks up the first item's replay pass (the
   // queue snapshot is captured before the loop's later calls land) — bulk writes go straight to
   // cloudAdapter's own batched Firestore write instead, which handles the whole list atomically.
-  const persistLocally = (list) => {
+  //
+  // Every mutator this hook returns is wrapped in useCallback. They are passed
+  // down (via App's own useCallback handlers) into memoized list components:
+  // as plain function expressions they took a new identity on every render, so
+  // one keystroke in the search box invalidated App's handlers and re-rendered
+  // every PackageCard anyway — the memo did the shallow compare and then
+  // re-rendered regardless.
+  const persistLocally = useCallback((list) => {
     const result = deliveryService.savePackages(list, user?.id || null);
     if (result && result.ok) {
       setSaveError(null);
@@ -123,48 +138,48 @@ export function usePackages(user, triggerCloudSync, onSaveError) {
       cause: (result && result.error) || null
     };
     setSaveError(failure);
-    if (onSaveError) onSaveError(failure);
+    if (onSaveErrorRef.current) onSaveErrorRef.current(failure);
     return false;
-  };
+  }, [user?.id]);
 
-  const clearSaveError = () => setSaveError(null);
+  const clearSaveError = useCallback(() => setSaveError(null), []);
 
-  const updatePackagesState = (newPackages) => {
+  const updatePackagesState = useCallback((newPackages) => {
     setPackages(newPackages);
     persistLocally(newPackages);
     if (user?.id && cloudAdapter.isFirestoreActive?.()) {
       cloudAdapter.savePackages(newPackages);
     }
     triggerCloudSync();
-  };
+  }, [persistLocally, triggerCloudSync, user?.id]);
 
   // Single-package mutation: writes one Firestore doc instead of batch-writing the full list (quota-efficient).
   // The cloud write goes through syncQueueService instead of calling cloudAdapter directly, so a failed
   // or offline write is retried with backoff and dead-lettered (not silently dropped) instead of just
   // logging a console.warn.
-  const upsertSinglePackage = (updatedPackages, changedPkg) => {
+  const upsertSinglePackage = useCallback((updatedPackages, changedPkg) => {
     setPackages(updatedPackages);
     persistLocally(updatedPackages);
     if (user?.id && cloudAdapter.isFirestoreActive?.()) {
       syncQueueService.enqueue(MUTATION_TYPES.UPDATE, changedPkg, user.id);
     }
     triggerCloudSync();
-  };
+  }, [persistLocally, triggerCloudSync, user?.id]);
 
-  const removeSinglePackage = (updatedPackages, packageId) => {
+  const removeSinglePackage = useCallback((updatedPackages, packageId) => {
     setPackages(updatedPackages);
     persistLocally(updatedPackages);
     if (user?.id && cloudAdapter.isFirestoreActive?.()) {
       syncQueueService.enqueue(MUTATION_TYPES.DELETE, { id: packageId }, user.id);
     }
     triggerCloudSync();
-  };
+  }, [persistLocally, triggerCloudSync, user?.id]);
 
   // Enters demo mode with the sample dataset — used by the "try a live demo" CTA.
-  const startDemoMode = () => {
+  const startDemoMode = useCallback(() => {
     setIsDemoMode(true);
     setPackages(INITIAL_PACKAGES);
-  };
+  }, []);
 
   return {
     packages,
