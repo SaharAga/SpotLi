@@ -97,6 +97,10 @@ export const translations = {
       duplicateTrackingWarning: 'A package with this tracking number already exists.',
       openExistingPackage: 'Open Existing Package',
       existingMatchFound: 'Matching existing package found - details will enrich existing record.',
+      detectedStore: 'Store',
+      detectedPickup: 'Pickup',
+      detectedPin: 'Locker PIN',
+      applyAllAction: 'Auto-fill Details',
     },
     detailModal: {
       shipmentDetails: 'Shipment Details & Live Timeline',
@@ -304,6 +308,10 @@ export const translations = {
       duplicateTrackingWarning: 'חבילה עם מספר מעקב זה כבר קיימת במערכת.',
       openExistingPackage: 'פתח חבילה קיימת',
       existingMatchFound: 'נמצאה חבילה קיימת תואמת - הפרטים יעודכנו ברשומה הקיימת.',
+      detectedStore: 'חנות',
+      detectedPickup: 'איסוף',
+      detectedPin: 'קוד לוקר',
+      applyAllAction: 'החל פרטים',
     },
     detailModal: {
       shipmentDetails: 'פרטי משלוח וציר זמן מלא',

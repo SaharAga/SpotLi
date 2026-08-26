@@ -1,4 +1,4 @@
-import { DETECTION_RULES, getCarrier } from '../types/carriers';
+import { DETECTION_RULES, getCarrier } from '../types/carriers.js';
 
 /**
  * Universal Tracking Number Sanitizer

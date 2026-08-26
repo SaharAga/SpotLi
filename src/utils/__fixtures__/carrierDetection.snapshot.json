@@ -405,7 +405,7 @@
     "isValidChecksum": null
   },
   "912345678": {
-    "carrierId": "bar",
+    "carrierId": "bar-distribution",
     "confidence": "medium",
     "isValidChecksum": null
   },
@@ -615,7 +615,7 @@
     "isValidChecksum": null
   },
   "BAR1094821": {
-    "carrierId": "bar",
+    "carrierId": "bar-distribution",
     "confidence": "high",
     "isValidChecksum": null
   },
@@ -880,7 +880,27 @@
     "isValidChecksum": null
   },
   "bar1094821": {
-    "carrierId": "bar",
+    "carrierId": "bar-distribution",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "LW94820194": {
+    "carrierId": "lionwheel",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "lw94820194": {
+    "carrierId": "lionwheel",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "BZR84920194": {
+    "carrierId": "buzzr",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "bzr84920194": {
+    "carrierId": "buzzr",
     "confidence": "high",
     "isValidChecksum": null
   },
@@ -893,6 +913,16 @@
     "carrierId": "cainiao",
     "confidence": "high",
     "isValidChecksum": true
+  },
+  "GSH12345678901": {
+    "carrierId": "shein",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "gsh12345678901": {
+    "carrierId": "shein",
+    "confidence": "high",
+    "isValidChecksum": null
   },
   "yt2109849201948201": {
     "carrierId": "yunexpress",
