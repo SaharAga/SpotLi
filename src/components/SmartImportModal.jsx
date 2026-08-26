@@ -10,6 +10,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { parseWithAi } from '../services/aiParseService';
 import { compressImageFile, extractImageFromPaste, ACCEPTED_IMAGE_TYPES } from '../utils/imageCompressor';
 import { submitFeedback } from '../services/feedbackService';
+import { Modal } from './Modal';
 
 /**
  * Maps the AI fallback's response shape to the same shape parseSmartText()
@@ -338,8 +339,12 @@ export function SmartImportModal({
   const showLowConfidenceHint = parseSource === 'ai' && (aiConfidence === 'low' || aiConfidence === 'medium');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      componentName="SmartImportModal"
+      className="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8"
+    >
         {/* Header */}
         <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-blue-600/10 to-indigo-600/10">
           <div className="flex items-center gap-3">
@@ -621,7 +626,6 @@ export function SmartImportModal({
             {t('modal.cancel')}
           </button>
         </div>
-      </div>
-    </div>
+      </Modal>
   );
 }

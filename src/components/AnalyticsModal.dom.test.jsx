@@ -73,10 +73,10 @@ describe('AnalyticsModal computation gating', () => {
 
   it('renders the same numbers it would have rendered without the gate', () => {
     const packages = makePackages(6);
-    const { container } = renderModal({ isOpen: true, packages });
+    renderModal({ isOpen: true, packages });
 
     const expected = analyticsUtils.calculateDeliveryMetrics(packages);
-    expect(container.textContent).toContain(String(expected.deliveredCount));
-    expect(container.textContent).toContain(`${expected.deliverySuccessRate}%`);
+    expect(document.body.textContent).toContain(String(expected.deliveredCount));
+    expect(document.body.textContent).toContain(`${expected.deliverySuccessRate}%`);
   });
 });

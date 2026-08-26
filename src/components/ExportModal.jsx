@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { exportToCSV, exportToJSON, generatePrintableSummary } from '../utils/exportUtils';
+import { Modal } from './Modal';
 
 export function ExportModal({
   isOpen,
@@ -90,12 +91,13 @@ export function ExportModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in overflow-y-auto"
-      role="dialog"
-      aria-modal="true"
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      componentName="ExportModal"
+      overlayClassName="p-3 sm:p-4"
+      className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8"
     >
-      <div className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8">
         {/* Header */}
         <div className="p-5 sm:p-6 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-600/10">
           <div className="flex items-center gap-3">
@@ -291,7 +293,6 @@ export function ExportModal({
             </span>
           </button>
         </div>
-      </div>
-    </div>
+      </Modal>
   );
 }
