@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Package, Plus, Sparkles, Menu, X, LogIn,
-  ClipboardCheck, Edit3
+  ClipboardCheck, Edit3, ShieldCheck
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -77,6 +77,18 @@ export function Navbar({
 
         {/* Desktop Toolbar (Hidden on Mobile) — kept deliberately minimal; everything else lives in the nav drawer */}
         <div className="hidden lg:flex items-center gap-2 sm:gap-2.5">
+          {/* Admin Center Shortcut */}
+          {onOpenAdminFeedback && (
+            <button
+              onClick={onOpenAdminFeedback}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-bold transition-colors cursor-pointer min-h-[48px]"
+              title={language === 'he' ? 'מרכז ניהול ומדדים' : 'Admin Telemetry Center'}
+            >
+              <ShieldCheck className="w-4 h-4 text-indigo-400" />
+              <span className="hidden xl:inline">{language === 'he' ? 'ניהול ומדדים' : 'Admin Center'}</span>
+            </button>
+          )}
+
           {/* User Account / Profile */}
           <button
             onClick={onOpenAuth}
@@ -120,6 +132,16 @@ export function Navbar({
 
         {/* Mobile / Tablet Compact Action Bar */}
         <div className="flex lg:hidden items-center gap-2">
+          {/* Admin shortcut icon on mobile */}
+          {onOpenAdminFeedback && (
+            <button
+              onClick={onOpenAdminFeedback}
+              className="flex items-center justify-center p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 cursor-pointer min-h-[48px] min-w-[44px]"
+              title={language === 'he' ? 'מרכז ניהול ומדדים' : 'Admin Telemetry'}
+            >
+              <ShieldCheck className="w-4 h-4 text-indigo-400" />
+            </button>
+          )}
           {/* Quick User Account Avatar / LogIn Button */}
           <button
             onClick={onOpenAuth}
