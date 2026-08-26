@@ -90,6 +90,30 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Automatic anonymous crash reports (src/services/crashReportService.js
+    // — ErrorBoundary + window error/unhandledrejection handlers). Kept
+    // separate from /feedback deliberately: crash volume is machine-driven
+    // and bursty (one bad deploy can generate far more documents than real
+    // testers ever submit), so mixing them would let a crash wave crowd out
+    // human feedback in the admin inspector's fetch limit. One document per
+    // occurrence, same as /feedback; the admin view groups them by
+    // signature client-side rather than aggregating server-side, to avoid
+    // giving anonymous clients any Firestore update permission.
+    match /crashReports/{crashId} {
+      allow create: if request.resource.data.message is string &&
+        request.resource.data.message.size() > 0 &&
+        request.resource.data.message.size() <= 1500 &&
+        request.resource.data.signature is string &&
+        request.resource.data.signature.size() <= 64 &&
+        (!('componentName' in request.resource.data) || (request.resource.data.componentName is string && request.resource.data.componentName.size() <= 100)) &&
+        (!('timestamp' in request.resource.data) || (request.resource.data.timestamp is string && request.resource.data.timestamp.size() <= 60));
+      // Readable only by allowlisted admins. Never writable or deletable
+      // from any client once created — no update means no client can alter
+      // or tamper with a report after submitting it.
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+
     // Mis-parse correction signal (src/services/parseCorrectionService.js).
     // Records only which fields a user changed after Smart Import auto-filled
     // them, never the field values themselves — deliberately as anonymous and

@@ -100,6 +100,38 @@ describe('AddEditPackageModal (rendered)', () => {
     expect(saved.createdAt).toBe('2026-01-01T00:00:00.000Z');
   });
 
+
+  it("warns about duplicate tracking numbers and provides a button to open the existing package", async () => {
+    const existing = [
+      { id: "pkg-existing-1", trackingNumber: "IL123456789IL", title: "Existing Phone Case", carrier: "israel-post", status: "in_transit" }
+    ];
+    const handleOpenExisting = vi.fn();
+    const handleClose = vi.fn();
+
+    renderWithLanguage(
+      <AddEditPackageModal
+        isOpen={true}
+        onClose={handleClose}
+        onSave={vi.fn()}
+        packages={existing}
+        onOpenExisting={handleOpenExisting}
+      />
+    );
+
+    const user = userEvent.setup();
+    const inputs = screen.getAllByRole("textbox");
+    const trackingInput = inputs[1];
+
+    await user.type(trackingInput, "IL-123-456-789-IL");
+
+    const openBtn = screen.getByRole("button", { name: /Open Existing Package|פתח חבילה קיימת/i });
+    expect(openBtn).toBeDefined();
+
+    await user.click(openBtn);
+    expect(handleOpenExisting).toHaveBeenCalledWith(existing[0]);
+    expect(handleClose).toHaveBeenCalled();
+  });
+
   it('renders nothing when isOpen is false', () => {
     const { container } = renderWithLanguage(
       <AddEditPackageModal isOpen={false} onClose={vi.fn()} onSave={vi.fn()} />

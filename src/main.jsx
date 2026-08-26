@@ -4,6 +4,11 @@ import './index.css';
 import App from './App.jsx';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { registerServiceWorker } from './services/serviceWorkerRegistration';
+import { initGlobalCrashReporting } from './services/crashReportService';
+
+// Catch errors ErrorBoundary can't see: thrown outside render (event
+// handlers, timers, async callbacks) and unhandled promise rejections.
+initGlobalCrashReporting();
 
 // Clean up stale caches on client boot (iOS WebKit fix)
 if (typeof window !== 'undefined' && 'caches' in window) {
