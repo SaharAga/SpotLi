@@ -220,3 +220,103 @@ export async function requestGmailForwardingSetup(ingestionEmail) {
   }
 }
 
+/**
+ * Programmatically creates a shipping email forwarding rule in Outlook via Microsoft Graph REST API.
+ * @param {string} accessToken Valid Microsoft OAuth access token
+ * @param {string} ingestionEmail The user's Deliveree ingestion email address
+ * @returns {Promise<{ ok: boolean, error?: string }>}
+ */
+export async function setupOutlookAutoForward(accessToken, ingestionEmail) {
+  if (!accessToken || !ingestionEmail) {
+    return { ok: false, error: 'Missing access token or ingestion address' };
+  }
+
+  try {
+    const createRuleRes = await fetch(
+      'https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messageRules',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          displayName: 'Deliveree Shipping Ingestion',
+          sequence: 1,
+          isEnabled: true,
+          conditions: {
+            senderContains: [
+              'aliexpress', 'amazon', 'shein', 'temu',
+              'dhl', 'fedex', 'ups', 'israelpost', 'iherb',
+              'zara', 'next', 'chita'
+            ],
+            bodyOrSubjectContains: [
+              'shipped', 'tracking', 'order', 'package',
+              'מעקב', 'נשלחה', 'הזמנה', 'חבילה'
+            ]
+          },
+          actions: {
+            forwardTo: [
+              {
+                emailAddress: {
+                  address: ingestionEmail
+                }
+              }
+            ]
+          }
+        })
+      }
+    );
+
+    if (!createRuleRes.ok && createRuleRes.status !== 409) {
+      const errData = await createRuleRes.json().catch(() => ({}));
+      throw new Error(errData.error?.message || 'Failed to create forwarding rule in Outlook');
+    }
+
+    setConnectedService('outlook', true);
+    return { ok: true };
+  } catch (err) {
+    console.error('[EmailSyncService] setupOutlookAutoForward error:', err);
+    return { ok: false, error: err.message || 'Failed to connect Outlook forwarding' };
+  }
+}
+
+/**
+ * Prompts Microsoft OAuth popup to grant Mail.ReadWrite scope and configures the forwarding rule.
+ * @param {string} ingestionEmail
+ * @returns {Promise<{ ok: boolean, error?: string }>}
+ */
+export async function requestOutlookForwardingSetup(ingestionEmail) {
+  if (!isFirebaseConfigured || !auth) {
+    return { ok: false, error: 'Firebase is not configured' };
+  }
+
+  try {
+    const { signInWithPopup, OAuthProvider } = await import('firebase/auth');
+    const provider = new OAuthProvider('microsoft.com');
+    provider.addScope('Mail.ReadWrite');
+    provider.addScope('MailboxSettings.ReadWrite');
+    provider.setCustomParameters({ prompt: 'select_account' });
+
+    const result = await signInWithPopup(auth, provider);
+    const credential = OAuthProvider.credentialFromResult(result);
+    const accessToken = credential?.accessToken;
+    const connectedEmail = result?.user?.email || 'Outlook Account';
+
+    if (!accessToken) {
+      return { ok: false, error: 'Microsoft OAuth token was not granted' };
+    }
+
+    const forwardRes = await setupOutlookAutoForward(accessToken, ingestionEmail);
+    if (forwardRes.ok) {
+      addConnectedAccount({ email: connectedEmail, service: 'outlook' });
+      return { ok: true, email: connectedEmail };
+    }
+    return forwardRes;
+  } catch (err) {
+    console.error('[EmailSyncService] requestOutlookForwardingSetup error:', err);
+    return { ok: false, error: err.message || 'Microsoft authentication was cancelled or failed' };
+  }
+}
+
+

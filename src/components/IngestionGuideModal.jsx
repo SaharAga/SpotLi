@@ -15,7 +15,8 @@ import {
   removeConnectedAccount,
   setConnectedService, 
   setupGmailAutoForward,
-  requestGmailForwardingSetup
+  requestGmailForwardingSetup,
+  requestOutlookForwardingSetup
 } from '../services/emailSyncService';
 import { DEFAULT_FORWARDING_FILTER_QUERY } from '../constants/emailFilters';
 import { Modal } from './Modal';
@@ -33,6 +34,7 @@ export function IngestionGuideModal({
   const [showQR, setShowQR] = useState(false);
   const [selectedGuide, setSelectedGuide] = useState('gmail'); // 'gmail' | 'outlook' | 'icloud' | 'yahoo'
   const [isConnectingGmail, setIsConnectingGmail] = useState(false);
+  const [isConnectingOutlook, setIsConnectingOutlook] = useState(false);
   const [connectedServices, setConnectedServicesState] = useState(() => getConnectedServices());
 
   if (!isOpen) return null;
@@ -96,6 +98,49 @@ export function IngestionGuideModal({
     }
   };
 
+  const handleConnectOutlook = async () => {
+    setIsConnectingOutlook(true);
+    try {
+      if (!user) {
+        if (onShowToast) onShowToast(
+          language === 'he' ? 'נא להתחבר לחשבון כדי להפעיל סנכרון אוטומטי' : 'Please sign in to enable auto-sync',
+          'info'
+        );
+        setIsConnectingOutlook(false);
+        return;
+      }
+
+      const res = await requestOutlookForwardingSetup(ingestionEmail);
+      if (res.ok) {
+        setConnectedServicesState(getConnectedServices());
+        if (onShowToast) {
+          onShowToast(
+            language === 'he' 
+              ? 'סנכרון Outlook הופעל בהצלחה! אישורי הזמנות יועברו אוטומטית 🎉' 
+              : 'Outlook auto-sync enabled! Orders will sync automatically 🎉',
+            'success'
+          );
+        }
+      } else {
+        if (onShowToast) {
+          onShowToast(
+            language === 'he' ? `החיבור ל-Outlook נכשל: ${res.error}` : `Outlook connection failed: ${res.error}`,
+            'error'
+          );
+        }
+      }
+    } catch (err) {
+      if (onShowToast) {
+        onShowToast(
+          language === 'he' ? 'החיבור ל-Outlook נכשל, נסה את המדריך הידני' : 'Outlook connection failed, try manual setup',
+          'error'
+        );
+      }
+    } finally {
+      setIsConnectingOutlook(false);
+    }
+  };
+
   const handleDisconnectAccount = (accountEmail) => {
     removeConnectedAccount(accountEmail);
     setConnectedServicesState(getConnectedServices());
@@ -142,7 +187,7 @@ export function IngestionGuideModal({
       {/* Body */}
       <div className="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1 text-xs">
         
-        {/* Method 1: 1-Click Gmail Connect */}
+        {/* Method 1: 1-Click Automated Ingestion (Gmail & Outlook) */}
         <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-indigo-950/40 via-slate-950 to-blue-950/40 border border-indigo-500/30 space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start sm:items-center gap-3">
@@ -152,9 +197,9 @@ export function IngestionGuideModal({
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-bold text-sm text-slate-100">
-                    {language === 'he' ? 'חיבור Gmail ב-1 לחיצה' : '1-Click Gmail Auto-Sync'}
+                    {language === 'he' ? 'חיבור אימייל אוטומטי ב-1 לחיצה' : '1-Click Automated Email Sync'}
                   </h3>
-                  {connectedServices.gmail && (
+                  {(connectedServices.gmail || connectedServices.outlook) && (
                     <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold flex items-center gap-1">
                       <Check className="w-3 h-3" />
                       {language === 'he' ? 'מופעל' : 'Active'}
@@ -162,31 +207,56 @@ export function IngestionGuideModal({
                   )}
                 </div>
                 <p className="text-[11px] text-slate-400">
-                  {language === 'he' ? 'אישורי הזמנה מאמזון, עליאקספרס וחנויות יועברו אוטומטית' : 'Order receipts from Amazon, AliExpress & stores auto-sync'}
+                  {language === 'he' ? 'חיבור ישיר ל-Gmail ו-Outlook להעברת חבילות אוטומטית' : 'Direct 1-click connection for Gmail & Outlook / Hotmail'}
                 </p>
               </div>
             </div>
 
-            <button
-              onClick={handleConnectGmail}
-              disabled={isConnectingGmail}
-              className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all shadow-md cursor-pointer min-h-[44px] shrink-0 ${
-                connectedServices.gmail
-                  ? 'bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40'
-                  : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-indigo-600/20'
-              }`}
-            >
-              {isConnectingGmail ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : connectedServices.gmail ? (
-                <>
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>{language === 'he' ? 'חבר חשבון Gmail נוסף' : 'Connect Another Gmail'}</span>
-                </>
-              ) : (
-                <span>{language === 'he' ? 'הפעל סנכרון Gmail' : 'Enable Gmail Sync'}</span>
-              )}
-            </button>
+            <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+              {/* Gmail Button */}
+              <button
+                onClick={handleConnectGmail}
+                disabled={isConnectingGmail}
+                className={`flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all shadow-md cursor-pointer min-h-[44px] ${
+                  connectedServices.gmail
+                    ? 'bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40'
+                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-indigo-600/20'
+                }`}
+              >
+                {isConnectingGmail ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : connectedServices.gmail ? (
+                  <>
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>{language === 'he' ? '+ Gmail נוסף' : '+ Add Gmail'}</span>
+                  </>
+                ) : (
+                  <span>{language === 'he' ? 'חבר Gmail' : 'Connect Gmail'}</span>
+                )}
+              </button>
+
+              {/* Outlook Button */}
+              <button
+                onClick={handleConnectOutlook}
+                disabled={isConnectingOutlook}
+                className={`flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all shadow-md cursor-pointer min-h-[44px] ${
+                  connectedServices.outlook
+                    ? 'bg-sky-600/30 hover:bg-sky-600/50 text-sky-200 border border-sky-500/40'
+                    : 'bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white shadow-sky-600/20'
+                }`}
+              >
+                {isConnectingOutlook ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : connectedServices.outlook ? (
+                  <>
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>{language === 'he' ? '+ Outlook נוסף' : '+ Add Outlook'}</span>
+                  </>
+                ) : (
+                  <span>{language === 'he' ? 'חבר Outlook' : 'Connect Outlook'}</span>
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Connected Accounts List */}
