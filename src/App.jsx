@@ -38,7 +38,10 @@ import { usePackages } from './hooks/usePackages';
 export function DashboardContent() {
 
   const { t, language, isRTL } = useLanguage();
-  const { user, loading, triggerCloudSync } = useAuth();
+  // updateUserPreferences was used by the auto-archive prompt handlers below
+  // without ever being pulled off the context, so confirming or declining the
+  // prompt threw ReferenceError for any signed-in user.
+  const { user, loading, triggerCloudSync, updateUserPreferences } = useAuth();
 
   const {
     packages,
@@ -229,7 +232,11 @@ export function DashboardContent() {
       if (val === 'false') return false;
     }
     return null; // not decided yet
-  }, [user?.preferences]);
+    // The *value*, not `user.preferences` — that object is rebuilt whenever
+    // the auth context re-creates `user`, which would give this function a new
+    // identity and cascade through checkAndHandleAutoArchive into
+    // handleStatusChange, re-rendering every memoized card.
+  }, [user?.preferences?.autoArchiveDelivered]);
 
   const checkAndHandleAutoArchive = useCallback((pkgId, isNewlyDelivered) => {
     if (!isNewlyDelivered) return;

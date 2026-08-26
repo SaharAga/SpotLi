@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { screen, cleanup } from '@testing-library/react';
+import { screen, cleanup, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DashboardContent } from './App';
 import { renderWithLanguage } from './test-utils/renderWithProviders';
@@ -172,6 +172,40 @@ describe('App - typing in the search box does not re-render the package list', (
 
     expect(screen.getByPlaceholderText(/search/i)).toHaveValue('Memo');
     expect(renderCounts.table).toBe(rendersAfterSwitch);
+  });
+
+  // 8eaa504 moved the auto-archive flow inside handleStatusChange, which is
+  // now a memoized card's prop and reads packages through a ref. If the
+  // handler ever went stale — or if getAutoArchiveSetting's dependency were
+  // re-broadened to the `user.preferences` object — this is the path that
+  // would silently misbehave, so it is exercised after a keystroke.
+  it('drives the auto-archive prompt from a card whose handler is memoized', async () => {
+    seedPackages();
+    renderWithLanguage(<DashboardContent />);
+
+    expect(await screen.findByText('Memo Parcel One')).toBeInTheDocument();
+
+    // A keystroke first: the handler the card holds must still be the live one.
+    await userEvent.type(screen.getByPlaceholderText(/search/i), 'Parcel One');
+    expect(screen.queryByText('Memo Parcel Two')).toBeNull();
+
+    await userEvent.click(await screen.findByTitle(/delivered/i));
+
+    // No stored preference yet, so marking delivered asks rather than archives.
+    expect(await screen.findByText('Auto-Archive Delivered Packages?')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /Yes, Auto-Archive/i }));
+
+    // The confirmed package is archived and leaves the (non-archived) list.
+    await waitFor(() => {
+      const stored = deliveryService.getPackages('user-memo');
+      const target = stored.find((p) => p.id === 'pkg-memo-1');
+      expect(target.status).toBe('delivered');
+      expect(target.isArchived).toBe(true);
+    });
+    await waitFor(() => {
+      expect(screen.queryByText('Memo Parcel One')).toBeNull();
+    });
   });
 
   it('still re-renders the list when the query actually narrows it', async () => {
