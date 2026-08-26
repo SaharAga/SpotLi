@@ -9,6 +9,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { recordParseCorrection } from '../services/parseCorrectionService';
 import { recordTrainingExample } from '../services/trainingDataService';
+import { Modal } from './Modal';
 
 // Smart Import fields worth watching for a post-autofill edit. Excludes
 // `destination`, which is always a static guess ("Israel") rather than
@@ -217,8 +218,12 @@ export function AddEditPackageModal({
   const detectedCarrierObj = CARRIERS[carrier] || CARRIERS['other'];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      componentName="AddEditPackageModal"
+      className="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8"
+    >
         {/* Header */}
         <div className="p-6 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -455,7 +460,6 @@ export function AddEditPackageModal({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      </Modal>
   );
 }

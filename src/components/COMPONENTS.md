@@ -1,9 +1,10 @@
 # Components
 
 Reference map of `src/components/`, for orienting quickly rather than re-discovering wiring by
-reading `App.jsx` each time. All components are function components; most modals follow the same
-`isOpen`/`onClose` pattern and are wrapped individually in `<ErrorBoundary compact>` at their
-mount point in `App.jsx` so one modal crashing doesn't take down the rest of the app.
+reading `App.jsx` each time. All components are function components; every modal follows the same
+`isOpen`/`onClose` pattern, renders its shell through the shared **`Modal`** primitive, and is
+registered once in `App.jsx`'s `MODALS` array — which renders each of them inside a single
+`<ErrorBoundary compact>` so one modal crashing doesn't take down the rest of the app.
 
 ## Shell / always-mounted
 
@@ -20,8 +21,16 @@ mount point in `App.jsx` so one modal crashing doesn't take down the rest of the
   `PackageCard`/`PackageDetailModal` rather than mounted standalone.
 - **`Toast`** — single floating notification, driven by `App.jsx`'s `showToast()`; all user-facing
   success/error messages across the app funnel through it.
-- **`ErrorBoundary`** — class component; wraps most modals individually (`compact` prop) with an
-  `onReset` that closes just that modal, so one broken modal doesn't blank the page.
+- **`ErrorBoundary`** — class component; wraps each modal (`compact` prop) with an `onReset` that
+  closes just that modal, so one broken modal doesn't blank the page. Applied once, in the
+  `MODALS.map()` in `App.jsx`, and once more inside `Modal` around the dialog's content.
+- **`Modal`** — the one modal shell. Owns the portal (into `document.body`), the backdrop and
+  click-to-dismiss, Escape (routed to the topmost dialog only), the focus trap, initial focus and
+  focus restore to the trigger, the reference-counted body scroll lock, `role="dialog"` /
+  `aria-modal` / labelling, and the named z-layer stack (`MODAL_LAYERS`: `base` / `gate` / `top`)
+  that replaced hand-picked z-indexes. Per-dialog appearance comes in as `className` /
+  `overlayClassName` and is composed over the shared shell with `clsx` + `tailwind-merge`, so a
+  caller's `bg-black/60` replaces the default backdrop rather than stacking on top of it.
 - **`InstallPwaBanner`** — PWA install prompt banner, self-contained (owns its own
   dismissal/storage state).
 - **`LegalConsentGate`** — blocking overlay for any signed-in user whose stored
@@ -70,6 +79,13 @@ mount point in `App.jsx` so one modal crashing doesn't take down the rest of the
 
 ## Adding a new modal
 
-Follow the existing pattern: an `isOpen`/`onClose` component mounted once in `App.jsx`, wrapped in
-its own `<ErrorBoundary compact componentName="..." onReset={...}>`, with `onShowToast` passed
-down for user-facing messages rather than the component owning its own toast state.
+1. Write an `isOpen`/`onClose` component whose top-level element is `<Modal>`, passing the panel's
+   own classes as `className` and any backdrop deviation as `overlayClassName`. Do not hand-roll a
+   `fixed inset-0` overlay, a z-index, an Escape handler, or a focus trap — `Modal` owns all of
+   those, and a second copy is how they drifted apart in the first place.
+2. Give it an id in `MODAL` in `App.jsx` and an entry in the `MODALS` array there. The array's
+   order is render order, and therefore the stacking order for two dialogs open at once.
+3. Open it with `openModal(MODAL.X, payload)` and close it with `closeModal(MODAL.X)` — the modal
+   router (`useModalRouter`) is the single source of truth for what is open, replacing the
+   per-modal `isXOpen` booleans and their companion state.
+4. Pass `onShowToast` down for user-facing messages rather than owning toast state.

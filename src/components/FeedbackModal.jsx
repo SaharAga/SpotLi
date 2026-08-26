@@ -11,6 +11,7 @@ import {
   extractImageFromPaste,
   ACCEPTED_IMAGE_TYPES
 } from '../utils/imageCompressor';
+import { Modal } from './Modal';
 
 export function FeedbackModal({
   isOpen,
@@ -127,8 +128,12 @@ export function FeedbackModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in overflow-y-auto" role="dialog" aria-modal="true">
-      <div className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      componentName="FeedbackModal"
+      className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8"
+    >
         {/* Header */}
         <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-600/10">
           <div className="flex items-center gap-3">
@@ -367,7 +372,6 @@ export function FeedbackModal({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      </Modal>
   );
 }

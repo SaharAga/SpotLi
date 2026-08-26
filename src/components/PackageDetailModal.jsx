@@ -13,6 +13,7 @@ import { canTransition, TRANSITION_MATRIX } from '../services/deliveryService';
 import { checkRateLimit } from '../services/trackingService';
 import { isLiveTrackingSupported } from '../services/carrierApiProxy';
 import confetti from 'canvas-confetti';
+import { Modal } from './Modal';
 
 export function PackageDetailModal({
   pkg,
@@ -183,8 +184,12 @@ export function PackageDetailModal({
   const itemNotes = (language === 'he' && pkg.notesHe) ? pkg.notesHe : pkg.notes;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8 max-h-[90vh] flex flex-col">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      componentName="PackageDetailModal"
+      className="relative w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8 max-h-[90vh] flex flex-col"
+    >
         {/* Header with Carrier Brand Color Banner */}
         <div className={`p-6 border-b border-slate-800/80 bg-gradient-to-r ${carrier.color} bg-opacity-10 relative flex items-start justify-between gap-4`}>
           <div className="flex flex-col gap-1">
@@ -549,7 +554,6 @@ export function PackageDetailModal({
             {language === 'he' ? 'סגור' : 'Close'}
           </button>
         </div>
-      </div>
-    </div>
+      </Modal>
   );
 }

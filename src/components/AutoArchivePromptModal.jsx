@@ -1,6 +1,7 @@
 import React from "react";
 import { Archive, Check, X } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
+import { Modal } from './Modal';
 
 export function AutoArchivePromptModal({
   isOpen,
@@ -12,16 +13,16 @@ export function AutoArchivePromptModal({
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="auto-archive-title"
+    <Modal
+      isOpen={isOpen}
+      onClose={onDecline}
+      componentName="AutoArchivePromptModal"
+      scrollable={false}
+      overlayClassName="bg-black/60 backdrop-blur-sm"
+      labelledBy="auto-archive-title"
+      className="bg-[var(--card-bg)] border border-[var(--border-color)] rounded-2xl shadow-2xl max-w-md w-full p-6 text-[var(--text-main)] animate-scale-up"
+      dir={isRTL ? "rtl" : "ltr"}
     >
-      <div
-        className="bg-[var(--card-bg)] border border-[var(--border-color)] rounded-2xl shadow-2xl max-w-md w-full p-6 text-[var(--text-main)] animate-scale-up"
-        dir={isRTL ? "rtl" : "ltr"}
-      >
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
             <Archive className="w-6 h-6" />
@@ -62,7 +63,6 @@ export function AutoArchivePromptModal({
             {t("autoArchive.confirmYes")}
           </button>
         </div>
-      </div>
-    </div>
+      </Modal>
   );
 }

@@ -3,6 +3,7 @@ import { ShieldCheck, FileText, Sparkles, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { LegalDocumentModal } from './LegalDocumentModal';
+import { Modal } from './Modal';
 
 /**
  * Blocking, non-dismissable overlay shown to any signed-in user whose stored
@@ -44,12 +45,14 @@ export function LegalConsentGate({ onShowToast }) {
 
   return (
     <>
-      <div
-        className="fixed inset-0 z-[65] flex items-center justify-center p-4 bg-slate-950/95 backdrop-blur-md animate-fade-in overflow-y-auto"
-        role="dialog"
-        aria-modal="true"
+      <Modal
+        componentName="LegalConsentGate"
+        layer="gate"
+        overlayClassName="bg-slate-950/95"
+        className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8"
+        closeOnBackdrop={false}
+        closeOnEscape={false}
       >
-        <div className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8">
           <div className="p-6 border-b border-slate-800 bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-600/10">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/20">
@@ -143,8 +146,7 @@ export function LegalConsentGate({ onShowToast }) {
               <span>{language === 'he' ? 'התנתקות במקום זאת' : 'Sign out instead'}</span>
             </button>
           </div>
-        </div>
-      </div>
+        </Modal>
 
       <LegalDocumentModal isOpen={!!openDoc} onClose={() => setOpenDoc(null)} docType={openDoc || 'terms'} />
     </>
