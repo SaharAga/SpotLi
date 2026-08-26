@@ -1,8 +1,9 @@
-import { onCall } from 'firebase-functions/v2/https';
+import { onCall, onRequest } from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { createParseWithAiHandler } from './handler.js';
+import { createInboundEmailHandler } from './inboundEmailHandler.js';
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
 
@@ -36,3 +37,21 @@ export const parseWithAi = onCall(
       apiKey: geminiApiKey.value()
     })(request)
 );
+
+/**
+ * Inbound Email Webhook.
+ *
+ * Ingests forwarded shipping emails from SendGrid Inbound Parse, Mailgun,
+ * Postmark, or standard email webhooks sent to *@in.deliveree.app.
+ */
+export const inboundEmailWebhook = onRequest(
+  {
+    cors: false,
+    timeoutSeconds: 30,
+    memory: '256MiB'
+  },
+  createInboundEmailHandler({
+    db: getFirestore()
+  })
+);
+
