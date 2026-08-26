@@ -53,6 +53,17 @@ export const STORES = {
     icon: 'Shirt',
     website: 'https://www.shein.com'
   },
+  temu: {
+    id: 'temu',
+    name: 'Temu',
+    hebrewName: 'טמו (Temu)',
+    brandColor: '#FB7701',
+    badgeBg: 'bg-orange-500/10',
+    textColor: 'text-orange-400',
+    borderColor: 'border-orange-500/30',
+    icon: 'ShoppingBag',
+    website: 'https://www.temu.com'
+  },
   iherb: {
     id: 'iherb',
     name: 'iHerb',
@@ -179,27 +190,31 @@ export const STORES = {
 const STORE_MATCHERS = [
   {
     id: 'amazon',
-    patterns: [/\bamazon\b/i, /\bamzn\b/i, /אמזון/i]
+    patterns: [/\bamazon\b/i, /\bamzn\b/i, /אמזון/i, /אמאזון/i]
   },
   {
     id: 'aliexpress',
-    patterns: [/\baliexpress\b/i, /\bcainiao\b/i, /עלי\s*אקספרס/i, /אלי\s*אקספרס/i]
+    patterns: [/\baliexpress\b/i, /\bcainiao\b/i, /\bali\s*express\b/i, /עלי\s*אקספרס/i, /אלי\s*אקספרס/i, /עליאקספרס/i, /אליאקספרס/i]
   },
   {
     id: 'shein',
-    patterns: [/\bshein\b/i, /שיין/i]
+    patterns: [/\bshein\b/i, /שיין/i, /שאין/i, /שי\s*אין/i]
+  },
+  {
+    id: 'temu',
+    patterns: [/\btemu\b/i, /טמו/i, /טימו/i, /טאמו/i]
   },
   {
     id: 'iherb',
-    patterns: [/\biherb\b/i, /אייהרב/i, /אי\s*הרב/i]
+    patterns: [/\biherb\b/i, /אייהרב/i, /אי\s*הרב/i, /איי\s*הרב/i, /איהרב/i]
   },
   {
     id: 'asos',
-    patterns: [/\basos\b/i, /אסוס/i]
+    patterns: [/\basos\b/i, /אסוס/i, /אזוס/i]
   },
   {
     id: 'zara',
-    patterns: [/\bzara\b/i, /זארה/i]
+    patterns: [/\bzara\b/i, /זארה/i, /זארא/i]
   },
   {
     id: 'nike',
@@ -211,11 +226,11 @@ const STORE_MATCHERS = [
   },
   {
     id: 'ksp',
-    patterns: [/\bksp\b/i, /קיי\s*\.?\s*אס\s*\.?\s*פי/i]
+    patterns: [/\bksp\b/i, /קיי\s*\.?\s*אס\s*\.?\s*פי/i, /קיי\s*אס\s*פי/i, /ק\.?ס\.?פ/i, /קספ/i]
   },
   {
     id: 'ivory',
-    patterns: [/\bivory\b/i, /אייבורי/i]
+    patterns: [/\bivory\b/i, /אייבורי/i, /איבורי/i]
   },
   {
     id: 'ebay',

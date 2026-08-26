@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Sparkles, Package } from 'lucide-react';
-import { CARRIERS, CARRIER_LIST } from '../types/carriers';
-import { STAGES, CATEGORIES } from '../types/stages';
-import { findPackageByTrackingNumber } from '../services/deliveryService';
-import { AlertTriangle, ExternalLink } from 'lucide-react';
-import { detectCarrier } from '../utils/carrierDetector';
+import { X, Sparkles, Package, AlertTriangle, ExternalLink, MapPin, Key, ShoppingBag, Wand2 } from 'lucide-react';
+import { CARRIERS, CARRIER_LIST } from '../types/carriers.js';
+import { STAGES, CATEGORIES } from '../types/stages.js';
+import { findPackageByTrackingNumber } from '../services/deliveryService.js';
+import { detectCarrier } from '../utils/carrierDetector.js';
+import { parseSmartText } from '../utils/smartParser.js';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { recordParseCorrection } from '../services/parseCorrectionService';
@@ -48,12 +48,25 @@ export function AddEditPackageModal({
   // (editing an existing package is not a "correction" of anything).
   const autoFillSnapshotRef = useRef(null);
 
-
   // Check for duplicate tracking number against existing package list
   const duplicatePackage = React.useMemo(() => {
     if (!trackingNumber || !trackingNumber.trim()) return null;
     return findPackageByTrackingNumber(packages, trackingNumber, editPackage?.id || null);
   }, [packages, trackingNumber, editPackage?.id]);
+
+  // Live courier & SMS intelligence extraction from typed or pasted tracking field
+  const liveIntelligence = React.useMemo(() => {
+    if (!trackingNumber || trackingNumber.trim().length < 3) return null;
+    const parsed = parseSmartText(trackingNumber);
+    const hasDetectedDetails = Boolean(
+      (parsed.trackingNumber && parsed.trackingNumber !== trackingNumber.trim().toUpperCase()) ||
+      (parsed.carrier && parsed.carrier !== 'other') ||
+      parsed.store ||
+      parsed.pickupLocation ||
+      parsed.lockerPin
+    );
+    return hasDetectedDetails ? parsed : null;
+  }, [trackingNumber]);
 
   // Auto-detect carrier on tracking number typing
   useEffect(() => {
@@ -61,9 +74,11 @@ export function AddEditPackageModal({
       const detection = detectCarrier(trackingNumber);
       if (detection.confidence !== 'none') {
         setCarrier(detection.carrierId);
+      } else if (liveIntelligence?.carrier && liveIntelligence.carrier !== 'other') {
+        setCarrier(liveIntelligence.carrier);
       }
     }
-  }, [trackingNumber, isManualCarrier]);
+  }, [trackingNumber, isManualCarrier, liveIntelligence]);
 
   // Load existing package for edit mode or initial smart import values
   useEffect(() => {
@@ -170,6 +185,40 @@ export function AddEditPackageModal({
     autoFillSnapshotRef.current = null; // report once per prefill, not on every future save
   };
 
+  const handleApplySmartDetection = () => {
+    if (!liveIntelligence) return;
+
+    if (liveIntelligence.trackingNumber) {
+      setTrackingNumber(liveIntelligence.trackingNumber);
+    }
+    if (liveIntelligence.carrier && liveIntelligence.carrier !== 'other') {
+      setCarrier(liveIntelligence.carrier);
+      setIsManualCarrier(false);
+    }
+    if (liveIntelligence.store && (!title || title.trim() === '')) {
+      setTitle(language === 'he' && liveIntelligence.titleHe ? liveIntelligence.titleHe : liveIntelligence.title);
+    }
+    if (liveIntelligence.category && liveIntelligence.category !== 'other' && category === 'electronics') {
+      setCategory(liveIntelligence.category);
+    }
+    if (liveIntelligence.pickupLocation && (!destination || destination === 'Tel Aviv, Israel' || destination === 'Israel')) {
+      setDestination(liveIntelligence.pickupLocation);
+    }
+    if (liveIntelligence.pickupLocation || liveIntelligence.lockerPin) {
+      const parts = [];
+      if (liveIntelligence.pickupLocation) {
+        parts.push(`${t('modal.detectedPickup')}: ${liveIntelligence.pickupLocation}`);
+      }
+      if (liveIntelligence.lockerPin) {
+        parts.push(`${t('modal.detectedPin')}: ${liveIntelligence.lockerPin}`);
+      }
+      const snippet = parts.join(' | ');
+      if (snippet && !notes.includes(liveIntelligence.lockerPin || liveIntelligence.pickupLocation)) {
+        setNotes(notes ? `${notes}\n${snippet}` : snippet);
+      }
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!title.trim() || !trackingNumber.trim()) return;
@@ -224,242 +273,278 @@ export function AddEditPackageModal({
       componentName="AddEditPackageModal"
       className="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8"
     >
-        {/* Header */}
-        <div className="p-6 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
-              <Package className="w-5 h-5" />
-            </div>
-            <h2 className="text-lg font-bold text-slate-100">
-              {editPackage ? t('modal.editPackage') : t('modal.addNew')}
-            </h2>
+      {/* Header */}
+      <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            <Package className="w-5 h-5" />
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <h2 className="text-lg font-bold text-slate-100">
+            {editPackage ? t('modal.editPackage') : t('modal.addNew')}
+          </h2>
+        </div>
+        <button
+          onClick={onClose}
+          className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer"
+          aria-label={t('modal.cancel')}
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+        {/* Item Title */}
+        <div>
+          <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+            {t('modal.itemTitle')} *
+          </label>
+          <input
+            type="text"
+            required
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder={t('modal.itemTitlePlaceholder')}
+            className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all min-h-[48px]"
+          />
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
-          {/* Item Title */}
-          <div>
-            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-              {t('modal.itemTitle')} *
+        {/* Tracking Number with Auto-detection Indicator & Live Badges */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+              {t('modal.trackingNum')} *
             </label>
-            <input
-              type="text"
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={t('modal.itemTitlePlaceholder')}
-              className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all min-h-[44px]"
-            />
-          </div>
-
-          {/* Tracking Number with Auto-detection Indicator */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
-                {t('modal.trackingNum')} *
-              </label>
-              {carrier !== 'other' && (
-                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
-                  <Sparkles className="w-3 h-3" />
-                  <span>{t('modal.carrierAutoDetected')}: {language === 'he' ? detectedCarrierObj.hebrewName : detectedCarrierObj.name}</span>
-                </span>
-              )}
-            </div>
-            <input
-              type="text"
-              required
-              value={trackingNumber}
-              onChange={(e) => setTrackingNumber(e.target.value)}
-              placeholder={t('modal.trackingNumPlaceholder')}
-              className={`w-full font-mono bg-slate-950 border ${
-                duplicatePackage ? 'border-amber-500/50 focus:border-amber-500 focus:ring-amber-500' : 'border-slate-800 focus:border-blue-500 focus:ring-blue-500'
-              } text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-1 transition-all min-h-[44px]`}
-            />
-            {duplicatePackage && (
-              <div className="mt-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between gap-2 text-xs text-amber-400 animate-fade-in">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 shrink-0" />
-                  <span>
-                    {t('modal.duplicateTrackingWarning')}
-                    {duplicatePackage.title ? ` ("${duplicatePackage.title}")` : ''}
-                  </span>
-                </div>
-                {onOpenExisting && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onOpenExisting(duplicatePackage);
-                      onClose();
-                    }}
-                    className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg font-medium transition-colors shrink-0 flex items-center gap-1 min-h-[32px]"
-                  >
-                    <span>{t('modal.openExistingPackage')}</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </button>
-                )}
-              </div>
+            {carrier !== 'other' && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
+                <Sparkles className="w-3 h-3" />
+                <span>{t('modal.carrierAutoDetected')}: {language === 'he' ? detectedCarrierObj.hebrewName : detectedCarrierObj.name}</span>
+              </span>
             )}
           </div>
+          <input
+            type="text"
+            required
+            value={trackingNumber}
+            onChange={(e) => setTrackingNumber(e.target.value)}
+            placeholder={t('modal.trackingNumPlaceholder')}
+            className={`w-full font-mono bg-slate-950 border ${
+              duplicatePackage ? 'border-amber-500/50 focus:border-amber-500 focus:ring-amber-500' : 'border-slate-800 focus:border-blue-500 focus:ring-blue-500'
+            } text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-1 transition-all min-h-[48px]`}
+          />
 
-          {/* Carrier & Category Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Carrier Selector */}
-            <div>
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                {t('modal.carrier')}
-              </label>
-              <select
-                value={carrier}
-                onChange={(e) => {
-                  setCarrier(e.target.value);
-                  setIsManualCarrier(true);
-                }}
-                className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 cursor-pointer min-h-[44px]"
+          {/* Live Ingestion Badges & 1-Tap Quick Action */}
+          {liveIntelligence && (
+            <div className="mt-2.5 p-2.5 bg-slate-950/80 border border-blue-500/25 rounded-2xl flex flex-wrap items-center justify-between gap-2 text-xs animate-fade-in">
+              <div className="flex flex-wrap items-center gap-1.5">
+                {liveIntelligence.store && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-500/15 text-purple-300 border border-purple-500/25 font-medium">
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                    <span>{language === 'he' && liveIntelligence.storeHe ? liveIntelligence.storeHe : liveIntelligence.store}</span>
+                  </span>
+                )}
+                {liveIntelligence.pickupLocation && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 font-medium">
+                    <MapPin className="w-3.5 h-3.5" />
+                    <span>{liveIntelligence.pickupLocation}</span>
+                  </span>
+                )}
+                {liveIntelligence.lockerPin && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/25 font-mono font-medium">
+                    <Key className="w-3.5 h-3.5" />
+                    <span>{t('modal.detectedPin')}: {liveIntelligence.lockerPin}</span>
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={handleApplySmartDetection}
+                className="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 hover:text-blue-200 border border-blue-500/30 rounded-xl font-semibold transition-all flex items-center gap-1.5 min-h-[48px] cursor-pointer"
               >
-                {CARRIER_LIST.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {language === 'he' ? c.hebrewName : c.name} ({c.country})
-                  </option>
-                ))}
-              </select>
+                <Wand2 className="w-3.5 h-3.5" />
+                <span>{t('modal.applyAllAction')}</span>
+              </button>
             </div>
+          )}
 
-            {/* Category Selector */}
-            <div>
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                {t('modal.category')}
-              </label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 cursor-pointer min-h-[44px]"
-              >
-                {CATEGORIES.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {language === 'he' ? cat.hebrewLabel : cat.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Dates Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                {t('modal.orderDate')}
-              </label>
-              <input
-                type="date"
-                value={orderDate}
-                onChange={(e) => setOrderDate(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 cursor-pointer min-h-[44px]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                {t('modal.expectedDelivery')}
-              </label>
-              <input
-                type="date"
-                value={expectedDeliveryDate}
-                onChange={(e) => setExpectedDeliveryDate(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 cursor-pointer min-h-[44px]"
-              />
-            </div>
-          </div>
-
-          {/* Origin & Destination Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                {t('modal.origin')}
-              </label>
-              <input
-                type="text"
-                value={origin}
-                onChange={(e) => setOrigin(e.target.value)}
-                placeholder={t('modal.originPlaceholder')}
-                className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 min-h-[44px]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-                {t('modal.destination')}
-              </label>
-              <input
-                type="text"
-                value={destination}
-                onChange={(e) => setDestination(e.target.value)}
-                placeholder={t('modal.destinationPlaceholder')}
-                className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 min-h-[44px]"
-              />
-            </div>
-          </div>
-
-          {/* Current Status Stage */}
-          <div>
-            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-              {t('modal.status')}
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {STAGES.map((s) => (
+          {duplicatePackage && (
+            <div className="mt-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between gap-2 text-xs text-amber-400 animate-fade-in">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <span>
+                  {t('modal.duplicateTrackingWarning')}
+                  {duplicatePackage.title ? ` ("${duplicatePackage.title}")` : ''}
+                </span>
+              </div>
+              {onOpenExisting && (
                 <button
                   type="button"
-                  key={s.id}
-                  onClick={() => setStatus(s.id)}
-                  className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center min-h-[40px] cursor-pointer ${
-                    status === s.id
-                      ? 'bg-blue-600 border-blue-500 text-white shadow-sm'
-                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
-                  }`}
+                  onClick={() => {
+                    onOpenExisting(duplicatePackage);
+                    onClose();
+                  }}
+                  className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg font-medium transition-colors shrink-0 flex items-center gap-1 min-h-[48px] cursor-pointer"
                 >
-                  {language === 'he' ? s.hebrewLabel : s.label}
+                  <span>{t('modal.openExistingPackage')}</span>
+                  <ExternalLink className="w-3 h-3" />
                 </button>
-              ))}
+              )}
             </div>
-          </div>
+          )}
+        </div>
 
-          {/* Notes / Locker / Instructions */}
+        {/* Carrier & Category Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Carrier Selector */}
           <div>
             <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-              {t('modal.notes')}
+              {t('modal.carrier')}
             </label>
-            <textarea
-              rows={2}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder={t('modal.notesPlaceholder')}
-              className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl p-3 focus:outline-none focus:border-blue-500 transition-all resize-none"
+            <select
+              value={carrier}
+              onChange={(e) => {
+                setCarrier(e.target.value);
+                setIsManualCarrier(true);
+              }}
+              className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 cursor-pointer min-h-[48px]"
+            >
+              {CARRIER_LIST.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {language === 'he' ? c.hebrewName : c.name} ({c.country})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Category Selector */}
+          <div>
+            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+              {t('modal.category')}
+            </label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 cursor-pointer min-h-[48px]"
+            >
+              {CATEGORIES.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {language === 'he' ? cat.hebrewLabel : cat.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Dates Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+              {t('modal.orderDate')}
+            </label>
+            <input
+              type="date"
+              value={orderDate}
+              onChange={(e) => setOrderDate(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 cursor-pointer min-h-[48px]"
             />
           </div>
 
-          {/* Modal Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition-colors"
-            >
-              {t('modal.cancel')}
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20"
-            >
-              {editPackage ? t('modal.save') : t('modal.create')}
-            </button>
+          <div>
+            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+              {t('modal.expectedDelivery')}
+            </label>
+            <input
+              type="date"
+              value={expectedDeliveryDate}
+              onChange={(e) => setExpectedDeliveryDate(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 cursor-pointer min-h-[48px]"
+            />
           </div>
-        </form>
-      </Modal>
+        </div>
+
+        {/* Origin & Destination Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+              {t('modal.origin')}
+            </label>
+            <input
+              type="text"
+              value={origin}
+              onChange={(e) => setOrigin(e.target.value)}
+              placeholder={t('modal.originPlaceholder')}
+              className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 min-h-[48px]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+              {t('modal.destination')}
+            </label>
+            <input
+              type="text"
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
+              placeholder={t('modal.destinationPlaceholder')}
+              className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 min-h-[48px]"
+            />
+          </div>
+        </div>
+
+        {/* Current Status Stage */}
+        <div>
+          <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+            {t('modal.status')}
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {STAGES.map((s) => (
+              <button
+                type="button"
+                key={s.id}
+                onClick={() => setStatus(s.id)}
+                className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center min-h-[48px] cursor-pointer ${
+                  status === s.id
+                    ? 'bg-blue-600 border-blue-500 text-white shadow-sm'
+                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                }`}
+              >
+                {language === 'he' ? s.hebrewLabel : s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Notes / Locker / Instructions */}
+        <div>
+          <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+            {t('modal.notes')}
+          </label>
+          <textarea
+            rows={2}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder={t('modal.notesPlaceholder')}
+            className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl p-3 focus:outline-none focus:border-blue-500 transition-all resize-none min-h-[48px]"
+          />
+        </div>
+
+        {/* Modal Actions */}
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition-colors min-h-[48px] cursor-pointer"
+          >
+            {t('modal.cancel')}
+          </button>
+          <button
+            type="submit"
+            className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 min-h-[48px] cursor-pointer"
+          >
+            {editPackage ? t('modal.save') : t('modal.create')}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }

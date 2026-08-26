@@ -47,11 +47,6 @@ export const CARRIERS = {
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     /**
      * Real upstream integration (Israel Post Open Status Gateway).
-     *
-     * A carrier that carries `liveTracking` can be tracked live; one that
-     * doesn't is reported as untracked rather than having data invented for it.
-     * `parse` returns a tracked record, or null when the gateway had nothing
-     * for this item — it must never fabricate checkpoints.
      */
     liveTracking: {
       endpoint: (trackNum) =>
@@ -108,7 +103,8 @@ export const CARRIERS = {
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
       rule(/^(CH|CT)\d{8,12}$/i, { confidence: 'high', priority: 30 }),
-      rule(/^CHT[A-Z0-9]{8,12}$/i, { confidence: 'high', priority: 31 })
+      rule(/^CHT[A-Z0-9]{7,12}$/i, { confidence: 'high', priority: 31 }),
+      rule(/^CHTR[A-Z0-9]{6,12}$/i, { confidence: 'high', priority: 32 })
     ],
     sample: 'CH10849201',
     country: 'Israel'
@@ -152,8 +148,8 @@ export const CARRIERS = {
   },
   'tapuz': {
     id: 'tapuz',
-    name: 'Tapuz / YDM',
-    hebrewName: 'תפוז שליחויות / YDM',
+    name: 'Tapuz Delivery',
+    hebrewName: 'תפוז שליחויות',
     color: 'from-orange-500 to-amber-600',
     badgeBg: 'bg-orange-500/10 border-orange-500/30 text-orange-400',
     accentColor: '#f97316',
@@ -162,7 +158,7 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://tapuzdelivery.co.il/%D7%90%D7%99%D7%A4%D7%94-%D7%94%D7%97%D7%91%D7%99%D7%9C%D7%94-%D7%A9%D7%9C%D7%99/?num=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
-      rule(/^(TPZ|YDM)\d{7,12}$/i, { confidence: 'high', priority: 60 }),
+      rule(/^(TPZ|YDM|TAPUZ)\d{6,12}$/i, { confidence: 'high', priority: 60 }),
       rule(/^7\d{8}$/)
     ],
     sample: 'TPZ84920194',
@@ -239,6 +235,24 @@ export const CARRIERS = {
     sample: 'OR94820194',
     country: 'Israel'
   },
+  'bar-distribution': {
+    id: 'bar-distribution',
+    name: 'Bar Distribution',
+    hebrewName: 'בר הפצה',
+    color: 'from-blue-600 to-slate-800',
+    badgeBg: 'bg-blue-600/10 border-blue-600/30 text-blue-300',
+    accentColor: '#2563eb',
+    logoText: 'בר',
+    website: 'https://bardistribution.co.il',
+    getTrackingUrl: (trackNum) => `https://bardistribution.co.il/track?track=${encodeURIComponent(trackNum)}`,
+    fallbackTrackingUrl: (trackNum) => `https://barexpress.co.il/track?track=${encodeURIComponent(trackNum)}`,
+    patterns: [
+      rule(/^(BAR|BD)\d{6,12}$/i, { confidence: 'high', priority: 110 }),
+      rule(/^9\d{8}$/)
+    ],
+    sample: 'BAR1094821',
+    country: 'Israel'
+  },
   'bar': {
     id: 'bar',
     name: 'Bar Distribution',
@@ -247,14 +261,50 @@ export const CARRIERS = {
     badgeBg: 'bg-blue-600/10 border-blue-600/30 text-blue-300',
     accentColor: '#2563eb',
     logoText: 'בר',
-    website: 'https://barexpress.co.il',
-    getTrackingUrl: (trackNum) => `https://barexpress.co.il/track?track=${encodeURIComponent(trackNum)}`,
-    fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
+    website: 'https://bardistribution.co.il',
+    getTrackingUrl: (trackNum) => `https://bardistribution.co.il/track?track=${encodeURIComponent(trackNum)}`,
+    fallbackTrackingUrl: (trackNum) => `https://barexpress.co.il/track?track=${encodeURIComponent(trackNum)}`,
     patterns: [
-      rule(/^BAR\d{7,12}$/i, { confidence: 'high', priority: 110 }),
+      rule(/^(BAR|BD)\d{6,12}$/i, { confidence: 'high', priority: 110 }),
       rule(/^9\d{8}$/)
     ],
     sample: 'BAR1094821',
+    country: 'Israel'
+  },
+  'lionwheel': {
+    id: 'lionwheel',
+    name: 'LionWheel',
+    hebrewName: 'ליאון וויל (LionWheel)',
+    color: 'from-cyan-600 to-blue-800',
+    badgeBg: 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300',
+    accentColor: '#06b6d4',
+    logoText: 'Lion',
+    website: 'https://lionwheel.com',
+    getTrackingUrl: (trackNum) => `https://tracking.lionwheel.com/orders/${encodeURIComponent(trackNum)}`,
+    fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
+    patterns: [
+      rule(/^(LW|LION)\d{6,14}$/i, { confidence: 'high', priority: 115 }),
+      rule(/^LW[A-Z0-9]{6,14}$/i, { confidence: 'high', priority: 116 })
+    ],
+    sample: 'LW94820194',
+    country: 'Israel'
+  },
+  'buzzr': {
+    id: 'buzzr',
+    name: 'Buzzr',
+    hebrewName: 'באזר (Buzzr)',
+    color: 'from-yellow-500 to-amber-600',
+    badgeBg: 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400',
+    accentColor: '#eab308',
+    logoText: 'Buzzr',
+    website: 'https://buzzr.co.il',
+    getTrackingUrl: (trackNum) => `https://buzzr.co.il/track/${encodeURIComponent(trackNum)}`,
+    fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
+    patterns: [
+      rule(/^(BZR|BUZZR)\d{6,12}$/i, { confidence: 'high', priority: 125 }),
+      rule(/^BZ[A-Z0-9]{7,12}$/i, { confidence: 'high', priority: 126 })
+    ],
+    sample: 'BZR84920194',
     country: 'Israel'
   },
   'zigzag': {
@@ -292,11 +342,30 @@ export const CARRIERS = {
       rule(/^[A-Z]{2}\d{9}CN$/i, { confidence: 'high', checksum: 'upu-s10', priority: 140 }),
       rule(/^(LP|CAINIAO)\d+/i, { confidence: 'high', checksum: 'assume-valid', priority: 141 }),
       rule(/^AE[A-Z0-9]{10,18}$/i, { confidence: 'high', checksum: 'assume-valid', priority: 142 }),
+      rule(/^S0000\d{8,18}$/i, { confidence: 'high', checksum: 'assume-valid', priority: 144 }),
+      rule(/^S\d{12,18}$/i, { confidence: 'high', checksum: 'assume-valid', priority: 145 }),
       rule(/^CN\d{10,}$/i, { confidence: 'high', checksum: 'assume-valid', priority: 143 }),
       rule(/^CN\d{10,}/i)
     ],
     sample: 'LP00582910482CN',
     country: 'China'
+  },
+  'shein': {
+    id: 'shein',
+    name: 'SHEIN Express',
+    hebrewName: 'שיין (SHEIN)',
+    color: 'from-slate-700 to-zinc-900',
+    badgeBg: 'bg-zinc-500/10 border-zinc-500/30 text-zinc-200',
+    accentColor: '#18181b',
+    logoText: 'SHEIN',
+    website: 'https://www.shein.com',
+    getTrackingUrl: (trackNum) => `https://www.shein.com/user/orders/detail/${encodeURIComponent(trackNum)}`,
+    fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
+    patterns: [
+      rule(/^GSH[A-Z0-9]{8,20}$/i, { confidence: 'high', priority: 146 })
+    ],
+    sample: 'GSH12345678901',
+    country: 'Global'
   },
   'yunexpress': {
     id: 'yunexpress',
@@ -485,20 +554,18 @@ export const CARRIERS = {
   }
 };
 
-export const CARRIER_LIST = Object.values(CARRIERS);
+export const CARRIER_LIST = Object.values(CARRIERS).filter((c, idx, arr) => arr.findIndex(x => x.id === c.id) === idx);
 
 /**
  * Look up a carrier by id, falling back to the universal 'other' carrier.
- *
- * Every consumer needs the same fallback, so it lives here rather than being
- * re-derived as `CARRIERS[id] || CARRIERS['other']` at each call site.
  *
  * @param {string} [carrierId]
  * @returns {typeof CARRIERS[keyof typeof CARRIERS]}
  */
 export function getCarrier(carrierId) {
-  // Own-property check: a carrier id is user-influenced data, and a bare
-  // `CARRIERS[id]` would happily return `Object.prototype.constructor`.
+  if (carrierId === 'bar-distribution' || carrierId === 'bar') {
+    return CARRIERS['bar-distribution'] || CARRIERS['bar'];
+  }
   return Object.prototype.hasOwnProperty.call(CARRIERS, carrierId)
     ? CARRIERS[carrierId]
     : CARRIERS['other'];
@@ -507,9 +574,7 @@ export function getCarrier(carrierId) {
 /**
  * All detection rules across every carrier, in evaluation order.
  *
- * Sorted by priority (lower first), then high confidence before medium. The
- * sort is stable, so rules that tie keep table order — which is what the
- * previous generic `for (carrier of CARRIERS)` sweep relied on.
+ * Sorted by priority (lower first), then high confidence before medium.
  *
  * @type {Array<{ carrier: object, re: RegExp, confidence: string, checksum: string|null, priority: number, test: (v: string) => boolean }>}
  */

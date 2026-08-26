@@ -10,7 +10,7 @@
  * committed snapshot in __fixtures__/carrierDetection.snapshot.json.
  */
 
-import { CARRIER_LIST } from '../types/carriers';
+import { CARRIER_LIST } from '../types/carriers.js';
 
 const REAL_EXAMPLES = [
   // Israel Post / UPU S10
@@ -33,13 +33,7 @@ const REAL_EXAMPLES = [
   '1Z999AA10123456784', '1Z9999999999999999',
   '9400100000000000000000', '9205590164917312345612',
   '920559016491731234561',
-  // Checksum-PASSING inputs. Without these the snapshot pins only the failing
-  // branch of `mod10-31` and `upu-s10`, so inverting either validator would not
-  // be caught. Check digits below are computed, not invented:
-  //   USPS IMpb  weighted mod-10, weights [3,1] from the right, last digit is
-  //              the check digit.
-  //   Royal Mail UPU S10 mod-11, weights [8,6,4,2,3,5,9,7] over the 8 serial
-  //              digits, 9th digit is the check digit.
+  // Checksum-PASSING inputs.
   '9400100000000000000006', '9205590164917312345615',
   'RN123456785GB',
   'UY894729184YP', 'VR123456789YP', 'LP12345678901234YP', 'ABCDEFGHYP',
