@@ -588,7 +588,11 @@ export function DashboardContent() {
   };
 
   const handleImportData = (jsonString) => {
-    const res = deliveryService.importData(jsonString);
+    // Scoped to the signed-in user. Without this the restore lands in the
+    // guest partition (deliveree_packages_guest) no matter who is signed in —
+    // deliveryService.importData defaults userId to null. The service half of
+    // this fix shipped in #67; this is the call site it needed.
+    const res = deliveryService.importData(jsonString, user?.id || null);
     if (res.success) {
       updatePackagesState(res.packages);
       showToast(t('backup.imported'), 'success');
