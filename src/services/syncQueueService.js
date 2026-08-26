@@ -4,6 +4,11 @@ import { deliveryService } from './deliveryService';
 export const QUEUE_STORAGE_KEY = 'deliveree_offline_sync_queue';
 export const DEAD_LETTER_STORAGE_KEY = 'deliveree_offline_sync_dead_letter';
 export const MAX_RETRY_COUNT = 5;
+/**
+ * Ordering-chain key shared by every mutation whose target package cannot be
+ * determined. See `SyncQueueService.orderingKey`.
+ */
+export const UNKEYED_ORDERING_KEY = '__unkeyed__';
 export const MUTATION_TYPES = Object.freeze({
   ADD: 'ADD',
   UPDATE: 'UPDATE',
@@ -254,8 +259,21 @@ export class SyncQueueService {
     } else {
       packageId = payload?.id;
     }
+
+    if (packageId === undefined || packageId === null || packageId === '') {
+      // `enqueue` is public, so a payload can arrive without a recognisable id.
+      // Giving such a mutation its own key would let it run *concurrently* with
+      // the real chain for the package it actually touches — silent reordering.
+      // They all share one chain instead: the failure mode is slow, not wrong.
+      console.warn(
+        `[SyncQueueService] Mutation ${mutation.id} (${type}) has no recognisable package id; ` +
+        'replaying it serially against every other unkeyed mutation.'
+      );
+      return UNKEYED_ORDERING_KEY;
+    }
+
     // Scope by user too: the same package id under two users is two documents.
-    return `${userId ?? ''}::${String(packageId ?? mutation.id)}`;
+    return `${userId ?? ''}::${String(packageId)}`;
   }
 
   /**
@@ -269,8 +287,14 @@ export class SyncQueueService {
    * network round trip each. This is the path a user hits the instant they come
    * back online with a backlog.
    *
-   * The local package list is read once per user and written once at the end,
-   * instead of a read+parse+validate+stringify per STATUS_CHANGE.
+   * A STATUS_CHANGE's local read-modify-write stays *synchronous and adjacent*,
+   * completed before the network await, exactly as it was before. `savePackages`
+   * overwrites the whole stored list, and this replay is not the only writer of
+   * it — the cloud adapter's `onSnapshot` handler (which our own remote upserts
+   * provoke) and every add/edit/delete in the app write it too. Holding a list
+   * snapshot across replay's network I/O and flushing it at the end would
+   * silently clobber any of those writes. Replay must never overwrite a write it
+   * did not observe, so the window stays as narrow as the original's.
    *
    * @returns {Promise<{ processed: number, failed: number, remaining: number }>}
    */
@@ -290,19 +314,6 @@ export class SyncQueueService {
     const settledIds = new Set();
     const retriedMutations = new Map();
 
-    // Local package lists, read once per user and mutated in memory. JS runs these
-    // chains on one thread, so concurrent chains cannot interleave mid-update.
-    /** @type {Map<string|null, Array<object>>} */
-    const localLists = new Map();
-    /** @type {Set<string|null>} */
-    const dirtyUsers = new Set();
-    const readLocalList = (userId) => {
-      if (!localLists.has(userId)) {
-        localLists.set(userId, deliveryService.getPackages(userId));
-      }
-      return localLists.get(userId);
-    };
-
     const applyMutation = async (mutation) => {
       const { type, payload, userId } = mutation;
 
@@ -311,7 +322,9 @@ export class SyncQueueService {
       } else if (type === MUTATION_TYPES.DELETE) {
         await cloudAdapter.deletePackageRemote(payload.id || payload, userId);
       } else if (type === MUTATION_TYPES.STATUS_CHANGE) {
-        const pkgs = readLocalList(userId);
+        // Read, modify and write with no await in between, so no other writer
+        // can land between the read and the save.
+        const pkgs = deliveryService.getPackages(userId);
         const target = pkgs.find(p => p.id === payload.packageId);
         if (target && deliveryService.canTransition(target.status, payload.newStatus)) {
           const updated = {
@@ -319,8 +332,8 @@ export class SyncQueueService {
             status: payload.newStatus,
             updatedAt: new Date().toISOString()
           };
-          localLists.set(userId, pkgs.map((p) => (p.id === updated.id ? updated : p)));
-          dirtyUsers.add(userId);
+          const updatedList = pkgs.map((p) => (p.id === updated.id ? updated : p));
+          deliveryService.savePackages(updatedList, userId);
           await cloudAdapter.upsertPackageRemote(updated, userId);
         }
       }
@@ -355,12 +368,6 @@ export class SyncQueueService {
         }
       }
     }));
-
-    // One write per user instead of one per STATUS_CHANGE. `savePackages` validates
-    // the list exactly as it did before, so the persisted result is unchanged.
-    for (const userId of dirtyUsers) {
-      deliveryService.savePackages(localLists.get(userId), userId);
-    }
 
     const remainingQueue = this.getQueue()
       .filter((m) => !settledIds.has(m.id))

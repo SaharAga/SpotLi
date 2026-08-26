@@ -340,6 +340,49 @@ export function mergeFeedbackSources(cloudItems, localItems) {
 }
 
 /**
+ * How many queued feedback uploads may be in flight at once. Each upload carries
+ * its own 2.5s timeout budget (see `uploadToFirestore`), so this bounds both the
+ * bytes on the wire and the number of items sharing any one stretch of that
+ * budget.
+ */
+export const FLUSH_CONCURRENCY = 4;
+
+/**
+ * Runs `task` over `items` with at most `limit` in flight, returning results in
+ * input order in `Promise.allSettled` shape — one task settling either way never
+ * abandons the rest.
+ *
+ * @template T, R
+ * @param {T[]} items
+ * @param {number} limit
+ * @param {(item: T) => Promise<R>} task
+ * @returns {Promise<Array<{status: 'fulfilled', value: R} | {status: 'rejected', reason: unknown}>>}
+ */
+export async function mapWithConcurrency(items, limit, task) {
+  const results = new Array(items.length);
+  let next = 0;
+
+  const worker = async () => {
+    while (next < items.length) {
+      const index = next;
+      next += 1;
+      try {
+        results[index] = { status: 'fulfilled', value: await task(items[index]) };
+      } catch (reason) {
+        results[index] = { status: 'rejected', reason };
+      }
+    }
+  };
+
+  const workers = [];
+  for (let i = 0; i < Math.min(limit, items.length); i += 1) {
+    workers.push(worker());
+  }
+  await Promise.all(workers);
+  return results;
+}
+
+/**
  * Flushes all pending offline feedback items to Cloud Firestore.
  * @returns {Promise<{ flushed: number, remaining: number }>}
  */
@@ -357,11 +400,20 @@ export async function flushOfflineFeedbackQueue() {
   }
 
   // Each queued item is an independent Firestore document write keyed by its own
-  // id, so there is no ordering constraint between them. Issuing them together
-  // turns N sequential round trips into one — this path runs the moment a user
-  // comes back online with a backlog. `allSettled`, not `all`: one rejection must
-  // not abandon the rest of the queue.
-  const results = await Promise.allSettled(queue.map(item => uploadToFirestore(item)));
+  // id, so there is no ordering constraint between them. Overlapping them turns N
+  // sequential round trips into ceil(N / FLUSH_CONCURRENCY) — this path runs the
+  // moment a user comes back online with a backlog. `allSettled`, not `all`: one
+  // rejection must not abandon the rest of the queue.
+  //
+  // Bounded, not unbounded: `uploadToFirestore` races each write against a fixed
+  // 2.5s timeout, so firing all N in one tick would make that one budget cover
+  // the entire queue. The queue holds up to 100 items and each may carry a
+  // screenshot near MAX_SCREENSHOT_CHARS, so that would also push several MB at
+  // once down a connection that has only just come back — and a write that acks
+  // after the deadline resolves false, goes back to `remaining`, and is uploaded
+  // again on the next `online` event despite having succeeded. A small pool keeps
+  // every item's budget realistic while still removing the serial round trips.
+  const results = await mapWithConcurrency(queue, FLUSH_CONCURRENCY, uploadToFirestore);
 
   const remaining = [];
   const flushedPayloads = [];

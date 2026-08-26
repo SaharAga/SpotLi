@@ -303,34 +303,82 @@ describe('SyncQueueService Unit Tests', () => {
       expect(deliveryService.getPackages('user-ordered')[0].status).toBe('in_transit');
     });
 
-    it('reads and writes the local package list once for a batch of status changes', async () => {
-      vi.spyOn(cloudAdapter, 'upsertPackageRemote').mockResolvedValue({ ok: true });
+    it('does not clobber a package written by someone else mid-replay', async () => {
+      // The cloud adapter's onSnapshot handler and every add/edit in the app write
+      // the same localStorage list that replay writes. Replay must never overwrite
+      // a write it did not observe.
+      let releaseUpsert = null;
+      vi.spyOn(cloudAdapter, 'upsertPackageRemote').mockImplementation(() => new Promise((resolve) => {
+        releaseUpsert = () => resolve({ ok: true });
+      }));
 
-      const packages = Array.from({ length: 4 }, (_, i) => ({
-        id: `pkg-batch-${i}`,
-        title: `Batch ${i}`,
-        trackingNumber: `RS94821948${i}IL`,
+      const existing = {
+        id: 'pkg-local-1',
+        title: 'Local Item',
+        trackingNumber: 'RS948219481IL',
         carrier: 'israel-post',
         status: 'ordered'
-      }));
-      deliveryService.savePackages(packages, 'user-batch');
+      };
+      deliveryService.savePackages([existing], 'user-clobber');
 
       syncQueue.isOnline = false;
-      for (const pkg of packages) {
-        syncQueue.enqueue(MUTATION_TYPES.STATUS_CHANGE, { packageId: pkg.id, newStatus: 'shipped' }, 'user-batch');
-      }
-
-      const getSpy = vi.spyOn(deliveryService, 'getPackages');
-      const saveSpy = vi.spyOn(deliveryService, 'savePackages');
+      syncQueue.enqueue(MUTATION_TYPES.STATUS_CHANGE, { packageId: existing.id, newStatus: 'shipped' }, 'user-clobber');
 
       syncQueue.isOnline = true;
-      await syncQueue.replayQueue();
+      const replay = syncQueue.replayQueue();
+      await Promise.resolve();
 
-      expect(getSpy).toHaveBeenCalledTimes(1);
-      expect(saveSpy).toHaveBeenCalledTimes(1);
+      // An external writer lands while replay is awaiting its network call.
+      const external = {
+        id: 'pkg-external-1',
+        title: 'Arrived From Another Device',
+        trackingNumber: 'RS948219482IL',
+        carrier: 'dhl',
+        status: 'in_transit'
+      };
+      deliveryService.savePackages(
+        [...deliveryService.getPackages('user-clobber'), external],
+        'user-clobber'
+      );
 
-      getSpy.mockRestore();
-      expect(deliveryService.getPackages('user-batch').every(p => p.status === 'shipped')).toBe(true);
+      releaseUpsert();
+      await replay;
+
+      const stored = deliveryService.getPackages('user-clobber');
+      expect(stored.map(p => p.id).sort()).toEqual(['pkg-external-1', 'pkg-local-1']);
+      expect(stored.find(p => p.id === 'pkg-local-1').status).toBe('shipped');
+    });
+
+    it('serialises mutations whose target package cannot be identified', async () => {
+      const started = [];
+      let resolveCurrent = null;
+      vi.spyOn(cloudAdapter, 'upsertPackageRemote').mockImplementation((pkg) => {
+        started.push(pkg?.title);
+        return new Promise((resolve) => { resolveCurrent = () => resolve({ ok: true }); });
+      });
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      // Written straight to storage: enqueue()'s dedup would collapse two ADDs
+      // that both lack an id into one.
+      syncQueue.saveQueue([
+        { id: 'mut-a', type: MUTATION_TYPES.ADD, payload: { title: 'No Id A' }, userId: 'user-unkeyed', retryCount: 0 },
+        { id: 'mut-b', type: MUTATION_TYPES.ADD, payload: { title: 'No Id B' }, userId: 'user-unkeyed', retryCount: 0 }
+      ]);
+
+      syncQueue.isOnline = true;
+      const replay = syncQueue.replayQueue();
+      await Promise.resolve();
+
+      // Both share the unkeyed chain, so only the first may be in flight.
+      expect(started).toEqual(['No Id A']);
+      expect(console.warn).toHaveBeenCalled();
+
+      resolveCurrent();
+      await Promise.resolve();
+      await Promise.resolve();
+      resolveCurrent();
+      await replay;
+      expect(started).toEqual(['No Id A', 'No Id B']);
     });
   });
 });

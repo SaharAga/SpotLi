@@ -282,4 +282,53 @@ describe('FeedbackService Unit & Resilience Test Suite', () => {
       expect(getLocalFeedbackHistory()).toHaveLength(50);
     });
   });
+  describe('bounded upload concurrency', () => {
+    const { mapWithConcurrency, FLUSH_CONCURRENCY } = feedbackService;
+
+    it('overlaps work but never exceeds the bound', async () => {
+      let inFlight = 0;
+      let maxInFlight = 0;
+      const items = Array.from({ length: 20 }, (_, i) => i);
+
+      const results = await mapWithConcurrency(items, FLUSH_CONCURRENCY, async (item) => {
+        inFlight += 1;
+        maxInFlight = Math.max(maxInFlight, inFlight);
+        await new Promise((resolve) => setTimeout(resolve, 1));
+        inFlight -= 1;
+        return item * 2;
+      });
+
+      // The serial loop this replaces never had more than one in flight; firing
+      // all 20 at once would make uploadToFirestore's single 2.5s budget cover
+      // the whole queue and push every payload's bytes out in one tick.
+      expect(maxInFlight).toBeGreaterThan(1);
+      expect(maxInFlight).toBe(FLUSH_CONCURRENCY);
+      expect(FLUSH_CONCURRENCY).toBeLessThan(items.length);
+      expect(results).toHaveLength(20);
+      expect(results.map(r => r.value)).toEqual(items.map(i => i * 2));
+    });
+
+    it('keeps results in input order regardless of completion order', async () => {
+      const items = [30, 10, 20];
+      const results = await mapWithConcurrency(items, 3, async (delay) => {
+        await new Promise((resolve) => setTimeout(resolve, delay / 10));
+        return delay;
+      });
+      expect(results.map(r => r.value)).toEqual([30, 10, 20]);
+    });
+
+    it('isolates a rejection instead of abandoning the rest', async () => {
+      const results = await mapWithConcurrency([1, 2, 3], 2, async (n) => {
+        if (n === 2) throw new Error('boom');
+        return n;
+      });
+      expect(results.map(r => r.status)).toEqual(['fulfilled', 'rejected', 'fulfilled']);
+      expect(results[1].reason).toBeInstanceOf(Error);
+      expect(results[2].value).toBe(3);
+    });
+
+    it('handles an empty input without hanging', async () => {
+      await expect(mapWithConcurrency([], 4, async () => 1)).resolves.toEqual([]);
+    });
+  });
 });
