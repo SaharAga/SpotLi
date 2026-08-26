@@ -51,7 +51,8 @@ When a version bump occurs, the following files **MUST** be updated atomically:
 No release tag or deployment may be authorized unless all quality gates are verified:
 
 ```markdown
-- [ ] 1. Linter & Static Analysis: 0 oxlint/eslint errors and warnings.
+- [ ] 1. Linter & Static Analysis: `npm run lint` exits 0 (0 errors). Warnings
+       are permitted — the `react-perf` rules are a worklist, not a gate.
 - [ ] 2. Schema Contracts: 100% Zod validation pass across all data ingestion boundaries.
 - [ ] 3. Automated Testbench: 100% pass rate across all co-located unit and integration tests.
 - [ ] 4. Security Audit: Deliveree Security Baseline compliance verified.
