@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { LegalDocumentModal } from './LegalDocumentModal';
 import { APP_VERSION } from '../constants/version';
+import { Modal } from './Modal';
 
 export function calculatePasswordStrength(password) {
   const str = typeof password === 'string' ? password : '';
@@ -282,8 +283,13 @@ export function AuthModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in overflow-y-auto" role="dialog" aria-modal="true">
-      <div className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8">
+    <>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      componentName="AuthModal"
+      className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8"
+    >
         {/* Header */}
         <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-600/10">
           <div className="flex items-center gap-3">
@@ -724,13 +730,13 @@ export function AuthModal({
             </>
           )}
         </div>
-      </div>
+      </Modal>
 
       <LegalDocumentModal
         isOpen={!!openLegalDoc}
         onClose={() => setOpenLegalDoc(null)}
         docType={openLegalDoc || 'terms'}
       />
-    </div>
+    </>
   );
 }

@@ -31,7 +31,7 @@ describe('AddEditPackageModal (rendered)', () => {
 
   it('auto-detects the carrier as the tracking number is typed', async () => {
     const user = userEvent.setup();
-    const { container } = renderWithLanguage(
+    renderWithLanguage(
       <AddEditPackageModal isOpen onClose={vi.fn()} onSave={vi.fn()} />
     );
 
@@ -42,7 +42,7 @@ describe('AddEditPackageModal (rendered)', () => {
     // inside one badge, so assert on the badge's combined text rather than
     // an exact node match.
     await screen.findByText(/auto-detected/i);
-    expect(container.textContent).toContain('Israel Post');
+    expect(document.body.textContent).toContain('Israel Post');
   });
 
   it('submits a normalized package on save and closes the modal', async () => {

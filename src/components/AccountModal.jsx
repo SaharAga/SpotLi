@@ -15,6 +15,7 @@ import { LegalDocumentModal } from './LegalDocumentModal';
 import { exportRawToJSON } from '../utils/exportUtils';
 import { deliveryService } from '../services/deliveryService';
 import { todayISO } from '../utils/dateUtils';
+import { Modal } from './Modal';
 
 const ACCOUNT_SECTIONS = [
   { id: 'preferences', icon: Settings, label: { en: 'Appearance & Language', he: 'תצוגה ושפה' } },
@@ -258,11 +259,15 @@ export function AccountModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in overflow-y-auto" role="dialog" aria-modal="true">
-      <div
-        className="settings-theme relative w-full max-w-3xl bg-[var(--stg-surface)] border border-[var(--stg-border)] rounded-2xl shadow-2xl overflow-hidden my-8"
-        style={{ fontFamily: 'var(--stg-font)' }}
-      >
+    <>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      componentName="AccountModal"
+      overlayClassName="p-3 sm:p-4"
+      className="settings-theme relative w-full max-w-3xl bg-[var(--stg-surface)] border border-[var(--stg-border)] rounded-2xl shadow-2xl overflow-hidden my-8"
+      style={{ fontFamily: 'var(--stg-font)' }}
+    >
         {/* Header */}
         <div className="p-5 sm:p-6 border-b border-[var(--stg-border)] flex items-center justify-between bg-[var(--stg-surface-2)]">
           <div className="flex items-center gap-3">
@@ -908,13 +913,13 @@ export function AccountModal({
           </button>
         </div>
 
-      </div>
+      </Modal>
 
       <LegalDocumentModal
         isOpen={!!openLegalDoc}
         onClose={() => setOpenLegalDoc(null)}
         docType={openLegalDoc || 'terms'}
       />
-    </div>
+    </>
   );
 }

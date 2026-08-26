@@ -3,6 +3,7 @@ import {
   X, MapPin, Clock, Phone, Navigation, ExternalLink, ShieldCheck, Search
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { Modal } from './Modal';
 
 export const POPULAR_PICKUP_POINTS = [
   {
@@ -96,12 +97,12 @@ export function LockerMapModal({
     `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query || `${lat},${lng}`)}`;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in overflow-y-auto"
-      role="dialog"
-      aria-modal="true"
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      componentName="LockerMapModal"
+      className="relative w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-6 max-h-[90vh] flex flex-col"
     >
-      <div className="relative w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-6 max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="p-5 border-b border-slate-800 flex items-center justify-between gap-4 bg-slate-950/50">
           <div className="flex items-center gap-3">
@@ -273,7 +274,6 @@ export function LockerMapModal({
             )}
           </div>
         </div>
-      </div>
-    </div>
+      </Modal>
   );
 }

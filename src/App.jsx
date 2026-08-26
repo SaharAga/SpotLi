@@ -35,6 +35,84 @@ import { getTabPredicate, ARCHIVED_TAB } from './types/stages';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { usePackages } from './hooks/usePackages';
 
+/**
+ * Every dialog in the app, by id. These replaced twelve `isXOpen` booleans
+ * plus their companion payload state (`editPackage`, `authInitialMode`,
+ * `pendingDeliveredPkgId`, …), which between them could describe states that
+ * do not exist — two dialogs "open" at once with no defined stacking, or an
+ * `editPackage` left dangling after its modal closed.
+ */
+export const MODAL = {
+  ADD_EDIT: 'addEdit',
+  SMART_IMPORT: 'smartImport',
+  DETAIL: 'detail',
+  ANALYTICS: 'analytics',
+  INGESTION_GUIDE: 'ingestionGuide',
+  AUTH: 'auth',
+  ACCOUNT: 'account',
+  EXPORT: 'export',
+  LOCKER_MAP: 'lockerMap',
+  ABOUT: 'about',
+  FEEDBACK: 'feedback',
+  ADMIN_FEEDBACK: 'adminFeedback',
+  AUTO_ARCHIVE: 'autoArchive',
+  DELETE_CONFIRM: 'deleteConfirm'
+};
+
+/**
+ * One value describes the whole modal layer: an ordered stack of
+ * `{ id, payload }`, whose last entry is `activeModal`.
+ *
+ * A stack rather than a single id because these dialogs genuinely nest —
+ * Account opens Export over itself, Package Details opens the Locker Map,
+ * the Ingestion Guide opens Smart Import — and a lone `activeModal` string
+ * would have silently closed the parent underneath.
+ *
+ * Every mutator is referentially stable (functional updates only), so
+ * handlers built on them stay stable for the memoized list components.
+ */
+export function useModalRouter() {
+  const [stack, setStack] = useState([]);
+
+  // Re-opening a modal already in the stack moves it to the top rather than
+  // duplicating it.
+  const openModal = useCallback((id, payload = null) => {
+    setStack((prev) => [...prev.filter((entry) => entry.id !== id), { id, payload }]);
+  }, []);
+
+  const closeModal = useCallback((id) => {
+    setStack((prev) => (id ? prev.filter((entry) => entry.id !== id) : prev.slice(0, -1)));
+  }, []);
+
+  // Updates the payload of an already-open modal, and does nothing if it is
+  // closed — which is exactly the `if (selectedDetailPackage?.id === x)`
+  // guard that used to be written out at each call site.
+  const setModalPayload = useCallback((id, next) => {
+    setStack((prev) =>
+      prev.map((entry) =>
+        entry.id === id
+          ? { ...entry, payload: typeof next === 'function' ? next(entry.payload) : next }
+          : entry
+      )
+    );
+  }, []);
+
+  const isModalOpen = useCallback((id) => stack.some((entry) => entry.id === id), [stack]);
+  const getModalPayload = useCallback(
+    (id) => stack.find((entry) => entry.id === id)?.payload ?? null,
+    [stack]
+  );
+
+  return {
+    activeModal: stack.length > 0 ? stack[stack.length - 1].id : null,
+    openModal,
+    closeModal,
+    setModalPayload,
+    isModalOpen,
+    getModalPayload
+  };
+}
+
 export function DashboardContent() {
 
   const { t, language, isRTL } = useLanguage();
@@ -61,39 +139,33 @@ export function DashboardContent() {
   const [sortBy, setSortBy] = useState('newest');
   const [viewMode, setViewMode] = useState('grid');
 
-  // Modals & Active Elements
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [editPackage, setEditPackage] = useState(null);
-  const [smartPrefill, setSmartPrefill] = useState(null);
-  const [isSmartImportOpen, setIsSmartImportOpen] = useState(false);
-  const [selectedDetailPackage, setSelectedDetailPackage] = useState(null);
-  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
-  const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [authInitialMode, setAuthInitialMode] = useState('signin');
-  const [isAccountOpen, setIsAccountOpen] = useState(false);
-  const [accountInitialTab, setAccountInitialTab] = useState('profile');
-  const [isAboutOpen, setIsAboutOpen] = useState(false);
-  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-  const [isAdminFeedbackOpen, setIsAdminFeedbackOpen] = useState(false);
-  const [isExportOpen, setIsExportOpen] = useState(false);
-  const [isLockerMapOpen, setIsLockerMapOpen] = useState(false);
-  const [deletePackageId, setDeletePackageId] = useState(null);
-  const [isAutoArchivePromptOpen, setIsAutoArchivePromptOpen] = useState(false);
-  const [pendingDeliveredPkgId, setPendingDeliveredPkgId] = useState(null);
+  // Modals & Active Elements — one router, not twelve booleans.
+  const {
+    activeModal,
+    openModal,
+    closeModal,
+    setModalPayload,
+    isModalOpen,
+    getModalPayload
+  } = useModalRouter();
+
+  // The payloads a few handlers still read directly, named as they were.
+  const selectedDetailPackage = getModalPayload(MODAL.DETAIL);
+  const pendingDeliveredPkgId = getModalPayload(MODAL.AUTO_ARCHIVE)?.packageId ?? null;
+  const deletePackageId = getModalPayload(MODAL.DELETE_CONFIRM)?.packageId ?? null;
 
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
-  const [smartImportInitialText, setSmartImportInitialText] = useState('');
 
   // Mutable mirrors of state that handlers need to *read* but must not be
   // re-created for. Keeping them out of the dependency arrays below is what
   // lets the memoized list components see stable props across a keystroke or
   // a package mutation.
+  // (The companion `selectedDetailIdRef` is gone: the detail package now
+  // lives in the modal router, and `setModalPayload` updates it only when
+  // that modal is open, which is what the ref-and-compare guarded.)
   const packagesRef = useRef(packages);
-  const selectedDetailIdRef = useRef(selectedDetailPackage?.id ?? null);
   useEffect(() => {
     packagesRef.current = packages;
-    selectedDetailIdRef.current = selectedDetailPackage?.id ?? null;
   });
 
   // Handle PWA App Shortcuts, Web Share Target & Query Parameters on mount
@@ -107,7 +179,7 @@ export function DashboardContent() {
       // 1. App Shortcut: ?action=paste
       const action = params.get('action');
       if (action === 'paste') {
-        setIsSmartImportOpen(true);
+        openModal(MODAL.SMART_IMPORT);
       }
 
       // 2. App Shortcut: ?tab=active / ?tab=archived / ?tab=customs / etc.
@@ -128,8 +200,7 @@ export function DashboardContent() {
           .trim();
 
         if (combinedSharedText) {
-          setSmartImportInitialText(combinedSharedText);
-          setIsSmartImportOpen(true);
+          openModal(MODAL.SMART_IMPORT, { initialText: combinedSharedText });
         }
       }
 
@@ -138,7 +209,7 @@ export function DashboardContent() {
       if (pkgIdParam) {
         const found = packagesRef.current.find(p => p.id === pkgIdParam || p.trackingNumber === pkgIdParam);
         if (found) {
-          setSelectedDetailPackage(found);
+          openModal(MODAL.DETAIL, found);
         }
       }
 
@@ -253,11 +324,10 @@ export function DashboardContent() {
       // First time reaching delivered without preference set
       const prompted = typeof localStorage !== 'undefined' && localStorage.getItem('deliveree_auto_archive_prompted') === 'true';
       if (!prompted) {
-        setPendingDeliveredPkgId(pkgId);
-        setIsAutoArchivePromptOpen(true);
+        openModal(MODAL.AUTO_ARCHIVE, { packageId: pkgId });
       }
     }
-  }, [getAutoArchiveSetting, setPackages, upsertSinglePackage]);
+  }, [getAutoArchiveSetting, openModal, setPackages, upsertSinglePackage]);
 
   const handleConfirmAutoArchive = () => {
     if (user) {
@@ -282,8 +352,7 @@ export function DashboardContent() {
         return updated;
       });
     }
-    setIsAutoArchivePromptOpen(false);
-    setPendingDeliveredPkgId(null);
+    closeModal(MODAL.AUTO_ARCHIVE);
     showToast(language === 'he' ? 'החבילה הועברה לארכיון וההגדרה נשמרה' : 'Package archived and preference saved', 'success');
   };
 
@@ -302,8 +371,7 @@ export function DashboardContent() {
       localStorage.setItem('deliveree_auto_archive_prompted', 'true');
     } catch {}
 
-    setIsAutoArchivePromptOpen(false);
-    setPendingDeliveredPkgId(null);
+    closeModal(MODAL.AUTO_ARCHIVE);
   };
 
   // Handlers
@@ -354,11 +422,7 @@ export function DashboardContent() {
     const changedPkg = updated.find(p => p.id === targetId);
     upsertSinglePackage(updated, changedPkg);
 
-    if (selectedDetailPackage?.id === targetId) {
-      setSelectedDetailPackage(changedPkg);
-    }
-    setEditPackage(null);
-    setSmartPrefill(null);
+    setModalPayload(MODAL.DETAIL, (pkg) => (pkg?.id === targetId ? changedPkg : pkg));
 
     if (isNewlyDelivered) {
       checkAndHandleAutoArchive(targetId, true);
@@ -369,7 +433,7 @@ export function DashboardContent() {
     const updated = packages.filter(p => p.id !== id);
     removeSinglePackage(updated, id);
     if (selectedDetailPackage?.id === id) {
-      setSelectedDetailPackage(null);
+      closeModal(MODAL.DETAIL);
     }
     showToast(language === 'he' ? 'החבילה נמחקה' : 'Package deleted', 'info');
   };
@@ -429,14 +493,14 @@ export function DashboardContent() {
     });
     const changedPkg = updated.find(p => p.id === id);
     if (changedPkg) upsertSinglePackage(updated, changedPkg);
-    if (selectedDetailIdRef.current === id) {
-      setSelectedDetailPackage(prev => ({ ...prev, status: newStatus, updatedAt: new Date().toISOString() }));
-    }
+    setModalPayload(MODAL.DETAIL, (pkg) => (
+      pkg?.id === id ? { ...pkg, status: newStatus, updatedAt: new Date().toISOString() } : pkg
+    ));
 
     if (isNewlyDelivered) {
       checkAndHandleAutoArchive(id, true);
     }
-  }, [checkAndHandleAutoArchive, language, showToast, upsertSinglePackage]);
+  }, [checkAndHandleAutoArchive, language, setModalPayload, showToast, upsertSinglePackage]);
 
   // Display name for a carrier, in the active language.
   const carrierLabel = useCallback((pkg) => {
@@ -461,28 +525,29 @@ export function DashboardContent() {
     if (res.success && res.updatedPackage) {
       const updatedList = packagesRef.current.map(p => (p.id === pkg.id ? res.updatedPackage : p));
       upsertSinglePackage(updatedList, res.updatedPackage);
-      if (selectedDetailIdRef.current === pkg.id) {
-        setSelectedDetailPackage(res.updatedPackage);
-      }
+      setModalPayload(MODAL.DETAIL, (open) => (open?.id === pkg.id ? res.updatedPackage : open));
       showToast(t('tracking.refreshSuccessSingle'), 'success');
     } else if (res.rateLimited) {
       showToast(res.error || t('card.rateLimited'), 'info');
     } else {
       showToast(res.error || 'Failed to refresh tracking', 'error');
     }
-  }, [carrierLabel, showToast, t, upsertSinglePackage, user?.id]);
+  }, [carrierLabel, setModalPayload, showToast, t, upsertSinglePackage, user?.id]);
 
   // Passed straight into the memoized list components, so they must be
   // referentially stable — an inline arrow here re-rendered every card on
   // every keystroke.
-  const handleOpenDetails = useCallback((p) => setSelectedDetailPackage(p), []);
+  const handleOpenDetails = useCallback((p) => openModal(MODAL.DETAIL, p), [openModal]);
 
-  const handleEditFromList = useCallback((p) => {
-    setEditPackage(p);
-    setIsAddModalOpen(true);
-  }, []);
+  const handleEditFromList = useCallback(
+    (p) => openModal(MODAL.ADD_EDIT, { editPackage: p }),
+    [openModal]
+  );
 
-  const handleRequestDelete = useCallback((id) => setDeletePackageId(id), []);
+  const handleRequestDelete = useCallback(
+    (id) => openModal(MODAL.DELETE_CONFIRM, { packageId: id }),
+    [openModal]
+  );
 
   const [isBatchRefreshing, setIsBatchRefreshing] = useState(false);
 
@@ -496,10 +561,9 @@ export function DashboardContent() {
 
     if (res.updatedPackages && res.updatedPackages.length > 0) {
       updatePackagesState(res.updatedPackages);
-      if (selectedDetailPackage) {
-        const updatedDetail = res.updatedPackages.find(p => p.id === selectedDetailPackage.id);
-        if (updatedDetail) setSelectedDetailPackage(updatedDetail);
-      }
+      setModalPayload(MODAL.DETAIL, (open) => (
+        (open && res.updatedPackages.find(p => p.id === open.id)) || open
+      ));
     }
 
     setIsBatchRefreshing(false);
@@ -515,8 +579,7 @@ export function DashboardContent() {
   };
 
   const handleSmartImportResult = (parsedData) => {
-    setSmartPrefill(parsedData);
-    setIsAddModalOpen(true);
+    openModal(MODAL.ADD_EDIT, { initialValues: parsedData });
   };
 
   const handleExportData = () => {
@@ -640,15 +703,208 @@ export function DashboardContent() {
     return next;
   }, [packages, searchQuery, selectedCarrier, activeTab, sortBy, language]);
 
+  /**
+   * The modal registry. Order is render order, and because <Modal> portals
+   * every dialog to document.body in that order, it is also the stacking
+   * order for two dialogs open at once (Locker Map over Package Details,
+   * Export over Account). It matches the order these blocks were written in
+   * before, so the existing pairs stack exactly as they did.
+   */
+  const MODALS = [
+    {
+      id: MODAL.ADD_EDIT,
+      componentName: 'AddEditPackageModal',
+      render: (isOpen, payload) => (
+        <AddEditPackageModal
+          isOpen={isOpen}
+          onClose={() => closeModal(MODAL.ADD_EDIT)}
+          onSave={handleAddOrUpdatePackage}
+          editPackage={payload?.editPackage ?? null}
+          initialValues={payload?.initialValues ?? null}
+          packages={packages}
+          onOpenExisting={(pkg) => openModal(MODAL.DETAIL, pkg)}
+        />
+      )
+    },
+    {
+      id: MODAL.SMART_IMPORT,
+      componentName: 'SmartImportModal',
+      render: (isOpen, payload) => (
+        <SmartImportModal
+          isOpen={isOpen}
+          initialText={payload?.initialText ?? ''}
+          onClose={() => closeModal(MODAL.SMART_IMPORT)}
+          onParsedResult={handleSmartImportResult}
+          onShowToast={showToast}
+          onSwitchToManual={(rawText) => {
+            closeModal(MODAL.SMART_IMPORT);
+            openModal(MODAL.ADD_EDIT, {
+              initialValues: rawText?.trim() ? { notes: rawText.trim() } : null
+            });
+          }}
+        />
+      )
+    },
+    {
+      id: MODAL.DETAIL,
+      componentName: 'PackageDetailModal',
+      render: (isOpen, payload) => (
+        <PackageDetailModal
+          pkg={payload}
+          isOpen={isOpen && !!payload}
+          onClose={() => closeModal(MODAL.DETAIL)}
+          onUpdatePackage={handleAddOrUpdatePackage}
+          onRefreshTracking={handleRefreshSinglePackage}
+          onOpenLockerMap={() => openModal(MODAL.LOCKER_MAP)}
+          onShowToast={showToast}
+        />
+      )
+    },
+    {
+      id: MODAL.ANALYTICS,
+      componentName: 'AnalyticsModal',
+      render: (isOpen) => (
+        <AnalyticsModal
+          isOpen={isOpen}
+          onClose={() => closeModal(MODAL.ANALYTICS)}
+          packages={packages}
+        />
+      )
+    },
+    {
+      id: MODAL.INGESTION_GUIDE,
+      componentName: 'IngestionGuideModal',
+      render: (isOpen) => (
+        <IngestionGuideModal
+          isOpen={isOpen}
+          onClose={() => closeModal(MODAL.INGESTION_GUIDE)}
+          onOpenSmartImport={() => openModal(MODAL.SMART_IMPORT)}
+          onShowToast={showToast}
+        />
+      )
+    },
+    {
+      id: MODAL.AUTH,
+      componentName: 'AuthModal',
+      render: (isOpen, payload) => (
+        <AuthModal
+          isOpen={isOpen}
+          initialMode={payload?.initialMode ?? 'signin'}
+          onClose={() => closeModal(MODAL.AUTH)}
+          onShowToast={showToast}
+        />
+      )
+    },
+    {
+      id: MODAL.ACCOUNT,
+      componentName: 'AccountModal',
+      render: (isOpen, payload) => (
+        <AccountModal
+          isOpen={isOpen}
+          onClose={() => closeModal(MODAL.ACCOUNT)}
+          initialTab={payload?.initialTab ?? 'profile'}
+          packages={packages}
+          onExportData={handleExportData}
+          onOpenExport={() => openModal(MODAL.EXPORT)}
+          onOpenAuth={() => openModal(MODAL.AUTH, { initialMode: 'signin' })}
+          onShowToast={showToast}
+        />
+      )
+    },
+    {
+      id: MODAL.EXPORT,
+      componentName: 'ExportModal',
+      render: (isOpen) => (
+        <ExportModal
+          isOpen={isOpen}
+          onClose={() => closeModal(MODAL.EXPORT)}
+          packages={packages}
+          onShowToast={showToast}
+        />
+      )
+    },
+    {
+      id: MODAL.LOCKER_MAP,
+      componentName: 'LockerMapModal',
+      render: (isOpen) => (
+        <LockerMapModal isOpen={isOpen} onClose={() => closeModal(MODAL.LOCKER_MAP)} />
+      )
+    },
+    {
+      id: MODAL.ABOUT,
+      componentName: 'AboutModal',
+      render: (isOpen) => (
+        <AboutModal
+          isOpen={isOpen}
+          onClose={() => closeModal(MODAL.ABOUT)}
+          onOpenFeedback={() => {
+            closeModal(MODAL.ABOUT);
+            openModal(MODAL.FEEDBACK);
+          }}
+          onShowToast={showToast}
+        />
+      )
+    },
+    {
+      id: MODAL.FEEDBACK,
+      componentName: 'FeedbackModal',
+      render: (isOpen) => (
+        <FeedbackModal
+          isOpen={isOpen}
+          onClose={() => closeModal(MODAL.FEEDBACK)}
+          onShowToast={showToast}
+        />
+      )
+    },
+    {
+      id: MODAL.ADMIN_FEEDBACK,
+      componentName: 'AdminFeedbackModal',
+      render: (isOpen) => (
+        <AdminFeedbackModal
+          isOpen={isOpen}
+          onClose={() => closeModal(MODAL.ADMIN_FEEDBACK)}
+          onShowToast={showToast}
+        />
+      )
+    },
+    {
+      id: MODAL.AUTO_ARCHIVE,
+      componentName: 'AutoArchivePromptModal',
+      render: (isOpen) => (
+        <AutoArchivePromptModal
+          isOpen={isOpen}
+          onConfirm={handleConfirmAutoArchive}
+          onDecline={handleDeclineAutoArchive}
+        />
+      )
+    },
+    {
+      id: MODAL.DELETE_CONFIRM,
+      componentName: 'DeleteConfirmDialog',
+      render: (isOpen, payload) => (
+        <DeleteConfirmDialog
+          isOpen={isOpen}
+          onClose={() => closeModal(MODAL.DELETE_CONFIRM)}
+          onConfirm={() => {
+            if (payload?.packageId) handleDeletePackage(payload.packageId);
+          }}
+        />
+      )
+    }
+  ];
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans transition-colors duration-200">
+    <div
+      data-active-modal={activeModal || undefined}
+      className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans transition-colors duration-200"
+    >
       {/* Demo Banner indicator when in Demo Mode */}
       {isDemoMode && !user && (
         <div className="bg-gradient-to-r from-indigo-900/90 to-blue-900/90 border-b border-indigo-500/30 px-4 py-2.5 text-center text-xs font-semibold text-indigo-200 flex items-center justify-center gap-2">
           <PlayCircle className="w-4 h-4 text-indigo-400 shrink-0" />
           <span>{isRTL ? 'אתה צופה בגרסת הדגמה חיה (?demo=true)' : 'You are viewing the Interactive Demo (?demo=true)'}</span>
           <button 
-            onClick={() => { setAuthInitialMode('signin'); setIsAuthOpen(true); }}
+            onClick={() => openModal(MODAL.AUTH, { initialMode: 'signin' })}
             className="underline ms-2 text-white hover:text-blue-300 cursor-pointer font-bold"
           >
             {isRTL ? 'התחבר לחשבון אמיתי' : 'Sign in to use real tracking'}
@@ -659,32 +915,23 @@ export function DashboardContent() {
       {/* Top Navbar */}
       <Navbar
         isDemoMode={isDemoMode}
-        onOpenAddModal={() => {
-          setEditPackage(null);
-          setSmartPrefill(null);
-          setIsAddModalOpen(true);
-        }}
-        onOpenSmartImport={() => setIsSmartImportOpen(true)}
-        onOpenAnalytics={() => setIsAnalyticsOpen(true)}
-        onOpenConnectModal={() => setIsConnectModalOpen(true)}
+        onOpenAddModal={() => openModal(MODAL.ADD_EDIT)}
+        onOpenSmartImport={() => openModal(MODAL.SMART_IMPORT)}
+        onOpenAnalytics={() => openModal(MODAL.ANALYTICS)}
+        onOpenConnectModal={() => openModal(MODAL.INGESTION_GUIDE)}
         onOpenAuth={() => {
           if (user) {
-            setAccountInitialTab('profile');
-            setIsAccountOpen(true);
+            openModal(MODAL.ACCOUNT, { initialTab: 'profile' });
           } else {
-            setAuthInitialMode('signin');
-            setIsAuthOpen(true);
+            openModal(MODAL.AUTH, { initialMode: 'signin' });
           }
         }}
-        onOpenSettings={() => {
-          setAccountInitialTab('preferences');
-          setIsAccountOpen(true);
-        }}
-        onOpenAbout={() => setIsAboutOpen(true)}
-        onOpenFeedback={() => setIsFeedbackOpen(true)}
-        onOpenAdminFeedback={isAdminUser(user) ? () => setIsAdminFeedbackOpen(true) : undefined}
-        onOpenExport={() => setIsExportOpen(true)}
-        onOpenLockerMap={() => setIsLockerMapOpen(true)}
+        onOpenSettings={() => openModal(MODAL.ACCOUNT, { initialTab: 'preferences' })}
+        onOpenAbout={() => openModal(MODAL.ABOUT)}
+        onOpenFeedback={() => openModal(MODAL.FEEDBACK)}
+        onOpenAdminFeedback={isAdminUser(user) ? () => openModal(MODAL.ADMIN_FEEDBACK) : undefined}
+        onOpenExport={() => openModal(MODAL.EXPORT)}
+        onOpenLockerMap={() => openModal(MODAL.LOCKER_MAP)}
         onExportData={handleExportData}
         onImportData={handleImportData}
         onResetData={handleResetData}
@@ -736,14 +983,14 @@ export function DashboardContent() {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto mb-4">
               <button
-                onClick={() => { setAuthInitialMode('signin'); setIsAuthOpen(true); }}
+                onClick={() => openModal(MODAL.AUTH, { initialMode: 'signin' })}
                 className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[48px]"
               >
                 <LogIn className="w-4 h-4" />
                 <span>{isRTL ? 'התחבר לחשבון שלך' : 'Sign In to Your Account'}</span>
               </button>
               <button
-                onClick={() => { setAuthInitialMode('register'); setIsAuthOpen(true); }}
+                onClick={() => openModal(MODAL.AUTH, { initialMode: 'register' })}
                 className="w-full py-3.5 px-6 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs sm:text-sm border border-slate-700 transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[48px]"
               >
                 <UserPlus className="w-4 h-4 text-blue-400" />
@@ -814,7 +1061,7 @@ export function DashboardContent() {
                     {t('filters.clearFilters')}
                   </button>
                   <button
-                    onClick={() => setIsSmartImportOpen(true)}
+                    onClick={() => openModal(MODAL.SMART_IMPORT)}
                     className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 cursor-pointer min-h-[44px]"
                   >
                     <Plus className="w-4 h-4" />
@@ -862,7 +1109,7 @@ export function DashboardContent() {
       {/* Floating Alpha Feedback Button */}
       <aside aria-label="Alpha Feedback" className={`fixed z-30 bottom-5 ${isRTL ? 'left-5' : 'right-5'}`}>
         <button
-          onClick={() => setIsFeedbackOpen(true)}
+          onClick={() => openModal(MODAL.FEEDBACK)}
           className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white text-xs font-bold shadow-xl shadow-indigo-600/30 hover:scale-105 transition-all cursor-pointer min-h-[44px]"
           title={language === 'he' ? 'משוב ודיווח תקלות' : 'Feedback & Bug Report'}
         >
@@ -881,183 +1128,28 @@ export function DashboardContent() {
         </div>
       </footer>
 
-      {/* Add / Edit Package Modal */}
-      <ErrorBoundary compact componentName="AddEditPackageModal" onReset={() => setIsAddModalOpen(false)}>
-        <AddEditPackageModal
-          isOpen={isAddModalOpen}
-          onClose={() => {
-            setIsAddModalOpen(false);
-            setEditPackage(null);
-            setSmartPrefill(null);
-          }}
-          onSave={handleAddOrUpdatePackage}
-          editPackage={editPackage}
-          initialValues={smartPrefill}
-          packages={packages}
-          onOpenExisting={(pkg) => {
-            setSelectedDetailPackage(pkg);
-          }}
-        />
-      </ErrorBoundary>
-
-      {/* Smart Import from SMS / Email Modal */}
-      <ErrorBoundary compact componentName="SmartImportModal" onReset={() => {
-        setIsSmartImportOpen(false);
-        setSmartImportInitialText('');
-      }}>
-        <SmartImportModal
-          isOpen={isSmartImportOpen}
-          initialText={smartImportInitialText}
-          onClose={() => {
-            setIsSmartImportOpen(false);
-            setSmartImportInitialText('');
-          }}
-          onParsedResult={handleSmartImportResult}
-          onShowToast={showToast}
-          onSwitchToManual={(rawText) => {
-            setIsSmartImportOpen(false);
-            setSmartImportInitialText('');
-            setEditPackage(null);
-            setSmartPrefill(rawText?.trim() ? { notes: rawText.trim() } : null);
-            setIsAddModalOpen(true);
-          }}
-        />
-      </ErrorBoundary>
-
-      {/* Shipment Details & Interactive Timeline Modal */}
-      <ErrorBoundary compact componentName="PackageDetailModal" onReset={() => setSelectedDetailPackage(null)}>
-        <PackageDetailModal
-          pkg={selectedDetailPackage}
-          isOpen={!!selectedDetailPackage}
-          onClose={() => setSelectedDetailPackage(null)}
-          onUpdatePackage={handleAddOrUpdatePackage}
-          onRefreshTracking={handleRefreshSinglePackage}
-          onOpenLockerMap={() => setIsLockerMapOpen(true)}
-          onShowToast={showToast}
-        />
-      </ErrorBoundary>
-
-      {/* Analytics & Performance Modal */}
-      <ErrorBoundary compact componentName="AnalyticsModal" onReset={() => setIsAnalyticsOpen(false)}>
-        <AnalyticsModal
-          isOpen={isAnalyticsOpen}
-          onClose={() => setIsAnalyticsOpen(false)}
-          packages={packages}
-        />
-      </ErrorBoundary>
-
-      {/* 1-Click Ingestion Guide Modal */}
-      <ErrorBoundary compact componentName="IngestionGuideModal" onReset={() => setIsConnectModalOpen(false)}>
-        <IngestionGuideModal
-          isOpen={isConnectModalOpen}
-          onClose={() => setIsConnectModalOpen(false)}
-          onOpenSmartImport={() => setIsSmartImportOpen(true)}
-          onShowToast={showToast}
-        />
-      </ErrorBoundary>
+      {/* Every dialog, declared once. The shell (portal, backdrop, Escape,
+          focus trap, focus restore, scroll lock, ARIA) lives in <Modal>;
+          the crash boundary that used to be copied around thirteen of these
+          blocks now appears exactly once, below. */}
+      {MODALS.map(({ id, componentName, render }) => (
+        <ErrorBoundary
+          key={id}
+          compact
+          componentName={componentName}
+          onReset={() => closeModal(id)}
+        >
+          {render(isModalOpen(id), getModalPayload(id))}
+        </ErrorBoundary>
+      ))}
 
       {/* Blocking gate for any signed-in user who hasn't accepted the
           current Terms of Use / Privacy Policy version — new OAuth
-          sign-ins and pre-existing accounts alike. Renders null otherwise. */}
+          sign-ins and pre-existing accounts alike. Renders null otherwise.
+          Not part of the router: nothing opens or closes it. */}
       <ErrorBoundary compact componentName="LegalConsentGate">
         <LegalConsentGate onShowToast={showToast} />
       </ErrorBoundary>
-
-      {/* User Account & Cloud Sync Modal */}
-      <ErrorBoundary compact componentName="AuthModal" onReset={() => setIsAuthOpen(false)}>
-        <AuthModal
-          isOpen={isAuthOpen}
-          initialMode={authInitialMode}
-          onClose={() => setIsAuthOpen(false)}
-          onShowToast={showToast}
-        />
-      </ErrorBoundary>
-
-      {/* Dedicated Account & Personal Settings Modal */}
-      <ErrorBoundary compact componentName="AccountModal" onReset={() => setIsAccountOpen(false)}>
-        <AccountModal
-          isOpen={isAccountOpen}
-          onClose={() => setIsAccountOpen(false)}
-          initialTab={accountInitialTab}
-          packages={packages}
-          onExportData={handleExportData}
-          onOpenExport={() => setIsExportOpen(true)}
-          onOpenAuth={() => {
-            setAuthInitialMode('signin');
-            setIsAuthOpen(true);
-          }}
-          onShowToast={showToast}
-        />
-      </ErrorBoundary>
-
-      {/* Dedicated Export Center Modal */}
-      <ErrorBoundary compact componentName="ExportModal" onReset={() => setIsExportOpen(false)}>
-        <ExportModal
-          isOpen={isExportOpen}
-          onClose={() => setIsExportOpen(false)}
-          packages={packages}
-          onShowToast={showToast}
-        />
-      </ErrorBoundary>
-
-      {/* Interactive Locker & Pickup Point Modal */}
-      <ErrorBoundary compact componentName="LockerMapModal" onReset={() => setIsLockerMapOpen(false)}>
-        <LockerMapModal
-          isOpen={isLockerMapOpen}
-          onClose={() => setIsLockerMapOpen(false)}
-        />
-      </ErrorBoundary>
-
-      {/* About & System Info Modal */}
-      <ErrorBoundary compact componentName="AboutModal" onReset={() => setIsAboutOpen(false)}>
-        <AboutModal
-          isOpen={isAboutOpen}
-          onClose={() => setIsAboutOpen(false)}
-          onOpenFeedback={() => {
-            setIsAboutOpen(false);
-            setIsFeedbackOpen(true);
-          }}
-          onShowToast={showToast}
-        />
-      </ErrorBoundary>
-
-      {/* Alpha Tester Feedback Modal */}
-      <ErrorBoundary compact componentName="FeedbackModal" onReset={() => setIsFeedbackOpen(false)}>
-        <FeedbackModal
-          isOpen={isFeedbackOpen}
-          onClose={() => setIsFeedbackOpen(false)}
-          onShowToast={showToast}
-        />
-      </ErrorBoundary>
-
-      {/* Admin Feedback Inspector Modal */}
-      <ErrorBoundary compact componentName="AdminFeedbackModal" onReset={() => setIsAdminFeedbackOpen(false)}>
-        <AdminFeedbackModal
-          isOpen={isAdminFeedbackOpen}
-          onClose={() => setIsAdminFeedbackOpen(false)}
-          onShowToast={showToast}
-        />
-      </ErrorBoundary>
-
-
-            {/* Auto-Archive Confirmation Prompt Modal */}
-      <AutoArchivePromptModal
-        isOpen={isAutoArchivePromptOpen}
-        onConfirm={handleConfirmAutoArchive}
-        onDecline={handleDeclineAutoArchive}
-      />
-
-      {/* Delete Confirmation Dialog */}
-      <DeleteConfirmDialog
-        isOpen={!!deletePackageId}
-        onClose={() => setDeletePackageId(null)}
-        onConfirm={() => {
-          if (deletePackageId) {
-            handleDeletePackage(deletePackageId);
-            setDeletePackageId(null);
-          }
-        }}
-      />
 
       {/* PWA Floating Update Available Banner */}
       {isUpdateAvailable && (

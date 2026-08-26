@@ -1,6 +1,7 @@
 import React from 'react';
 import { Trash2 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { Modal } from './Modal';
 
 export function DeleteConfirmDialog({
   isOpen,
@@ -12,8 +13,13 @@ export function DeleteConfirmDialog({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-sm bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden p-6 space-y-4">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      componentName="DeleteConfirmDialog"
+      scrollable={false}
+      className="relative w-full max-w-sm bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden p-6 space-y-4"
+    >
         <div className="flex items-center gap-3 text-rose-400">
           <div className="p-2.5 rounded-2xl bg-rose-500/10 border border-rose-500/20">
             <Trash2 className="w-5 h-5" />
@@ -44,7 +50,6 @@ export function DeleteConfirmDialog({
             {t('deleteDialog.confirm')}
           </button>
         </div>
-      </div>
-    </div>
+      </Modal>
   );
 }
