@@ -159,11 +159,38 @@ describe('emailSyncService Unit Tests', () => {
     });
   });
 
-  describe('requestGmailForwardingSetup', () => {
-    it('returns error when firebase is not configured', async () => {
-      const { requestGmailForwardingSetup: requestSetup } = await import('./emailSyncService');
-      const res = await requestSetup('usr_123@in.deliveree.app');
+  describe('setupOutlookAutoForward', () => {
+    it('fails fast on missing access token or email', async () => {
+      const { setupOutlookAutoForward: setupOutlook } = await import('./emailSyncService');
+      const res = await setupOutlook(null, 'test@in.deliveree.app');
       expect(res.ok).toBe(false);
+      expect(res.error).toContain('Missing access token');
+    });
+
+    it('creates messageRule via Microsoft Graph API', async () => {
+      const { setupOutlookAutoForward: setupOutlook } = await import('./emailSyncService');
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 201,
+        json: () => Promise.resolve({ id: 'rule-123' })
+      });
+      global.fetch = fetchMock;
+
+      const res = await setupOutlook('mock-ms-token', 'usr_123@in.deliveree.app');
+      expect(res.ok).toBe(true);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('requestGmailForwardingSetup & requestOutlookForwardingSetup', () => {
+    it('returns error when firebase is not configured', async () => {
+      const { requestGmailForwardingSetup: requestGmail, requestOutlookForwardingSetup: requestOutlook } =
+        await import('./emailSyncService');
+      const resGmail = await requestGmail('usr_123@in.deliveree.app');
+      expect(resGmail.ok).toBe(false);
+
+      const resOutlook = await requestOutlook('usr_123@in.deliveree.app');
+      expect(resOutlook.ok).toBe(false);
     });
   });
 });

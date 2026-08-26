@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 import React, { useState } from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, cleanup, waitFor } from '@testing-library/react';
+import { render, screen, cleanup, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import { Modal } from './Modal';
@@ -47,6 +47,26 @@ describe('Modal — dismissal', () => {
     );
 
     await user.keyboard('{Escape}');
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes on mobile horizontal swipe gesture', () => {
+    const onClose = vi.fn();
+    render(
+      <Modal isOpen onClose={onClose} labelledBy="t">
+        <h2 id="t">Title</h2>
+      </Modal>
+    );
+
+    const dialog = getDialog();
+    // Simulate touch swipe left-to-right (dx > 70px)
+    fireEvent.touchStart(dialog, {
+      touches: [{ clientX: 10, clientY: 100 }]
+    });
+    fireEvent.touchEnd(dialog, {
+      changedTouches: [{ clientX: 120, clientY: 105 }]
+    });
+
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 

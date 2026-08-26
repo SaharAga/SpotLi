@@ -19,6 +19,10 @@ vi.mock('../services/emailSyncService', async () => {
     requestGmailForwardingSetup: vi.fn().mockImplementation(async () => {
       actual.setConnectedService('gmail', true);
       return { ok: true };
+    }),
+    requestOutlookForwardingSetup: vi.fn().mockImplementation(async () => {
+      actual.setConnectedService('outlook', true);
+      return { ok: true };
     })
   };
 });
@@ -43,11 +47,12 @@ describe('IngestionGuideModal Component Tests', () => {
     );
   };
 
-  it('renders correctly when open with 1-Click Gmail and personal address', () => {
+  it('renders correctly when open with 1-Click Gmail/Outlook and personal address', () => {
     renderModal();
 
     expect(screen.getByText(/Automatic Shipment Ingestion|קליטת משלוחים אוטומטית/i)).toBeTruthy();
-    expect(screen.getByText(/1-Click Gmail Auto-Sync|חיבור Gmail ב-1 לחיצה/i)).toBeTruthy();
+    expect(screen.getByText(/Connect Gmail|חבר Gmail/i)).toBeTruthy();
+    expect(screen.getByText(/Connect Outlook|חבר Outlook/i)).toBeTruthy();
     expect(screen.getByText(/usr_testuser123@in.deliveree.app/i)).toBeTruthy();
   });
 
@@ -74,12 +79,25 @@ describe('IngestionGuideModal Component Tests', () => {
     const handleToast = vi.fn();
     renderModal({ onShowToast: handleToast });
 
-    const enableSyncBtn = screen.getByText(/Enable Gmail Sync|הפעל סנכרון Gmail/i);
+    const enableSyncBtn = screen.getByText(/Connect Gmail|חבר Gmail/i);
     fireEvent.click(enableSyncBtn);
 
     await waitFor(() => {
       expect(handleToast).toHaveBeenCalledTimes(1);
-      expect(screen.getByText(/Connect Another Gmail|חבר חשבון Gmail נוסף/i)).toBeTruthy();
+      expect(screen.getByText(/\+ Gmail נוסף|\+ Add Gmail/i)).toBeTruthy();
+    });
+  });
+
+  it('handles 1-Click Outlook sync button click', async () => {
+    const handleToast = vi.fn();
+    renderModal({ onShowToast: handleToast });
+
+    const enableSyncBtn = screen.getByText(/Connect Outlook|חבר Outlook/i);
+    fireEvent.click(enableSyncBtn);
+
+    await waitFor(() => {
+      expect(handleToast).toHaveBeenCalledTimes(1);
+      expect(screen.getByText(/\+ Outlook נוסף|\+ Add Outlook/i)).toBeTruthy();
     });
   });
 

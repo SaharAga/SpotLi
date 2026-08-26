@@ -92,15 +92,52 @@ export const MODAL = {
  */
 export function useModalRouter() {
   const [stack, setStack] = useState([]);
+  const stackRef = useRef(stack);
+  stackRef.current = stack;
+
+  // OS Native Back Swipe & Browser History navigation support
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const handlePopState = () => {
+      if (stackRef.current.length > 0) {
+        setStack((prev) => prev.slice(0, -1));
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Re-opening a modal already in the stack moves it to the top rather than
   // duplicating it.
   const openModal = useCallback((id, payload = null) => {
+    if (typeof window !== 'undefined') {
+      try {
+        window.history.pushState({ modalRouter: true, modalId: id }, '', window.location.href);
+      } catch {
+        // Ignore
+      }
+    }
     setStack((prev) => [...prev.filter((entry) => entry.id !== id), { id, payload }]);
   }, []);
 
   const closeModal = useCallback((id) => {
-    setStack((prev) => (id ? prev.filter((entry) => entry.id !== id) : prev.slice(0, -1)));
+    setStack((prev) => {
+      const nextStack = id ? prev.filter((entry) => entry.id !== id) : prev.slice(0, -1);
+      if (
+        typeof window !== 'undefined' &&
+        window.history.state?.modalRouter &&
+        (!id || window.history.state?.modalId === id)
+      ) {
+        try {
+          window.history.back();
+        } catch {
+          // Ignore
+        }
+      }
+      return nextStack;
+    });
   }, []);
 
   // Updates the payload of an already-open modal, and does nothing if it is
