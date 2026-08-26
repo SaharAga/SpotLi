@@ -93,7 +93,10 @@ export const translations = {
       status: 'Current Status Stage',
       save: 'Save Package',
       cancel: 'Cancel',
-      create: 'Add to Tracking'
+      create: 'Add to Tracking',
+      duplicateTrackingWarning: 'A package with this tracking number already exists.',
+      openExistingPackage: 'Open Existing Package',
+      existingMatchFound: 'Matching existing package found - details will enrich existing record.',
     },
     detailModal: {
       shipmentDetails: 'Shipment Details & Live Timeline',
@@ -165,6 +168,15 @@ export const translations = {
       stageDistribution: 'Shipment Stages Breakdown',
       onTime: 'On-Time',
       exceptions: 'Exceptions'
+    },
+    autoArchive: {
+      promptTitle: 'Auto-Archive Delivered Packages?',
+      promptQuestion: 'Would you like Deliveree to automatically move packages to your Archive once they are delivered?',
+      promptHint: 'You can change this preference anytime in Account Settings.',
+      confirmYes: 'Yes, Auto-Archive',
+      confirmNo: 'No, Keep in Delivered',
+      settingTitle: 'Auto-Archive Delivered Packages',
+      settingDesc: 'Automatically move shipments to the archive as soon as they reach delivered status.'
     },
     notifications: {
       title: 'Notifications & Alerts',
@@ -288,7 +300,10 @@ export const translations = {
       status: 'שלב נוכחי בציר הזמן',
       save: 'שמור שינויים',
       cancel: 'ביטול',
-      create: 'הוסף למעקב'
+      create: 'הוסף למעקב',
+      duplicateTrackingWarning: 'חבילה עם מספר מעקב זה כבר קיימת במערכת.',
+      openExistingPackage: 'פתח חבילה קיימת',
+      existingMatchFound: 'נמצאה חבילה קיימת תואמת - הפרטים יעודכנו ברשומה הקיימת.',
     },
     detailModal: {
       shipmentDetails: 'פרטי משלוח וציר זמן מלא',
@@ -360,6 +375,15 @@ export const translations = {
       stageDistribution: 'התפלגות לפי שלב משלוח',
       onTime: 'בזמן',
       exceptions: 'חריגות'
+    },
+    autoArchive: {
+      promptTitle: 'העברה אוטומטית לארכיון לאחר מסירה?',
+      promptQuestion: 'האם ברצונך ש-Deliveree יעביר חבילות לארכיון באופן אוטומטי ברגע שהן נמסרות?',
+      promptHint: 'ניתן לשנות הגדרה זו בכל עת בהגדרות החשבון.',
+      confirmYes: 'כן, העבר אוטומטית לארכיון',
+      confirmNo: 'לא, השאר ברשימת הנמסרו',
+      settingTitle: 'ארכוב אוטומטי של חבילות שנמסרו',
+      settingDesc: 'העברה אוטומטית של משלוחים לארכיון מיד עם הגעתם לסטטוס נמסר.'
     },
     notifications: {
       title: 'התראות ועדכונים חיים',

@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { parseSmartText } from '../utils/smartParser';
 import { CARRIERS } from '../types/carriers';
+import { findPackageByTrackingNumber } from '../services/deliveryService';
 import { useLanguage } from '../context/LanguageContext';
 import { parseWithAi } from '../services/aiParseService';
 import { compressImageFile, extractImageFromPaste, ACCEPTED_IMAGE_TYPES } from '../utils/imageCompressor';
@@ -39,7 +40,8 @@ export function SmartImportModal({
   onParsedResult,
   onSwitchToManual,
   onShowToast,
-  initialText = ''
+  initialText = '',
+  packages = []
 }) {
   const { t, language, isRTL } = useLanguage();
   const [rawText, setRawText] = useState(initialText || '');
@@ -67,6 +69,11 @@ export function SmartImportModal({
   // instead of a new reporting system.
   const [isReportingWrong, setIsReportingWrong] = useState(false);
   const [reportedWrong, setReportedWrong] = useState(false);
+
+  const matchedExistingPackage = React.useMemo(() => {
+    if (!parsed || !parsed.trackingNumber) return null;
+    return findPackageByTrackingNumber(packages, parsed.trackingNumber);
+  }, [packages, parsed]);
 
   useEffect(() => {
     if (initialText && initialText.trim() && isOpen) {
@@ -324,6 +331,9 @@ export function SmartImportModal({
     }
   ];
 
+
+
+
   const detectedCarrierObj = parsed ? (CARRIERS[parsed.carrier] || CARRIERS['other']) : null;
   const showLowConfidenceHint = parseSource === 'ai' && (aiConfidence === 'low' || aiConfidence === 'medium');
 
@@ -498,10 +508,22 @@ export function SmartImportModal({
             <div className="animate-fade-in pt-2">
               {parsed && parsed.trackingNumber ? (
                 <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 space-y-3">
-                  <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs">
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>{t('smartModal.parsedSuccess')}</span>
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs">
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>{t('smartModal.parsedSuccess')}</span>
+                    </div>
+                    {matchedExistingPackage && (
+                      <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[11px] font-medium flex items-center gap-1">
+                        <span>{language === 'he' ? 'חבילה קיימת מעודכנת' : 'Matching Existing Package'}</span>
+                      </span>
+                    )}
                   </div>
+                  {matchedExistingPackage && (
+                    <p className="text-[11px] text-blue-200/80 bg-blue-500/10 p-2 rounded-lg border border-blue-500/20">
+                      ℹ️ {t('modal.existingMatchFound')}
+                    </p>
+                  )}
 
                   {showLowConfidenceHint && (
                     <div className="flex items-start gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30">

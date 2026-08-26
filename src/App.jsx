@@ -19,11 +19,12 @@ import { AdminFeedbackModal } from './components/AdminFeedbackModal';
 import { ExportModal } from './components/ExportModal';
 import { LockerMapModal } from './components/LockerMapModal';
 import { DeleteConfirmDialog } from './components/DeleteConfirmDialog';
+import { AutoArchivePromptModal } from './components/AutoArchivePromptModal';
+import { findPackageByTrackingNumber } from './services/deliveryService';
 
 import { Toast } from './components/Toast';
 import { InstallPwaBanner } from './components/InstallPwaBanner';
 import { deliveryService } from './services/deliveryService';
-import { notificationService } from './services/notificationService';
 import { useLanguage, LanguageProvider } from './context/LanguageContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { useAuth, AuthProvider } from './context/AuthContext';
@@ -74,6 +75,8 @@ export function DashboardContent() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isLockerMapOpen, setIsLockerMapOpen] = useState(false);
   const [deletePackageId, setDeletePackageId] = useState(null);
+  const [isAutoArchivePromptOpen, setIsAutoArchivePromptOpen] = useState(false);
+  const [pendingDeliveredPkgId, setPendingDeliveredPkgId] = useState(null);
 
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
   const [smartImportInitialText, setSmartImportInitialText] = useState('');
@@ -194,38 +197,144 @@ export function DashboardContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saveError]);
 
+  // Helper to check user auto-archive setting and prompting status
+  const getAutoArchiveSetting = () => {
+    if (user?.preferences && typeof user.preferences.autoArchiveDelivered === 'boolean') {
+      return user.preferences.autoArchiveDelivered;
+    }
+    if (typeof localStorage !== 'undefined') {
+      const val = localStorage.getItem('deliveree_auto_archive_delivered');
+      if (val === 'true') return true;
+      if (val === 'false') return false;
+    }
+    return null; // not decided yet
+  };
+
+  const checkAndHandleAutoArchive = (pkgId, isNewlyDelivered) => {
+    if (!isNewlyDelivered) return;
+    const currentPref = getAutoArchiveSetting();
+    if (currentPref === true) {
+      // Auto-archive directly
+      setPackages(prev => {
+        const updated = prev.map(p => p.id === pkgId ? { ...p, isArchived: true } : p);
+        const changed = updated.find(p => p.id === pkgId);
+        if (changed) upsertSinglePackage(updated, changed);
+        return updated;
+      });
+    } else if (currentPref === null) {
+      // First time reaching delivered without preference set
+      const prompted = typeof localStorage !== 'undefined' && localStorage.getItem('deliveree_auto_archive_prompted') === 'true';
+      if (!prompted) {
+        setPendingDeliveredPkgId(pkgId);
+        setIsAutoArchivePromptOpen(true);
+      }
+    }
+  };
+
+  const handleConfirmAutoArchive = () => {
+    if (user) {
+      updateUserPreferences({
+        ...(user.preferences || {}),
+        autoArchiveDelivered: true
+      });
+    } else {
+      try {
+        localStorage.setItem('deliveree_auto_archive_delivered', 'true');
+      } catch {}
+    }
+    try {
+      localStorage.setItem('deliveree_auto_archive_prompted', 'true');
+    } catch {}
+
+    if (pendingDeliveredPkgId) {
+      setPackages(prev => {
+        const updated = prev.map(p => p.id === pendingDeliveredPkgId ? { ...p, isArchived: true } : p);
+        const changed = updated.find(p => p.id === pendingDeliveredPkgId);
+        if (changed) upsertSinglePackage(updated, changed);
+        return updated;
+      });
+    }
+    setIsAutoArchivePromptOpen(false);
+    setPendingDeliveredPkgId(null);
+    showToast(language === 'he' ? 'החבילה הועברה לארכיון וההגדרה נשמרה' : 'Package archived and preference saved', 'success');
+  };
+
+  const handleDeclineAutoArchive = () => {
+    if (user) {
+      updateUserPreferences({
+        ...(user.preferences || {}),
+        autoArchiveDelivered: false
+      });
+    } else {
+      try {
+        localStorage.setItem('deliveree_auto_archive_delivered', 'false');
+      } catch {}
+    }
+    try {
+      localStorage.setItem('deliveree_auto_archive_prompted', 'true');
+    } catch {}
+
+    setIsAutoArchivePromptOpen(false);
+    setPendingDeliveredPkgId(null);
+  };
+
   // Handlers
   const handleAddOrUpdatePackage = (pkgData) => {
     let updated;
-    const existingPkg = packages.find(p => p.id === pkgData.id);
+    // Check if updating by ID or matching duplicate tracking number
+    let existingPkg = packages.find(p => p.id === pkgData.id);
+    if (!existingPkg && pkgData.trackingNumber) {
+      existingPkg = findPackageByTrackingNumber(packages, pkgData.trackingNumber);
+    }
+
+    const targetId = existingPkg ? existingPkg.id : (pkgData.id || `pkg-${Date.now()}`);
+    const isNewlyDelivered = pkgData.status === "delivered" && existingPkg?.status !== "delivered";
+
     if (existingPkg) {
       if (pkgData.status && pkgData.status !== existingPkg.status && !deliveryService.canTransition(existingPkg.status, pkgData.status)) {
         showToast(
-          language === 'he'
+          language === "he"
             ? `מעבר לא חוקי מ-${existingPkg.status} אל ${pkgData.status}`
             : `Invalid state transition from ${existingPkg.status} to ${pkgData.status}`,
-          'error'
+          "error"
         );
         return;
       }
-      if (pkgData.status && pkgData.status !== existingPkg.status) {
-        notificationService.notifyStatusChange(pkgData, existingPkg.status, pkgData.status, language);
-      }
-      const updatedPkgWithUser = user?.id ? { ...pkgData, userId: user.id } : pkgData;
-      updated = packages.map(p => (p.id === pkgData.id ? updatedPkgWithUser : p));
-      showToast(language === 'he' ? 'החבילה עודכנה בהצלחה!' : 'Package updated successfully!', 'success');
+      // Merge/enrich existing package data while preserving existing ID and history
+      const mergedPkg = {
+        ...existingPkg,
+        ...pkgData,
+        id: targetId,
+        checkpoints: pkgData.checkpoints?.length ? pkgData.checkpoints : existingPkg.checkpoints,
+        userId: user?.id || existingPkg.userId,
+        updatedAt: new Date().toISOString()
+      };
+      updated = packages.map(p => (p.id === targetId ? mergedPkg : p));
+      showToast(language === "he" ? "החבילה עודכנה בהצלחה!" : "Package updated successfully!", "success");
     } else {
-      const newPkgWithUser = user?.id ? { ...pkgData, userId: user.id } : pkgData;
+      const newPkgWithUser = {
+        ...pkgData,
+        id: targetId,
+        userId: user?.id || undefined,
+        createdAt: pkgData.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
       updated = [newPkgWithUser, ...packages];
-      showToast(language === 'he' ? 'החבילה נוספה למעקב!' : 'New package added to tracking!', 'success');
+      showToast(language === "he" ? "החבילה נוספה למעקב!" : "New package added to tracking!", "success");
     }
-    const changedPkg = updated.find(p => p.id === pkgData.id) || (user?.id ? { ...pkgData, userId: user.id } : pkgData);
+
+    const changedPkg = updated.find(p => p.id === targetId);
     upsertSinglePackage(updated, changedPkg);
-    if (selectedDetailPackage?.id === pkgData.id) {
-      setSelectedDetailPackage(pkgData);
+
+    if (selectedDetailPackage?.id === targetId) {
+      setSelectedDetailPackage(changedPkg);
     }
     setEditPackage(null);
     setSmartPrefill(null);
+
+    if (isNewlyDelivered) {
+      checkAndHandleAutoArchive(targetId, true);
+    }
   };
 
   const handleDeletePackage = (id) => {
@@ -270,16 +379,16 @@ export function DashboardContent() {
     const existingPkg = packages.find(p => p.id === id);
     if (existingPkg && existingPkg.status !== newStatus && !deliveryService.canTransition(existingPkg.status, newStatus)) {
       showToast(
-        language === 'he'
+        language === "he"
           ? `מעבר לא חוקי מ-${existingPkg.status} אל ${newStatus}`
           : `Invalid state transition from ${existingPkg.status} to ${newStatus}`,
-        'error'
+        "error"
       );
       return;
     }
-    if (existingPkg && existingPkg.status !== newStatus) {
-      notificationService.notifyStatusChange({ ...existingPkg, status: newStatus }, existingPkg.status, newStatus, language);
-    }
+
+    const isNewlyDelivered = newStatus === "delivered" && existingPkg?.status !== "delivered";
+
     const updated = packages.map(p => {
       if (p.id === id) {
         return { ...p, status: newStatus, updatedAt: new Date().toISOString() };
@@ -290,6 +399,10 @@ export function DashboardContent() {
     if (changedPkg) upsertSinglePackage(updated, changedPkg);
     if (selectedDetailPackage?.id === id) {
       setSelectedDetailPackage(prev => ({ ...prev, status: newStatus, updatedAt: new Date().toISOString() }));
+    }
+
+    if (isNewlyDelivered) {
+      checkAndHandleAutoArchive(id, true);
     }
   };
 
@@ -721,6 +834,10 @@ export function DashboardContent() {
           onSave={handleAddOrUpdatePackage}
           editPackage={editPackage}
           initialValues={smartPrefill}
+          packages={packages}
+          onOpenExisting={(pkg) => {
+            setSelectedDetailPackage(pkg);
+          }}
         />
       </ErrorBoundary>
 
@@ -863,6 +980,13 @@ export function DashboardContent() {
         />
       </ErrorBoundary>
 
+
+            {/* Auto-Archive Confirmation Prompt Modal */}
+      <AutoArchivePromptModal
+        isOpen={isAutoArchivePromptOpen}
+        onConfirm={handleConfirmAutoArchive}
+        onDecline={handleDeclineAutoArchive}
+      />
 
       {/* Delete Confirmation Dialog */}
       <DeleteConfirmDialog
