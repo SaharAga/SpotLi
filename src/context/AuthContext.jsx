@@ -771,7 +771,8 @@ export function AuthProvider({ children }) {
       defaultCarrier: sanitizeString(newPrefs?.defaultCarrier, 50) || user.preferences?.defaultCarrier || 'all',
       language: sanitizeString(newPrefs?.language, 10) || user.preferences?.language || 'he',
       theme: sanitizeString(newPrefs?.theme, 10) || user.preferences?.theme || 'dark',
-      dateFormat: sanitizeString(newPrefs?.dateFormat, 20) || user.preferences?.dateFormat || 'DD/MM/YYYY'
+      dateFormat: sanitizeString(newPrefs?.dateFormat, 20) || user.preferences?.dateFormat || 'DD/MM/YYYY',
+      autoArchiveDelivered: typeof newPrefs?.autoArchiveDelivered === 'boolean' ? newPrefs.autoArchiveDelivered : (typeof user.preferences?.autoArchiveDelivered === 'boolean' ? user.preferences.autoArchiveDelivered : false)
     };
 
     const updatedUser = {

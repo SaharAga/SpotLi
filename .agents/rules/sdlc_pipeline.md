@@ -58,7 +58,9 @@ For a single-developer project, the standard quality gate pipeline is:
   * **Secrets Check**: Zero hardcoded secrets, keys, or credentials committed.
 
 ### Gate 4: QA & Build Verification (QA Verifier)
-* **Static Analysis**: `npx oxlint -D warnings --deny-warnings`
+* **Static Analysis**: `npm run lint` (exit 0). **Not** `-D warnings`: the
+  `react-perf` rules are intentionally warnings — a standing worklist, not a
+  gate. See `AGENTS.md` §9.1.
 * **Typecheck**: `npx tsc --noEmit --strict`
 * **Test Suite**: `npm test` (100% pass rate)
 * **Anti-Facade**: Scan for dummy assertions (`expect(true).toBe(true)`) or skipped tests (`it.skip`).

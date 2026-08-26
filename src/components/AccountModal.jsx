@@ -124,7 +124,8 @@ export function AccountModal({
     defaultCarrier: 'all',
     language: language || 'he',
     theme: isDark ? 'dark' : 'light',
-    dateFormat: 'DD/MM/YYYY'
+    dateFormat: 'DD/MM/YYYY',
+    autoArchiveDelivered: false
   };
 
   const handleCarrierChange = (e) => {
@@ -148,6 +149,31 @@ export function AccountModal({
     }
     if (onShowToast) {
       onShowToast(newLang === 'he' ? 'שפת הממשק שונתה לעברית' : 'Language changed to English', 'success');
+    }
+  };
+
+
+  const handleAutoArchiveToggle = (e) => {
+    const nextVal = e.target.checked;
+    if (user) {
+      updateUserPreferences({
+        ...currentPrefs,
+        autoArchiveDelivered: nextVal
+      });
+    } else {
+      try {
+        localStorage.setItem("deliveree_auto_archive_delivered", String(nextVal));
+      } catch (err) {
+        console.warn("Failed to set local autoArchive pref:", err);
+      }
+    }
+    if (onShowToast) {
+      onShowToast(
+        nextVal
+          ? (language === "he" ? "ארכוב אוטומטי הופעל" : "Auto-archive enabled")
+          : (language === "he" ? "ארכוב אוטומטי בוטל" : "Auto-archive disabled"),
+        "success"
+      );
     }
   };
 
@@ -542,6 +568,32 @@ export function AccountModal({
                     {language === 'he' ? 'התחברו כדי לשמור העדפה זו לחשבונכם' : 'Sign in to save this to your account'}
                   </p>
                 )}
+              </div>
+
+              
+              {/* Auto-Archive Delivered Packages Toggle */}
+              <div className={`${card} flex items-start justify-between gap-3`}>
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-[var(--stg-accent-soft)] text-[var(--stg-accent)] shrink-0">
+                    <Package className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-[var(--stg-text)] block text-xs">
+                      {t("autoArchive.settingTitle")}
+                    </span>
+                    <span className="text-[11px] text-[var(--stg-text-muted)] leading-relaxed block mt-0.5">
+                      {t("autoArchive.settingDesc")}
+                    </span>
+                  </div>
+                </div>
+                <Switch
+                  checked={
+                    user
+                      ? Boolean(user.preferences?.autoArchiveDelivered)
+                      : (typeof localStorage !== "undefined" && localStorage.getItem("deliveree_auto_archive_delivered") === "true")
+                  }
+                  onChange={handleAutoArchiveToggle}
+                />
               </div>
 
               {/* Language Selection */}

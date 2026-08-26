@@ -375,6 +375,30 @@ describe('Delivery Service and Storage Persistence', () => {
       expect(canTransition('delivered', 'archived')).toBe(true);
     });
 
+
+    it('allows all active stages (ordered, shipped, in_transit, customs, exception) to transition directly to delivered and archived', () => {
+      const activeStages = ['ordered', 'shipped', 'in_transit', 'customs', 'exception'];
+      for (const stage of activeStages) {
+        expect(canTransition(stage, 'delivered')).toBe(true);
+        expect(canTransition(stage, 'archived')).toBe(true);
+      }
+    });
+
+    it('normalizes tracking numbers and finds packages cleanly', () => {
+      expect(deliveryService.normalizeTrackingNumber("  RS-123 456-789 IL  ")).toBe("RS123456789IL");
+      expect(deliveryService.normalizeTrackingNumber(null)).toBe("");
+
+      const pkgs = [
+        { id: "pkg-1", trackingNumber: "RS 123 456 789 IL" },
+        { id: "pkg-2", trackingNumber: "LP-001-998" }
+      ];
+
+      expect(deliveryService.findPackageByTrackingNumber(pkgs, "rs123456789il")).toEqual(pkgs[0]);
+      expect(deliveryService.findPackageByTrackingNumber(pkgs, "LP001998")).toEqual(pkgs[1]);
+      expect(deliveryService.findPackageByTrackingNumber(pkgs, "rs-123-456-789-il", "pkg-1")).toBeNull();
+      expect(deliveryService.findPackageByTrackingNumber(pkgs, "NONEXISTENT")).toBeNull();
+    });
+
     it('handles null, undefined, or unknown state inputs safely', () => {
       expect(canTransition(null, 'delivered')).toBe(false);
       expect(canTransition('ordered', null)).toBe(false);
