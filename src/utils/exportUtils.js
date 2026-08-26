@@ -2,8 +2,13 @@ import { parsePackageList } from '../schemas/packageSchema';
 import { todayISO } from './dateUtils';
 
 /**
- * Canonical CSV column order, shared by the validated export and the raw backup
- * so a backup file is readable by the same importer.
+ * Canonical CSV column order for the report export.
+ *
+ * CSV is a *report* format here, not a backup format: ten flat columns cannot
+ * represent `checkpoints`, and they omit `titleHe`, `notesHe`, `category`,
+ * `isPinned`, `isArchived`, `carrierName` and `schemaVersion`. Restoring a
+ * package from these columns is impossible, and there is no CSV importer.
+ * The restorable backup is `exportRawToJSON` (read by `deliveryService.importData`).
  */
 export const CSV_HEADERS = Object.freeze([
   'ID',
@@ -42,9 +47,35 @@ export function downloadBlob(content, mime, filename) {
 }
 
 /**
+ * Characters that make a spreadsheet treat a cell as a formula when the file is
+ * opened. RFC 4180 quoting does not stop Excel or LibreOffice evaluating them.
+ */
+const CSV_FORMULA_TRIGGERS = ['=', '+', '-', '@', '\t', '\r'];
+
+/**
+ * Neutralises CSV formula injection by prefixing an apostrophe to any value
+ * that begins with a formula trigger (`=`, `+`, `-`, `@`, tab, CR).
+ *
+ * Applied at the CSV boundary rather than in `sanitizeString`, because the
+ * stored value is not dangerous — only its interpretation by a spreadsheet is.
+ * A title of `-5 units` must stay `-5 units` in storage and in JSON.
+ *
+ * @param {string} str
+ * @returns {string}
+ */
+function neutralizeFormula(str) {
+  if (str.length > 0 && CSV_FORMULA_TRIGGERS.includes(str[0])) {
+    return `'${str}`;
+  }
+  return str;
+}
+
+/**
  * Escapes a cell value according to RFC 4180 rules:
  * - Wrap in quotes if it contains quotes, commas, or newlines
  * - Double any quotes inside the value
+ *
+ * Also neutralises leading formula triggers (see `neutralizeFormula`).
  * @param {any} val
  * @returns {string}
  */
@@ -52,7 +83,7 @@ export function escapeCSVCell(val) {
   if (val === null || val === undefined) {
     return '""';
   }
-  const str = String(val);
+  const str = neutralizeFormula(String(val));
   const escaped = str.replace(/"/g, '""');
   return `"${escaped}"`;
 }
@@ -81,38 +112,6 @@ export function formatPackageCSVRow(pkg) {
     escapeCSVCell(pkg.origin || ''),
     escapeCSVCell(pkg.destination || ''),
     escapeCSVCell(notes)
-  ];
-}
-
-/**
- * Formats a package record into a CSV row array WITHOUT any repair pass and
- * without the Hebrew-first column preference.
- *
- * This is the backup formatter: every cell is whatever is actually stored, so
- * the file can reconstruct the user's data exactly. `formatPackageCSVRow`
- * prefers `titleHe || title`, which flips Title/Notes to Hebrew for any record
- * validatePackage has touched (it always populates `titleHe`). A backup must
- * not make that substitution either.
- *
- * @param {object} pkg
- * @returns {string[]}
- */
-export function formatRawPackageCSVRow(pkg) {
-  if (!pkg || typeof pkg !== 'object') {
-    return Array(CSV_HEADERS.length).fill('""');
-  }
-
-  return [
-    escapeCSVCell(pkg.id ?? ''),
-    escapeCSVCell(pkg.title ?? ''),
-    escapeCSVCell(pkg.trackingNumber ?? ''),
-    escapeCSVCell(pkg.carrier ?? ''),
-    escapeCSVCell(pkg.status ?? ''),
-    escapeCSVCell(pkg.orderDate ?? ''),
-    escapeCSVCell(pkg.expectedDeliveryDate ?? ''),
-    escapeCSVCell(pkg.origin ?? ''),
-    escapeCSVCell(pkg.destination ?? ''),
-    escapeCSVCell(pkg.notes ?? '')
   ];
 }
 
@@ -147,34 +146,40 @@ export function exportToCSV(packages, triggerDownload = false, filename = '') {
 }
 
 /**
- * Exports package list to CSV **verbatim** - no validation, no repair, no cap.
+ * Exports packages **verbatim** as JSON — no validation, no repair, no cap.
  *
- * This is the Account tab's backup path. `exportToCSV` routes through
- * `validatePackageList`, which rewrites unknown carriers/statuses, fills empty
- * dates and titles, rewrites or blanks tracking numbers to `UNTRACKED`, and
- * truncates notes and titles. Those repairs are right for a report and wrong
- * for a backup: a file that cannot reconstruct what the user had is not a
- * backup. Only the CSV *formatting* primitives (RFC 4180 quoting, the UTF-8
- * BOM, `downloadBlob`) are shared.
+ * This is the Account tab's backup path, and the format is what makes it a
+ * backup: JSON is what `deliveryService.importData` reads, and it carries
+ * every field — `checkpoints`, `titleHe`, `notesHe`, `category`, the flags,
+ * `schemaVersion` — that reconstructing a package needs. The CSV it replaced
+ * could not restore at all: ten flat columns, and no CSV importer exists.
+ *
+ * It is handed the blob from `deliveryService.getRawPackages` rather than the
+ * in-memory list. In normal operation the two agree — everything this version
+ * writes goes through `savePackages`, which validates first — so the raw read
+ * is not what buys fidelity. It matters only for a legacy or
+ * externally-modified blob, where it passes the stored bytes through untouched
+ * instead of repairing them into the backup.
+ *
+ * Output is compact, not pretty-printed: a backup is machine-read, and the
+ * ~26% inflation from indentation comes straight off the restore ceiling,
+ * since `MAX_IMPORT_SIZE_BYTES` is measured on the exported file.
  *
  * @param {object[]} packages
  * @param {boolean} [triggerDownload=false]
  * @param {string} [filename]
  * @returns {string}
  */
-export function exportRawToCSV(packages, triggerDownload = false, filename = '') {
+export function exportRawToJSON(packages, triggerDownload = false, filename = '') {
   const list = Array.isArray(packages) ? packages : [];
-
-  const rows = list.map(pkg => formatRawPackageCSVRow(pkg).join(','));
-  const csvBody = [CSV_HEADER_LINE, ...rows].join('\r\n');
-  const csvContentWithBOM = '\uFEFF' + csvBody;
+  const jsonString = JSON.stringify(list);
 
   if (triggerDownload && typeof document !== 'undefined') {
-    const defaultName = filename || `deliveree_backup_${todayISO()}.csv`;
-    downloadBlob(csvContentWithBOM, 'text/csv;charset=utf-8;', defaultName);
+    const defaultName = filename || `deliveree_backup_${todayISO()}.json`;
+    downloadBlob(jsonString, 'application/json;charset=utf-8;', defaultName);
   }
 
-  return csvContentWithBOM;
+  return jsonString;
 }
 
 /**
@@ -453,9 +458,8 @@ export const exportUtils = {
   downloadBlob,
   escapeCSVCell,
   formatPackageCSVRow,
-  formatRawPackageCSVRow,
   exportToCSV,
-  exportRawToCSV,
+  exportRawToJSON,
   exportToJSON,
   generatePrintableSummary
 };

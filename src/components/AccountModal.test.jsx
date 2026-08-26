@@ -44,9 +44,9 @@ vi.mock('../utils/exportUtils', async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...actual,
-    exportRawToCSV: (...args) => {
+    exportRawToJSON: (...args) => {
       exportSpies.raw(...args);
-      return actual.exportRawToCSV(...args);
+      return actual.exportRawToJSON(...args);
     },
     exportToCSV: (...args) => {
       exportSpies.validated(...args);
@@ -54,6 +54,8 @@ vi.mock('../utils/exportUtils', async (importOriginal) => {
     }
   };
 });
+
+const STORAGE_KEY = 'deliveree_packages_user-42';
 
 // A record that the repair pass would rewrite in every one of these fields.
 const UNREPAIRED_PACKAGE = {
@@ -85,8 +87,8 @@ function renderModal(props = {}) {
   );
 }
 
-async function clickQuickExport() {
-  const button = screen.getByRole('button', { name: /Quick Export to CSV/i });
+async function clickBackup() {
+  const button = screen.getByRole('button', { name: /Download Full Backup \(JSON\)/i });
   await userEvent.click(button);
 }
 
@@ -110,104 +112,112 @@ afterEach(() => {
 });
 
 describe('AccountModal — backup export path', () => {
-  it('routes the Account-tab backup through the raw exporter, not the validating one', async () => {
-    renderModal();
-    await clickQuickExport();
+  it('backs up the stored blob, not the in-memory prop', async () => {
+    // The two agree in normal operation (savePackages validates before
+    // writing). They diverge for a legacy or externally-written blob, which is
+    // what this asserts: the stored bytes reach the file, not App state.
+    const repairedProp = [{ ...UNREPAIRED_PACKAGE, carrier: 'other', status: 'in_transit', trackingNumber: 'RR123456789IL' }];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([UNREPAIRED_PACKAGE]));
+
+    renderModal({ packages: repairedProp });
+    await clickBackup();
 
     expect(exportSpies.raw).toHaveBeenCalledTimes(1);
     expect(exportSpies.validated).not.toHaveBeenCalled();
-  });
-
-  it('writes the user’s stored values verbatim — no repair pass', async () => {
-    renderModal();
-    await clickQuickExport();
 
     const [passedPackages] = exportSpies.raw.mock.calls[0];
     expect(passedPackages).toEqual([UNREPAIRED_PACKAGE]);
+    expect(passedPackages).not.toEqual(repairedProp);
+  });
 
-    // Re-derive the produced CSV through the same real implementation.
-    const { exportRawToCSV } = await import('../utils/exportUtils');
+  it('applies no repair pass of its own to what it was handed', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([UNREPAIRED_PACKAGE]));
+    renderModal();
+    await clickBackup();
+
+    const { exportRawToJSON } = await import('../utils/exportUtils');
     exportSpies.raw.mockClear();
-    const produced = exportRawToCSV([UNREPAIRED_PACKAGE]);
-    const row = produced.replace(/^﻿/, '').split('\r\n')[1];
+    const [out] = JSON.parse(exportRawToJSON([UNREPAIRED_PACKAGE]));
 
-    // Values the validating exporter would have rewritten:
-    expect(row).toContain('"some_carrier_we_never_heard_of"'); // not 'other'
-    expect(row).toContain('"lost_in_the_post"'); // not 'in_transit'
-    expect(row).toContain('"rr-123 456/789il"'); // not uppercased/stripped/UNTRACKED
-    expect(row).not.toContain('UNTRACKED');
-    expect(row).not.toContain(todayISO()); // empty orderDate stays empty
-    expect(row).not.toContain('Israel'); // empty destination stays empty
-    expect(row).not.toContain('Untitled Package');
+    expect(out.carrier).toBe('some_carrier_we_never_heard_of'); // not 'other'
+    expect(out.status).toBe('lost_in_the_post'); // not 'in_transit'
+    expect(out.trackingNumber).toBe('rr-123 456/789il'); // not uppercased/stripped/UNTRACKED
+    expect(out.orderDate).toBe(''); // empty orderDate stays empty
+    expect(out.destination).toBe(''); // empty destination stays empty
+    expect(out.title).toBe('Sneakers "Air"'); // not 'Untitled Package'
+    expect(out).not.toHaveProperty('schemaVersion'); // nothing added either
   });
 
-  it('keeps English Title/Notes columns even when Hebrew fields exist', async () => {
-    const { exportRawToCSV } = await import('../utils/exportUtils');
-    const row = exportRawToCSV([UNREPAIRED_PACKAGE])
-      .replace(/^﻿/, '')
-      .split('\r\n')[1];
+  it('keeps the Hebrew fields the CSV backup dropped (#53)', async () => {
+    const { exportRawToJSON } = await import('../utils/exportUtils');
+    const [out] = JSON.parse(exportRawToJSON([UNREPAIRED_PACKAGE]));
 
-    // formatPackageCSVRow uses `titleHe || title`; the raw formatter must not.
-    expect(row).toContain('Sneakers ""Air""');
-    expect(row).not.toContain('נעלי ספורט');
-    expect(row).toContain('Special ""Priority"" delivery');
-    expect(row).not.toContain('משלוח מהיר');
+    expect(out.title).toBe('Sneakers "Air"');
+    expect(out.titleHe).toBe('נעלי ספורט');
+    expect(out.notes).toBe('Special "Priority" delivery');
+    expect(out.notesHe).toBe('משלוח מהיר');
   });
 
-  it('round-trips an unrepaired backup: every stored cell is recoverable', async () => {
-    const { exportRawToCSV, CSV_HEADERS } = await import('../utils/exportUtils');
-    const csv = exportRawToCSV([UNREPAIRED_PACKAGE]).replace(/^﻿/, '');
-    const [headerLine, rowLine] = csv.split('\r\n');
+  it('produces a file the app can actually restore', async () => {
+    const withCheckpoints = {
+      ...UNREPAIRED_PACKAGE,
+      carrier: 'israel_post',
+      status: 'in_transit',
+      trackingNumber: 'RR123456789IL',
+      checkpoints: [{ id: 'cp-1', status: 'in_transit', location: 'Haifa', timestamp: '2026-08-01T00:00:00.000Z' }]
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([withCheckpoints]));
 
-    const parse = (line) =>
-      line
-        .slice(1, -1)
-        .split('","')
-        .map((cell) => cell.replace(/""/g, '"'));
+    renderModal();
+    await clickBackup();
 
-    const headers = parse(headerLine);
-    const cells = parse(rowLine);
-    expect(headers).toEqual([...CSV_HEADERS]);
+    const [passedPackages] = exportSpies.raw.mock.calls[0];
+    const { exportRawToJSON } = await import('../utils/exportUtils');
+    const { deliveryService } = await import('../services/deliveryService');
+    const restored = deliveryService.importData(exportRawToJSON(passedPackages));
 
-    const restored = Object.fromEntries(headers.map((h, i) => [h, cells[i]]));
-    expect(restored.ID).toBe(UNREPAIRED_PACKAGE.id);
-    expect(restored.Title).toBe(UNREPAIRED_PACKAGE.title);
-    expect(restored.TrackingNumber).toBe(UNREPAIRED_PACKAGE.trackingNumber);
-    expect(restored.Carrier).toBe(UNREPAIRED_PACKAGE.carrier);
-    expect(restored.Status).toBe(UNREPAIRED_PACKAGE.status);
-    expect(restored.OrderDate).toBe('');
-    expect(restored.Destination).toBe('');
-    expect(restored.Notes).toBe(UNREPAIRED_PACKAGE.notes);
+    expect(restored.error).toBeUndefined();
+    expect(restored.success).toBe(true);
+    expect(restored.packages[0].id).toBe(withCheckpoints.id);
+    expect(restored.packages[0].titleHe).toBe('נעלי ספורט');
+    expect(restored.packages[0].checkpoints).toHaveLength(1);
   });
 
-  it('exports every row past the 1,000-item advisory cap', async () => {
-    const { exportRawToCSV } = await import('../utils/exportUtils');
+  it('backs up every row past the 1,000-item advisory cap', async () => {
     const many = Array.from({ length: 1200 }, (_, i) => ({
       id: `pkg-${i}`,
       title: `Item ${i}`,
       trackingNumber: `TRK${i}`
     }));
-    const lines = exportRawToCSV(many).replace(/^﻿/, '').split('\r\n');
-    expect(lines.length).toBe(1201); // header + 1200 rows
-    expect(lines[1200]).toContain('pkg-1199');
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(many));
+
+    renderModal();
+    await clickBackup();
+
+    const [passedPackages] = exportSpies.raw.mock.calls[0];
+    expect(passedPackages).toHaveLength(1200);
+    const { exportRawToJSON } = await import('../utils/exportUtils');
+    expect(JSON.parse(exportRawToJSON(passedPackages))).toHaveLength(1200);
   });
 
   it('preserves the filename convention and the success toast', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([UNREPAIRED_PACKAGE]));
     const onShowToast = vi.fn();
     renderModal({ onShowToast });
-    await clickQuickExport();
+    await clickBackup();
 
     const [, triggerDownload, filename] = exportSpies.raw.mock.calls[0];
     expect(triggerDownload).toBe(true);
-    expect(filename).toBe(`deliveree_backup_user-42_${todayISO()}.csv`);
-    expect(downloads).toEqual([`deliveree_backup_user-42_${todayISO()}.csv`]);
-    expect(onShowToast).toHaveBeenCalledWith(expect.stringContaining('CSV backup'), 'success');
+    expect(filename).toBe(`deliveree_backup_user-42_${todayISO()}.json`);
+    expect(downloads).toEqual([`deliveree_backup_user-42_${todayISO()}.json`]);
+    expect(onShowToast).toHaveBeenCalledWith(expect.stringContaining('JSON backup'), 'success');
   });
 
-  it('shows an info toast and exports nothing when there are no packages', async () => {
+  it('shows an info toast and exports nothing when storage holds no packages', async () => {
     const onShowToast = vi.fn();
-    renderModal({ onShowToast, packages: [] });
-    await clickQuickExport();
+    // Non-empty prop, empty storage: the prop must not stand in for the blob.
+    renderModal({ onShowToast, packages: [UNREPAIRED_PACKAGE] });
+    await clickBackup();
 
     expect(exportSpies.raw).not.toHaveBeenCalled();
     expect(onShowToast).toHaveBeenCalledWith(expect.stringContaining('No packages'), 'info');
@@ -248,7 +258,9 @@ describe('AccountModal — account deletion keyword', () => {
     expect(isValidConfirmation('delete')).toBe(true);
     expect(isValidConfirmation('  DELETE  ')).toBe(true);
     expect(isValidConfirmation('מחק')).toBe(true);
+    expect(isValidConfirmation('  מחק  ')).toBe(true);
     expect(isValidConfirmation('del')).toBe(false);
+    expect(isValidConfirmation('cancel')).toBe(false);
     expect(isValidConfirmation('')).toBe(false);
     expect(isValidConfirmation(null)).toBe(false);
   });

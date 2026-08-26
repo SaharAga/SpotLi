@@ -56,12 +56,16 @@ export function ExportModal({
           );
         }
       } else if (selectedFormat === 'json') {
-        exportToJSON(filteredExportPackages, true, `deliveree_backup_${selectedScope}_${today}.json`);
+        // Not a backup: this list is scope-filtered, and importData overwrites
+        // the storage key wholesale rather than merging. A file named "backup"
+        // holding only `delivered` would delete every active package on
+        // restore. The restorable backup is the Account tab's Full Backup.
+        exportToJSON(filteredExportPackages, true, `deliveree_export_${selectedScope}_${today}.json`);
         if (onShowToast) {
           onShowToast(
             language === 'he' 
               ? `קובץ JSON הופק בהצלחה (${filteredExportPackages.length} חבילות)` 
-              : `JSON backup ready (${filteredExportPackages.length} packages)`,
+              : `JSON export ready (${filteredExportPackages.length} packages)`,
             'success'
           );
         }
@@ -103,7 +107,7 @@ export function ExportModal({
                 <span>{language === 'he' ? 'מרכז ייצוא ודוחות' : 'Export Center & Reports'}</span>
               </h2>
               <p className="text-xs text-slate-400">
-                {language === 'he' ? 'ייצוא נתונים מותאם לאקסל, גיבוי JSON והדפסה' : 'Export to Excel, JSON backup & printable PDF'}
+                {language === 'he' ? 'דוחות לאקסל, JSON והדפסה — לצפייה, לא לשחזור' : 'Excel, JSON & printable reports — for reading, not restoring'}
               </p>
             </div>
           </div>
@@ -147,7 +151,7 @@ export function ExportModal({
                 </div>
               </button>
 
-              {/* JSON Backup */}
+              {/* JSON report — scope-filtered, not a restorable backup */}
               <button
                 type="button"
                 onClick={() => setSelectedFormat('json')}
@@ -162,9 +166,11 @@ export function ExportModal({
                   {selectedFormat === 'json' && <CheckCircle2 className="w-4 h-4 text-blue-400" />}
                 </div>
                 <div>
-                  <span className="font-bold text-slate-100 block text-xs">JSON Backup</span>
+                  <span className="font-bold text-slate-100 block text-xs">
+                    {language === 'he' ? 'ייצוא JSON' : 'JSON Export'}
+                  </span>
                   <span className="text-[10px] text-slate-400">
-                    {language === 'he' ? 'גיבוי מלא לכל השדות' : 'Complete schema backup'}
+                    {language === 'he' ? 'לפי הסינון שנבחר — לא קובץ שחזור' : 'Filtered by scope — not a restore file'}
                   </span>
                 </div>
               </button>
