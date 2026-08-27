@@ -116,7 +116,12 @@ describe('inboundEmailHandler Unit Tests', () => {
       const dbMock = {
         collection: vi.fn(() => ({
           doc: vi.fn(() => ({
-            set: docSetMock
+            set: docSetMock,
+            collection: vi.fn(() => ({
+              doc: vi.fn(() => ({
+                set: docSetMock
+              }))
+            }))
           }))
         }))
       };
@@ -143,7 +148,7 @@ describe('inboundEmailHandler Unit Tests', () => {
         trackingNumber: 'LP00512345678901',
         carrier: 'cainiao'
       }));
-      expect(docSetMock).toHaveBeenCalledTimes(1);
+      expect(docSetMock).toHaveBeenCalledTimes(2);
       const [savedDoc] = docSetMock.mock.calls[0];
       expect(savedDoc.userId).toBe('user123');
       expect(savedDoc.trackingNumber).toBe('LP00512345678901');

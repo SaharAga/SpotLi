@@ -247,8 +247,11 @@ export async function requestGmailForwardingSetup(ingestionEmail) {
     const { signInWithPopup, GoogleAuthProvider } = await import('firebase/auth');
     const provider = new GoogleAuthProvider();
     provider.addScope('https://www.googleapis.com/auth/gmail.settings.basic');
-    provider.setCustomParameters({ prompt: 'select_account consent' });
+    provider.setCustomParameters({ prompt: 'select_account' });
 
+    const result = await signInWithPopup(auth, provider);
+    const credential = GoogleAuthProvider.credentialFromResult(result);
+    const accessToken = credential?.accessToken;
     const connectedEmail = result?.user?.email || 'Gmail Account';
 
     // Check if this account is already linked

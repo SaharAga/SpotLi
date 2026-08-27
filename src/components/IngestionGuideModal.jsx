@@ -29,7 +29,7 @@ export function IngestionGuideModal({
   onShowToast
 }) {
   const { language, isRTL } = useLanguage();
-  const { user } = useAuth();
+  const { user, loginWithGoogle } = useAuth();
   
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [showQR, setShowQR] = useState(false);
@@ -37,7 +37,7 @@ export function IngestionGuideModal({
   const [isConnectingGmail, setIsConnectingGmail] = useState(false);
   const [isConnectingOutlook, setIsConnectingOutlook] = useState(false);
   const [connectedServices, setConnectedServicesState] = useState(() => getConnectedServices(user));
-  const userUid = user?.uid;
+  const userUid = user?.uid || user?.id;
 
   // Sync state whenever user ID changes or modal opens
   React.useEffect(() => {
@@ -66,17 +66,28 @@ export function IngestionGuideModal({
   const handleConnectGmail = async () => {
     setIsConnectingGmail(true);
     try {
-      if (!user) {
-        if (onShowToast) onShowToast(
-          language === 'he' ? 'נא להתחבר לחשבון כדי להפעיל סנכרון אוטומטי' : 'Please sign in to enable auto-sync',
-          'info'
-        );
-        setIsConnectingGmail(false);
-        return;
+      let currentUser = user;
+      if (!currentUser) {
+        if (loginWithGoogle) {
+          const signedIn = await loginWithGoogle();
+          if (!signedIn) {
+            setIsConnectingGmail(false);
+            return;
+          }
+          currentUser = signedIn;
+        } else {
+          if (onShowToast) onShowToast(
+            language === 'he' ? 'נא להתחבר לחשבון כדי להפעיל סנכרון אוטומטי' : 'Please sign in to enable auto-sync',
+            'info'
+          );
+          setIsConnectingGmail(false);
+          return;
+        }
       }
 
-      const res = await requestGmailForwardingSetup(ingestionEmail);
-      setConnectedServicesState(getConnectedServices(user));
+      const activeIngestionEmail = getIngestionEmailAddress(currentUser);
+      const res = await requestGmailForwardingSetup(activeIngestionEmail);
+      setConnectedServicesState(getConnectedServices(currentUser));
 
       if (res.alreadyConnected) {
         if (onShowToast) {
@@ -117,7 +128,8 @@ export function IngestionGuideModal({
   const handleConnectOutlook = async () => {
     setIsConnectingOutlook(true);
     try {
-      if (!user) {
+      let currentUser = user;
+      if (!currentUser) {
         if (onShowToast) onShowToast(
           language === 'he' ? 'נא להתחבר לחשבון כדי להפעיל סנכרון אוטומטי' : 'Please sign in to enable auto-sync',
           'info'
@@ -126,8 +138,9 @@ export function IngestionGuideModal({
         return;
       }
 
-      const res = await requestOutlookForwardingSetup(ingestionEmail);
-      setConnectedServicesState(getConnectedServices(user));
+      const activeIngestionEmail = getIngestionEmailAddress(currentUser);
+      const res = await requestOutlookForwardingSetup(activeIngestionEmail);
+      setConnectedServicesState(getConnectedServices(currentUser));
 
       if (res.alreadyConnected) {
         if (onShowToast) {
