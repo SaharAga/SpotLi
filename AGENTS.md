@@ -15,18 +15,21 @@ Software engineering in this codebase is structured around rigorous design, dist
 
 ---
 
-## 1.1 Orchestrator Governance & Separation Invariant
+## 1.1 Orchestrator Governance & Two-Tier Risk Model
 
-To maintain clean separation of concerns:
-1. **Strict Orchestrator Hands-Off Rule**:
-   - The Lead Orchestrator is **STRICTLY FORBIDDEN** from directly modifying project source code (`src/**`, `scripts/**`) for multi-domain features or refactors.
-   - The Orchestrator's sole authority is: (1) Architecture/Task decomposition, (2) Subagent dispatching, and (3) Gate sign-off arbitration.
-2. **Distinct Verification Gates & Branch Isolation**:
-   - Feature development subagents run in isolated branch workspaces (`Workspace: 'branch'`).
-   - Code Review, Security Audit, and QA Verification **MUST ALWAYS** be executed by distinct subagents. Self-review by the Orchestrator or authoring subagent is strictly forbidden.
-3. **Optimized Concurrent Pipeline**:
-   - Routine development flows through the concurrent pipeline (**Gate 1 Developer → [Gate 2 Code Reviewer + Gate 3 Security Auditor in Parallel] → Gate 4 QA Verifier → Done**).
-   - Extra adversarial swarms (challengers/forensic auditors) are reserved strictly for meta-layer framework restructures, not routine application features.
+To maintain development velocity while preserving production safety, this repository uses a Risk-Based Two-Tier Governance Model:
+
+1. **Tier 1: Fast-Track (Direct Execution)**
+   - **Criteria**: Routine bug fixes, UI/UX tweaks, single-component updates, and contained logic fixes.
+   - **Process**: The Orchestrator acts as a unified agent, directly modifying source code (`src/**`, `scripts/**`, etc.) in collaboration with the user. No subagents or strict gatekeeping required.
+
+2. **Tier 2: Deep-Audit (Multi-Agent Swarm)**
+   - **Criteria**: Core architectural changes, Auth/OAuth updates, Firestore security rule modifications, or major cross-domain features.
+   - **Process**: The Orchestrator steps back into a management role. It must decompose tasks and dispatch specialized subagents into isolated branch workspaces (`Workspace: 'branch'`).
+   - Code Review, Security Audit, and QA Verification **MUST ALWAYS** be executed by distinct subagents for Tier 2 changes. Self-review is strictly forbidden here.
+
+3. **Optimized Concurrent Pipeline (Tier 2 Only)**:
+   - Deep-Audit development flows through the concurrent pipeline (**Gate 1 Developer → [Gate 2 Code Reviewer + Gate 3 Security Auditor in Parallel] → Gate 4 QA Verifier → Done**).
 
 ---
 

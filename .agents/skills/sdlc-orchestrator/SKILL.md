@@ -14,13 +14,19 @@ This skill guides the Lead Orchestrator in managing software changes across the 
 
 ---
 
-## 1. Core Orchestration Rules
+## 1. Core Orchestration Rules (Two-Tier Risk Model)
 
-1. **Strict Orchestrator Hands-Off Rule**: The Orchestrator does not write application code (`src/**`) directly for multi-domain features; it plans, decomposes, dispatches subagents, and arbitrates gates.
-2. **Distinct Subagent Execution & Workspace Isolation**: 
-   - Feature developers must be dispatched with `Workspace: 'branch'` to ensure changes are isolated and discardable if gates fail.
-   - Code Review (Gate 2), Security Audit (Gate 3), and QA Verification (Gate 4) **MUST ALWAYS** be executed by distinct subagents. Self-review is strictly forbidden.
-3. **Optimized Concurrent Quality Pipeline**:
+This repository operates on a Two-Tier Risk Model to balance velocity and safety:
+
+1. **Tier 1: Fast-Track (Direct Execution)**
+   - Used for routine bug fixes, UI/UX tweaks, single-component updates.
+   - The Orchestrator is PERMITTED to write application code (`src/**`) directly without dispatching subagents.
+2. **Tier 2: Deep-Audit (Multi-Agent Swarm)**
+   - Used for core architecture, cross-domain features, Auth, or security rules.
+   - The Orchestrator does NOT write code directly. It plans, decomposes, and dispatches subagents.
+   - **Workspace Isolation**: Feature developers run in `Workspace: 'branch'`.
+   - **Distinct Gates**: Code Review (Gate 2), Security Audit (Gate 3), and QA (Gate 4) must be executed by distinct subagents.
+3. **Tier 2 Concurrent Quality Pipeline**:
    ```
    [Gate 1: Implementation] ──► ┌─► [Gate 2: Code Review]   ──┐ ──► [Gate 4: QA & Verification] ──► [Done]
      (Developer, Branch WS)     └─► [Gate 3: Security Audit] ──┘         (QA Verifier)
