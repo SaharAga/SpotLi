@@ -55,6 +55,7 @@ import { APP_NAME, APP_COPYRIGHT } from './constants/app';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { usePackages } from './hooks/usePackages';
+import { triggerGmailBackfill } from './services/emailSyncService';
 
 /**
  * Every dialog in the app, by id. These replaced twelve `isXOpen` booleans
@@ -300,14 +301,59 @@ export function DashboardContent() {
         }
       }
 
+      // 5. Gmail OAuth callback return: ?gmail=connected | ?gmail=error
+      // Deliberately doesn't write localStorage here — the redirect param
+      // only proves Google sent us back, not that the OAuth token exchange
+      // in gmailOAuthCallback actually succeeded server-side. Opening the
+      // modal triggers its own isOpen effect, which asks the
+      // gmailConnectionStatus Cloud Function for the real, server-verified
+      // state (gmailConnections/{uid} itself is unreadable from the client).
+      const gmailResult = params.get('gmail');
+      if (gmailResult === 'connected') {
+        showToast(
+          language === 'he'
+            ? 'Gmail חובר בהצלחה! אישורי הזמנות יסונכרנו אוטומטית 🎉'
+            : 'Gmail connected! Orders will sync automatically 🎉',
+          'success'
+        );
+        // Reports scanned/saved counts (or the failure) so a silent client-
+        // side error isn't invisible — this used to be a bare
+        // .catch(() => {}), which meant a failed backfill call looked
+        // identical to "nothing matched in the last 30 days."
+        triggerGmailBackfill().then((res) => {
+          if (res.ok) {
+            showToast(
+              language === 'he'
+                ? `נסרקו ${res.scanned ?? 0} אימיילים, נוספו ${res.saved ?? 0} חבילות`
+                : `Scanned ${res.scanned ?? 0} emails, added ${res.saved ?? 0} packages`,
+              'info'
+            );
+          } else {
+            showToast(
+              language === 'he'
+                ? `סריקת 30 הימים האחרונים נכשלה: ${res.error || 'שגיאה לא ידועה'}`
+                : `30-day scan failed: ${res.error || 'unknown error'}`,
+              'error'
+            );
+          }
+        });
+        openModal(MODAL.INGESTION_GUIDE);
+      } else if (gmailResult === 'error') {
+        showToast(
+          language === 'he' ? 'החיבור ל-Gmail נכשל, נסה שוב' : 'Gmail connection failed, please try again',
+          'error'
+        );
+      }
+
       // Clean up share/action query params from URL without reload
-      if (action || tabParam || shareTitle || shareText || shareUrl || pkgIdParam) {
+      if (action || tabParam || shareTitle || shareText || shareUrl || pkgIdParam || gmailResult) {
         const cleanParams = new URLSearchParams(window.location.search);
         cleanParams.delete('action');
         cleanParams.delete('title');
         cleanParams.delete('text');
         cleanParams.delete('url');
         cleanParams.delete('packageId');
+        cleanParams.delete('gmail');
         
         const cleanQuery = cleanParams.toString();
         const newUrl = window.location.pathname + (cleanQuery ? `?${cleanQuery}` : '') + window.location.hash;

@@ -50,15 +50,14 @@ secrets (`scripts/pre_commit_secrets_check.js`).
 
 - **UI**: React 19 + Tailwind CSS 4, entry point `src/App.jsx`.
 - **Storage**: layered — `localStorage` (`src/services/deliveryService.js`)
-  is the baseline, `idbStorageAdapter.js` backs offline persistence, and
-  `cloudStorageAdapter.js` syncs to Firestore for signed-in users.
+  is the baseline, and `cloudStorageAdapter.js` syncs to Firestore for signed-in users.
   `syncQueueService.js` queues writes made while offline and replays them
   with idempotency keys once connectivity returns.
 - **Tracking**: `carrierApiProxy.js` is the only place that talks to a
   carrier's servers; `trackingService.js` layers rate limiting and
   checkpoint merging on top of it.
 - **Auth**: `src/context/AuthContext.jsx`, backed by Firebase Authentication
-  (Google, Apple, Facebook, email/password).
+  (Google, email/password).
 - **Data model & validation**: `src/schemas/packageSchema.js` (Zod), mirrored
   server-side by `firestore.rules` — the rules are the actual enforcement,
   the client schema is defense in depth.
@@ -164,6 +163,21 @@ were affected:
    deploy step that fails on every single push until then is exactly the
    trap `firestore.rules` auto-deploy fell into earlier; add it to
    `ci.yml`'s `deploy-firebase` job once 1–3 above are done.
+
+## Automated Email Ingestion & Gmail Sync
+
+Deliveree supports two channels for automatic shipment tracking from emails:
+
+1. **Direct Inbound Email Gateway (`functions/src/inboundEmailHandler.js`)**:
+   - Every user gets a dedicated ingestion address (`233b362d7b331adfde6e+usr_<uid>@cloudmailin.net`).
+   - Inbound shipment emails sent or forwarded to this address trigger CloudMailin's webhook, which parses carrier tracking numbers and auto-saves packages to Firestore.
+
+2. **Gmail OAuth 2.0 & Real-Time Push Sync (`functions/src/gmail*`)**:
+   - **1-Click Connect**: Redirect-based OAuth 2.0 flow with `gmail.readonly` scope.
+   - **Real-Time Updates**: Integrates Gmail `users.watch()` with Cloud Pub/Sub push notifications (`gmailPushHandler`).
+   - **Historical Backfill**: Automatically scans and deduplicates orders from the preceding 30 days upon connection (`gmailBackfill`).
+   - **Token Isolation**: Refresh tokens are stored server-side only in `gmailConnections/{uid}` with a strict **deny-all** in `firestore.rules` (only accessible via Firebase Admin SDK).
+   - **Watch Renewal**: Weekly Cloud Scheduler job (`gmailWatchRenewal`) automatically renews 7-day Gmail mailbox watches.
 
 ## Automated feedback/crash triage
 

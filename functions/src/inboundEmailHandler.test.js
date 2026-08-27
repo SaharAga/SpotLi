@@ -65,6 +65,28 @@ describe('inboundEmailHandler Unit Tests', () => {
       const details = extractTrackingDetails('Welcome to our store', 'Thank you for your business!');
       expect(details.trackingNumber).toBeNull();
     });
+
+    it('does not mistake a phone number for a DHL tracking number when "dhl" is absent', () => {
+      // Regression: a bare \d{10} match (Israeli phone numbers are exactly
+      // 10 digits) used to fire the DHL pattern for any AliExpress order
+      // whose shipping-address block happened to include the recipient's
+      // phone number, even though the shipment has nothing to do with DHL.
+      const details = extractTrackingDetails(
+        'Your AliExpress order has shipped',
+        'Recipient: Sahar Aga, Phone: 0501234567, Address: Tel Aviv'
+      );
+      expect(details.carrier).not.toBe('dhl');
+      expect(details.trackingNumber).toBeNull();
+    });
+
+    it('does not tag an order as DHL just because DHL is mentioned far from the number', () => {
+      const farText = 'x'.repeat(400);
+      const details = extractTrackingDetails(
+        'AliExpress order confirmation',
+        `We ship via DHL, FedEx, or Cainiao depending on availability. ${farText} Order number: 1234567890`
+      );
+      expect(details.carrier).not.toBe('dhl');
+    });
   });
 
   describe('createInboundEmailHandler', () => {

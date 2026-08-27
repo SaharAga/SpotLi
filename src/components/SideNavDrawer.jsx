@@ -139,19 +139,6 @@ export function SideNavDrawer({
             </div>
           </button>
 
-          {/* Settings — moved out of the Account modal so it's reachable in one tap */}
-          <button
-            onClick={() => {
-              onClose();
-              if (onOpenSettings) onOpenSettings();
-              else onOpenAuth();
-            }}
-            className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-800 text-slate-200 text-start cursor-pointer transition-colors min-h-[48px]"
-          >
-            <Settings className="w-4 h-4 text-slate-400 shrink-0" />
-            <span className="font-semibold">{language === 'he' ? 'הגדרות' : 'Settings'}</span>
-          </button>
-
           <div className="pt-1 pb-2 border-t border-slate-800" />
 
           {(user || isDemoMode) && (
@@ -198,7 +185,7 @@ export function SideNavDrawer({
                   onClose();
                   if (onOpenExport) onOpenExport();
                 }}
-                className="w-full flex items-center gap-3 p-3 rounded-2xl bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 text-blue-300 text-start cursor-pointer transition-colors min-h-[48px]"
+                className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-800 text-slate-200 text-start cursor-pointer transition-colors min-h-[48px]"
               >
                 <Download className="w-4 h-4 text-blue-400 shrink-0" />
                 <span className="font-semibold">{language === 'he' ? 'מרכז ייצוא ודוחות (CSV/JSON/PDF)' : 'Export Center (CSV/JSON/PDF)'}</span>
@@ -246,12 +233,25 @@ export function SideNavDrawer({
                 onClose();
                 onOpenAdminFeedback();
               }}
-              className="w-full flex items-center gap-3 p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-300 text-start cursor-pointer transition-colors min-h-[48px]"
+              className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-800 text-slate-200 text-start cursor-pointer transition-colors min-h-[48px]"
             >
               <ShieldCheck className="w-4 h-4 text-indigo-400 shrink-0" />
               <span className="font-semibold">{language === 'he' ? 'מרכז ניהול ומדדים (מנהל)' : 'Admin Dashboard & Telemetry'}</span>
             </button>
           )}
+
+          {/* Settings */}
+          <button
+            onClick={() => {
+              onClose();
+              if (onOpenSettings) onOpenSettings();
+              else onOpenAuth();
+            }}
+            className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-800 text-slate-200 text-start cursor-pointer transition-colors min-h-[48px]"
+          >
+            <Settings className="w-4 h-4 text-slate-400 shrink-0" />
+            <span className="font-semibold">{language === 'he' ? 'הגדרות' : 'Settings'}</span>
+          </button>
 
           {/* About & Info */}
           <button

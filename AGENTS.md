@@ -15,18 +15,21 @@ Software engineering in this codebase is structured around rigorous design, dist
 
 ---
 
-## 1.1 Orchestrator Governance & Separation Invariant
+## 1.1 Orchestrator Governance & Two-Tier Risk Model
 
-To maintain clean separation of concerns:
-1. **Strict Orchestrator Hands-Off Rule**:
-   - The Lead Orchestrator is **STRICTLY FORBIDDEN** from directly modifying project source code (`src/**`, `scripts/**`) for multi-domain features or refactors.
-   - The Orchestrator's sole authority is: (1) Architecture/Task decomposition, (2) Subagent dispatching, and (3) Gate sign-off arbitration.
-2. **Distinct Verification Gates & Branch Isolation**:
-   - Feature development subagents run in isolated branch workspaces (`Workspace: 'branch'`).
-   - Code Review, Security Audit, and QA Verification **MUST ALWAYS** be executed by distinct subagents. Self-review by the Orchestrator or authoring subagent is strictly forbidden.
-3. **Optimized Concurrent Pipeline**:
-   - Routine development flows through the concurrent pipeline (**Gate 1 Developer → [Gate 2 Code Reviewer + Gate 3 Security Auditor in Parallel] → Gate 4 QA Verifier → Done**).
-   - Extra adversarial swarms (challengers/forensic auditors) are reserved strictly for meta-layer framework restructures, not routine application features.
+To maintain development velocity while preserving production safety, this repository uses a Risk-Based Two-Tier Governance Model:
+
+1. **Tier 1: Fast-Track (Direct Execution)**
+   - **Criteria**: Routine bug fixes, UI/UX tweaks, single-component updates, and contained logic fixes.
+   - **Process**: The Orchestrator acts as a unified agent, directly modifying source code (`src/**`, `scripts/**`, etc.) in collaboration with the user. No subagents or strict gatekeeping required.
+
+2. **Tier 2: Deep-Audit (Multi-Agent Swarm)**
+   - **Criteria**: Core architectural changes, Auth/OAuth updates, Firestore security rule modifications, or major cross-domain features.
+   - **Process**: The Orchestrator steps back into a management role. It must decompose tasks and dispatch specialized subagents into isolated branch workspaces (`Workspace: 'branch'`).
+   - Code Review, Security Audit, and QA Verification **MUST ALWAYS** be executed by distinct subagents for Tier 2 changes. Self-review is strictly forbidden here.
+
+3. **Optimized Concurrent Pipeline (Tier 2 Only)**:
+   - Deep-Audit development flows through the concurrent pipeline (**Gate 1 Developer → [Gate 2 Code Reviewer + Gate 3 Security Auditor in Parallel] → Gate 4 QA Verifier → Done**).
 
 ---
 
@@ -215,16 +218,33 @@ job needs the build. Query check runs too early and you get four or five jobs
 and none of the ones that gate on others. **Wait for all seven to reach a
 terminal state** before calling a PR green.
 
-### 7.4 The production build cannot run locally
+### 7.4 The production build DOES run locally — use it
 
 `npm run build` requires `VITE_FIREBASE_API_KEY`, `..._AUTH_DOMAIN`,
-`..._PROJECT_ID`, `..._STORAGE_BUCKET`, `..._MESSAGING_SENDER_ID`, and
-`..._APP_ID`. `vite.config.js` deliberately fails the production build when any
-is missing or contains whitespace (this guard exists because a trailing CRLF in
-`authDomain` once broke Google sign-in in production while email/password kept
-working). CI supplies them as repository variables. Locally, `npm run build`
-fails identically on unmodified `main` — that failure is not caused by your
-change. Rely on CI for build verification.
+`..._PROJECT_ID`, `..._STORAGE_BUCKET`, `..._MESSAGING_SENDER_ID` and
+`..._APP_ID`. `vite.config.js` fails the production build when any is missing
+or contains whitespace — a guard added after a trailing CRLF in `authDomain`
+broke Google sign-in in production.
+
+**That guard checks presence and whitespace only, not validity.** So dummy
+values produce a real build with real chunk output:
+
+```bash
+VITE_FIREBASE_API_KEY=x VITE_FIREBASE_AUTH_DOMAIN=x VITE_FIREBASE_PROJECT_ID=x \
+VITE_FIREBASE_STORAGE_BUCKET=x VITE_FIREBASE_MESSAGING_SENDER_ID=x \
+VITE_FIREBASE_APP_ID=x npx vite build
+```
+
+Use this. It is the only way to see bundle sizes, chunk splits, and Rolldown's
+warnings — `INEFFECTIVE_DYNAMIC_IMPORT` in particular, which silently reports a
+dynamic import defeated by a static one elsewhere and is invisible to lint and
+tests.
+
+**This section previously said the build could not run locally. That was
+wrong**, and several agents skipped local build verification because of it. If
+you are changing bundling, chunking or imports, build locally before you push;
+CI proves the production numbers, but it should not be where you first learn
+your split did not work.
 
 ### 7.5 Known-flaky tests — wall-clock assertions
 

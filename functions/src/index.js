@@ -74,10 +74,9 @@ export const inboundEmailWebhook = onRequest(
  */
 export const gmailOAuthStart = onCall(
   {
-    enforceAppCheck: true,
     secrets: [gmailOAuthClientSecret],
     timeoutSeconds: 15,
-    memory: '128MiB'
+    memory: '256MiB'
   },
   (request) =>
     createGmailOAuthStartHandler({
@@ -145,7 +144,6 @@ export const gmailPushNotification = onRequest(
  */
 export const gmailBackfill = onCall(
   {
-    enforceAppCheck: true,
     secrets: [gmailOAuthClientSecret],
     // Scanning up to 100 messages one-by-one can take a while.
     timeoutSeconds: 180,
@@ -184,10 +182,9 @@ export const gmailWatchRenewal = onSchedule(
  */
 export const gmailDisconnect = onCall(
   {
-    enforceAppCheck: true,
     secrets: [gmailOAuthClientSecret],
     timeoutSeconds: 30,
-    memory: '128MiB'
+    memory: '256MiB'
   },
   (request) =>
     createGmailDisconnectHandler({
@@ -204,7 +201,6 @@ export const gmailDisconnect = onCall(
  */
 export const gmailConnectionStatus = onCall(
   {
-    enforceAppCheck: true,
     timeoutSeconds: 15,
     memory: '128MiB'
   },

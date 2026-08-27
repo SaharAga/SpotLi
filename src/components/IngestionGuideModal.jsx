@@ -14,7 +14,6 @@ import {
   removeConnectedAccount,
   disconnectService,
   connectGmail,
-  triggerGmailBackfill,
   requestOutlookForwardingSetup
 } from '../services/emailSyncService';
 import { DEFAULT_FORWARDING_FILTER_QUERY } from '../constants/emailFilters';
@@ -74,42 +73,11 @@ export function IngestionGuideModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userUid, isOpen]);
 
-  // Picks up the ?gmail=connected|error redirect-back from the Gmail OAuth
-  // flow (gmailOAuthCallback in functions/), shows a toast, triggers the
-  // client-side backfill call, and cleans the query param off the URL so a
-  // refresh doesn't re-trigger it.
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
-    const gmailResult = params.get('gmail');
-    if (!gmailResult) return;
-
-    if (gmailResult === 'connected') {
-      refreshConnectedServices();
-      if (onShowToast) {
-        onShowToast(
-          language === 'he'
-            ? 'Gmail חובר בהצלחה! אישורי הזמנות יסונכרנו אוטומטית 🎉'
-            : 'Gmail connected! Orders will sync automatically 🎉',
-          'success'
-        );
-      }
-      triggerGmailBackfill().catch(() => {});
-    } else if (gmailResult === 'error') {
-      if (onShowToast) {
-        onShowToast(
-          language === 'he' ? 'החיבור ל-Gmail נכשל, נסה שוב' : 'Gmail connection failed, please try again',
-          'error'
-        );
-      }
-    }
-
-    params.delete('gmail');
-    const newSearch = params.toString();
-    const newUrl = `${window.location.pathname}${newSearch ? `?${newSearch}` : ''}${window.location.hash}`;
-    window.history.replaceState({}, '', newUrl);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // The ?gmail=connected|error redirect-back from the Gmail OAuth flow is
+  // handled once, at the app root (App.jsx) — it shows the toast, triggers
+  // the backfill, and opens this modal. Opening it flips `isOpen`, which the
+  // effect above already reacts to by calling refreshConnectedServices(), so
+  // there's no need for a second listener here.
 
   if (!isOpen) return null;
 
@@ -276,7 +244,7 @@ export function IngestionGuideModal({
         </div>
         <button
           onClick={onClose}
-          className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+          className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
           aria-label="Close"
         >
           <X className="w-5 h-5" />
@@ -311,7 +279,7 @@ export function IngestionGuideModal({
                 type="button"
                 onClick={handleConnectGmail}
                 disabled={isConnectingGmail}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-all shadow-md shadow-indigo-600/20 disabled:opacity-50 cursor-pointer min-h-[44px]"
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-all shadow-md shadow-indigo-600/20 disabled:opacity-50 cursor-pointer min-h-[48px]"
               >
                 {isConnectingGmail ? (
                   <>
@@ -332,7 +300,7 @@ export function IngestionGuideModal({
                 type="button"
                 onClick={handleConnectOutlook}
                 disabled={isConnectingOutlook}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs transition-all shadow-md shadow-sky-600/20 disabled:opacity-50 cursor-pointer min-h-[44px]"
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs transition-all shadow-md shadow-sky-600/20 disabled:opacity-50 cursor-pointer min-h-[48px]"
               >
                 {isConnectingOutlook ? (
                   <>
@@ -624,7 +592,7 @@ export function IngestionGuideModal({
       <div className="p-4 border-t border-slate-800 bg-slate-950/80 flex justify-end shrink-0">
         <button
           onClick={onClose}
-          className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors cursor-pointer min-h-[44px]"
+          className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors cursor-pointer min-h-[48px]"
         >
           {language === 'he' ? 'הבנתי, תודה' : 'Got it, Thanks'}
         </button>
