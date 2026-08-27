@@ -181,9 +181,13 @@ export function createInboundEmailHandler({ db }) {
       };
 
       if (db) {
-        // Save to Firestore collection
-        const docRef = db.collection('packages').doc(packageId);
-        await docRef.set(newPackage);
+        // Save to user's scoped packages collection so client real-time listener sees it
+        const userPkgRef = db.collection('users').doc(userId).collection('packages').doc(packageId);
+        await userPkgRef.set(newPackage);
+
+        // Also save to root packages collection for backwards compatibility
+        const rootPkgRef = db.collection('packages').doc(packageId);
+        await rootPkgRef.set(newPackage);
       }
 
       res.status(200).json({

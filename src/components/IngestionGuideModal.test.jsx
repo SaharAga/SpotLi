@@ -7,7 +7,8 @@ import { LanguageProvider } from '../context/LanguageContext';
 
 vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({
-    user: { uid: 'testuser123', email: 'test@example.com' }
+    user: { uid: 'testuser123', email: 'test@example.com' },
+    loginWithGoogle: vi.fn().mockResolvedValue({ uid: 'testuser123', email: 'test@example.com' })
   }),
   AuthProvider: ({ children }) => <div>{children}</div>
 }));
@@ -17,12 +18,12 @@ vi.mock('../services/emailSyncService', async () => {
   return {
     ...actual,
     requestGmailForwardingSetup: vi.fn().mockImplementation(async () => {
-      actual.setConnectedService('gmail', true);
-      return { ok: true };
+      actual.addConnectedAccount({ email: 'test@example.com', service: 'gmail' });
+      return { ok: true, email: 'test@example.com' };
     }),
     requestOutlookForwardingSetup: vi.fn().mockImplementation(async () => {
-      actual.setConnectedService('outlook', true);
-      return { ok: true };
+      actual.addConnectedAccount({ email: 'test@outlook.com', service: 'outlook' });
+      return { ok: true, email: 'test@outlook.com' };
     })
   };
 });
@@ -30,7 +31,7 @@ vi.mock('../services/emailSyncService', async () => {
 describe('IngestionGuideModal Component Tests', () => {
   beforeEach(() => {
     localStorage.clear();
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   const renderModal = (props = {}) => {

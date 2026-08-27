@@ -645,9 +645,15 @@ export function AuthProvider({ children }) {
       const result = await signInWithPopup(auth, provider);
       if (!isMountedRef.current) return null;
       if (result?.user && !isExplicitLogoutRef.current) {
-        const cleanUser = buildCleanUserProfile(result.user);
+        let cleanUser = buildCleanUserProfile(result.user);
+        if (cleanUser && !cleanUser.legalAcceptedVersion) {
+          const stored = await withTimeout(fetchStoredLegalConsent(result.user.uid), 1500);
+          if (stored && isMountedRef.current) {
+            cleanUser = { ...cleanUser, ...stored };
+          }
+        }
         setUser(cleanUser);
-        syncProfileToFirestore(result.user);
+        syncProfileToFirestore(result.user, null, cleanUser);
         migrateGuestDataToUser(result.user.uid);
       }
       triggerCloudSync();
