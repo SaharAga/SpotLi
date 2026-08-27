@@ -1,7 +1,5 @@
-import { DEFAULT_FORWARDING_FILTER_QUERY } from '../constants/emailFilters';
-import { auth, isFirebaseConfigured } from './firebase';
+import { auth, isFirebaseConfigured, functionsInstance } from './firebase';
 import { STORAGE_KEYS } from '../constants/storageKeys';
-import { INGESTION_EMAIL_DOMAIN } from '../constants/app';
 
 const EMAIL_INTEGRATIONS_STORAGE_KEY = STORAGE_KEYS.EMAIL_INTEGRATIONS;
 
@@ -136,50 +134,36 @@ export function addConnectedAccount(account) {
 }
 
 /**
- * Deletes forwarding address and revokes OAuth token on Google's side.
- * @param {string} email
- * @param {string} [ingestionEmail]
+ * Calls the gmailDisconnect Cloud Function: revokes the stored refresh
+ * token, cancels the Gmail watch subscription, and deletes the server-side
+ * gmailConnections/{uid} doc. No client-side forwarding address exists to
+ * clean up under the OAuth+push model.
  */
-export async function deleteGmailForwardingAndRevoke(email, ingestionEmail) {
-  const token = sessionTokens.get(email?.toLowerCase());
-  if (!token) return;
+export async function revokeGmailConnection() {
+  if (!functionsInstance) return;
   try {
-    if (ingestionEmail) {
-      await fetch(
-        `https://gmail.googleapis.com/gmail/v1/users/me/settings/forwardingAddresses/${encodeURIComponent(ingestionEmail)}`,
-        {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      ).catch(() => {});
-    }
-    await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(token)}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-    }).catch(() => {});
+    const { httpsCallable } = await import('firebase/functions');
+    const disconnect = httpsCallable(functionsInstance, 'gmailDisconnect');
+    await disconnect();
   } catch (err) {
-    console.warn('[EmailSyncService] Google cleanup notice:', err);
+    console.warn('[EmailSyncService] gmailDisconnect call failed:', err);
   } finally {
-    sessionTokens.delete(email?.toLowerCase());
+    sessionTokens.clear();
   }
 }
 
 /**
  * Completely disconnects a specific service ('gmail' or 'outlook') and removes its accounts.
  * @param {'gmail' | 'outlook'} service
- * @param {string} [ingestionEmail]
  */
-export async function disconnectService(service, ingestionEmail = null) {
+export async function disconnectService(service) {
   if (typeof window === 'undefined' || !window.localStorage || !service) return;
   try {
-    const current = getConnectedServices();
-    const accountsToClean = current.accounts.filter((a) => a.service === service);
-    for (const acc of accountsToClean) {
-      if (service === 'gmail') {
-        await deleteGmailForwardingAndRevoke(acc.email, ingestionEmail);
-      }
+    if (service === 'gmail') {
+      await revokeGmailConnection();
     }
 
+    const current = getConnectedServices();
     const remainingAccounts = current.accounts.filter((a) => a.service !== service);
     const updated = {
       ...current,
@@ -195,15 +179,14 @@ export async function disconnectService(service, ingestionEmail = null) {
 /**
  * Removes a connected email account by email address and cleans up remote rules/tokens.
  * @param {string} email
- * @param {string} [ingestionEmail]
  */
-export async function removeConnectedAccount(email, ingestionEmail = null) {
+export async function removeConnectedAccount(email) {
   if (typeof window === 'undefined' || !window.localStorage || !email) return;
   try {
     const current = getConnectedServices();
     const target = current.accounts.find((a) => a.email.toLowerCase() === email.toLowerCase());
     if (target?.service === 'gmail') {
-      await deleteGmailForwardingAndRevoke(email, ingestionEmail);
+      await revokeGmailConnection();
     }
 
     const updatedAccounts = current.accounts.filter(
@@ -242,151 +225,63 @@ export function setConnectedService(service, isConnected) {
 }
 
 /**
- * Programmatically creates a shipping email forwarding filter in Gmail via Gmail REST API.
- * @param {string} accessToken Valid Google OAuth access token with gmail.settings.basic scope
- * @param {string} ingestionEmail The user's Deliveree ingestion email address
- * @param {string} [connectedEmail] The user's Gmail address for status updates
+ * Starts the Gmail auto-sync connect flow: calls the `gmailOAuthStart`
+ * Cloud Function (which mints a short-lived signed state token bound to
+ * the signed-in Firebase user, verified server-side via App Check + the
+ * callable's own auth context — never a bare uid in a URL) to get a Google
+ * consent URL, then navigates the whole page there.
+ *
+ * This replaces the old signInWithPopup + forwardingAddresses/filters
+ * REST-call flow entirely: no forwarding rule is created in the mailbox,
+ * no confirmation-email scraping happens, and the connection is read-only
+ * (gmail.readonly) with sync driven server-side by Cloud Functions via a
+ * stored refresh token + Pub/Sub push, independent of any open tab.
+ *
+ * Because this navigates away, the caller doesn't get a result back in the
+ * usual sense — the app re-mounts after Google redirects back to
+ * `${APP_BASE_URL}/?gmail=connected` (or `?gmail=error`), which
+ * IngestionGuideModal reads on mount to show the outcome.
+ *
  * @returns {Promise<{ ok: boolean, error?: string }>}
  */
-export async function setupGmailAutoForward(accessToken, ingestionEmail, connectedEmail = null) {
-  if (!accessToken || !ingestionEmail) {
-    return { ok: false, error: 'Missing access token or ingestion address' };
+export async function connectGmail() {
+  if (!isFirebaseConfigured || !auth?.currentUser || !functionsInstance) {
+    return { ok: false, error: 'Sign in required to connect Gmail' };
   }
 
   try {
-    // 1. Register forwarding address in Gmail
-    const addForwardingRes = await fetch(
-      'https://gmail.googleapis.com/gmail/v1/users/me/settings/forwardingAddresses',
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ forwardingEmail: ingestionEmail })
-      }
-    );
-
-    // 409 Conflict means the address is already registered, which is fine
-    if (!addForwardingRes.ok && addForwardingRes.status !== 409) {
-      const errData = await addForwardingRes.json().catch(() => ({}));
-      throw new Error(errData.error?.message || 'Failed to register forwarding address in Gmail');
+    const { httpsCallable } = await import('firebase/functions');
+    const start = httpsCallable(functionsInstance, 'gmailOAuthStart');
+    const res = await start();
+    const url = res?.data?.url;
+    if (!url) {
+      return { ok: false, error: 'Failed to start Gmail connection' };
     }
-
-    // 2. Create shipping filter in Gmail (with polling for auto-confirmation)
-    const filterQuery = DEFAULT_FORWARDING_FILTER_QUERY;
-    
-    const tryCreateFilter = async () => {
-      return fetch('https://gmail.googleapis.com/gmail/v1/users/me/settings/filters', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          criteria: { query: filterQuery },
-          action: { forward: ingestionEmail }
-        })
-      });
-    };
-
-    let createFilterRes = await tryCreateFilter();
-
-    // If verification is pending, poll for auto-confirmation
-    let attempts = 0;
-    while (!createFilterRes.ok && createFilterRes.status === 400 && attempts < 5) {
-      attempts++;
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      createFilterRes = await tryCreateFilter();
-    }
-
-    if (!createFilterRes.ok) {
-      const filterErrData = await createFilterRes.json().catch(() => ({}));
-      const errMsg = filterErrData.error?.message || '';
-      const isPendingVerification = 
-        createFilterRes.status === 400 && 
-        (/verification/i.test(errMsg) || /forward/i.test(errMsg) || /not verified/i.test(errMsg) || errMsg === '');
-
-      if (isPendingVerification) {
-        if (connectedEmail) updateAccountStatus(connectedEmail, 'pending');
-        return { ok: true, pendingVerification: true };
-      }
-      throw new Error(errMsg || 'Failed to create forwarding filter in Gmail');
-    }
-
-    if (createFilterRes.ok && connectedEmail) {
-      updateAccountStatus(connectedEmail, 'active');
-    }
-
-    setConnectedService('gmail', true);
+    window.location.href = url;
     return { ok: true };
   } catch (err) {
-    console.error('[EmailSyncService] setupGmailAutoForward error:', err);
-    return { ok: false, error: err.message || 'Failed to connect Gmail forwarding' };
+    console.error('[EmailSyncService] connectGmail error:', err);
+    return { ok: false, error: err.message || 'Failed to start Gmail connection' };
   }
 }
 
 /**
- * Prompts Google OAuth popup to grant gmail.settings.basic scope and configures the forwarding filter.
- * @param {string} ingestionEmail
- * @returns {Promise<{ ok: boolean, error?: string, email?: string, alreadyConnected?: boolean, pendingVerification?: boolean }>}
+ * Triggers the server-side 30-day historical backfill for the signed-in
+ * user's connected Gmail account. Called by the client right after the
+ * OAuth redirect-back completes, as a belt-and-suspenders companion to the
+ * fire-and-forget backfill the OAuth callback already kicks off itself.
+ * @returns {Promise<{ ok: boolean, saved?: number, error?: string }>}
  */
-export async function requestGmailForwardingSetup(ingestionEmail) {
-  if (!isFirebaseConfigured || !auth) {
-    return { ok: false, error: 'Firebase is not configured' };
-  }
-
+export async function triggerGmailBackfill() {
+  if (!functionsInstance) return { ok: false, error: 'Firebase is not configured' };
   try {
-    const { signInWithPopup, GoogleAuthProvider } = await import('firebase/auth');
-    const provider = new GoogleAuthProvider();
-    provider.addScope('https://www.googleapis.com/auth/gmail.settings.basic');
-    provider.addScope('https://www.googleapis.com/auth/gmail.settings.sharing');
-    provider.setCustomParameters({ 
-      prompt: 'consent select_account',
-      access_type: 'offline'
-    });
-
-    const result = await signInWithPopup(auth, provider);
-    const credential = GoogleAuthProvider.credentialFromResult(result);
-    const accessToken = credential?.accessToken || result?._tokenResponse?.oauthAccessToken;
-    const connectedEmail = result?.user?.email || 'Gmail Account';
-
-    // Check if this account is already linked
-    const currentServices = getConnectedServices();
-    const isAlreadyConnected = currentServices.accounts.some(
-      (a) => a.email.toLowerCase() === connectedEmail.toLowerCase() && a.status === 'active'
-    );
-    if (isAlreadyConnected) {
-      return { ok: true, alreadyConnected: true, email: connectedEmail };
-    }
-
-    if (!accessToken) {
-      return { ok: false, error: 'Google did not grant an access token with Gmail permissions', email: connectedEmail };
-    }
-
-    // Add account initially as pending verification
-    addConnectedAccount({ 
-      email: connectedEmail, 
-      service: 'gmail', 
-      status: 'pending',
-      token: accessToken 
-    });
-
-    const forwardRes = await setupGmailAutoForward(accessToken, ingestionEmail, connectedEmail);
-    if (!forwardRes.ok) {
-      removeConnectedAccount(connectedEmail);
-      return { ok: false, error: forwardRes.error, email: connectedEmail };
-    }
-
-    if (forwardRes.pendingVerification) {
-      return { ok: true, pendingVerification: true, email: connectedEmail };
-    }
-
-    updateAccountStatus(connectedEmail, 'active');
-    return { ok: true, email: connectedEmail };
+    const { httpsCallable } = await import('firebase/functions');
+    const backfill = httpsCallable(functionsInstance, 'gmailBackfill');
+    const res = await backfill();
+    return { ok: true, ...res.data };
   } catch (err) {
-    console.error('[EmailSyncService] requestGmailForwardingSetup error:', err);
-    return { ok: false, error: err.message || 'Google authentication was cancelled or failed' };
+    console.warn('[EmailSyncService] triggerGmailBackfill error:', err);
+    return { ok: false, error: err.message || 'Backfill failed' };
   }
 }
 

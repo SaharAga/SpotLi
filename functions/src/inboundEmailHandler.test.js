@@ -156,40 +156,5 @@ describe('inboundEmailHandler Unit Tests', () => {
       expect(savedDoc.source).toBe('email_forwarding');
     });
 
-    it('identifies and auto-confirms Google Gmail Forwarding Confirmation emails', async () => {
-      const globalFetchMock = vi.fn().mockResolvedValue({
-        status: 200,
-        text: vi.fn().mockResolvedValue('<html>Confirmation form</html>')
-      });
-      vi.stubGlobal('fetch', globalFetchMock);
-
-      const handler = createInboundEmailHandler({ db: null });
-      const req = {
-        method: 'POST',
-        body: {
-          to: '233b362d7b331adfde6e+usr_testuser@cloudmailin.net',
-          subject: '(#123456789) Gmail Forwarding Confirmation - Receive Mail from user@gmail.com',
-          text: 'To confirm, click: https://mail.google.com/mail/vf-v1-abcdef123456'
-        }
-      };
-      const res = {
-        status: vi.fn().mockReturnThis(),
-        json: vi.fn()
-      };
-
-      await handler(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-        ok: true,
-        type: 'google_forwarding_verified'
-      }));
-      expect(globalFetchMock).toHaveBeenCalledWith(
-        'https://mail.google.com/mail/vf-v1-abcdef123456',
-        expect.anything()
-      );
-
-      vi.unstubAllGlobals();
-    });
   });
 });

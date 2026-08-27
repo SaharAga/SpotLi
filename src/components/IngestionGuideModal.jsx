@@ -1,22 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  X, ClipboardCheck, Mail, Smartphone, 
+  X, ClipboardCheck, Smartphone, 
   Sparkles, ArrowRight, CheckCircle2, Copy,
-  Check, ChevronDown, ChevronUp, Loader2, RefreshCw, AlertCircle,
-  Plus, Trash2
+  RefreshCw, Plus, Trash2
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { copyToClipboard } from '../utils/clipboard';
-import { 
-  getIngestionEmailAddress, 
-  getConnectedServices, 
-  getConnectedAccounts,
+import {
+  getIngestionEmailAddress,
+  getConnectedServices,
   removeConnectedAccount,
   disconnectService,
-  setConnectedService, 
-  setupGmailAutoForward,
-  requestGmailForwardingSetup,
+  connectGmail,
+  triggerGmailBackfill,
   requestOutlookForwardingSetup
 } from '../services/emailSyncService';
 import { DEFAULT_FORWARDING_FILTER_QUERY } from '../constants/emailFilters';
@@ -40,11 +37,49 @@ export function IngestionGuideModal({
   const userUid = user?.uid || user?.id;
 
   // Sync state whenever user ID changes or modal opens
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen) {
       setConnectedServicesState(getConnectedServices(user));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userUid, isOpen]);
+
+  // Picks up the ?gmail=connected|error redirect-back from the Gmail OAuth
+  // flow (gmailOAuthCallback in functions/), shows a toast, triggers the
+  // client-side backfill call, and cleans the query param off the URL so a
+  // refresh doesn't re-trigger it.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const gmailResult = params.get('gmail');
+    if (!gmailResult) return;
+
+    if (gmailResult === 'connected') {
+      setConnectedServicesState(getConnectedServices(user));
+      if (onShowToast) {
+        onShowToast(
+          language === 'he'
+            ? 'Gmail חובר בהצלחה! אישורי הזמנות יסונכרנו אוטומטית 🎉'
+            : 'Gmail connected! Orders will sync automatically 🎉',
+          'success'
+        );
+      }
+      triggerGmailBackfill().catch(() => {});
+    } else if (gmailResult === 'error') {
+      if (onShowToast) {
+        onShowToast(
+          language === 'he' ? 'החיבור ל-Gmail נכשל, נסה שוב' : 'Gmail connection failed, please try again',
+          'error'
+        );
+      }
+    }
+
+    params.delete('gmail');
+    const newSearch = params.toString();
+    const newUrl = `${window.location.pathname}${newSearch ? `?${newSearch}` : ''}${window.location.hash}`;
+    window.history.replaceState({}, '', newUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!isOpen) return null;
 
@@ -85,42 +120,17 @@ export function IngestionGuideModal({
         }
       }
 
-      const activeIngestionEmail = getIngestionEmailAddress(currentUser);
-      const res = await requestGmailForwardingSetup(activeIngestionEmail);
-      setConnectedServicesState(getConnectedServices(currentUser));
-
-      if (res.alreadyConnected) {
-        if (onShowToast) {
-          onShowToast(
-            language === 'he' ? `החשבון ${res.email} כבר מחובר לסנכרון` : `Account ${res.email} is already connected`,
-            'info'
-          );
-        }
-      } else if (res.pendingVerification) {
-        if (onShowToast) {
-          onShowToast(
-            language === 'he' 
-              ? `החיבור ל-Gmail נרשם בהצלחה וממתין לאישור. החשבון נשמר ברשימה.` 
-              : `Gmail forwarding registered! Awaiting verification.`,
-            'info'
-          );
-        }
-      } else if (res.ok) {
-        if (onShowToast) {
-          onShowToast(
-            language === 'he' 
-              ? `החשבון ${res.email} חובר בהצלחה! אישורי הזמנות יועברו אוטומטית 🎉` 
-              : `Account ${res.email} connected! Orders will sync automatically 🎉`,
-            'success'
-          );
-        }
-      } else {
-        if (onShowToast) {
-          onShowToast(
-            language === 'he' ? `החיבור ל-Gmail נכשל: ${res.error}` : `Gmail connection failed: ${res.error}`,
-            'error'
-          );
-        }
+      // connectGmail navigates the whole page away to Google's consent
+      // screen on success — there's no in-place pending/polling state to
+      // manage here anymore. The outcome is picked up on mount via the
+      // `?gmail=connected|error` redirect-back query param (see effect
+      // above), after the app re-loads.
+      const res = await connectGmail();
+      if (!res.ok && onShowToast) {
+        onShowToast(
+          language === 'he' ? `החיבור ל-Gmail נכשל: ${res.error}` : `Gmail connection failed: ${res.error}`,
+          'error'
+        );
       }
     } catch {
       if (onShowToast) {
@@ -188,8 +198,7 @@ export function IngestionGuideModal({
   };
 
   const handleDisconnectAccount = async (accountEmail) => {
-    const activeIngestionEmail = getIngestionEmailAddress(user);
-    await removeConnectedAccount(accountEmail, activeIngestionEmail);
+    await removeConnectedAccount(accountEmail);
     setConnectedServicesState(getConnectedServices(user));
     if (onShowToast) {
       onShowToast(
@@ -202,8 +211,7 @@ export function IngestionGuideModal({
   };
 
   const handleDisconnectService = async (service) => {
-    const activeIngestionEmail = getIngestionEmailAddress(user);
-    await disconnectService(service, activeIngestionEmail);
+    await disconnectService(service);
     setConnectedServicesState(getConnectedServices(user));
     if (onShowToast) {
       onShowToast(

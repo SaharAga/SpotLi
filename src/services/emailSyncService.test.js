@@ -7,7 +7,7 @@ import {
   addConnectedAccount,
   removeConnectedAccount,
   setConnectedService,
-  setupGmailAutoForward
+  connectGmail
 } from './emailSyncService';
 
 describe('emailSyncService Unit Tests', () => {
@@ -59,14 +59,12 @@ describe('emailSyncService Unit Tests', () => {
   });
 
   describe('Multi-Email Accounts Management', () => {
-    it('adds, lists, disconnects and removes connected accounts with token cleanup', async () => {
+    it('adds, lists, disconnects and removes connected accounts', async () => {
       const { disconnectService: disconnect, updateAccountStatus } = await import('./emailSyncService');
-      const fetchMock = vi.fn().mockResolvedValue({ ok: true });
-      global.fetch = fetchMock;
 
       expect(getConnectedAccounts()).toEqual([]);
 
-      addConnectedAccount({ email: 'sahar@gmail.com', service: 'gmail', status: 'pending', token: 'mock-token' });
+      addConnectedAccount({ email: 'sahar@gmail.com', service: 'gmail', status: 'pending' });
       addConnectedAccount({ email: 'work@company.com', service: 'gmail' });
 
       let accounts = getConnectedAccounts();
@@ -77,111 +75,26 @@ describe('emailSyncService Unit Tests', () => {
       accounts = getConnectedAccounts();
       expect(accounts[0].status).toBe('active');
 
-      await removeConnectedAccount('sahar@gmail.com', 'usr_123@in.deliveree.app');
+      // No client-side network call: disconnect goes through the
+      // gmailDisconnect Cloud Function, which is unavailable in this test
+      // environment (no Firebase project configured) and fails silently.
+      await removeConnectedAccount('sahar@gmail.com');
       const remaining = getConnectedAccounts();
       expect(remaining.length).toBe(1);
       expect(remaining[0].email).toBe('work@company.com');
       expect(getConnectedServices().gmail).toBe(true);
 
-      // Verify Google delete endpoint and token revocation were called
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining('forwardingAddresses'),
-        expect.objectContaining({ method: 'DELETE' })
-      );
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.stringContaining('oauth2.googleapis.com/revoke'),
-        expect.objectContaining({ method: 'POST' })
-      );
-
-      await disconnect('gmail', 'usr_123@in.deliveree.app');
+      await disconnect('gmail');
       expect(getConnectedAccounts().length).toBe(0);
       expect(getConnectedServices().gmail).toBe(false);
     });
   });
 
-  describe('setupGmailAutoForward', () => {
-    it('fails fast on missing access token or email', async () => {
-      const res = await setupGmailAutoForward(null, 'test@in.deliveree.app');
+  describe('connectGmail', () => {
+    it('returns an error when not signed in / Firebase is not configured', async () => {
+      const res = await connectGmail();
       expect(res.ok).toBe(false);
-      expect(res.error).toContain('Missing access token');
-    });
-
-    it('successfully calls Google Gmail API endpoints', async () => {
-      const fetchMock = vi.fn().mockImplementation((url) => {
-        if (url.includes('forwardingAddresses')) {
-          return Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve({ forwardingEmail: 'usr_123@in.deliveree.app' })
-          });
-        }
-        if (url.includes('filters')) {
-          return Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve({ id: 'filter-123' })
-          });
-        }
-        return Promise.reject(new Error('Unknown url'));
-      });
-
-      global.fetch = fetchMock;
-
-      const res = await setupGmailAutoForward('mock-google-token', 'usr_123@in.deliveree.app');
-      expect(res.ok).toBe(true);
-      expect(fetchMock).toHaveBeenCalledTimes(2);
-      expect(getConnectedServices().gmail).toBe(true);
-    });
-
-    it('tolerates 409 conflict when forwarding address was already added', async () => {
-      const fetchMock = vi.fn().mockImplementation((url) => {
-        if (url.includes('forwardingAddresses')) {
-          return Promise.resolve({
-            ok: false,
-            status: 409,
-            json: () => Promise.resolve({ error: { message: 'Already exists' } })
-          });
-        }
-        if (url.includes('filters')) {
-          return Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve({ id: 'filter-123' })
-          });
-        }
-        return Promise.reject(new Error('Unknown url'));
-      });
-
-      global.fetch = fetchMock;
-
-      const res = await setupGmailAutoForward('mock-google-token', 'usr_123@in.deliveree.app');
-      expect(res.ok).toBe(true);
-    });
-
-    it('returns error when filter creation fails', async () => {
-      const fetchMock = vi.fn().mockImplementation((url) => {
-        if (url.includes('forwardingAddresses')) {
-          return Promise.resolve({
-            ok: true,
-            status: 200,
-            json: () => Promise.resolve({})
-          });
-        }
-        if (url.includes('filters')) {
-          return Promise.resolve({
-            ok: false,
-            status: 400,
-            json: () => Promise.resolve({ error: { message: 'Invalid query criteria' } })
-          });
-        }
-        return Promise.reject(new Error('Unknown url'));
-      });
-
-      global.fetch = fetchMock;
-
-      const res = await setupGmailAutoForward('mock-google-token', 'usr_123@in.deliveree.app');
-      expect(res.ok).toBe(false);
-      expect(res.error).toBe('Invalid query criteria');
+      expect(res.error).toBeTruthy();
     });
   });
 
@@ -208,13 +121,9 @@ describe('emailSyncService Unit Tests', () => {
     });
   });
 
-  describe('requestGmailForwardingSetup & requestOutlookForwardingSetup', () => {
+  describe('requestOutlookForwardingSetup', () => {
     it('returns error when firebase is not configured', async () => {
-      const { requestGmailForwardingSetup: requestGmail, requestOutlookForwardingSetup: requestOutlook } =
-        await import('./emailSyncService');
-      const resGmail = await requestGmail('usr_123@in.deliveree.app');
-      expect(resGmail.ok).toBe(false);
-
+      const { requestOutlookForwardingSetup: requestOutlook } = await import('./emailSyncService');
       const resOutlook = await requestOutlook('usr_123@in.deliveree.app');
       expect(resOutlook.ok).toBe(false);
     });
