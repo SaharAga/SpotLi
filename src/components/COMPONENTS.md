@@ -61,8 +61,7 @@ discards in-progress form state.
   matches or the input is a screenshot. Maps the AI response into the same shape the regex parser
   returns so the rest of the component (and `AddEditPackageModal`) don't need to know which path
   produced a result.
-- **`IngestionGuideModal`** — "how to get tracking numbers in" help/connect modal (SMS, share
-  target, paste).
+- **`IngestionGuideModal`** — shipment ingestion & sync center: manages 1-Click Gmail OAuth sync (`connectGmail`), Outlook auto-forwarding (`requestOutlookForwardingSetup`), dedicated ingestion email addresses (`getIngestionEmailAddress`), and provider-specific forwarding setup guides.
 
 ## Analytics / export
 

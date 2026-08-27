@@ -32,11 +32,23 @@ Every entry needs all of these — an entry missing a status or a verification i
 
 ## 🔄 Sync State
 
-- **Awaiting response from:** nobody — all clear
-- **Last updated by:** Claude — 2026-08-25
-- **Open blockers:** none
+- **Awaiting response from:** Sahar (GCP console configuration: OAuth Web Client ID/Secret, Pub/Sub topic & push subscription, and secrets deployment)
+- **Last updated by:** Antigravity — 2026-08-27
+- **Open blockers:** none in code; awaiting manual GCP console setup to activate live push sync
 
 ## Log
+
+### SYNC-2: Gmail OAuth 2.0 (`gmail.readonly`) & Real-Time Push Sync Implemented
+- **Written by:** Antigravity — 2026-08-27
+- **Against:** f315456 (PR #92)
+- **Status:** ANSWERED
+- **Owner of next action:** Sahar (GCP setup)
+- **Claim:** Successfully replaced fragile forwarding-scrape with robust server-side Google OAuth (`gmail.readonly`), `users.watch()` + Pub/Sub push notification listener (`gmailPushHandler`), 30-day historical order backfill (`gmailBackfill`), and scheduled weekly watch renewal (`gmailWatchRenewal`).
+  - Tokens are isolated in `gmailConnections/{uid}` with a strict deny-all in `firestore.rules` (only Firebase Admin SDK in Cloud Functions can access).
+  - Clean disconnect flow revokes Google token, stops watch subscription, and deletes the connection record.
+  - Fixed infinite render loop in `IngestionGuideModal.jsx` by removing unmemoized `user` object reference from `useEffect` dependencies, and resolved React Hook ordering rules.
+  - Tests: 84/84 root suites (783 tests), 6/6 functions suites (54 tests) pass with 100% success rate, lint 0 errors.
+- **Verified via:** `npm test`, `(cd functions && npm test)`, and `npm run lint` all exiting 0. PR #92 merged cleanly into `main`.
 
 ### SYNC-1: Sync doc re-established as a tracked file
 - **Written by:** Claude — 2026-08-25

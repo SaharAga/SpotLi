@@ -5,9 +5,14 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { IngestionGuideModal } from './IngestionGuideModal.jsx';
 import { LanguageProvider } from '../context/LanguageContext';
 
-vi.mock('firebase/functions', () => ({
-  httpsCallable: () => vi.fn().mockResolvedValue({ data: { ok: true } })
-}));
+vi.mock('firebase/functions', async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    getFunctions: vi.fn(),
+    httpsCallable: () => vi.fn().mockResolvedValue({ data: { ok: true } })
+  };
+});
 
 vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({
