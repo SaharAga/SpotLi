@@ -75,7 +75,7 @@ export const gmailOAuthStart = onCall(
   {
     secrets: [gmailOAuthClientSecret],
     timeoutSeconds: 15,
-    memory: '128MiB'
+    memory: '256MiB'
   },
   (request) =>
     createGmailOAuthStartHandler({
@@ -183,7 +183,7 @@ export const gmailDisconnect = onCall(
   {
     secrets: [gmailOAuthClientSecret],
     timeoutSeconds: 30,
-    memory: '128MiB'
+    memory: '256MiB'
   },
   (request) =>
     createGmailDisconnectHandler({
