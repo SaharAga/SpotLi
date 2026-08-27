@@ -1,7 +1,9 @@
 import { DEFAULT_FORWARDING_FILTER_QUERY } from '../constants/emailFilters';
 import { auth, isFirebaseConfigured } from './firebase';
+import { STORAGE_KEYS } from '../constants/storageKeys';
+import { INGESTION_EMAIL_DOMAIN } from '../constants/app';
 
-const EMAIL_INTEGRATIONS_STORAGE_KEY = 'deliveree_email_integrations_v1';
+const EMAIL_INTEGRATIONS_STORAGE_KEY = STORAGE_KEYS.EMAIL_INTEGRATIONS;
 
 export const LIVE_INBOUND_EMAIL_DOMAIN = 'cloudmailin.net';
 export const LIVE_INBOUND_INBOX_ID = '233b362d7b331adfde6e';

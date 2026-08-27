@@ -1,7 +1,8 @@
 import { cloudAdapter } from './cloudStorageAdapter';
 import { deliveryService } from './deliveryService';
+import { STORAGE_KEYS } from '../constants/storageKeys';
 
-export const QUEUE_STORAGE_KEY = 'deliveree_offline_sync_queue';
+export const QUEUE_STORAGE_KEY = STORAGE_KEYS.OFFLINE_SYNC_QUEUE;
 export const DEAD_LETTER_STORAGE_KEY = 'deliveree_offline_sync_dead_letter';
 export const MAX_RETRY_COUNT = 5;
 /**

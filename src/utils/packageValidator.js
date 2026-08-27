@@ -1,4 +1,4 @@
-import { CARRIERS } from '../types/carriers';
+import { CARRIERS, getCarrier } from '../types/carriers';
 import { STAGES, CATEGORIES } from '../types/stages';
 // NOTE: this module deliberately does NOT import from '../schemas/packageSchema'.
 // packageSchema imports `sanitizeString` from here; importing back created a
@@ -199,7 +199,7 @@ export function validatePackage(pkg) {
   // 2. Carrier resolution & fallback
   const rawCarrier = typeof safeObj.carrier === 'string' ? safeObj.carrier.toLowerCase().trim() : '';
   const carrier = VALID_CARRIER_IDS.has(rawCarrier) ? rawCarrier : 'other';
-  const defaultCarrierObj = CARRIERS[carrier] || CARRIERS['other'];
+  const defaultCarrierObj = getCarrier(carrier);
   const carrierName = sanitizeString(safeObj.carrierName, 100) || defaultCarrierObj.name;
 
   // 3. Status stage resolution & fallback

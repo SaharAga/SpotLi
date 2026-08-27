@@ -1,4 +1,4 @@
-import { CARRIERS } from '../types/carriers';
+import { getCarrier } from '../types/carriers';
 import { STAGES } from '../types/stages';
 
 /**
@@ -226,7 +226,7 @@ export function calculateCarrierTurnaroundLeaderboard(packages = [], transitDays
   }
 
   const leaderboard = Object.entries(carrierMap).map(([carrierId, stats]) => {
-    const carrierDef = CARRIERS[carrierId] || CARRIERS['other'];
+    const carrierDef = getCarrier(carrierId);
     const avgDays = stats.deliveredCount > 0
       ? Math.round((stats.totalDays / stats.deliveredCount) * 10) / 10
       : 0;

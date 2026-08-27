@@ -66,4 +66,17 @@ describe('Store / Merchant Detection Engine', () => {
     expect(detectStore('Random unbranded gadget')).toBeNull();
     expect(detectStore({})).toBeNull();
   });
+
+  it('memoizes results in cache for identical object references and strings', () => {
+    const pkg = { title: 'Zara Summer Dress', notes: 'Express' };
+    const firstResult = detectStore(pkg);
+    const secondResult = detectStore(pkg);
+    expect(firstResult).toBe(secondResult);
+    expect(firstResult?.id).toBe('zara');
+
+    const strFirst = detectStore('Order from Amazon.com');
+    const strSecond = detectStore('Order from Amazon.com');
+    expect(strFirst).toBe(strSecond);
+    expect(strFirst?.id).toBe('amazon');
+  });
 });

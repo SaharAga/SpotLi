@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Copy, Check, ExternalLink, Pin, Trash2, Edit3, CheckCircle } from 'lucide-react';
-import { CARRIERS } from '../types/carriers';
+import { getCarrier } from '../types/carriers';
 import { copyToClipboard } from '../utils/clipboard';
 import { STAGES } from '../types/stages';
 import { useLanguage } from '../context/LanguageContext';
@@ -60,7 +60,7 @@ function PackageTableImpl({
         </thead>
         <tbody className="divide-y divide-slate-800/60">
           {packages.map((pkg) => {
-            const carrier = CARRIERS[pkg.carrier] || CARRIERS['other'];
+            const carrier = getCarrier(pkg.carrier);
             const stage = STAGES.find(s => s.id === pkg.status) || STAGES[0];
             const daysInfo = getDaysRemaining(pkg.expectedDeliveryDate, language);
             const itemTitle = (language === 'he' && pkg.titleHe) ? pkg.titleHe : pkg.title;

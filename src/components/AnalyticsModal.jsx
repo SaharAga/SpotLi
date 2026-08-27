@@ -4,7 +4,7 @@ import {
   Award, Coins, CheckCircle2,
   Clock
 } from 'lucide-react';
-import { CARRIERS } from '../types/carriers';
+import { getCarrier } from '../types/carriers';
 import { STAGES } from '../types/stages';
 import { useLanguage } from '../context/LanguageContext';
 import {
@@ -53,7 +53,7 @@ export function AnalyticsModal({
       topCarrierId = cid;
     }
   });
-  const topCarrierObj = CARRIERS[topCarrierId] || CARRIERS['other'];
+  const topCarrierObj = getCarrier(topCarrierId);
 
   // SVG Circular Gauge calculations for Success / On-Time Ring Indicator
   const ringRadius = 38;
@@ -361,7 +361,7 @@ export function AnalyticsModal({
 
             <div className="space-y-3">
               {Object.entries(metrics.carrierDistribution).map(([carrierId, data]) => {
-                const carrier = CARRIERS[carrierId] || CARRIERS['other'];
+                const carrier = getCarrier(carrierId);
 
                 return (
                   <div key={carrierId} className="space-y-1.5">

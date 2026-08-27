@@ -2,6 +2,7 @@ import { sanitizeString } from '../utils/packageValidator';
 import { sanitizeForTelemetry } from '../utils/privacySanitizer';
 import { APP_VERSION, BUILD_CHANNEL } from '../constants/version';
 import { db, isFirebaseConfigured } from './firebase';
+import { STORAGE_KEYS } from '../constants/storageKeys';
 
 // Deliberately its own Firestore collection and its own offline queue, not
 // merged into feedbackService's /feedback — see the comment on the
@@ -9,8 +10,8 @@ import { db, isFirebaseConfigured } from './firebase';
 // machine-driven and bursty, and mixing it with human feedback would let a
 // crash wave crowd out real testers in the admin inspector's fetch limit.
 
-export const OFFLINE_CRASH_QUEUE_KEY = 'deliveree_offline_crash_queue';
-const SESSION_SEEN_KEY = 'deliveree_crash_seen_v1';
+export const OFFLINE_CRASH_QUEUE_KEY = STORAGE_KEYS.OFFLINE_CRASH_QUEUE;
+const SESSION_SEEN_KEY = STORAGE_KEYS.CRASH_SEEN;
 const MAX_REPORTS_PER_SESSION = 20;
 const MAX_QUEUE_ITEMS = 100;
 const MAX_MESSAGE_CHARS = 1500;

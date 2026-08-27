@@ -48,8 +48,10 @@ import { useLanguage, LanguageProvider } from './context/LanguageContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { useAuth, AuthProvider } from './context/AuthContext';
 import { isAdminUser } from './constants/admin';
-import { CARRIERS } from './types/carriers';
+import { getCarrier } from './types/carriers';
 import { getTabPredicate, ARCHIVED_TAB } from './types/stages';
+import { STORAGE_KEYS } from './constants/storageKeys';
+import { APP_NAME, APP_COPYRIGHT } from './constants/app';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { usePackages } from './hooks/usePackages';
@@ -383,7 +385,7 @@ export function DashboardContent() {
       return user.preferences.autoArchiveDelivered;
     }
     if (typeof localStorage !== 'undefined') {
-      const val = localStorage.getItem('deliveree_auto_archive_delivered');
+      const val = localStorage.getItem(STORAGE_KEYS.AUTO_ARCHIVE_DELIVERED);
       if (val === 'true') return true;
       if (val === 'false') return false;
     }
@@ -407,7 +409,7 @@ export function DashboardContent() {
       });
     } else if (currentPref === null) {
       // First time reaching delivered without preference set
-      const prompted = typeof localStorage !== 'undefined' && localStorage.getItem('deliveree_auto_archive_prompted') === 'true';
+      const prompted = typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEYS.AUTO_ARCHIVE_PROMPTED) === 'true';
       if (!prompted) {
         openModal(MODAL.AUTO_ARCHIVE, { packageId: pkgId });
       }
@@ -422,11 +424,11 @@ export function DashboardContent() {
       });
     } else {
       try {
-        localStorage.setItem('deliveree_auto_archive_delivered', 'true');
+        localStorage.setItem(STORAGE_KEYS.AUTO_ARCHIVE_DELIVERED, 'true');
       } catch {}
     }
     try {
-      localStorage.setItem('deliveree_auto_archive_prompted', 'true');
+      localStorage.setItem(STORAGE_KEYS.AUTO_ARCHIVE_PROMPTED, 'true');
     } catch {}
 
     if (pendingDeliveredPkgId) {
@@ -449,11 +451,11 @@ export function DashboardContent() {
       });
     } else {
       try {
-        localStorage.setItem('deliveree_auto_archive_delivered', 'false');
+        localStorage.setItem(STORAGE_KEYS.AUTO_ARCHIVE_DELIVERED, 'false');
       } catch {}
     }
     try {
-      localStorage.setItem('deliveree_auto_archive_prompted', 'true');
+      localStorage.setItem(STORAGE_KEYS.AUTO_ARCHIVE_PROMPTED, 'true');
     } catch {}
 
     closeModal(MODAL.AUTO_ARCHIVE);
@@ -589,8 +591,10 @@ export function DashboardContent() {
 
   // Display name for a carrier, in the active language.
   const carrierLabel = useCallback((pkg) => {
-    const def = CARRIERS[pkg?.carrier];
-    if (!def) return pkg?.carrierName || pkg?.carrier || '';
+    const def = getCarrier(pkg?.carrier);
+    if (def.id === 'other' && pkg?.carrierName) {
+      return pkg.carrierName;
+    }
     return language === 'he' ? (def.hebrewName || def.name) : def.name;
   }, [language]);
 
@@ -1047,7 +1051,7 @@ export function DashboardContent() {
             </div>
 
             <h2 className="text-xl sm:text-3xl font-extrabold text-white tracking-tight mb-2">
-              {isRTL ? 'ברוכים הבאים ל-Deliveree' : 'Welcome to Deliveree'}
+              {isRTL ? `ברוכים הבאים ל-${APP_NAME}` : `Welcome to ${APP_NAME}`}
             </h2>
             <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto mb-8 leading-relaxed">
               {isRTL 
@@ -1210,7 +1214,7 @@ export function DashboardContent() {
       {/* Footer */}
       <footer className="border-t border-slate-900/80 bg-slate-950/60 py-6 mt-12 text-center text-xs text-slate-400">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p>© 2026 Deliveree • {t('appTagline')}</p>
+          <p>{APP_COPYRIGHT} • {t('appTagline')}</p>
           <div className="flex items-center gap-4 text-slate-400">
             <span>Supports Israel Post, AliExpress, 4PX, DHL, FedEx, UPS & Yanwen</span>
           </div>
@@ -1262,7 +1266,7 @@ export function DashboardContent() {
         <aside aria-label="App Update Ready" className="fixed top-18 left-1/2 -translate-x-1/2 z-50 animate-bounce-subtle">
           <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold shadow-2xl border border-blue-400/30 backdrop-blur-xl">
             <RefreshCw className="w-4 h-4 animate-spin text-blue-200" />
-            <span>{isRTL ? 'גרסה חדשה של Deliveree זמינה!' : 'A new version of Deliveree is ready!'}</span>
+            <span>{isRTL ? `גרסה חדשה של ${APP_NAME} זמינה!` : `A new version of ${APP_NAME} is ready!`}</span>
             <button
               onClick={handleApplyUpdate}
               className="px-3 py-1 rounded-xl bg-white text-blue-600 font-bold hover:bg-blue-50 transition-colors cursor-pointer"

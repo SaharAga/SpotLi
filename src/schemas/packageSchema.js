@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { sanitizeString, VALID_STATUSES } from '../utils/packageValidator';
-import { CARRIERS } from '../types/carriers';
+import { CARRIERS, getCarrier } from '../types/carriers';
 import { CATEGORIES } from '../types/stages';
 
 export { VALID_STATUSES };
@@ -228,7 +228,7 @@ export const repairingPackageSchema = z.preprocess(
     ...pkg,
     titleHe: pkg.titleHe || pkg.title,
     notesHe: pkg.notesHe || pkg.notes,
-    carrierName: pkg.carrierName || (CARRIERS[pkg.carrier] || CARRIERS['other']).name
+    carrierName: pkg.carrierName || getCarrier(pkg.carrier).name
   };
   // Legacy contract: `userId` is absent rather than empty when unknown.
   if (!out.userId) {

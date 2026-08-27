@@ -1,5 +1,7 @@
 import { parsePackageList } from '../schemas/packageSchema';
 import { notificationService } from './notificationService';
+import { STORAGE_KEYS } from '../constants/storageKeys';
+import { APP_NAME } from '../constants/app';
 
 /**
  * Builds the result of a save attempt.
@@ -21,9 +23,9 @@ function makeSaveResult(packages, { ok, error = null, overflow = false }) {
 
 function getStorageKey(userId) {
   if (userId) {
-    return `deliveree_packages_${userId}`;
+    return `${STORAGE_KEYS.PACKAGES_USER_PREFIX}${userId}`;
   }
-  return 'deliveree_packages_guest';
+  return STORAGE_KEYS.PACKAGES_GUEST;
 }
 
 /**
@@ -216,7 +218,7 @@ export const deliveryService = {
     const url = URL.createObjectURL(blob);
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute("href", url);
-    downloadAnchor.setAttribute("download", `deliveree_backup_${new Date().toISOString().slice(0, 10)}.json`);
+    downloadAnchor.setAttribute("download", `${APP_NAME.toLowerCase()}_backup_${new Date().toISOString().slice(0, 10)}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();

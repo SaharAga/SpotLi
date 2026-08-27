@@ -1,6 +1,6 @@
 import { detectCarrier, sanitizeTrackingNumber } from './carrierDetector.js';
 import { detectStore } from './storeDetector.js';
-import { CARRIERS } from '../types/carriers.js';
+import { getCarrier } from '../types/carriers.js';
 import { sanitizeString } from './packageValidator.js';
 
 /** Known shortened domains used by Israeli & Global logistics providers and SMS gateways */
@@ -642,7 +642,7 @@ export function parseSmartText(rawText) {
       titleHe: '',
       trackingNumber: '',
       carrier: 'other',
-      carrierName: CARRIERS['other'].name,
+      carrierName: getCarrier('other').name,
       category: 'other',
       origin: '',
       destination: 'Israel',
@@ -747,7 +747,7 @@ export function parseSmartText(rawText) {
     titleHe = 'חבילה חדשה למעקב';
   }
 
-  const carrierObj = CARRIERS[bestCarrier] || CARRIERS['other'];
+  const carrierObj = getCarrier(bestCarrier);
 
   // Construct notes snippet
   let notesText = cleanText;

@@ -3,7 +3,8 @@ import {
   X, ExternalLink, Copy, Check, Calendar, MapPin, Plus, 
   Truck, Clock, RefreshCw, Info
 } from 'lucide-react';
-import { CARRIERS } from '../types/carriers';
+import confetti from 'canvas-confetti';
+import { getCarrier } from '../types/carriers';
 import { detectStore } from '../utils/storeDetector';
 import { copyToClipboard } from '../utils/clipboard';
 import { STAGES, CATEGORIES } from '../types/stages';
@@ -12,7 +13,6 @@ import { formatDate, formatDateTime, getDaysRemaining } from '../utils/dateUtils
 import { canTransition, TRANSITION_MATRIX } from '../services/deliveryService';
 import { checkRateLimit } from '../services/trackingService';
 import { isLiveTrackingSupported } from '../services/carrierApiProxy';
-import confetti from 'canvas-confetti';
 import { Modal } from './Modal';
 
 export function PackageDetailModal({
@@ -36,7 +36,7 @@ export function PackageDetailModal({
 
   if (!isOpen || !pkg) return null;
 
-  const carrier = CARRIERS[pkg.carrier] || CARRIERS['other'];
+  const carrier = getCarrier(pkg.carrier);
   const store = detectStore(pkg);
   const currentStageIndex = STAGES.findIndex(s => s.id === pkg.status);
   const effectiveIndex = currentStageIndex === -1 ? 0 : currentStageIndex;

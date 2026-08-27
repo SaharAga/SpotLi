@@ -250,14 +250,36 @@ const STORE_MATCHERS = [
   }
 ];
 
+const objectStoreCache = new WeakMap();
+const stringStoreCache = new Map();
+const MAX_STRING_CACHE_SIZE = 256;
+
+/**
+ * Clear the store detection cache (useful for tests).
+ */
+export function clearStoreDetectionCache() {
+  stringStoreCache.clear();
+}
+
 /**
  * Detects the store / merchant from package fields (title, notes, origin, or raw text).
+ * Uses WeakMap for package objects and Map for string inputs to avoid redundant regex evaluations.
  * 
  * @param {object|string} input - Either a package object or an unstructured text string
  * @returns {StoreInfo | null} - Detected store info object or null if none detected
  */
 export function detectStore(input) {
   if (!input) return null;
+
+  if (typeof input === 'object') {
+    if (objectStoreCache.has(input)) {
+      return objectStoreCache.get(input);
+    }
+  } else if (typeof input === 'string') {
+    if (stringStoreCache.has(input)) {
+      return stringStoreCache.get(input);
+    }
+  }
 
   let combinedText = '';
 
@@ -276,17 +298,39 @@ export function detectStore(input) {
   }
 
   if (!combinedText || typeof combinedText !== 'string') {
+    if (typeof input === 'object') {
+      objectStoreCache.set(input, null);
+    } else if (typeof input === 'string') {
+      if (stringStoreCache.size >= MAX_STRING_CACHE_SIZE) {
+        const firstKey = stringStoreCache.keys().next().value;
+        stringStoreCache.delete(firstKey);
+      }
+      stringStoreCache.set(input, null);
+    }
     return null;
   }
 
+  let result = null;
   // Linear bounded check
   for (const matcher of STORE_MATCHERS) {
     for (const pattern of matcher.patterns) {
       if (pattern.test(combinedText)) {
-        return STORES[matcher.id] || null;
+        result = STORES[matcher.id] || null;
+        break;
       }
     }
+    if (result) break;
   }
 
-  return null;
+  if (typeof input === 'object') {
+    objectStoreCache.set(input, result);
+  } else if (typeof input === 'string') {
+    if (stringStoreCache.size >= MAX_STRING_CACHE_SIZE) {
+      const firstKey = stringStoreCache.keys().next().value;
+      stringStoreCache.delete(firstKey);
+    }
+    stringStoreCache.set(input, result);
+  }
+
+  return result;
 }

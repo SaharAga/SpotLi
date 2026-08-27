@@ -15,6 +15,7 @@ import { LegalDocumentModal } from './LegalDocumentModal';
 import { exportRawToJSON } from '../utils/exportUtils';
 import { deliveryService } from '../services/deliveryService';
 import { todayISO } from '../utils/dateUtils';
+import { STORAGE_KEYS } from '../constants/storageKeys';
 import { Modal } from './Modal';
 
 const ACCOUNT_SECTIONS = [
@@ -163,7 +164,7 @@ export function AccountModal({
       });
     } else {
       try {
-        localStorage.setItem("deliveree_auto_archive_delivered", String(nextVal));
+        localStorage.setItem(STORAGE_KEYS.AUTO_ARCHIVE_DELIVERED, String(nextVal));
       } catch (err) {
         console.warn("Failed to set local autoArchive pref:", err);
       }
@@ -595,7 +596,7 @@ export function AccountModal({
                   checked={
                     user
                       ? Boolean(user.preferences?.autoArchiveDelivered)
-                      : (typeof localStorage !== "undefined" && localStorage.getItem("deliveree_auto_archive_delivered") === "true")
+                      : (typeof localStorage !== "undefined" && localStorage.getItem(STORAGE_KEYS.AUTO_ARCHIVE_DELIVERED) === "true")
                   }
                   onChange={handleAutoArchiveToggle}
                 />

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Download, X, Share, PlusSquare, Smartphone } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { STORAGE_KEYS } from '../constants/storageKeys';
 
-const STORAGE_DISMISS_KEY = 'deliveree_pwa_banner_dismissed';
+const STORAGE_DISMISS_KEY = STORAGE_KEYS.PWA_BANNER_DISMISSED;
 
 export function InstallPwaBanner() {
   const { isRTL } = useLanguage();

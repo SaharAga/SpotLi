@@ -4,7 +4,7 @@ import {
   AlertCircle, ImagePlus, Trash2, Loader2, ShieldAlert, Flag
 } from 'lucide-react';
 import { parseSmartText } from '../utils/smartParser';
-import { CARRIERS } from '../types/carriers';
+import { getCarrier } from '../types/carriers';
 import { findPackageByTrackingNumber } from '../services/deliveryService';
 import { useLanguage } from '../context/LanguageContext';
 import { parseWithAi } from '../services/aiParseService';
@@ -18,7 +18,7 @@ import { Modal } from './Modal';
  * downstream) never needs to know which path produced a result.
  */
 function mapAiResultToParsed(aiResult) {
-  const carrierObj = CARRIERS[aiResult.carrier] || CARRIERS['other'];
+  const carrierObj = getCarrier(aiResult.carrier);
   const title = aiResult.title || (aiResult.trackingNumber ? `Package ${aiResult.trackingNumber.slice(0, 8)}...` : '');
   return {
     title,
@@ -335,7 +335,7 @@ export function SmartImportModal({
 
 
 
-  const detectedCarrierObj = parsed ? (CARRIERS[parsed.carrier] || CARRIERS['other']) : null;
+  const detectedCarrierObj = parsed ? getCarrier(parsed.carrier) : null;
   const showLowConfidenceHint = parseSource === 'ai' && (aiConfidence === 'low' || aiConfidence === 'medium');
 
   return (

@@ -2,9 +2,10 @@ import { sanitizeString } from '../utils/packageValidator';
 import { sanitizeForTelemetry, redactPII } from '../utils/privacySanitizer';
 import { APP_VERSION, BUILD_CHANNEL } from '../constants/version';
 import { db, isFirebaseConfigured } from './firebase';
+import { STORAGE_KEYS } from '../constants/storageKeys';
 
-export const OFFLINE_FEEDBACK_QUEUE_KEY = 'deliveree_offline_feedback_queue';
-export const LOCAL_FEEDBACK_HISTORY_KEY = 'deliveree_tester_feedback';
+export const OFFLINE_FEEDBACK_QUEUE_KEY = STORAGE_KEYS.OFFLINE_FEEDBACK_QUEUE;
+export const LOCAL_FEEDBACK_HISTORY_KEY = STORAGE_KEYS.LOCAL_FEEDBACK_HISTORY;
 const MAX_LOCAL_HISTORY_ITEMS = 50;
 
 /**
