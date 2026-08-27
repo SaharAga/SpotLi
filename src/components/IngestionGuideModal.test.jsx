@@ -101,6 +101,22 @@ describe('IngestionGuideModal Component Tests', () => {
     });
   });
 
+  it('handles unlinking a connected account', async () => {
+    const handleToast = vi.fn();
+    const { addConnectedAccount } = await import('../services/emailSyncService');
+    addConnectedAccount({ email: 'tester@gmail.com', service: 'gmail' });
+
+    renderModal({ onShowToast: handleToast });
+
+    expect(screen.getByText('tester@gmail.com')).toBeTruthy();
+    const unlinkBtn = screen.getByLabelText(/Unlink tester@gmail\.com|Disconnect tester@gmail\.com/i);
+    fireEvent.click(unlinkBtn);
+
+    await waitFor(() => {
+      expect(handleToast).toHaveBeenCalledWith(expect.stringContaining('tester@gmail.com'), 'info');
+    });
+  });
+
   it('calls onClose when close button is clicked', () => {
     const handleClose = vi.fn();
     renderModal({ onClose: handleClose });

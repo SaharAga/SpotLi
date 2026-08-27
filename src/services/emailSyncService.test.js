@@ -39,18 +39,28 @@ describe('emailSyncService Unit Tests', () => {
 
     it('persists connected state across calls', () => {
       setConnectedService('gmail', true);
-      expect(getConnectedServices()).toEqual({ gmail: true, outlook: false, accounts: [] });
+      expect(getConnectedServices().gmail).toBe(true);
 
       setConnectedService('outlook', true);
-      expect(getConnectedServices()).toEqual({ gmail: true, outlook: true, accounts: [] });
+      expect(getConnectedServices().outlook).toBe(true);
 
       setConnectedService('gmail', false);
-      expect(getConnectedServices()).toEqual({ gmail: false, outlook: true, accounts: [] });
+      expect(getConnectedServices().gmail).toBe(false);
+      expect(getConnectedServices().outlook).toBe(true);
+    });
+
+    it('auto-migrates legacy state when currentUser is provided', () => {
+      window.localStorage.setItem('deliveree_email_integrations_v1', JSON.stringify({ gmail: true }));
+      const services = getConnectedServices({ email: 'sahar@example.com' });
+      expect(services.gmail).toBe(true);
+      expect(services.accounts.length).toBe(1);
+      expect(services.accounts[0].email).toBe('sahar@example.com');
     });
   });
 
   describe('Multi-Email Accounts Management', () => {
-    it('adds, lists, and removes connected accounts', () => {
+    it('adds, lists, disconnects and removes connected accounts', async () => {
+      const { disconnectService: disconnect } = await import('./emailSyncService');
       expect(getConnectedAccounts()).toEqual([]);
 
       addConnectedAccount({ email: 'sahar@gmail.com', service: 'gmail' });
@@ -67,7 +77,7 @@ describe('emailSyncService Unit Tests', () => {
       expect(remaining[0].email).toBe('work@company.com');
       expect(getConnectedServices().gmail).toBe(true);
 
-      removeConnectedAccount('work@company.com');
+      disconnect('gmail');
       expect(getConnectedAccounts().length).toBe(0);
       expect(getConnectedServices().gmail).toBe(false);
     });

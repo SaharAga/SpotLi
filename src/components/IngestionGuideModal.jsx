@@ -13,6 +13,7 @@ import {
   getConnectedServices, 
   getConnectedAccounts,
   removeConnectedAccount,
+  disconnectService,
   setConnectedService, 
   setupGmailAutoForward,
   requestGmailForwardingSetup,
@@ -35,7 +36,15 @@ export function IngestionGuideModal({
   const [selectedGuide, setSelectedGuide] = useState('gmail'); // 'gmail' | 'outlook' | 'icloud' | 'yahoo'
   const [isConnectingGmail, setIsConnectingGmail] = useState(false);
   const [isConnectingOutlook, setIsConnectingOutlook] = useState(false);
-  const [connectedServices, setConnectedServicesState] = useState(() => getConnectedServices());
+  const [connectedServices, setConnectedServicesState] = useState(() => getConnectedServices(user));
+  const userUid = user?.uid;
+
+  // Sync state whenever user ID changes or modal opens
+  React.useEffect(() => {
+    if (isOpen) {
+      setConnectedServicesState(getConnectedServices(user));
+    }
+  }, [userUid, isOpen]);
 
   if (!isOpen) return null;
 
@@ -143,10 +152,21 @@ export function IngestionGuideModal({
 
   const handleDisconnectAccount = (accountEmail) => {
     removeConnectedAccount(accountEmail);
-    setConnectedServicesState(getConnectedServices());
+    setConnectedServicesState(getConnectedServices(user));
     if (onShowToast) {
       onShowToast(
         language === 'he' ? `החשבון ${accountEmail} נותק` : `Disconnected ${accountEmail}`,
+        'info'
+      );
+    }
+  };
+
+  const handleDisconnectService = (service) => {
+    disconnectService(service);
+    setConnectedServicesState(getConnectedServices(user));
+    if (onShowToast) {
+      onShowToast(
+        language === 'he' ? `סנכרון ${service} נותק בהצלחה` : `${service} sync disconnected`,
         'info'
       );
     }
@@ -259,32 +279,77 @@ export function IngestionGuideModal({
             </div>
           </div>
 
-          {/* Connected Accounts List */}
-          {connectedServices.accounts && connectedServices.accounts.length > 0 && (
-            <div className="pt-2 border-t border-slate-800/60 space-y-2">
-              <div className="text-[11px] font-semibold text-slate-300">
-                {language === 'he' ? 'חשבונות מחוברים לסנכרון אוטומטי:' : 'Connected Accounts for Auto-Sync:'}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {connectedServices.accounts.map((acc) => (
-                  <div
-                    key={acc.email}
-                    className="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-900/90 border border-slate-800 text-slate-200 text-xs"
+          {/* Connected Accounts & Inboxes List */}
+          {((connectedServices.accounts && connectedServices.accounts.length > 0) ||
+            connectedServices.gmail ||
+            connectedServices.outlook) && (
+            <div className="pt-3 border-t border-slate-800/80 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-200 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  {language === 'he' ? 'תיבות מחוברות להעברה אוטומטית:' : 'Active Connected Inboxes:'}
+                </span>
+                {(connectedServices.gmail || connectedServices.outlook) && (
+                  <button
+                    onClick={() => {
+                      if (connectedServices.gmail) disconnectService('gmail');
+                      if (connectedServices.outlook) disconnectService('outlook');
+                      setConnectedServicesState(getConnectedServices(user));
+                      if (onShowToast) onShowToast(language === 'he' ? 'כל החשבונות נותקו' : 'All accounts disconnected', 'info');
+                    }}
+                    className="text-[10px] text-rose-400 hover:text-rose-300 underline font-medium cursor-pointer p-1"
                   >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      <span className="truncate font-medium text-[11px]">{acc.email}</span>
+                    {language === 'he' ? 'נתק הכל' : 'Disconnect All'}
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {connectedServices.accounts && connectedServices.accounts.length > 0 ? (
+                  connectedServices.accounts.map((acc) => (
+                    <div
+                      key={acc.email}
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-slate-200 text-xs"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
+                          acc.service === 'outlook' ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                        }`}>
+                          {acc.service || 'Gmail'}
+                        </span>
+                        <span className="truncate font-medium text-[11px]" title={acc.email}>
+                          {acc.email}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleDisconnectAccount(acc.email)}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 transition-colors cursor-pointer text-[10px] font-semibold shrink-0 ml-1"
+                        title={language === 'he' ? 'נתק חשבון' : 'Unlink account'}
+                        aria-label={`Unlink ${acc.email}`}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>{language === 'he' ? 'נתק' : 'Unlink'}</span>
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  /* Fallback if legacy flag is active without accounts list */
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-slate-200 text-xs col-span-full">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-[11px] font-medium">
+                        {connectedServices.gmail ? (user?.email || 'Gmail Auto-Sync') : 'Outlook Auto-Sync'}
+                      </span>
                     </div>
                     <button
-                      onClick={() => handleDisconnectAccount(acc.email)}
-                      className="p-1 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer min-h-[28px] min-w-[28px] flex items-center justify-center shrink-0 ml-1"
-                      title={language === 'he' ? 'נתק חשבון' : 'Disconnect account'}
-                      aria-label={`Disconnect ${acc.email}`}
+                      onClick={() => handleDisconnectService(connectedServices.gmail ? 'gmail' : 'outlook')}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 transition-colors cursor-pointer text-[10px] font-semibold"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-3 h-3" />
+                      <span>{language === 'he' ? 'נתק סנכרון' : 'Unlink'}</span>
                     </button>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           )}

@@ -17,10 +17,11 @@ export function getIngestionEmailAddress(user) {
 }
 
 /**
- * Reads user's connected email services state from local storage.
+ * Reads user's connected email services state from local storage with auto-reconciliation.
+ * @param {object} [currentUser] Optional current authenticated user for legacy state migration
  * @returns {{ gmail: boolean, outlook: boolean, accounts: Array<{ email: string, service: string, connectedAt: string }> }}
  */
-export function getConnectedServices() {
+export function getConnectedServices(currentUser = null) {
   if (typeof window === 'undefined' || !window.localStorage) {
     return { gmail: false, outlook: false, accounts: [] };
   }
@@ -28,10 +29,30 @@ export function getConnectedServices() {
     const raw = window.localStorage.getItem(EMAIL_INTEGRATIONS_STORAGE_KEY);
     if (!raw) return { gmail: false, outlook: false, accounts: [] };
     const parsed = JSON.parse(raw);
-    const accounts = Array.isArray(parsed.accounts) ? parsed.accounts : [];
+    let accounts = Array.isArray(parsed.accounts) ? parsed.accounts : [];
+
+    // Auto-migration: If legacy flag is true but accounts list is empty, synthesize an entry
+    if (parsed.gmail && !accounts.some((a) => a.service === 'gmail')) {
+      accounts.push({
+        email: currentUser?.email || 'Connected Gmail Account',
+        service: 'gmail',
+        connectedAt: new Date().toISOString()
+      });
+    }
+    if (parsed.outlook && !accounts.some((a) => a.service === 'outlook')) {
+      accounts.push({
+        email: currentUser?.email || 'Connected Outlook Account',
+        service: 'outlook',
+        connectedAt: new Date().toISOString()
+      });
+    }
+
+    const hasGmail = Boolean(parsed.gmail || accounts.some((a) => a.service === 'gmail'));
+    const hasOutlook = Boolean(parsed.outlook || accounts.some((a) => a.service === 'outlook'));
+
     return {
-      gmail: Boolean(parsed.gmail || accounts.some(a => a.service === 'gmail')),
-      outlook: Boolean(parsed.outlook || accounts.some(a => a.service === 'outlook')),
+      gmail: hasGmail,
+      outlook: hasOutlook,
       accounts
     };
   } catch {
@@ -41,10 +62,11 @@ export function getConnectedServices() {
 
 /**
  * Gets the list of all connected email accounts.
+ * @param {object} [currentUser]
  * @returns {Array<{ email: string, service: string, connectedAt: string }>}
  */
-export function getConnectedAccounts() {
-  return getConnectedServices().accounts;
+export function getConnectedAccounts(currentUser = null) {
+  return getConnectedServices(currentUser).accounts;
 }
 
 /**
@@ -74,6 +96,26 @@ export function addConnectedAccount(account) {
     window.localStorage.setItem(EMAIL_INTEGRATIONS_STORAGE_KEY, JSON.stringify(updated));
   } catch (err) {
     console.warn('[EmailSyncService] Failed to save connected account:', err);
+  }
+}
+
+/**
+ * Completely disconnects a specific service ('gmail' or 'outlook') and removes its accounts.
+ * @param {'gmail' | 'outlook'} service
+ */
+export function disconnectService(service) {
+  if (typeof window === 'undefined' || !window.localStorage || !service) return;
+  try {
+    const current = getConnectedServices();
+    const remainingAccounts = current.accounts.filter((a) => a.service !== service);
+    const updated = {
+      ...current,
+      [service]: false,
+      accounts: remainingAccounts
+    };
+    window.localStorage.setItem(EMAIL_INTEGRATIONS_STORAGE_KEY, JSON.stringify(updated));
+  } catch (err) {
+    console.warn('[EmailSyncService] Failed to disconnect service:', err);
   }
 }
 
@@ -111,6 +153,9 @@ export function setConnectedService(service, isConnected) {
   try {
     const current = getConnectedServices();
     const updated = { ...current, [service]: Boolean(isConnected) };
+    if (!isConnected) {
+      updated.accounts = (current.accounts || []).filter((a) => a.service !== service);
+    }
     window.localStorage.setItem(EMAIL_INTEGRATIONS_STORAGE_KEY, JSON.stringify(updated));
   } catch (err) {
     console.warn('[EmailSyncService] Failed to save connected service state:', err);
