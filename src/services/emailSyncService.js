@@ -71,8 +71,6 @@ export function getConnectedServices(currentUser = null) {
 export function getConnectedAccounts(currentUser = null) {
   return getConnectedServices(currentUser).accounts;
 }
-// In-memory token cache for active session API cleanup
-const sessionTokens = new Map();
 
 /**
  * Updates status of a connected account ('pending' | 'active').
@@ -105,9 +103,7 @@ export function updateAccountStatus(email, status) {
  */
 export function addConnectedAccount(account) {
   if (typeof window === 'undefined' || !window.localStorage || !account?.email) return;
-  if (account.token) {
-    sessionTokens.set(account.email.toLowerCase(), account.token);
-  }
+
   try {
     const current = getConnectedServices();
     const existingAccounts = current.accounts.filter(
@@ -147,8 +143,6 @@ export async function revokeGmailConnection() {
     await disconnect();
   } catch (err) {
     console.warn('[EmailSyncService] gmailDisconnect call failed:', err);
-  } finally {
-    sessionTokens.clear();
   }
 }
 

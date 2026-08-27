@@ -246,7 +246,7 @@ export function IngestionGuideModal({
         </div>
         <button
           onClick={onClose}
-          className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+          className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
           aria-label="Close"
         >
           <X className="w-5 h-5" />
@@ -281,7 +281,7 @@ export function IngestionGuideModal({
                 type="button"
                 onClick={handleConnectGmail}
                 disabled={isConnectingGmail}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-all shadow-md shadow-indigo-600/20 disabled:opacity-50 cursor-pointer min-h-[44px]"
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-all shadow-md shadow-indigo-600/20 disabled:opacity-50 cursor-pointer min-h-[48px]"
               >
                 {isConnectingGmail ? (
                   <>
@@ -302,7 +302,7 @@ export function IngestionGuideModal({
                 type="button"
                 onClick={handleConnectOutlook}
                 disabled={isConnectingOutlook}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs transition-all shadow-md shadow-sky-600/20 disabled:opacity-50 cursor-pointer min-h-[44px]"
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs transition-all shadow-md shadow-sky-600/20 disabled:opacity-50 cursor-pointer min-h-[48px]"
               >
                 {isConnectingOutlook ? (
                   <>
@@ -594,7 +594,7 @@ export function IngestionGuideModal({
       <div className="p-4 border-t border-slate-800 bg-slate-950/80 flex justify-end shrink-0">
         <button
           onClick={onClose}
-          className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors cursor-pointer min-h-[44px]"
+          className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors cursor-pointer min-h-[48px]"
         >
           {language === 'he' ? 'הבנתי, תודה' : 'Got it, Thanks'}
         </button>
