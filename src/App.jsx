@@ -55,6 +55,7 @@ import { APP_NAME, APP_COPYRIGHT } from './constants/app';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { usePackages } from './hooks/usePackages';
+import { setConnectedService, addConnectedAccount, triggerGmailBackfill } from './services/emailSyncService';
 
 /**
  * Every dialog in the app, by id. These replaced twelve `isXOpen` booleans
@@ -300,14 +301,39 @@ export function DashboardContent() {
         }
       }
 
+      // 5. Gmail OAuth callback return: ?gmail=connected | ?gmail=error
+      const gmailResult = params.get('gmail');
+      if (gmailResult === 'connected') {
+        setConnectedService('gmail', true);
+        addConnectedAccount({
+          email: user?.email || 'Connected Gmail Account',
+          service: 'gmail',
+          connectedAt: new Date().toISOString()
+        });
+        showToast(
+          language === 'he'
+            ? 'Gmail חובר בהצלחה! אישורי הזמנות יסונכרנו אוטומטית 🎉'
+            : 'Gmail connected! Orders will sync automatically 🎉',
+          'success'
+        );
+        triggerGmailBackfill().catch(() => {});
+        openModal(MODAL.INGESTION_GUIDE);
+      } else if (gmailResult === 'error') {
+        showToast(
+          language === 'he' ? 'החיבור ל-Gmail נכשל, נסה שוב' : 'Gmail connection failed, please try again',
+          'error'
+        );
+      }
+
       // Clean up share/action query params from URL without reload
-      if (action || tabParam || shareTitle || shareText || shareUrl || pkgIdParam) {
+      if (action || tabParam || shareTitle || shareText || shareUrl || pkgIdParam || gmailResult) {
         const cleanParams = new URLSearchParams(window.location.search);
         cleanParams.delete('action');
         cleanParams.delete('title');
         cleanParams.delete('text');
         cleanParams.delete('url');
         cleanParams.delete('packageId');
+        cleanParams.delete('gmail');
         
         const cleanQuery = cleanParams.toString();
         const newUrl = window.location.pathname + (cleanQuery ? `?${cleanQuery}` : '') + window.location.hash;

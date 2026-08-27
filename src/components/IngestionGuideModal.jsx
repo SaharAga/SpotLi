@@ -10,6 +10,8 @@ import { copyToClipboard } from '../utils/clipboard';
 import {
   getIngestionEmailAddress,
   getConnectedServices,
+  setConnectedService,
+  addConnectedAccount,
   removeConnectedAccount,
   disconnectService,
   connectGmail,
@@ -55,6 +57,12 @@ export function IngestionGuideModal({
     if (!gmailResult) return;
 
     if (gmailResult === 'connected') {
+      setConnectedService('gmail', true);
+      addConnectedAccount({
+        email: user?.email || 'Connected Gmail Account',
+        service: 'gmail',
+        connectedAt: new Date().toISOString()
+      });
       setConnectedServicesState(getConnectedServices(user));
       if (onShowToast) {
         onShowToast(
