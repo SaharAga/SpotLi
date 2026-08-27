@@ -10,6 +10,7 @@ import { copyToClipboard } from '../utils/clipboard';
 import {
   getIngestionEmailAddress,
   getConnectedServices,
+  getGmailConnectionStatus,
   removeConnectedAccount,
   disconnectService,
   connectGmail,
@@ -36,10 +37,39 @@ export function IngestionGuideModal({
   const [connectedServices, setConnectedServicesState] = useState(() => getConnectedServices(user));
   const userUid = user?.uid || user?.id;
 
+  // The client can't read gmailConnections/{uid} directly (Firestore rules
+  // deny it — the doc holds a refresh token), so localStorage alone can't
+  // tell us whether Gmail is actually connected. This merges the real
+  // server-verified Gmail status into the Outlook-accurate localStorage
+  // state getConnectedServices() returns.
+  const refreshConnectedServices = async () => {
+    const local = getConnectedServices(user);
+    const nonGmailAccounts = (local.accounts || []).filter((a) => a.service !== 'gmail');
+
+    if (!userUid) {
+      setConnectedServicesState({ ...local, gmail: false, accounts: nonGmailAccounts });
+      return;
+    }
+
+    const gmailStatus = await getGmailConnectionStatus();
+    const accounts = gmailStatus.connected
+      ? [
+          ...nonGmailAccounts,
+          {
+            email: gmailStatus.emailAddress || user?.email || 'Gmail Account',
+            service: 'gmail',
+            status: 'active',
+            connectedAt: gmailStatus.connectedAt
+          }
+        ]
+      : nonGmailAccounts;
+    setConnectedServicesState({ ...local, gmail: Boolean(gmailStatus.connected), accounts });
+  };
+
   // Sync state whenever user ID changes or modal opens
   useEffect(() => {
     if (isOpen) {
-      setConnectedServicesState(getConnectedServices(user));
+      refreshConnectedServices();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userUid, isOpen]);
@@ -55,7 +85,7 @@ export function IngestionGuideModal({
     if (!gmailResult) return;
 
     if (gmailResult === 'connected') {
-      setConnectedServicesState(getConnectedServices(user));
+      refreshConnectedServices();
       if (onShowToast) {
         onShowToast(
           language === 'he'
@@ -199,7 +229,7 @@ export function IngestionGuideModal({
 
   const handleDisconnectAccount = async (accountEmail) => {
     await removeConnectedAccount(accountEmail);
-    setConnectedServicesState(getConnectedServices(user));
+    await refreshConnectedServices();
     if (onShowToast) {
       onShowToast(
         language === 'he'
@@ -212,7 +242,7 @@ export function IngestionGuideModal({
 
   const handleDisconnectService = async (service) => {
     await disconnectService(service);
-    setConnectedServicesState(getConnectedServices(user));
+    await refreshConnectedServices();
     if (onShowToast) {
       onShowToast(
         language === 'he' ? `סנכרון ${service} נותק בהצלחה` : `${service} sync disconnected`,
