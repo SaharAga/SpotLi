@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.18.3] - 2026-08-27
+
+### Fixed
+- Add public Privacy Policy and Terms of Service pages for Google Cloud OAuth verification compliance and public legal hosting.
+
 ## [0.18.2] - 2026-08-27
 
 ### Fixed
