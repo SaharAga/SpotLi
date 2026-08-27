@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — Deliveree</title>
+  <link rel="icon" type="image/png" href="/icons/app-icon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #030712;
+      --card-bg: #0b1329;
+      --card-border: #1e293b;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-gradient: linear-gradient(135deg, #3b82f6, #6366f1, #8b5cf6);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      line-height: 1.65;
+      padding: 2rem 1rem;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      max-width: 860px;
+      width: 100%;
+    }
+    header {
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .logo-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: inherit;
+    }
+    .brand img {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+    }
+    .brand-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .lang-switcher {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .lang-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: var(--text);
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .lang-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-top: 0.5rem;
+    }
+    .updated {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    .highlight-card {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(99, 102, 241, 0.08));
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #93c5fd;
+      margin: 1.5rem 0 0.75rem 0;
+    }
+    h2:first-child { margin-top: 0; }
+    p {
+      color: #cbd5e1;
+      font-size: 0.95rem;
+      margin-bottom: 1rem;
+    }
+    ul {
+      margin-left: 1.5rem;
+      margin-bottom: 1rem;
+      color: #cbd5e1;
+      font-size: 0.95rem;
+    }
+    li { margin-bottom: 0.4rem; }
+    .rtl {
+      direction: rtl;
+      font-family: 'Assistant', 'Inter', system-ui, sans-serif;
+    }
+    .rtl ul { margin-left: 0; margin-right: 1.5rem; }
+    footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--card-border);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo-row">
+        <a href="/" class="brand">
+          <img src="/icons/app-icon.png" alt="Deliveree Logo">
+          <span class="brand-title">Deliveree</span>
+        </a>
+        <div class="lang-switcher">
+          <button class="lang-btn active" onclick="switchLang('en')">English</button>
+          <button class="lang-btn" onclick="switchLang('he')">עברית</button>
+        </div>
+      </div>
+      <div>
+        <h1 id="page-title">Privacy Policy</h1>
+        <p class="updated" id="page-updated">Last updated: August 27, 2026</p>
+      </div>
+    </header>
+
+    <!-- English Content -->
+    <main id="content-en">
+      <div class="card highlight-card">
+        <h2>Google API Services User Data Policy Compliance</h2>
+        <p>Deliveree's use and transfer to any other app of information received from Google APIs will adhere to <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" style="color: #60a5fa;">Google API Services User Data Policy</a>, including the <strong>Limited Use</strong> requirements.</p>
+        <p><strong>Specific Disclosure for Gmail Integration:</strong> Deliveree requests access to the <code>https://www.googleapis.com/auth/gmail.settings.basic</code> scope solely upon user request to create an inbox forwarding filter for shipping and parcel notification emails. Deliveree <strong>never reads, scans, stores, or sells your inbox emails</strong>.</p>
+      </div>
+
+      <div class="card">
+        <h2>1. Who Operates Deliveree</h2>
+        <p>Deliveree is an autonomous package tracking application operated for users in Israel. For privacy inquiries, data deletion, or account questions, contact: <strong>saharaga97@gmail.com</strong>.</p>
+
+        <h2>2. Information We Collect & Why</h2>
+        <ul>
+          <li><strong>Account Details:</strong> Name and email provided when you sign in via Google, Microsoft, or Email/Password, used strictly for user authentication and cross-device synchronization.</li>
+          <li><strong>Package & Tracking Data:</strong> Tracking numbers, carrier names, and package titles entered or imported by you, used to query carrier APIs and track status.</li>
+          <li><strong>AI Smart Import:</strong> When using Smart Import with Gemini AI, pasted text is scrubbed of personal identifying information (PII) before transmission to Google's Gemini API for structured extraction.</li>
+        </ul>
+
+        <h2>3. Data Sharing & Third Parties</h2>
+        <p>We do not sell your personal data or use it for advertising. Data is shared solely with necessary service infrastructure:</p>
+        <ul>
+          <li><strong>Google Cloud & Firebase:</strong> Secure database, authentication, and hosting infrastructure.</li>
+          <li><strong>Postal & Courier APIs:</strong> Tracking numbers are transmitted to the relevant carrier (e.g. Israel Post, Cheetah, DHL, FedEx, UPS, Cainiao) to fetch live parcel delivery updates.</li>
+        </ul>
+
+        <h2>4. Your Rights & Data Deletion</h2>
+        <p>You have the full right to view, export, or permanently delete your account and all stored package data at any time via <strong>Settings &rarr; Danger Zone &rarr; Delete Account</strong> within the app.</p>
+      </div>
+    </main>
+
+    <!-- Hebrew Content -->
+    <main id="content-he" class="rtl" style="display: none;">
+      <div class="card highlight-card">
+        <h2>עמידה במדיניות המידע של Google API Services</h2>
+        <p>השימוש של Deliveree במידע המתקבל מ-Google APIs והעברתו לכל שירות אחר תואמים באופן מלא ל-<a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" style="color: #60a5fa;">מדיניות נתוני המשתמש של שירותי Google API</a>, לרבות דרישות <strong>השימוש המוגבל (Limited Use)</strong>.</p>
+        <p><strong>גילוי ספציפי עבור אינטגרציית Gmail:</strong> Deliveree מבקשת הרשאה עבור <code>gmail.settings.basic</code> אך ורק לפי בקשת המשתמש לצורך יצירת כלל העברה אוטומטי להודעות שילוח וחבילות. Deliveree <strong>לעולם אינה קוראת, סורקת, שומרת או מוכרת את הודעות האימייל בתיבת הדואר שלך</strong>.</p>
+      </div>
+
+      <div class="card">
+        <h2>1. מי מפעיל את Deliveree</h2>
+        <p>Deliveree היא אפליקציה למעקב חכם אחר חבילות ומשלוחים בישראל. לכל שאלה, בקשת פרטיות או מחיקת מידע, ניתן לפנות לכתובת: <strong>saharaga97@gmail.com</strong>.</p>
+
+        <h2>2. המידע שאנו אוספים ומטרתו</h2>
+        <ul>
+          <li><strong>פרטי חשבון:</strong> שם וכתובת אימייל בעת התחברות עם Google, Microsoft או אימייל/סיסמה, לצורך אימות וסנכרון ענן בין מכשיריך.</li>
+          <li><strong>מידע על חבילות:</strong> מספרי מעקב, שמות ספקים ותיאורי חבילות שהזנת, לצורך בדיקת סטטוס מול חברות השילוח.</li>
+          <li><strong>ייבוא חכם באמצעות AI:</strong> בעת שימוש ב-Smart Import עם Gemini AI, טקסט מודבק מנוקה אוטומטית מפרטי זיהוי אישיים טרם שליחתו לניתוח מבני.</li>
+        </ul>
+
+        <h2>3. שיתוף מידע עם צדדים שלישיים</h2>
+        <p>איננו מוכרים את המידע שלך או משתמשים בו לפרסום. המידע מועבר אך ורק לתשתיות הנדרשות להפעלת השירות:</p>
+        <ul>
+          <li><strong>Google Cloud & Firebase:</strong> אחסון מסד נתונים, אימות משתמשים ואירוח מאובטח.</li>
+          <li><strong>חברות שילוח ודואר:</strong> מספרי המעקב נשלחים ישירות לספק הרלוונטי (דואר ישראל, צ'יטה, DHL, UPS, קאיניאו וכו') לקבלת עדכוני מסירה בזמן אמת.</li>
+        </ul>
+
+        <h2>4. הזכויות שלך ומחיקת נתונים</h2>
+        <p>הינך רשאי לצפות, לייצא או למחוק לצמיתות את חשבונך ואת כל נתוני החבילות שלך בכל עת דרך <strong>הגדרות &larr; אזור סכנה &larr; מחיקת חשבון</strong> באפליקציה.</p>
+      </div>
+    </main>
+
+    <footer>
+      <p>&copy; 2026 Deliveree. All rights reserved. | <a href="/terms.html">Terms of Service</a> | <a href="/">Open Deliveree App</a></p>
+    </footer>
+  </div>
+
+  <script>
+    function switchLang(lang) {
+      document.getElementById('content-en').style.display = lang === 'en' ? 'block' : 'none';
+      document.getElementById('content-he').style.display = lang === 'he' ? 'block' : 'none';
+      document.getElementById('page-title').innerText = lang === 'en' ? 'Privacy Policy' : 'מדיניות פרטיות';
+      document.getElementById('page-updated').innerText = lang === 'en' ? 'Last updated: August 27, 2026' : 'עודכן לאחרונה: 27 באוגוסט 2026';
+      
+      const buttons = document.querySelectorAll('.lang-btn');
+      buttons[0].classList.toggle('active', lang === 'en');
+      buttons[1].classList.toggle('active', lang === 'he');
+    }
+  </script>
+</body>
+</html>
