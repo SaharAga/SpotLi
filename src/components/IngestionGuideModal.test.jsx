@@ -53,7 +53,7 @@ describe('IngestionGuideModal Component Tests', () => {
     expect(screen.getByText(/Automatic Shipment Ingestion|קליטת משלוחים אוטומטית/i)).toBeTruthy();
     expect(screen.getByText(/Connect Gmail|חבר Gmail/i)).toBeTruthy();
     expect(screen.getByText(/Connect Outlook|חבר Outlook/i)).toBeTruthy();
-    expect(screen.getByText(/usr_testuser123@in.deliveree.app/i)).toBeTruthy();
+    expect(screen.getByText(/233b362d7b331adfde6e\+usr_testuser123@cloudmailin\.net/i)).toBeTruthy();
   });
 
   it('switches between interactive provider setup guides smoothly', () => {

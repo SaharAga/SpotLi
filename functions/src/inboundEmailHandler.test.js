@@ -21,6 +21,11 @@ describe('inboundEmailHandler Unit Tests', () => {
   });
 
   describe('extractUserIdFromToAddress', () => {
+    it('extracts userId from CloudMailin plus-addressing format', () => {
+      expect(extractUserIdFromToAddress('233b362d7b331adfde6e+usr_testuser123@cloudmailin.net')).toBe('testuser123');
+      expect(extractUserIdFromToAddress('233b362d7b331adfde6e+user888@cloudmailin.net')).toBe('user888');
+    });
+
     it('extracts userId from usr_ format', () => {
       expect(extractUserIdFromToAddress('usr_abc123@in.deliveree.app')).toBe('abc123');
       expect(extractUserIdFromToAddress('usr_user99_secrettoken@in.deliveree.app')).toBe('user99');

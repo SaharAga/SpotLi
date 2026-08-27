@@ -58,6 +58,24 @@
     <meta name="apple-mobile-web-app-title" content="Deliveree" />
     <link rel="apple-touch-icon" href="/icons/app-icon.png" />
 
+    <!-- Staging Visual Differentiation -->
+    <script>
+      (function() {
+        try {
+          var isStaging = window.location.hostname.indexOf('staging') !== -1 || window.location.hostname.indexOf('localhost') !== -1;
+          if (isStaging) {
+            document.title = 'Deliveree (Staging)';
+            var metaTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+            if (metaTitle) metaTitle.setAttribute('content', 'Deliveree (Staging)');
+            var icon = document.querySelector('link[rel="icon"]');
+            if (icon) icon.setAttribute('href', '/icons/icon-staging.svg');
+            var appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
+            if (appleIcon) appleIcon.setAttribute('href', '/icons/icon-staging.svg');
+          }
+        } catch (e) {}
+      })();
+    </script>
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

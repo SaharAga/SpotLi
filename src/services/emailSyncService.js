@@ -3,17 +3,20 @@ import { auth, isFirebaseConfigured } from './firebase';
 
 const EMAIL_INTEGRATIONS_STORAGE_KEY = 'deliveree_email_integrations_v1';
 
+export const LIVE_INBOUND_EMAIL_DOMAIN = 'cloudmailin.net';
+export const LIVE_INBOUND_INBOX_ID = '233b362d7b331adfde6e';
+
 /**
- * Derives a consistent, user-specific ingestion email address.
+ * Derives a consistent, user-specific ingestion email address using the live receiving gateway.
  * @param {{ uid?: string } | null | undefined} user
  * @returns {string}
  */
 export function getIngestionEmailAddress(user) {
   if (!user || !user.uid) {
-    return 'your-id.pkg@in.deliveree.app';
+    return `${LIVE_INBOUND_INBOX_ID}@${LIVE_INBOUND_EMAIL_DOMAIN}`;
   }
   const cleanUid = String(user.uid).replace(/[^a-zA-Z0-9]/g, '').slice(0, 16);
-  return `usr_${cleanUid}@in.deliveree.app`;
+  return `${LIVE_INBOUND_INBOX_ID}+usr_${cleanUid}@${LIVE_INBOUND_EMAIL_DOMAIN}`;
 }
 
 /**

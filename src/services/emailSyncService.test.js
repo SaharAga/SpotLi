@@ -18,16 +18,16 @@ describe('emailSyncService Unit Tests', () => {
 
   describe('getIngestionEmailAddress', () => {
     it('returns clean email based on user uid', () => {
-      expect(getIngestionEmailAddress({ uid: 'user12345' })).toBe('usr_user12345@in.deliveree.app');
+      expect(getIngestionEmailAddress({ uid: 'user12345' })).toBe('233b362d7b331adfde6e+usr_user12345@cloudmailin.net');
     });
 
     it('returns placeholder when user is null or missing uid', () => {
-      expect(getIngestionEmailAddress(null)).toBe('your-id.pkg@in.deliveree.app');
-      expect(getIngestionEmailAddress({})).toBe('your-id.pkg@in.deliveree.app');
+      expect(getIngestionEmailAddress(null)).toBe('233b362d7b331adfde6e@cloudmailin.net');
+      expect(getIngestionEmailAddress({})).toBe('233b362d7b331adfde6e@cloudmailin.net');
     });
 
     it('strips non-alphanumeric characters from uid', () => {
-      expect(getIngestionEmailAddress({ uid: 'user-abc_123!@#' })).toBe('usr_userabc123@in.deliveree.app');
+      expect(getIngestionEmailAddress({ uid: 'user-abc_123!@#' })).toBe('233b362d7b331adfde6e+usr_userabc123@cloudmailin.net');
     });
   });
 
