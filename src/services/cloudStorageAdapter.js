@@ -12,6 +12,9 @@ import {
 import { db, isFirebaseConfigured } from './firebase';
 import { deliveryService } from './deliveryService';
 import { parsePackage, parsePackageList } from '../schemas/packageSchema';
+import { STORAGE_KEYS } from '../constants/storageKeys';
+
+export const MAX_TOMBSTONES = 200;
 
 /**
  * Validates a package list through the single repairing schema entry point.
@@ -26,9 +29,9 @@ function validateList(packages) {
 
 function getTombstonesStorageKey(userId) {
   if (userId) {
-    return `deliveree_deleted_tombstones_${userId}`;
+    return `${STORAGE_KEYS.TOMBSTONES_PREFIX}${userId}`;
   }
-  return "deliveree_deleted_tombstones_guest";
+  return STORAGE_KEYS.TOMBSTONES_GUEST;
 }
 
 /**
@@ -51,7 +54,7 @@ export class CloudStorageAdapter {
       const raw = localStorage.getItem(getTombstonesStorageKey(userId));
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) return parsed.slice(-MAX_TOMBSTONES);
       }
     } catch (e) {
       console.warn("[CloudStorageAdapter] Failed to load tombstones:", e);
@@ -73,7 +76,14 @@ export class CloudStorageAdapter {
 
   recordTombstone(packageId, userId = this.userId) {
     if (!packageId) return;
+    if (this.tombstones.has(packageId)) {
+      this.tombstones.delete(packageId);
+    }
     this.tombstones.add(packageId);
+    while (this.tombstones.size > MAX_TOMBSTONES) {
+      const oldest = this.tombstones.values().next().value;
+      this.tombstones.delete(oldest);
+    }
     this.saveTombstones(userId);
   }
 

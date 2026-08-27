@@ -22,10 +22,11 @@ import { cloudAdapter } from '../services/cloudStorageAdapter';
 import { deliveryService } from '../services/deliveryService';
 import { sanitizeString } from '../utils/packageValidator';
 import { LEGAL_VERSION } from '../constants/legal';
+import { STORAGE_KEYS } from '../constants/storageKeys';
 
 const AuthContext = createContext();
 
-const STORAGE_AUTH_KEY = 'deliveree_auth_user_v1';
+const STORAGE_AUTH_KEY = STORAGE_KEYS.AUTH_USER;
 const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
 /**
@@ -53,12 +54,12 @@ async function withTimeout(promise, ms = 2000) {
 export async function migrateGuestDataToUser(targetUserId) {
   if (!targetUserId || typeof targetUserId !== 'string') return [];
   try {
-    const guestStored = localStorage.getItem('deliveree_packages_guest');
+    const guestStored = localStorage.getItem(STORAGE_KEYS.PACKAGES_GUEST);
     if (!guestStored) return [];
 
     const guestPackages = deliveryService.getPackages(null);
     if (!Array.isArray(guestPackages) || guestPackages.length === 0) {
-      localStorage.removeItem('deliveree_packages_guest');
+      localStorage.removeItem(STORAGE_KEYS.PACKAGES_GUEST);
       return [];
     }
 
@@ -97,7 +98,7 @@ export async function migrateGuestDataToUser(targetUserId) {
       }
     }
 
-    localStorage.removeItem('deliveree_packages_guest');
+    localStorage.removeItem(STORAGE_KEYS.PACKAGES_GUEST);
     return merged;
   } catch (err) {
     console.warn('[AuthContext] Guest data migration error:', err);
@@ -873,11 +874,11 @@ export function AuthProvider({ children }) {
     }
 
     try {
-      localStorage.removeItem(`deliveree_packages_${targetId}`);
-      localStorage.removeItem('deliveree_packages_guest');
+      localStorage.removeItem(`${STORAGE_KEYS.PACKAGES_USER_PREFIX}${targetId}`);
+      localStorage.removeItem(STORAGE_KEYS.PACKAGES_GUEST);
       localStorage.removeItem(STORAGE_AUTH_KEY);
-      localStorage.removeItem('deliveree_tester_feedback');
-      localStorage.removeItem('deliveree_pwa_banner_dismissed');
+      localStorage.removeItem(STORAGE_KEYS.LOCAL_FEEDBACK_HISTORY);
+      localStorage.removeItem(STORAGE_KEYS.PWA_BANNER_DISMISSED);
     } catch {
       // Ignore
     }

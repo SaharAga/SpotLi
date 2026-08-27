@@ -79,6 +79,19 @@ describe('CloudStorageAdapter', () => {
     expect(afterDelete[0].id).toBe('pkg-102');
   });
 
+  it('caps tombstones at MAX_TOMBSTONES (200) with LRU eviction', () => {
+    for (let i = 0; i < 250; i++) {
+      adapter.recordTombstone(`tomb-${i}`);
+    }
+    expect(adapter.tombstones.size).toBe(200);
+    // First 50 should have been evicted
+    expect(adapter.isDeleted('tomb-0')).toBe(false);
+    expect(adapter.isDeleted('tomb-49')).toBe(false);
+    // Items 50-249 should still be retained
+    expect(adapter.isDeleted('tomb-50')).toBe(true);
+    expect(adapter.isDeleted('tomb-249')).toBe(true);
+  });
+
   describe('upsertPackageRemote / deletePackageRemote (SYNC-08 replay path)', () => {
     it('throws rather than silently no-op-ing when userId is missing, so a caller (e.g. the sync queue replay loop) sees a real failure instead of a false success', async () => {
       await expect(adapter.upsertPackageRemote({ id: 'pkg-1', title: 'X', trackingNumber: 'T1' }, undefined))

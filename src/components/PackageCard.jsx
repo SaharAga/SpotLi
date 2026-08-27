@@ -4,7 +4,7 @@ import {
   Calendar, CheckCircle, ArrowUpRight, RefreshCw, Loader2, Package
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { CARRIERS } from '../types/carriers';
+import { getCarrier } from '../types/carriers';
 import { detectStore } from '../utils/storeDetector';
 import { copyToClipboard } from '../utils/clipboard';
 import { STAGES } from '../types/stages';
@@ -36,7 +36,7 @@ function PackageCardImpl({
   const touchStartYRef = useRef(0);
   const hapticTriggeredRef = useRef(false);
 
-  const carrier = CARRIERS[pkg.carrier] || CARRIERS['other'];
+  const carrier = getCarrier(pkg.carrier);
   const store = detectStore(pkg);
   const daysInfo = getDaysRemaining(pkg.expectedDeliveryDate, language);
 
@@ -152,7 +152,10 @@ function PackageCardImpl({
   const stage = STAGES.find(s => s.id === pkg.status) || STAGES[0];
 
   return (
-    <div className="relative overflow-hidden rounded-2xl">
+    <div
+      className="relative overflow-hidden rounded-2xl"
+      style={{ contentVisibility: 'auto', containIntrinsicSize: '140px' }}
+    >
       {/* Swipe Action Background Indicator */}
       {isSwiping && (
         <div className="absolute inset-0 flex items-center justify-between px-6 rounded-2xl transition-colors">

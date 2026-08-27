@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Sparkles, Package, AlertTriangle, ExternalLink, MapPin, Key, ShoppingBag, Wand2 } from 'lucide-react';
-import { CARRIERS, CARRIER_LIST } from '../types/carriers.js';
+import { CARRIER_LIST, getCarrier } from '../types/carriers.js';
 import { STAGES, CATEGORIES } from '../types/stages.js';
 import { findPackageByTrackingNumber } from '../services/deliveryService.js';
 import { detectCarrier } from '../utils/carrierDetector.js';
@@ -225,7 +225,7 @@ export function AddEditPackageModal({
 
     reportAutoFillCorrections();
 
-    const carrierObj = CARRIERS[carrier] || CARRIERS['other'];
+    const carrierObj = getCarrier(carrier);
 
     const packageData = {
       id: editPackage ? editPackage.id : `pkg-${Date.now()}`,
@@ -264,7 +264,7 @@ export function AddEditPackageModal({
     onClose();
   };
 
-  const detectedCarrierObj = CARRIERS[carrier] || CARRIERS['other'];
+  const detectedCarrierObj = getCarrier(carrier);
 
   return (
     <Modal

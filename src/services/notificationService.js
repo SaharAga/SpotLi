@@ -1,7 +1,8 @@
 import { readJSON, writeJSON } from '../utils/storage';
+import { STORAGE_KEYS } from '../constants/storageKeys';
 
-export const NOTIFICATION_PREFS_KEY = 'deliveree_notification_prefs';
-export const PUSH_SUBSCRIPTION_KEY = 'deliveree_push_subscription';
+export const NOTIFICATION_PREFS_KEY = STORAGE_KEYS.NOTIFICATION_PREFS;
+export const PUSH_SUBSCRIPTION_KEY = STORAGE_KEYS.PUSH_SUBSCRIPTION;
 
 /**
  * Default notification preferences schema

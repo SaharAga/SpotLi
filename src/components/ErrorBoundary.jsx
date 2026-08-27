@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
 import { reportCrash } from '../services/crashReportService';
+import { isAppStorageKey } from '../constants/storageKeys';
 
 export class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -33,7 +34,7 @@ export class ErrorBoundary extends React.Component {
       const keysToRemove = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && /^deliveree_/.test(key)) {
+        if (isAppStorageKey(key)) {
           keysToRemove.push(key);
         }
       }
