@@ -215,16 +215,33 @@ job needs the build. Query check runs too early and you get four or five jobs
 and none of the ones that gate on others. **Wait for all seven to reach a
 terminal state** before calling a PR green.
 
-### 7.4 The production build cannot run locally
+### 7.4 The production build DOES run locally — use it
 
 `npm run build` requires `VITE_FIREBASE_API_KEY`, `..._AUTH_DOMAIN`,
-`..._PROJECT_ID`, `..._STORAGE_BUCKET`, `..._MESSAGING_SENDER_ID`, and
-`..._APP_ID`. `vite.config.js` deliberately fails the production build when any
-is missing or contains whitespace (this guard exists because a trailing CRLF in
-`authDomain` once broke Google sign-in in production while email/password kept
-working). CI supplies them as repository variables. Locally, `npm run build`
-fails identically on unmodified `main` — that failure is not caused by your
-change. Rely on CI for build verification.
+`..._PROJECT_ID`, `..._STORAGE_BUCKET`, `..._MESSAGING_SENDER_ID` and
+`..._APP_ID`. `vite.config.js` fails the production build when any is missing
+or contains whitespace — a guard added after a trailing CRLF in `authDomain`
+broke Google sign-in in production.
+
+**That guard checks presence and whitespace only, not validity.** So dummy
+values produce a real build with real chunk output:
+
+```bash
+VITE_FIREBASE_API_KEY=x VITE_FIREBASE_AUTH_DOMAIN=x VITE_FIREBASE_PROJECT_ID=x \
+VITE_FIREBASE_STORAGE_BUCKET=x VITE_FIREBASE_MESSAGING_SENDER_ID=x \
+VITE_FIREBASE_APP_ID=x npx vite build
+```
+
+Use this. It is the only way to see bundle sizes, chunk splits, and Rolldown's
+warnings — `INEFFECTIVE_DYNAMIC_IMPORT` in particular, which silently reports a
+dynamic import defeated by a static one elsewhere and is invisible to lint and
+tests.
+
+**This section previously said the build could not run locally. That was
+wrong**, and several agents skipped local build verification because of it. If
+you are changing bundling, chunking or imports, build locally before you push;
+CI proves the production numbers, but it should not be where you first learn
+your split did not work.
 
 ### 7.5 Known-flaky tests — wall-clock assertions
 
