@@ -354,13 +354,12 @@ export async function requestGmailForwardingSetup(ingestionEmail) {
     });
 
     if (!accessToken) {
-      return { ok: true, email: connectedEmail };
+      return { ok: false, error: 'Google did not return an access token for Gmail API', email: connectedEmail };
     }
 
-    try {
-      await setupGmailAutoForward(accessToken, ingestionEmail, connectedEmail);
-    } catch (forwardErr) {
-      console.warn('[EmailSyncService] Non-blocking forward rule warning:', forwardErr);
+    const forwardRes = await setupGmailAutoForward(accessToken, ingestionEmail, connectedEmail);
+    if (!forwardRes.ok) {
+      return { ok: false, error: forwardRes.error, email: connectedEmail };
     }
 
     return { ok: true, email: connectedEmail };
