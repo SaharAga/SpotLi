@@ -65,22 +65,30 @@ export function SideNavDrawer({
     e.target.value = '';
   };
 
+  const handleNavClick = (callback) => {
+    if (typeof callback === 'function') {
+      callback();
+    }
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true">
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm transition-opacity duration-300 animate-fade-in"
-        onClick={onClose}
-      />
-
+    <div
+      className={`fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm transition-opacity duration-300 animate-fade-in flex ${isRTL ? 'justify-start' : 'justify-end'}`}
+      role="dialog"
+      aria-modal="true"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
       {/* Off-canvas Sheet */}
       <div
-        className={`relative w-full max-w-xs sm:max-w-sm h-full bg-slate-900 border-s border-slate-800 shadow-2xl flex flex-col z-10 transition-transform duration-300 animate-slide-in-${isRTL ? 'right' : 'left'}`}
-        style={{
-          [isRTL ? 'marginLeft' : 'marginRight']: 'auto'
-        }}
+        className={`relative w-full max-w-xs sm:max-w-sm h-full bg-slate-900 ${isRTL ? 'border-e' : 'border-s'} border-slate-800 shadow-2xl flex flex-col z-10 transition-transform duration-300 animate-slide-in-${isRTL ? 'right' : 'left'}`}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Drawer Header */}
         <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
@@ -107,10 +115,7 @@ export function SideNavDrawer({
         <div className="p-4 space-y-1.5 overflow-y-auto flex-1 text-xs">
           {/* Profile / User Account */}
           <button
-            onClick={() => {
-              onClose();
-              onOpenAuth();
-            }}
+            onClick={() => handleNavClick(onOpenAuth)}
             className="w-full flex items-center gap-3 p-3 rounded-2xl bg-blue-950/30 border border-blue-500/20 text-blue-200 text-start cursor-pointer hover:bg-blue-950/50 transition-colors min-h-[48px]"
           >
             {user ? (
@@ -145,10 +150,7 @@ export function SideNavDrawer({
             <>
               {/* Smart Clipboard Ingestion */}
               <button
-                onClick={() => {
-                  onClose();
-                  onOpenSmartImport();
-                }}
+                onClick={() => handleNavClick(onOpenSmartImport)}
                 className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-800 text-slate-200 text-start cursor-pointer transition-colors min-h-[48px]"
               >
                 <Sparkles className="w-4 h-4 text-indigo-400 shrink-0" />
@@ -157,10 +159,7 @@ export function SideNavDrawer({
 
               {/* Ingestion Guide */}
               <button
-                onClick={() => {
-                  onClose();
-                  onOpenConnectModal();
-                }}
+                onClick={() => handleNavClick(onOpenConnectModal)}
                 className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-800 text-slate-200 text-start cursor-pointer transition-colors min-h-[48px]"
               >
                 <Link2 className="w-4 h-4 text-blue-400 shrink-0" />
@@ -169,10 +168,7 @@ export function SideNavDrawer({
 
               {/* Insights */}
               <button
-                onClick={() => {
-                  onClose();
-                  onOpenAnalytics();
-                }}
+                onClick={() => handleNavClick(onOpenAnalytics)}
                 className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-800 text-slate-200 text-start cursor-pointer transition-colors min-h-[48px]"
               >
                 <BarChart3 className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -181,10 +177,7 @@ export function SideNavDrawer({
 
               {/* Export Center */}
               <button
-                onClick={() => {
-                  onClose();
-                  if (onOpenExport) onOpenExport();
-                }}
+                onClick={() => handleNavClick(onOpenExport)}
                 className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-800 text-slate-200 text-start cursor-pointer transition-colors min-h-[48px]"
               >
                 <Download className="w-4 h-4 text-blue-400 shrink-0" />
@@ -201,10 +194,7 @@ export function SideNavDrawer({
               {/* Locker Map */}
               {onOpenLockerMap && (
                 <button
-                  onClick={() => {
-                    onClose();
-                    onOpenLockerMap();
-                  }}
+                  onClick={() => handleNavClick(onOpenLockerMap)}
                   className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-800 text-slate-200 text-start cursor-pointer transition-colors min-h-[48px]"
                 >
                   <MapPin className="w-4 h-4 text-rose-400 shrink-0" />
@@ -216,10 +206,7 @@ export function SideNavDrawer({
 
           {/* Alpha Feedback */}
           <button
-            onClick={() => {
-              onClose();
-              if (onOpenFeedback) onOpenFeedback();
-            }}
+            onClick={() => handleNavClick(onOpenFeedback)}
             className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-800 text-emerald-300 text-start cursor-pointer transition-colors min-h-[48px]"
           >
             <MessageSquare className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -229,10 +216,7 @@ export function SideNavDrawer({
           {/* Admin Dashboard & Telemetry */}
           {onOpenAdminFeedback && (
             <button
-              onClick={() => {
-                onClose();
-                onOpenAdminFeedback();
-              }}
+              onClick={() => handleNavClick(onOpenAdminFeedback)}
               className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-800 text-slate-200 text-start cursor-pointer transition-colors min-h-[48px]"
             >
               <ShieldCheck className="w-4 h-4 text-indigo-400 shrink-0" />
@@ -242,11 +226,7 @@ export function SideNavDrawer({
 
           {/* Settings */}
           <button
-            onClick={() => {
-              onClose();
-              if (onOpenSettings) onOpenSettings();
-              else onOpenAuth();
-            }}
+            onClick={() => handleNavClick(onOpenSettings || onOpenAuth)}
             className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-800 text-slate-200 text-start cursor-pointer transition-colors min-h-[48px]"
           >
             <Settings className="w-4 h-4 text-slate-400 shrink-0" />
@@ -255,10 +235,7 @@ export function SideNavDrawer({
 
           {/* About & Info */}
           <button
-            onClick={() => {
-              onClose();
-              onOpenAbout();
-            }}
+            onClick={() => handleNavClick(onOpenAbout)}
             className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-800 text-slate-200 text-start cursor-pointer transition-colors min-h-[48px]"
           >
             <Info className="w-4 h-4 text-blue-400 shrink-0" />
@@ -269,10 +246,7 @@ export function SideNavDrawer({
             /* Reset / Clear Data */
             <div className="pt-2 border-t border-slate-800 space-y-1">
               <button
-                onClick={() => {
-                  onClose();
-                  onResetData();
-                }}
+                onClick={() => handleNavClick(onResetData)}
                 className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-rose-500/10 text-rose-400 text-start cursor-pointer transition-colors min-h-[48px]"
               >
                 <RotateCcw className="w-4 h-4 text-rose-400 shrink-0" />
