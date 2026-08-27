@@ -96,6 +96,15 @@ export function IngestionGuideModal({
             'info'
           );
         }
+      } else if (res.pendingVerification) {
+        if (onShowToast) {
+          onShowToast(
+            language === 'he' 
+              ? `החיבור ל-Gmail נרשם בהצלחה וממתין לאישור. החשבון נשמר ברשימה.` 
+              : `Gmail forwarding registered! Awaiting verification.`,
+            'info'
+          );
+        }
       } else if (res.ok) {
         if (onShowToast) {
           onShowToast(

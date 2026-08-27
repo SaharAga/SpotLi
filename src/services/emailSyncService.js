@@ -273,7 +273,7 @@ export async function setupGmailAutoForward(accessToken, ingestionEmail, connect
       throw new Error(errData.error?.message || 'Failed to register forwarding address in Gmail');
     }
 
-    // 2. Create shipping filter in Gmail
+    // 2. Create shipping filter in Gmail (with polling for auto-confirmation)
     const filterQuery = DEFAULT_FORWARDING_FILTER_QUERY;
     
     const tryCreateFilter = async () => {
@@ -292,15 +292,26 @@ export async function setupGmailAutoForward(accessToken, ingestionEmail, connect
 
     let createFilterRes = await tryCreateFilter();
 
-    // If verification is pending, retry after auto-confirm takes effect
-    if (!createFilterRes.ok && createFilterRes.status === 400) {
-      await new Promise((resolve) => setTimeout(resolve, 2500));
+    // If verification is pending, poll for auto-confirmation
+    let attempts = 0;
+    while (!createFilterRes.ok && createFilterRes.status === 400 && attempts < 5) {
+      attempts++;
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       createFilterRes = await tryCreateFilter();
     }
 
     if (!createFilterRes.ok) {
       const filterErrData = await createFilterRes.json().catch(() => ({}));
-      throw new Error(filterErrData.error?.message || 'Failed to create forwarding filter in Gmail');
+      const errMsg = filterErrData.error?.message || '';
+      const isPendingVerification = 
+        createFilterRes.status === 400 && 
+        (/verification/i.test(errMsg) || /forward/i.test(errMsg) || /not verified/i.test(errMsg) || errMsg === '');
+
+      if (isPendingVerification) {
+        if (connectedEmail) updateAccountStatus(connectedEmail, 'pending');
+        return { ok: true, pendingVerification: true };
+      }
+      throw new Error(errMsg || 'Failed to create forwarding filter in Gmail');
     }
 
     if (createFilterRes.ok && connectedEmail) {
@@ -318,7 +329,7 @@ export async function setupGmailAutoForward(accessToken, ingestionEmail, connect
 /**
  * Prompts Google OAuth popup to grant gmail.settings.basic scope and configures the forwarding filter.
  * @param {string} ingestionEmail
- * @returns {Promise<{ ok: boolean, error?: string, email?: string, alreadyConnected?: boolean }>}
+ * @returns {Promise<{ ok: boolean, error?: string, email?: string, alreadyConnected?: boolean, pendingVerification?: boolean }>}
  */
 export async function requestGmailForwardingSetup(ingestionEmail) {
   if (!isFirebaseConfigured || !auth) {
@@ -365,6 +376,10 @@ export async function requestGmailForwardingSetup(ingestionEmail) {
     if (!forwardRes.ok) {
       removeConnectedAccount(connectedEmail);
       return { ok: false, error: forwardRes.error, email: connectedEmail };
+    }
+
+    if (forwardRes.pendingVerification) {
+      return { ok: true, pendingVerification: true, email: connectedEmail };
     }
 
     updateAccountStatus(connectedEmail, 'active');

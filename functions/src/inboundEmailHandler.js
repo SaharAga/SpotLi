@@ -147,6 +147,57 @@ export function createInboundEmailHandler({ db }) {
       const cleanText = rawText || sanitizeEmailHtml(rawHtml);
       const userId = extractUserIdFromToAddress(to);
 
+      // Check if this is a Gmail Forwarding Confirmation email from Google
+      const isGoogleForwarding = 
+        /gmail forwarding confirmation/i.test(subject) ||
+        /אישור העברה ב-Gmail/i.test(subject) ||
+        /forwarding-noreply@google\.com/i.test(cleanText) ||
+        /requested to automatically forward mail/i.test(cleanText);
+
+      if (isGoogleForwarding) {
+        const combined = `${cleanText} ${rawHtml}`;
+        const linkMatch = combined.match(/https:\/\/(?:mail-settings\.google\.com|mail\.google\.com)\/mail\/vf-[a-zA-Z0-9_-]+/i);
+        if (linkMatch && linkMatch[0]) {
+          try {
+            const verifyUrl = linkMatch[0];
+            const resp = await fetch(verifyUrl, {
+              headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
+            });
+            const html = await resp.text();
+            
+            // If there is an action confirmation form, submit it
+            const formMatch = html.match(/<form[^>]*action="([^"]*)"[^>]*>([\s\S]*?)<\/form>/i);
+            if (formMatch) {
+              const actionUrl = formMatch[1].startsWith('http') 
+                ? formMatch[1] 
+                : new URL(formMatch[1], verifyUrl).href;
+              
+              const inputs = {};
+              const inputMatches = formMatch[2].matchAll(/<input[^>]*name="([^"]*)"[^>]*value="([^"]*)"/gi);
+              for (const match of inputMatches) {
+                inputs[match[1]] = match[2];
+              }
+              inputs['act'] = 'confirm';
+
+              const bodyParams = new URLSearchParams(inputs);
+              await fetch(actionUrl, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded',
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+                },
+                body: bodyParams.toString()
+              });
+            }
+
+            res.status(200).json({ ok: true, type: 'google_forwarding_verified', url: verifyUrl });
+            return;
+          } catch (err) {
+            console.error('[InboundEmailHandler] Failed to auto-confirm Gmail forwarding:', err);
+          }
+        }
+      }
+
       if (!userId) {
         res.status(400).json({ error: 'Invalid or missing recipient ingestion token' });
         return;
