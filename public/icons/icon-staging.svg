@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 48 48">
+  <rect width="48" height="48" rx="12" fill="#0f172a"/>
+  <rect width="46" height="46" x="1" y="1" rx="11" stroke="#f59e0b" stroke-width="2" stroke-opacity="0.8"/>
+  <path d="M14 18L24 12L34 18V30L24 36L14 30V18Z" stroke="#f59e0b" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M24 12V24M14 18L24 24L34 18" stroke="#f59e0b" stroke-width="2.5" stroke-linejoin="round"/>
+  <rect x="22" y="29" width="22" height="15" rx="4" fill="#d97706" stroke="#fbbf24" stroke-width="1.5"/>
+  <text x="33" y="40" fill="#ffffff" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="900" text-anchor="middle" letter-spacing="0.5">STG</text>
+</svg>

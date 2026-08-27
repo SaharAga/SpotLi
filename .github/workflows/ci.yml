@@ -267,7 +267,6 @@ jobs:
     needs: [build, detect-release]
     if: |
       github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-      needs.detect-release.outputs.is_release != 'true' &&
       vars.FIREBASE_HOSTING_ENABLED == 'true'
     steps:
       - name: Checkout Code

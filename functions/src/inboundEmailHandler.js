@@ -28,19 +28,30 @@ export function sanitizeEmailHtml(html) {
 
 /**
  * Extracts userId from the recipient email address.
- * Formats: `usr_abc123@in.deliveree.app`, `abc123.pkg@in.deliveree.app`, or `usr_abc123_sec@in.deliveree.app`
+ * Formats:
+ * - `233b362d7b331adfde6e+usr_abc123@cloudmailin.net`
+ * - `usr_abc123@in.deliveree.app`
+ * - `abc123.pkg@in.deliveree.app`
  * @param {string} toAddress
  * @returns {string|null}
  */
 export function extractUserIdFromToAddress(toAddress) {
   if (typeof toAddress !== 'string') return null;
-  const emailMatch = toAddress.match(/([a-zA-Z0-9_-]+)(?:\.pkg)?@(?:in\.)?deliveree\.app/i);
+
+  // 1. Check for plus-addressing (e.g. 233b362d7b331adfde6e+usr_abc123@cloudmailin.net)
+  const plusMatch = toAddress.match(/\+(?:usr_)?([a-zA-Z0-9_-]+)@/i);
+  if (plusMatch && plusMatch[1]) {
+    const cleanId = plusMatch[1].split('_')[0];
+    if (cleanId && cleanId.length >= 3) return cleanId;
+  }
+
+  // 2. Check for direct subdomain pattern (e.g. usr_abc123@in.deliveree.app or abc123.pkg@deliveree.app)
+  const emailMatch = toAddress.match(/([a-zA-Z0-9_-]+)(?:\.pkg)?@(?:in\.)?(?:deliveree\.app|cloudmailin\.net)/i);
   if (!emailMatch) return null;
 
   const localPart = emailMatch[1];
   // Strip usr_ prefix if present
   const userId = localPart.startsWith('usr_') ? localPart.slice(4) : localPart;
-  // If there is a secret token suffix (e.g. userId_secret), take the userId portion
   const cleanUserId = userId.split('_')[0];
   return cleanUserId && cleanUserId.length >= 3 ? cleanUserId : null;
 }
@@ -117,12 +128,21 @@ export function createInboundEmailHandler({ db }) {
 
     try {
       const payload = req.body || {};
+      const headers = payload.headers || {};
+      const envelope = payload.envelope || {};
       
-      // Extract recipient, subject, and text/html from various webhook formats (SendGrid, Mailgun, Postmark, generic)
-      const to = payload.to || payload.recipient || payload.To || (payload.envelope && payload.envelope.to?.[0]) || '';
-      const subject = payload.subject || payload.Subject || '';
+      // Extract recipient, subject, and text/html from various webhook formats (CloudMailin, SendGrid, Mailgun, Postmark)
+      const to =
+        payload.to ||
+        payload.recipient ||
+        payload.To ||
+        (envelope.to?.[0] || envelope.to) ||
+        (headers.to || headers.To) ||
+        '';
+
+      const subject = payload.subject || payload.Subject || headers.subject || headers.Subject || '';
       const rawHtml = payload.html || payload['body-html'] || payload.HtmlBody || '';
-      const rawText = payload.text || payload['body-plain'] || payload.TextBody || '';
+      const rawText = payload.plain || payload.text || payload['body-plain'] || payload.TextBody || '';
       
       const cleanText = rawText || sanitizeEmailHtml(rawHtml);
       const userId = extractUserIdFromToAddress(to);
