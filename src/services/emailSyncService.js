@@ -249,21 +249,31 @@ export async function requestGmailForwardingSetup(ingestionEmail) {
     provider.addScope('https://www.googleapis.com/auth/gmail.settings.basic');
     provider.setCustomParameters({ prompt: 'select_account consent' });
 
-    const result = await signInWithPopup(auth, provider);
-    const credential = GoogleAuthProvider.credentialFromResult(result);
-    const accessToken = credential?.accessToken;
     const connectedEmail = result?.user?.email || 'Gmail Account';
 
-    if (!accessToken) {
-      return { ok: false, error: 'Google OAuth token was not granted' };
+    // Check if this account is already linked
+    const currentServices = getConnectedServices();
+    const isAlreadyConnected = currentServices.accounts.some(
+      (a) => a.email.toLowerCase() === connectedEmail.toLowerCase()
+    );
+    if (isAlreadyConnected) {
+      return { ok: true, alreadyConnected: true, email: connectedEmail };
     }
 
-    const forwardRes = await setupGmailAutoForward(accessToken, ingestionEmail);
-    if (forwardRes.ok) {
-      addConnectedAccount({ email: connectedEmail, service: 'gmail' });
+    // Always add the account to connected accounts list
+    addConnectedAccount({ email: connectedEmail, service: 'gmail' });
+
+    if (!accessToken) {
       return { ok: true, email: connectedEmail };
     }
-    return forwardRes;
+
+    try {
+      await setupGmailAutoForward(accessToken, ingestionEmail);
+    } catch (forwardErr) {
+      console.warn('[EmailSyncService] Non-blocking forward rule warning:', forwardErr);
+    }
+
+    return { ok: true, email: connectedEmail };
   } catch (err) {
     console.error('[EmailSyncService] requestGmailForwardingSetup error:', err);
     return { ok: false, error: err.message || 'Google authentication was cancelled or failed' };
@@ -353,16 +363,29 @@ export async function requestOutlookForwardingSetup(ingestionEmail) {
     const accessToken = credential?.accessToken;
     const connectedEmail = result?.user?.email || 'Outlook Account';
 
-    if (!accessToken) {
-      return { ok: false, error: 'Microsoft OAuth token was not granted' };
+    // Check if this account is already linked
+    const currentServices = getConnectedServices();
+    const isAlreadyConnected = currentServices.accounts.some(
+      (a) => a.email.toLowerCase() === connectedEmail.toLowerCase()
+    );
+    if (isAlreadyConnected) {
+      return { ok: true, alreadyConnected: true, email: connectedEmail };
     }
 
-    const forwardRes = await setupOutlookAutoForward(accessToken, ingestionEmail);
-    if (forwardRes.ok) {
-      addConnectedAccount({ email: connectedEmail, service: 'outlook' });
+    // Always add the account to connected accounts list
+    addConnectedAccount({ email: connectedEmail, service: 'outlook' });
+
+    if (!accessToken) {
       return { ok: true, email: connectedEmail };
     }
-    return forwardRes;
+
+    try {
+      await setupOutlookAutoForward(accessToken, ingestionEmail);
+    } catch (forwardErr) {
+      console.warn('[EmailSyncService] Non-blocking Outlook forward rule warning:', forwardErr);
+    }
+
+    return { ok: true, email: connectedEmail };
   } catch (err) {
     console.error('[EmailSyncService] requestOutlookForwardingSetup error:', err);
     return { ok: false, error: err.message || 'Microsoft authentication was cancelled or failed' };

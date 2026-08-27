@@ -66,7 +66,6 @@ export function IngestionGuideModal({
   const handleConnectGmail = async () => {
     setIsConnectingGmail(true);
     try {
-      // If user is not logged in, prompt sign in
       if (!user) {
         if (onShowToast) onShowToast(
           language === 'he' ? 'נא להתחבר לחשבון כדי להפעיל סנכרון אוטומטי' : 'Please sign in to enable auto-sync',
@@ -77,13 +76,21 @@ export function IngestionGuideModal({
       }
 
       const res = await requestGmailForwardingSetup(ingestionEmail);
-      if (res.ok) {
-        setConnectedServicesState(getConnectedServices());
+      setConnectedServicesState(getConnectedServices(user));
+
+      if (res.alreadyConnected) {
+        if (onShowToast) {
+          onShowToast(
+            language === 'he' ? `החשבון ${res.email} כבר מחובר לסנכרון` : `Account ${res.email} is already connected`,
+            'info'
+          );
+        }
+      } else if (res.ok) {
         if (onShowToast) {
           onShowToast(
             language === 'he' 
-              ? 'סנכרון Gmail הופעל בהצלחה! אישורי הזמנות יועברו אוטומטית 🎉' 
-              : 'Gmail auto-sync enabled! Orders will sync automatically 🎉',
+              ? `החשבון ${res.email} חובר בהצלחה! אישורי הזמנות יועברו אוטומטית 🎉` 
+              : `Account ${res.email} connected! Orders will sync automatically 🎉`,
             'success'
           );
         }
@@ -95,7 +102,7 @@ export function IngestionGuideModal({
           );
         }
       }
-    } catch (err) {
+    } catch {
       if (onShowToast) {
         onShowToast(
           language === 'he' ? 'החיבור ל-Gmail נכשל, נסה את המדריך הידני' : 'Gmail connection failed, try manual setup',
@@ -120,13 +127,21 @@ export function IngestionGuideModal({
       }
 
       const res = await requestOutlookForwardingSetup(ingestionEmail);
-      if (res.ok) {
-        setConnectedServicesState(getConnectedServices());
+      setConnectedServicesState(getConnectedServices(user));
+
+      if (res.alreadyConnected) {
+        if (onShowToast) {
+          onShowToast(
+            language === 'he' ? `החשבון ${res.email} כבר מחובר לסנכרון` : `Account ${res.email} is already connected`,
+            'info'
+          );
+        }
+      } else if (res.ok) {
         if (onShowToast) {
           onShowToast(
             language === 'he' 
-              ? 'סנכרון Outlook הופעל בהצלחה! אישורי הזמנות יועברו אוטומטית 🎉' 
-              : 'Outlook auto-sync enabled! Orders will sync automatically 🎉',
+              ? `החשבון ${res.email} חובר בהצלחה! אישורי הזמנות יועברו אוטומטית 🎉` 
+              : `Account ${res.email} connected! Orders will sync automatically 🎉`,
             'success'
           );
         }
@@ -138,7 +153,7 @@ export function IngestionGuideModal({
           );
         }
       }
-    } catch (err) {
+    } catch {
       if (onShowToast) {
         onShowToast(
           language === 'he' ? 'החיבור ל-Outlook נכשל, נסה את המדריך הידני' : 'Outlook connection failed, try manual setup',
@@ -155,7 +170,7 @@ export function IngestionGuideModal({
     setConnectedServicesState(getConnectedServices(user));
     if (onShowToast) {
       onShowToast(
-        language === 'he' ? `החשבון ${accountEmail} נותק` : `Disconnected ${accountEmail}`,
+        language === 'he' ? `החשבון ${accountEmail} נותק מ-Deliveree` : `Disconnected ${accountEmail} from Deliveree`,
         'info'
       );
     }
