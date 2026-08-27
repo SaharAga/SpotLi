@@ -6,37 +6,41 @@
 
 ## 🗺️ Step-by-Step Execution Plan
 
-### ✅ Step 1: Real Authentication & Registration (COMPLETED)
-* **What was changed**:
-  1. Configured real Firebase Web App credentials (`deliveree-app-2a938`) in `.env.local`.
-  2. Eliminated all mock user generation from `AuthContext.jsx`.
-  3. Added Google, Apple, and Facebook SSO providers + real Email/Password registration and login.
-  4. Handled duplicate account rejection (`auth/email-already-in-use`) and weak password errors with friendly bilingual messages.
-  5. Guaranteed persistent session across page reloads and browser restarts.
-  6. Implemented complete account and package deletion in Firestore & Auth (`deleteUserAccountAndData`).
-  7. Removed developer jargon and cleaned `AuthModal.jsx`.
+### ✅ Step 1: Real Authentication & Registration (COMPLETED — v0.2.1)
+* Configured real Firebase Web App credentials (`deliveree-app-2a938`).
+* Eliminated mock user generation; added Google SSO + Email/Password auth with password entropy meter.
+* Persistent auth state across reloads and guest-to-permanent non-destructive migration.
 
 ---
 
-### 📦 Step 2: Real Carrier Live Tracking Engine (NEXT)
-* Deploy serverless proxy (Cloudflare Worker / Firebase Cloud Function) to query real 17Track, Israel Post, DHL, and Cainiao tracking APIs without browser CORS errors.
-* Replace `simulateCarrierTracking` with real upstream checkpoints and 2-hour edge caching.
+### ✅ Step 2: Real Carrier Tracking Engine & Proxy (COMPLETED — v0.2.2)
+* Carrier tracking proxy and normalized checkpoint resolvers for Israeli & Global couriers.
+* 60s cooldown rate-limiting with eviction bounded cache, and batch refresh.
+* Formal state machine transition matrix validation (`canTransition`).
 
 ---
 
-### 📥 Step 3: Zero-Friction Automated Ingestion
-* 1-Click "Connect Gmail" (`gmail.readonly`) to automatically detect order & tracking numbers from AliExpress, Amazon, Shein, ASOS, and Israel Post.
-* Native SMS and notification auto-capture.
+### ✅ Step 3: Zero-Friction Automated Email Ingestion (COMPLETED — v0.18.3)
+* 1-Click "Connect Gmail" (`gmail.readonly`) with Google Cloud Pub/Sub push listener and weekly watch renewal.
+* Serverless 30-day historical order backfill with atomic batch writes.
+* Inbound email webhook gateway (`inboundEmailWebhook`) via CloudMailin.
+* Gemini AI serverless parsing engine (`parseWithAi`) with image/text drop fallback in `SmartImportModal`.
+* Context-aware multi-carrier detection and anti-false-positive filtering for Israeli couriers & global merchants.
 
 ---
 
-### 🎨 Step 4: UI/UX Simplification & De-cluttering
-* Remove developer jargon and technical metric badges from consumer views.
-* Redesign Package Cards with carrier logos, clear human stages, and instant pickup barcodes.
-* Simple in-app feedback dialog.
+### 🎨 Step 4: UI/UX & Native Ergonomics (IN PROGRESS — v0.19.0)
+* [x] Mobile Slide-Over Navigation Drawer with touch optimization ($\ge 48\text{px}$).
+* [x] Rich Cards vs Compact Feed toggle with stage filters.
+* [x] Interactive Locker & Service Point Map (`LockerMapModal.jsx`).
+* [x] Dedicated bilingual Export Center (Excel, CSV, PDF).
+* [ ] Direct FCM Web Push Notifications for status transitions (TASK-13).
+* [ ] Camera Barcode & Label OCR Scanner (`BarcodeDetector` API) (TASK-23).
 
 ---
 
-### 📱 Step 5: Native App Packaging (Capacitor)
-* Wrap application with Capacitor for iOS and Android deployment.
-* Enable native mobile Push Notifications and WebCam/Camera barcode scanning.
+### 📱 Step 5: Native App Packaging & Omnichannel Extensions
+* Wrap application with Capacitor for native iOS and Android store deployment.
+* $75 Customs Threshold Monitor & 72-hour tax alerts (TASK-21).
+* Return window countdown timer & waybill vault (TASK-22).
+* Courier WhatsApp Quick Replies & pickup proxy authorization (TASK-25).
