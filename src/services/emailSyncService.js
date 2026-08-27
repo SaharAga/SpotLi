@@ -329,6 +329,7 @@ export async function requestGmailForwardingSetup(ingestionEmail) {
     const { signInWithPopup, GoogleAuthProvider } = await import('firebase/auth');
     const provider = new GoogleAuthProvider();
     provider.addScope('https://www.googleapis.com/auth/gmail.settings.basic');
+    provider.addScope('https://www.googleapis.com/auth/gmail.settings.sharing');
     provider.setCustomParameters({ 
       prompt: 'consent select_account',
       access_type: 'offline'
