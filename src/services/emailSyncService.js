@@ -73,13 +73,43 @@ export function getConnectedServices(currentUser = null) {
 export function getConnectedAccounts(currentUser = null) {
   return getConnectedServices(currentUser).accounts;
 }
+// In-memory token cache for active session API cleanup
+const sessionTokens = new Map();
+
+/**
+ * Updates status of a connected account ('pending' | 'active').
+ * @param {string} email
+ * @param {'pending' | 'active'} status
+ */
+export function updateAccountStatus(email, status) {
+  if (typeof window === 'undefined' || !window.localStorage || !email) return;
+  try {
+    const current = getConnectedServices();
+    const updatedAccounts = current.accounts.map((a) => {
+      if (a.email.toLowerCase() === email.toLowerCase()) {
+        return { ...a, status };
+      }
+      return a;
+    });
+    const updated = {
+      ...current,
+      accounts: updatedAccounts
+    };
+    window.localStorage.setItem(EMAIL_INTEGRATIONS_STORAGE_KEY, JSON.stringify(updated));
+  } catch (err) {
+    console.warn('[EmailSyncService] Failed to update account status:', err);
+  }
+}
 
 /**
  * Adds or updates a connected email account.
- * @param {{ email: string, service?: string, connectedAt?: string }} account
+ * @param {{ email: string, service?: string, status?: string, connectedAt?: string, token?: string }} account
  */
 export function addConnectedAccount(account) {
   if (typeof window === 'undefined' || !window.localStorage || !account?.email) return;
+  if (account.token) {
+    sessionTokens.set(account.email.toLowerCase(), account.token);
+  }
   try {
     const current = getConnectedServices();
     const existingAccounts = current.accounts.filter(
@@ -90,6 +120,7 @@ export function addConnectedAccount(account) {
       {
         email: account.email,
         service: account.service || 'gmail',
+        status: account.status || 'active',
         connectedAt: account.connectedAt || new Date().toISOString()
       }
     ];
@@ -105,13 +136,50 @@ export function addConnectedAccount(account) {
 }
 
 /**
+ * Deletes forwarding address and revokes OAuth token on Google's side.
+ * @param {string} email
+ * @param {string} [ingestionEmail]
+ */
+export async function deleteGmailForwardingAndRevoke(email, ingestionEmail) {
+  const token = sessionTokens.get(email?.toLowerCase());
+  if (!token) return;
+  try {
+    if (ingestionEmail) {
+      await fetch(
+        `https://gmail.googleapis.com/gmail/v1/users/me/settings/forwardingAddresses/${encodeURIComponent(ingestionEmail)}`,
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      ).catch(() => {});
+    }
+    await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(token)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    }).catch(() => {});
+  } catch (err) {
+    console.warn('[EmailSyncService] Google cleanup notice:', err);
+  } finally {
+    sessionTokens.delete(email?.toLowerCase());
+  }
+}
+
+/**
  * Completely disconnects a specific service ('gmail' or 'outlook') and removes its accounts.
  * @param {'gmail' | 'outlook'} service
+ * @param {string} [ingestionEmail]
  */
-export function disconnectService(service) {
+export async function disconnectService(service, ingestionEmail = null) {
   if (typeof window === 'undefined' || !window.localStorage || !service) return;
   try {
     const current = getConnectedServices();
+    const accountsToClean = current.accounts.filter((a) => a.service === service);
+    for (const acc of accountsToClean) {
+      if (service === 'gmail') {
+        await deleteGmailForwardingAndRevoke(acc.email, ingestionEmail);
+      }
+    }
+
     const remainingAccounts = current.accounts.filter((a) => a.service !== service);
     const updated = {
       ...current,
@@ -125,13 +193,19 @@ export function disconnectService(service) {
 }
 
 /**
- * Removes a connected email account by email address.
+ * Removes a connected email account by email address and cleans up remote rules/tokens.
  * @param {string} email
+ * @param {string} [ingestionEmail]
  */
-export function removeConnectedAccount(email) {
+export async function removeConnectedAccount(email, ingestionEmail = null) {
   if (typeof window === 'undefined' || !window.localStorage || !email) return;
   try {
     const current = getConnectedServices();
+    const target = current.accounts.find((a) => a.email.toLowerCase() === email.toLowerCase());
+    if (target?.service === 'gmail') {
+      await deleteGmailForwardingAndRevoke(email, ingestionEmail);
+    }
+
     const updatedAccounts = current.accounts.filter(
       (a) => a.email.toLowerCase() !== email.toLowerCase()
     );
@@ -163,17 +237,18 @@ export function setConnectedService(service, isConnected) {
     }
     window.localStorage.setItem(EMAIL_INTEGRATIONS_STORAGE_KEY, JSON.stringify(updated));
   } catch (err) {
-    console.warn('[EmailSyncService] Failed to save connected service state:', err);
+    console.warn('[EmailSyncService] Failed to set connected service:', err);
   }
 }
 
 /**
- * Programmatically creates a shipping email forwarding filter in Gmail via Google REST API.
+ * Programmatically creates a shipping email forwarding filter in Gmail via Gmail REST API.
  * @param {string} accessToken Valid Google OAuth access token with gmail.settings.basic scope
  * @param {string} ingestionEmail The user's Deliveree ingestion email address
+ * @param {string} [connectedEmail] The user's Gmail address for status updates
  * @returns {Promise<{ ok: boolean, error?: string }>}
  */
-export async function setupGmailAutoForward(accessToken, ingestionEmail) {
+export async function setupGmailAutoForward(accessToken, ingestionEmail, connectedEmail = null) {
   if (!accessToken || !ingestionEmail) {
     return { ok: false, error: 'Missing access token or ingestion address' };
   }
@@ -201,28 +276,35 @@ export async function setupGmailAutoForward(accessToken, ingestionEmail) {
     // 2. Create shipping filter in Gmail
     const filterQuery = DEFAULT_FORWARDING_FILTER_QUERY;
     
-    const createFilterRes = await fetch(
-      'https://gmail.googleapis.com/gmail/v1/users/me/settings/filters',
-      {
+    const tryCreateFilter = async () => {
+      return fetch('https://gmail.googleapis.com/gmail/v1/users/me/settings/filters', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          criteria: {
-            query: filterQuery
-          },
-          action: {
-            forward: ingestionEmail
-          }
+          criteria: { query: filterQuery },
+          action: { forward: ingestionEmail }
         })
-      }
-    );
+      });
+    };
+
+    let createFilterRes = await tryCreateFilter();
+
+    // If verification is pending, retry after auto-confirm takes effect
+    if (!createFilterRes.ok && createFilterRes.status === 400) {
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+      createFilterRes = await tryCreateFilter();
+    }
 
     if (!createFilterRes.ok) {
       const filterErrData = await createFilterRes.json().catch(() => ({}));
       throw new Error(filterErrData.error?.message || 'Failed to create forwarding filter in Gmail');
+    }
+
+    if (createFilterRes.ok && connectedEmail) {
+      updateAccountStatus(connectedEmail, 'active');
     }
 
     setConnectedService('gmail', true);
@@ -236,7 +318,7 @@ export async function setupGmailAutoForward(accessToken, ingestionEmail) {
 /**
  * Prompts Google OAuth popup to grant gmail.settings.basic scope and configures the forwarding filter.
  * @param {string} ingestionEmail
- * @returns {Promise<{ ok: boolean, error?: string }>}
+ * @returns {Promise<{ ok: boolean, error?: string, email?: string, alreadyConnected?: boolean }>}
  */
 export async function requestGmailForwardingSetup(ingestionEmail) {
   if (!isFirebaseConfigured || !auth) {
@@ -263,15 +345,20 @@ export async function requestGmailForwardingSetup(ingestionEmail) {
       return { ok: true, alreadyConnected: true, email: connectedEmail };
     }
 
-    // Always add the account to connected accounts list
-    addConnectedAccount({ email: connectedEmail, service: 'gmail' });
+    // Add account initially as pending verification
+    addConnectedAccount({ 
+      email: connectedEmail, 
+      service: 'gmail', 
+      status: 'pending',
+      token: accessToken 
+    });
 
     if (!accessToken) {
       return { ok: true, email: connectedEmail };
     }
 
     try {
-      await setupGmailAutoForward(accessToken, ingestionEmail);
+      await setupGmailAutoForward(accessToken, ingestionEmail, connectedEmail);
     } catch (forwardErr) {
       console.warn('[EmailSyncService] Non-blocking forward rule warning:', forwardErr);
     }

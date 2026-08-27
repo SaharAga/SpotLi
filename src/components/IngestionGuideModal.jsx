@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   X, ClipboardCheck, Mail, Smartphone, 
   Sparkles, ArrowRight, CheckCircle2, Copy,
-  Check, ChevronDown, ChevronUp, Loader2, AlertCircle,
+  Check, ChevronDown, ChevronUp, Loader2, RefreshCw, AlertCircle,
   Plus, Trash2
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
@@ -178,19 +178,23 @@ export function IngestionGuideModal({
     }
   };
 
-  const handleDisconnectAccount = (accountEmail) => {
-    removeConnectedAccount(accountEmail);
+  const handleDisconnectAccount = async (accountEmail) => {
+    const activeIngestionEmail = getIngestionEmailAddress(user);
+    await removeConnectedAccount(accountEmail, activeIngestionEmail);
     setConnectedServicesState(getConnectedServices(user));
     if (onShowToast) {
       onShowToast(
-        language === 'he' ? `החשבון ${accountEmail} נותק מ-Deliveree` : `Disconnected ${accountEmail} from Deliveree`,
+        language === 'he'
+          ? `החשבון ${accountEmail} נותק והכללים הוסרו בהצלחה`
+          : `Account ${accountEmail} unlinked and rules removed`,
         'info'
       );
     }
   };
 
-  const handleDisconnectService = (service) => {
-    disconnectService(service);
+  const handleDisconnectService = async (service) => {
+    const activeIngestionEmail = getIngestionEmailAddress(user);
+    await disconnectService(service, activeIngestionEmail);
     setConnectedServicesState(getConnectedServices(user));
     if (onShowToast) {
       onShowToast(
@@ -219,7 +223,7 @@ export function IngestionGuideModal({
               {language === 'he' ? 'קליטת משלוחים אוטומטית' : 'Automatic Shipment Ingestion'}
             </h2>
             <p className="text-xs text-slate-400">
-              {language === 'he' ? 'חיבור אימייל ב-1 לחיצה, העברת הודעות והדבקה חכמה' : '1-Click Email Connect, Auto-Forwarding & Smart Paste'}
+              {language === 'he' ? 'חיבור אימייל אוטומטי, העברת הודעות והדבקה חכמה' : 'Automated Email Connect, Forwarding & Smart Paste'}
             </p>
           </div>
         </div>
@@ -235,44 +239,38 @@ export function IngestionGuideModal({
       {/* Body */}
       <div className="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1 text-xs">
         
-        {/* Method 1: 1-Click Automated Ingestion (Gmail & Outlook) */}
+        {/* Method 1: Automated Ingestion (Gmail & Outlook) */}
         <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-indigo-950/40 via-slate-950 to-blue-950/40 border border-indigo-500/30 space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-start sm:items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
-                <Mail className="w-5 h-5" />
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-bold text-[10px] tracking-wide uppercase border border-indigo-500/30">
+                  {language === 'he' ? 'מומלץ' : 'Recommended'}
+                </span>
+                <h3 className="text-sm font-bold text-slate-100">
+                  {language === 'he' ? 'חיבור תיבת דוא״ל אוטומטי' : 'Automated Email Sync'}
+                </h3>
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-sm text-slate-100">
-                    {language === 'he' ? 'חיבור אימייל אוטומטי ב-1 לחיצה' : '1-Click Automated Email Sync'}
-                  </h3>
-                  {(connectedServices.gmail || connectedServices.outlook) && (
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold flex items-center gap-1">
-                      <Check className="w-3 h-3" />
-                      {language === 'he' ? 'מופעל' : 'Active'}
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] text-slate-400">
-                  {language === 'he' ? 'חיבור ישיר ל-Gmail ו-Outlook להעברת חבילות אוטומטית' : 'Direct 1-click connection for Gmail & Outlook / Hotmail'}
-                </p>
-              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                {language === 'he'
+                  ? 'חיבור מאובטח לקבלת אישורי משלוחים ישירות לחשבונך'
+                  : 'Secure sync to receive shipping updates directly to your account'}
+              </p>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
-              {/* Gmail Button */}
+            {/* Service Connect Buttons */}
+            <div className="flex items-center gap-2 shrink-0">
               <button
+                type="button"
                 onClick={handleConnectGmail}
                 disabled={isConnectingGmail}
-                className={`flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all shadow-md cursor-pointer min-h-[44px] ${
-                  connectedServices.gmail
-                    ? 'bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40'
-                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-indigo-600/20'
-                }`}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-all shadow-md shadow-indigo-600/20 disabled:opacity-50 cursor-pointer min-h-[44px]"
               >
                 {isConnectingGmail ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>{language === 'he' ? 'מתחבר...' : 'Connecting...'}</span>
+                  </>
                 ) : connectedServices.gmail ? (
                   <>
                     <Plus className="w-3.5 h-3.5" />
@@ -283,18 +281,17 @@ export function IngestionGuideModal({
                 )}
               </button>
 
-              {/* Outlook Button */}
               <button
+                type="button"
                 onClick={handleConnectOutlook}
                 disabled={isConnectingOutlook}
-                className={`flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all shadow-md cursor-pointer min-h-[44px] ${
-                  connectedServices.outlook
-                    ? 'bg-sky-600/30 hover:bg-sky-600/50 text-sky-200 border border-sky-500/40'
-                    : 'bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white shadow-sky-600/20'
-                }`}
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs transition-all shadow-md shadow-sky-600/20 disabled:opacity-50 cursor-pointer min-h-[44px]"
               >
                 {isConnectingOutlook ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>{language === 'he' ? 'מתחבר...' : 'Connecting...'}</span>
+                  </>
                 ) : connectedServices.outlook ? (
                   <>
                     <Plus className="w-3.5 h-3.5" />
@@ -320,10 +317,8 @@ export function IngestionGuideModal({
                 {(connectedServices.gmail || connectedServices.outlook) && (
                   <button
                     onClick={() => {
-                      if (connectedServices.gmail) disconnectService('gmail');
-                      if (connectedServices.outlook) disconnectService('outlook');
-                      setConnectedServicesState(getConnectedServices(user));
-                      if (onShowToast) onShowToast(language === 'he' ? 'כל החשבונות נותקו' : 'All accounts disconnected', 'info');
+                      if (connectedServices.gmail) handleDisconnectService('gmail');
+                      if (connectedServices.outlook) handleDisconnectService('outlook');
                     }}
                     className="text-[10px] text-rose-400 hover:text-rose-300 underline font-medium cursor-pointer p-1"
                   >
@@ -348,6 +343,15 @@ export function IngestionGuideModal({
                         <span className="truncate font-medium text-[11px]" title={acc.email}>
                           {acc.email}
                         </span>
+                        {acc.status === 'pending' ? (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse shrink-0">
+                            {language === 'he' ? 'בהמתנה לאימות' : 'Setting up...'}
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">
+                            {language === 'he' ? 'פעיל' : 'Active'}
+                          </span>
+                        )}
                       </div>
                       <button
                         onClick={() => handleDisconnectAccount(acc.email)}
@@ -361,7 +365,6 @@ export function IngestionGuideModal({
                     </div>
                   ))
                 ) : (
-                  /* Fallback if legacy flag is active without accounts list */
                   <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-slate-200 text-xs col-span-full">
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
@@ -372,9 +375,10 @@ export function IngestionGuideModal({
                     <button
                       onClick={() => handleDisconnectService(connectedServices.gmail ? 'gmail' : 'outlook')}
                       className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 transition-colors cursor-pointer text-[10px] font-semibold"
+                      aria-label="Unlink service"
                     >
                       <Trash2 className="w-3 h-3" />
-                      <span>{language === 'he' ? 'נתק סנכרון' : 'Unlink'}</span>
+                      <span>{language === 'he' ? 'נתק' : 'Unlink'}</span>
                     </button>
                   </div>
                 )}
