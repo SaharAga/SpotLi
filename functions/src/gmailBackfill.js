@@ -60,13 +60,31 @@ export async function runBackfillForUser({ db, uid, refreshToken, clientSecret }
   });
 
   const messageRefs = listRes.data.messages || [];
-  let saved = 0;
+  if (messageRefs.length === 0) {
+    return { ok: true, scanned: 0, saved: 0, skipped: 0 };
+  }
+
+  // Fetch messages in parallel chunks of 10 to avoid sequential latency
+  const CHUNK_SIZE = 10;
+  const rawMessages = [];
+  for (let i = 0; i < messageRefs.length; i += CHUNK_SIZE) {
+    const chunk = messageRefs.slice(i, i + CHUNK_SIZE);
+    const chunkResults = await Promise.allSettled(
+      chunk.map((ref) => gmail.users.messages.get({ userId: 'me', id: ref.id, format: 'full' }))
+    );
+    for (const res of chunkResults) {
+      if (res.status === 'fulfilled' && res.value?.data) {
+        rawMessages.push(res.value.data);
+      }
+    }
+  }
+
+  const packagesToSave = [];
   let skipped = 0;
 
-  for (const ref of messageRefs) {
-    const msgRes = await gmail.users.messages.get({ userId: 'me', id: ref.id, format: 'full' });
+  for (const msgData of rawMessages) {
     const pkg = buildPackageFromGmailMessage({
-      gmailMessage: msgRes.data,
+      gmailMessage: msgData,
       userId: uid,
       existingTrackingNumbers,
       skipDelivered: true
@@ -77,11 +95,21 @@ export async function runBackfillForUser({ db, uid, refreshToken, clientSecret }
       continue;
     }
 
-    await db.collection('users').doc(uid).collection('packages').doc(pkg.id).set(pkg);
-    await db.collection('packages').doc(pkg.id).set(pkg);
+    packagesToSave.push(pkg);
     existingTrackingNumbers.add(pkg.trackingNumber.toUpperCase());
-    saved += 1;
   }
 
-  return { ok: true, scanned: messageRefs.length, saved, skipped };
+  // Atomic batch commit for all discovered packages
+  if (packagesToSave.length > 0) {
+    const batch = db.batch();
+    for (const pkg of packagesToSave) {
+      const userPkgRef = db.collection('users').doc(uid).collection('packages').doc(pkg.id);
+      const globalPkgRef = db.collection('packages').doc(pkg.id);
+      batch.set(userPkgRef, pkg);
+      batch.set(globalPkgRef, pkg);
+    }
+    await batch.commit();
+  }
+
+  return { ok: true, scanned: messageRefs.length, saved: packagesToSave.length, skipped };
 }

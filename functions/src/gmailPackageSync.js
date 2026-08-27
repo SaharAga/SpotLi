@@ -43,6 +43,7 @@ export function isDuplicateTrackingNumber(existingTrackingNumbers, trackingNumbe
 export function extractSubjectAndBodyFromGmailMessage(gmailMessage) {
   const headers = gmailMessage?.payload?.headers || [];
   const subject = headers.find((h) => h.name?.toLowerCase() === 'subject')?.value || '';
+  const from = headers.find((h) => h.name?.toLowerCase() === 'from')?.value || '';
 
   const parts = [];
   const walk = (part) => {
@@ -55,12 +56,12 @@ export function extractSubjectAndBodyFromGmailMessage(gmailMessage) {
   const decode = (data) => Buffer.from(data, 'base64url').toString('utf8');
 
   const plainPart = parts.find((p) => p.mimeType === 'text/plain');
-  if (plainPart) return { subject, body: decode(plainPart.data) };
+  if (plainPart) return { subject, from, body: decode(plainPart.data) };
 
   const htmlPart = parts.find((p) => p.mimeType === 'text/html');
-  if (htmlPart) return { subject, body: sanitizeEmailHtml(decode(htmlPart.data)) };
+  if (htmlPart) return { subject, from, body: sanitizeEmailHtml(decode(htmlPart.data)) };
 
-  return { subject, body: gmailMessage?.snippet || '' };
+  return { subject, from, body: gmailMessage?.snippet || '' };
 }
 
 /**
@@ -82,8 +83,8 @@ export function buildPackageFromGmailMessage({
   existingTrackingNumbers,
   skipDelivered = false
 }) {
-  const { subject, body } = extractSubjectAndBodyFromGmailMessage(gmailMessage);
-  const { trackingNumber, carrier, title } = extractTrackingDetails(subject, body);
+  const { subject, body, from } = extractSubjectAndBodyFromGmailMessage(gmailMessage);
+  const { trackingNumber, carrier, title, store } = extractTrackingDetails(subject, body, from);
 
   if (!trackingNumber) return null;
   if (isDuplicateTrackingNumber(existingTrackingNumbers, trackingNumber)) return null;
@@ -100,7 +101,7 @@ export function buildPackageFromGmailMessage({
     carrier,
     status: 'ordered',
     source: 'gmail_sync',
-    notes: subject ? `From Gmail: ${subject.slice(0, 100)}` : '',
+    notes: store ? `${store} order` : (subject ? `From Gmail: ${subject.slice(0, 80)}` : ''),
     createdAt: nowIso,
     updatedAt: nowIso,
     isArchived: false

@@ -1,0 +1,91 @@
+import { describe, it, expect } from 'vitest';
+import {
+  sanitizeEmailHtml,
+  isFalsePositive,
+  detectStore,
+  extractTrackingDetails
+} from './trackingExtraction.js';
+
+describe('sanitizeEmailHtml', () => {
+  it('strips tags and scripts and styles', () => {
+    const html = '<style>.x{color:red}</style><div>Order &amp; <b>Shipped</b></div><script>alert(1)</script>';
+    expect(sanitizeEmailHtml(html)).toBe('Order & Shipped');
+  });
+});
+
+describe('isFalsePositive', () => {
+  it('identifies Israeli phone numbers as false positives', () => {
+    expect(isFalsePositive('0541234567')).toBe(true);
+    expect(isFalsePositive('0509876543')).toBe(true);
+    expect(isFalsePositive('0771234567')).toBe(true);
+    expect(isFalsePositive('972541234567')).toBe(true);
+    expect(isFalsePositive('+972541234567')).toBe(true);
+  });
+
+  it('identifies dates and prices as false positives', () => {
+    expect(isFalsePositive('2026-08-28')).toBe(true);
+    expect(isFalsePositive('28/08/2026')).toBe(true);
+    expect(isFalsePositive('129.90 ₪')).toBe(true);
+  });
+
+  it('allows valid tracking numbers', () => {
+    expect(isFalsePositive('RR123456789IL')).toBe(false);
+    expect(isFalsePositive('1Z9999999999999999')).toBe(false);
+    expect(isFalsePositive('LP12345678901234')).toBe(false);
+    expect(isFalsePositive('TBA123456789012')).toBe(false);
+    expect(isFalsePositive('CH12345678')).toBe(false);
+  });
+});
+
+describe('detectStore', () => {
+  it('detects stores from sender email or text', () => {
+    expect(detectStore('auto-confirm@amazon.com', '')).toBe('Amazon');
+    expect(detectStore('orders@shein.com', '')).toBe('SHEIN');
+    expect(detectStore('transaction@notice.aliexpress.com', '')).toBe('AliExpress');
+    expect(detectStore('service@ksp.co.il', '')).toBe('KSP');
+    expect(detectStore('info@ivory.co.il', '')).toBe('Ivory');
+    expect(detectStore('', 'ההזמנה שלך מסופר-פארם יצאה לדרך')).toBe('Super-Pharm');
+  });
+});
+
+describe('extractTrackingDetails', () => {
+  it('extracts Amazon order with TBA tracking and product name in title', () => {
+    const subject = 'Your Amazon.com order of "Sony WH-1000XM5 Headphones" has shipped!';
+    const from = 'shipment-tracking@amazon.com';
+    const body = 'Your package is on its way. Tracking ID: TBA123456789012';
+    const result = extractTrackingDetails(subject, body, from);
+    expect(result.store).toBe('Amazon');
+    expect(result.trackingNumber).toBe('TBA123456789012');
+    expect(result.carrier).toBe('amazon');
+    expect(result.title).toBe('Amazon - Sony WH-1000XM5 Headphones');
+  });
+
+  it('extracts Israel Post international tracking number', () => {
+    const subject = 'חבילה בדרך לישראל';
+    const from = 'updates@aliexpress.com';
+    const body = 'החבילה שלך נשלחה עם מספר מעקב: RR987654321IL';
+    const result = extractTrackingDetails(subject, body, from);
+    expect(result.store).toBe('AliExpress');
+    expect(result.trackingNumber).toBe('RR987654321IL');
+    expect(result.carrier).toBe('israel-post');
+  });
+
+  it('extracts Chita tracking number and does not confuse with phone numbers in footer', () => {
+    const subject = 'ההזמנה מ-KSP נשלחה באמצעות חברת צ\'יטה';
+    const from = 'service@ksp.co.il';
+    const body = 'שלום, החבילה שלך נשלחה! מספר משלוח בצ\'יטה: CH99887766. לשירות לקוחות חייגו 0541234567.';
+    const result = extractTrackingDetails(subject, body, from);
+    expect(result.store).toBe('KSP');
+    expect(result.trackingNumber).toBe('CH99887766');
+    expect(result.carrier).toBe('chita');
+  });
+
+  it('extracts UPS tracking number', () => {
+    const subject = 'UPS Shipment Notification, Tracking Number 1Z999AA10123456784';
+    const from = 'pkginfo@ups.com';
+    const body = 'Your package is scheduled for delivery.';
+    const result = extractTrackingDetails(subject, body, from);
+    expect(result.trackingNumber).toBe('1Z999AA10123456784');
+    expect(result.carrier).toBe('ups');
+  });
+});

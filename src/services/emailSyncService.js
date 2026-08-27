@@ -50,13 +50,28 @@ export function getConnectedServices(currentUser = null) {
       });
     }
 
-    const hasGmail = Boolean(parsed.gmail || accounts.some((a) => a.service === 'gmail'));
-    const hasOutlook = Boolean(parsed.outlook || accounts.some((a) => a.service === 'outlook'));
+    // Reconcile placeholder accounts with currentUser email and dedupe identical emails
+    const uniqueAccounts = [];
+    const seenEmails = new Set();
+    for (const a of accounts) {
+      let email = a.email;
+      if (email === 'Connected Gmail Account' && currentUser?.email) {
+        email = currentUser.email;
+      }
+      const key = email.toLowerCase();
+      if (!seenEmails.has(key)) {
+        seenEmails.add(key);
+        uniqueAccounts.push({ ...a, email });
+      }
+    }
+
+    const hasGmail = Boolean(parsed.gmail || uniqueAccounts.some((a) => a.service === 'gmail'));
+    const hasOutlook = Boolean(parsed.outlook || uniqueAccounts.some((a) => a.service === 'outlook'));
 
     return {
       gmail: hasGmail,
       outlook: hasOutlook,
-      accounts
+      accounts: uniqueAccounts
     };
   } catch {
     return { gmail: false, outlook: false, accounts: [] };
@@ -106,21 +121,27 @@ export function addConnectedAccount(account) {
 
   try {
     const current = getConnectedServices();
-    const existingAccounts = current.accounts.filter(
-      (a) => a.email.toLowerCase() !== account.email.toLowerCase()
+    const serviceType = account.service || 'gmail';
+    const isPlaceholder = (e) => e === 'Connected Gmail Account' || e === 'Connected Outlook Account';
+
+    // Remove matching email or stale placeholder when real email is supplied
+    const filteredAccounts = current.accounts.filter(
+      (a) =>
+        a.email.toLowerCase() !== account.email.toLowerCase() &&
+        !(isPlaceholder(a.email) && !isPlaceholder(account.email) && a.service === serviceType)
     );
     const updatedAccounts = [
-      ...existingAccounts,
+      ...filteredAccounts,
       {
         email: account.email,
-        service: account.service || 'gmail',
+        service: serviceType,
         status: account.status || 'active',
         connectedAt: account.connectedAt || new Date().toISOString()
       }
     ];
     const updated = {
       ...current,
-      [account.service || 'gmail']: true,
+      [serviceType]: true,
       accounts: updatedAccounts
     };
     window.localStorage.setItem(EMAIL_INTEGRATIONS_STORAGE_KEY, JSON.stringify(updated));
