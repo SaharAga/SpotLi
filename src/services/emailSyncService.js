@@ -260,6 +260,30 @@ export async function connectGmail() {
 }
 
 /**
+ * Reads the real Gmail connection state from the server. The client can't
+ * read gmailConnections/{uid} directly (Firestore rules deny it — the doc
+ * holds a refresh token), so this is the only way the UI learns whether
+ * Gmail is actually connected; it's the source of truth for Gmail's status,
+ * not the localStorage bookkeeping getConnectedServices() reads (that stays
+ * accurate for Outlook, which has no server-side connection doc).
+ * @returns {Promise<{ connected: boolean, emailAddress?: string, connectedAt?: string }>}
+ */
+export async function getGmailConnectionStatus() {
+  if (!isFirebaseConfigured || !auth?.currentUser || !functionsInstance) {
+    return { connected: false };
+  }
+  try {
+    const { httpsCallable } = await import('firebase/functions');
+    const status = httpsCallable(functionsInstance, 'gmailConnectionStatus');
+    const res = await status();
+    return res?.data || { connected: false };
+  } catch (err) {
+    console.warn('[EmailSyncService] getGmailConnectionStatus error:', err);
+    return { connected: false };
+  }
+}
+
+/**
  * Triggers the server-side 30-day historical backfill for the signed-in
  * user's connected Gmail account. Called by the client right after the
  * OAuth redirect-back completes, as a belt-and-suspenders companion to the

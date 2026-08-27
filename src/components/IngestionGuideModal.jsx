@@ -10,12 +10,10 @@ import { copyToClipboard } from '../utils/clipboard';
 import {
   getIngestionEmailAddress,
   getConnectedServices,
-  setConnectedService,
-  addConnectedAccount,
+  getGmailConnectionStatus,
   removeConnectedAccount,
   disconnectService,
   connectGmail,
-  triggerGmailBackfill,
   requestOutlookForwardingSetup
 } from '../services/emailSyncService';
 import { DEFAULT_FORWARDING_FILTER_QUERY } from '../constants/emailFilters';
@@ -38,56 +36,48 @@ export function IngestionGuideModal({
   const [connectedServices, setConnectedServicesState] = useState(() => getConnectedServices(user));
   const userUid = user?.uid || user?.id;
 
+  // The client can't read gmailConnections/{uid} directly (Firestore rules
+  // deny it — the doc holds a refresh token), so localStorage alone can't
+  // tell us whether Gmail is actually connected. This merges the real
+  // server-verified Gmail status into the Outlook-accurate localStorage
+  // state getConnectedServices() returns.
+  const refreshConnectedServices = async () => {
+    const local = getConnectedServices(user);
+    const nonGmailAccounts = (local.accounts || []).filter((a) => a.service !== 'gmail');
+
+    if (!userUid) {
+      setConnectedServicesState({ ...local, gmail: false, accounts: nonGmailAccounts });
+      return;
+    }
+
+    const gmailStatus = await getGmailConnectionStatus();
+    const accounts = gmailStatus.connected
+      ? [
+          ...nonGmailAccounts,
+          {
+            email: gmailStatus.emailAddress || user?.email || 'Gmail Account',
+            service: 'gmail',
+            status: 'active',
+            connectedAt: gmailStatus.connectedAt
+          }
+        ]
+      : nonGmailAccounts;
+    setConnectedServicesState({ ...local, gmail: Boolean(gmailStatus.connected), accounts });
+  };
+
   // Sync state whenever user ID changes or modal opens
   useEffect(() => {
     if (isOpen) {
-      setConnectedServicesState(getConnectedServices(user));
+      refreshConnectedServices();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userUid, isOpen]);
 
-  // Picks up the ?gmail=connected|error redirect-back from the Gmail OAuth
-  // flow (gmailOAuthCallback in functions/), shows a toast, triggers the
-  // client-side backfill call, and cleans the query param off the URL so a
-  // refresh doesn't re-trigger it.
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
-    const gmailResult = params.get('gmail');
-    if (!gmailResult) return;
-
-    if (gmailResult === 'connected') {
-      setConnectedService('gmail', true);
-      addConnectedAccount({
-        email: user?.email || 'Connected Gmail Account',
-        service: 'gmail',
-        connectedAt: new Date().toISOString()
-      });
-      setConnectedServicesState(getConnectedServices(user));
-      if (onShowToast) {
-        onShowToast(
-          language === 'he'
-            ? 'Gmail חובר בהצלחה! אישורי הזמנות יסונכרנו אוטומטית 🎉'
-            : 'Gmail connected! Orders will sync automatically 🎉',
-          'success'
-        );
-      }
-      triggerGmailBackfill().catch(() => {});
-    } else if (gmailResult === 'error') {
-      if (onShowToast) {
-        onShowToast(
-          language === 'he' ? 'החיבור ל-Gmail נכשל, נסה שוב' : 'Gmail connection failed, please try again',
-          'error'
-        );
-      }
-    }
-
-    params.delete('gmail');
-    const newSearch = params.toString();
-    const newUrl = `${window.location.pathname}${newSearch ? `?${newSearch}` : ''}${window.location.hash}`;
-    window.history.replaceState({}, '', newUrl);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // The ?gmail=connected|error redirect-back from the Gmail OAuth flow is
+  // handled once, at the app root (App.jsx) — it shows the toast, triggers
+  // the backfill, and opens this modal. Opening it flips `isOpen`, which the
+  // effect above already reacts to by calling refreshConnectedServices(), so
+  // there's no need for a second listener here.
 
   if (!isOpen) return null;
 
@@ -207,7 +197,7 @@ export function IngestionGuideModal({
 
   const handleDisconnectAccount = async (accountEmail) => {
     await removeConnectedAccount(accountEmail);
-    setConnectedServicesState(getConnectedServices(user));
+    await refreshConnectedServices();
     if (onShowToast) {
       onShowToast(
         language === 'he'
@@ -220,7 +210,7 @@ export function IngestionGuideModal({
 
   const handleDisconnectService = async (service) => {
     await disconnectService(service);
-    setConnectedServicesState(getConnectedServices(user));
+    await refreshConnectedServices();
     if (onShowToast) {
       onShowToast(
         language === 'he' ? `סנכרון ${service} נותק בהצלחה` : `${service} sync disconnected`,

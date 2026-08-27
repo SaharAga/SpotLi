@@ -7,7 +7,8 @@ import {
   addConnectedAccount,
   removeConnectedAccount,
   setConnectedService,
-  connectGmail
+  connectGmail,
+  getGmailConnectionStatus
 } from './emailSyncService';
 
 describe('emailSyncService Unit Tests', () => {
@@ -95,6 +96,13 @@ describe('emailSyncService Unit Tests', () => {
       const res = await connectGmail();
       expect(res.ok).toBe(false);
       expect(res.error).toBeTruthy();
+    });
+  });
+
+  describe('getGmailConnectionStatus', () => {
+    it('reports not connected when Firebase is not configured / not signed in', async () => {
+      const status = await getGmailConnectionStatus();
+      expect(status).toEqual({ connected: false });
     });
   });
 

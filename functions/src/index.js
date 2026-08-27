@@ -11,6 +11,7 @@ import { createGmailPushHandler } from './gmailPushHandler.js';
 import { createGmailBackfillHandler, runBackfillForUser } from './gmailBackfill.js';
 import { createGmailWatchRenewalHandler } from './gmailWatchRenewal.js';
 import { createGmailDisconnectHandler } from './gmailDisconnect.js';
+import { createGmailConnectionStatusHandler } from './gmailConnectionStatus.js';
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
 // Shared-secret query param that authorizes calls to the Pub/Sub push
@@ -189,5 +190,22 @@ export const gmailDisconnect = onCall(
     createGmailDisconnectHandler({
       db: getFirestore(),
       clientSecret: gmailOAuthClientSecret.value()
+    })(request)
+);
+
+/**
+ * Reports whether the signed-in caller has an active Gmail connection —
+ * the client can't read gmailConnections/{uid} directly (refresh tokens
+ * must never reach the browser), so this is the sanctioned way the UI
+ * learns "is Gmail actually connected" after the OAuth redirect-back.
+ */
+export const gmailConnectionStatus = onCall(
+  {
+    timeoutSeconds: 15,
+    memory: '128MiB'
+  },
+  (request) =>
+    createGmailConnectionStatusHandler({
+      db: getFirestore()
     })(request)
 );
