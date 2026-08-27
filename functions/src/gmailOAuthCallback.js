@@ -1,0 +1,139 @@
+/**
+ * Gmail OAuth start + callback (onRequest handlers — a browser redirect
+ * flow, not a callable API).
+ *
+ * Flow:
+ *  1. Client calls a small onCall (createGmailOAuthStartHandler is exposed
+ *     as an onCall too, see index.js) to mint a short-lived signed state
+ *     token for its own uid (verified via Firebase Auth context, not a
+ *     bare query param), then navigates the browser to the returned
+ *     consent URL — OR the client redirects straight to `gmailOAuthStart`
+ *     with its Firebase ID token in a POST body; either shape works, this
+ *     app uses the onCall-mint-then-redirect shape so the ID token is never
+ *     placed in a URL that ends up in server logs.
+ *  2. Google redirects back to `gmailOAuthCallback` with `code` + `state`.
+ *  3. The callback verifies `state`, exchanges `code` for tokens, stores
+ *     the refresh token, registers `users.watch()`, and redirects the
+ *     browser back to the app with `?gmail=connected` or `?gmail=error`.
+ */
+
+import { HttpsError } from 'firebase-functions/v2/https';
+import { google } from 'googleapis';
+import { createOAuth2Client, GMAIL_SCOPES, setGmailConnection } from './gmailAuth.js';
+import { createStateToken, verifyStateToken } from './gmailStateToken.js';
+
+/**
+ * onCall: mints a short-lived state token for the signed-in caller and
+ * returns the Google consent URL to redirect to. Requires a verified
+ * Firebase Auth context (request.auth), never a client-supplied uid.
+ * @param {{ clientSecret: string }} deps
+ */
+export function createGmailOAuthStartHandler({ clientSecret }) {
+  return async function handler(request) {
+    const uid = request.auth?.uid;
+    if (!uid) {
+      throw new HttpsError('unauthenticated', 'Sign in required.');
+    }
+
+    const state = createStateToken({ uid, secret: clientSecret });
+    const oauth2Client = createOAuth2Client({ clientSecret });
+    const url = oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      // Force showing the consent screen (and thus re-issuing a refresh
+      // token) even for a user who has already granted this app access —
+      // Google only returns a refresh_token on the *first* consent
+      // otherwise.
+      prompt: 'consent',
+      scope: GMAIL_SCOPES,
+      state
+    });
+
+    return { url };
+  };
+}
+
+/**
+ * onRequest: Google redirects here with ?code=...&state=...
+ * @param {{ db: FirebaseFirestore.Firestore, clientSecret: string, runBackfill?: Function }} deps
+ */
+export function createGmailOAuthCallbackHandler({ db, clientSecret, runBackfill }) {
+  return async function handler(req, res) {
+    const appBaseUrl = (process.env.APP_BASE_URL || '').replace(/\/$/, '');
+    const redirectError = () => res.redirect(`${appBaseUrl}/?gmail=error`);
+
+    try {
+      const { code, state, error } = req.query;
+      if (error) {
+        console.warn('[gmailOAuthCallback] Google returned an error:', error);
+        return redirectError();
+      }
+      if (!code || !state) {
+        return redirectError();
+      }
+
+      const uid = verifyStateToken({ token: String(state), secret: clientSecret });
+      if (!uid) {
+        console.warn('[gmailOAuthCallback] Invalid or expired state token');
+        return redirectError();
+      }
+
+      const oauth2Client = createOAuth2Client({ clientSecret });
+      const { tokens } = await oauth2Client.getToken(String(code));
+      if (!tokens.refresh_token) {
+        // No refresh token means we can't sync in the background — this
+        // shouldn't happen with prompt=consent+access_type=offline, but
+        // fail loudly rather than silently storing an unusable connection.
+        console.error('[gmailOAuthCallback] No refresh_token returned for uid', uid);
+        return redirectError();
+      }
+      oauth2Client.setCredentials(tokens);
+
+      const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+      const profile = await gmail.users.getProfile({ userId: 'me' });
+      const emailAddress = profile.data.emailAddress;
+
+      const topicName = process.env.GMAIL_PUBSUB_TOPIC;
+      let historyId = profile.data.historyId;
+      let watchExpiration = null;
+
+      if (topicName) {
+        const watchRes = await gmail.users.watch({
+          userId: 'me',
+          requestBody: { topicName, labelIds: ['INBOX'], labelFilterAction: 'include' }
+        });
+        historyId = watchRes.data.historyId || historyId;
+        watchExpiration = watchRes.data.expiration || null;
+      } else {
+        console.warn('[gmailOAuthCallback] GMAIL_PUBSUB_TOPIC not set — skipping watch registration');
+      }
+
+      await setGmailConnection({
+        db,
+        uid,
+        data: {
+          refreshToken: tokens.refresh_token,
+          emailAddress,
+          historyId: historyId ? String(historyId) : null,
+          watchExpiration,
+          connectedAt: new Date().toISOString(),
+          status: 'active'
+        }
+      });
+
+      if (typeof runBackfill === 'function') {
+        // Fire-and-forget: don't hold up the redirect on the backfill scan.
+        // The client also triggers gmailBackfill itself after redirect-back
+        // as a belt-and-suspenders retry in case this in-process call is
+        // killed by the function's own response/timeout.
+        runBackfill({ uid }).catch((err) =>
+          console.error('[gmailOAuthCallback] Background backfill failed:', err)
+        );
+      }
+
+      return res.redirect(`${appBaseUrl}/?gmail=connected`);
+    } catch (err) {
+      console.error('[gmailOAuthCallback] Error handling callback:', err);
+      return redirectError();
+    }
+  };
+}

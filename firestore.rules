@@ -168,6 +168,16 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Gmail OAuth connections (functions/src/gmailAuth.js) — refresh
+    // tokens and sync cursors for the Gmail auto-sync feature. Written only
+    // by Cloud Functions via the Admin SDK, which bypasses these rules
+    // entirely; this explicit deny is defense-in-depth documentation that
+    // the client SDK must never read or write here (a refresh token must
+    // never reach the client).
+    match /gmailConnections/{uid} {
+      allow read, write: if false;
+    }
+
     // Explicitly deny everything else
     match /{document=**} {
       allow read, write: if false;

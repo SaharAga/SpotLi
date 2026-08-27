@@ -5,6 +5,10 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { IngestionGuideModal } from './IngestionGuideModal.jsx';
 import { LanguageProvider } from '../context/LanguageContext';
 
+vi.mock('firebase/functions', () => ({
+  httpsCallable: () => vi.fn().mockResolvedValue({ data: { ok: true } })
+}));
+
 vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({
     user: { uid: 'testuser123', email: 'test@example.com' },
@@ -17,10 +21,12 @@ vi.mock('../services/emailSyncService', async () => {
   const actual = await vi.importActual('../services/emailSyncService');
   return {
     ...actual,
-    requestGmailForwardingSetup: vi.fn().mockImplementation(async () => {
-      actual.addConnectedAccount({ email: 'test@example.com', service: 'gmail' });
-      return { ok: true, email: 'test@example.com' };
-    }),
+    // connectGmail navigates the whole page away on success in the real
+    // implementation, so there is no synchronous "connected" state to
+    // observe here — just that the call resolves ok and nothing crashes.
+    connectGmail: vi.fn().mockResolvedValue({ ok: true }),
+    triggerGmailBackfill: vi.fn().mockResolvedValue({ ok: true, saved: 0 }),
+    revokeGmailConnection: vi.fn().mockResolvedValue(undefined),
     requestOutlookForwardingSetup: vi.fn().mockImplementation(async () => {
       actual.addConnectedAccount({ email: 'test@outlook.com', service: 'outlook' });
       return { ok: true, email: 'test@outlook.com' };
@@ -76,7 +82,8 @@ describe('IngestionGuideModal Component Tests', () => {
     expect(screen.getByText(/פתחו את Yahoo Mail|Open Yahoo Mail/i)).toBeTruthy();
   });
 
-  it('handles 1-Click Gmail sync button click', async () => {
+  it('handles 1-Click Gmail sync button click by starting the OAuth redirect', async () => {
+    const { connectGmail } = await import('../services/emailSyncService');
     const handleToast = vi.fn();
     renderModal({ onShowToast: handleToast });
 
@@ -84,8 +91,24 @@ describe('IngestionGuideModal Component Tests', () => {
     fireEvent.click(enableSyncBtn);
 
     await waitFor(() => {
-      expect(handleToast).toHaveBeenCalledTimes(1);
-      expect(screen.getByText(/\+ Gmail נוסף|\+ Add Gmail/i)).toBeTruthy();
+      expect(connectGmail).toHaveBeenCalledTimes(1);
+    });
+    // Success navigates the page away — no in-place "connected" state or
+    // toast is expected here; only a failure surfaces a toast (see below).
+    expect(handleToast).not.toHaveBeenCalled();
+  });
+
+  it('shows an error toast when connectGmail fails to start', async () => {
+    const { connectGmail } = await import('../services/emailSyncService');
+    connectGmail.mockResolvedValueOnce({ ok: false, error: 'boom' });
+    const handleToast = vi.fn();
+    renderModal({ onShowToast: handleToast });
+
+    const enableSyncBtn = screen.getByText(/Connect Gmail|חבר Gmail/i);
+    fireEvent.click(enableSyncBtn);
+
+    await waitFor(() => {
+      expect(handleToast).toHaveBeenCalledWith(expect.stringContaining('boom'), 'error');
     });
   });
 
