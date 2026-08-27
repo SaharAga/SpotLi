@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms of Service — Deliveree</title>
+  <link rel="icon" type="image/png" href="/icons/app-icon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #030712;
+      --card-bg: #0b1329;
+      --card-border: #1e293b;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-gradient: linear-gradient(135deg, #3b82f6, #6366f1, #8b5cf6);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      line-height: 1.65;
+      padding: 2rem 1rem;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      max-width: 860px;
+      width: 100%;
+    }
+    header {
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .logo-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: inherit;
+    }
+    .brand img {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+    }
+    .brand-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .lang-switcher {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .lang-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: var(--text);
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .lang-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-top: 0.5rem;
+    }
+    .updated {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #93c5fd;
+      margin: 1.5rem 0 0.75rem 0;
+    }
+    h2:first-child { margin-top: 0; }
+    p {
+      color: #cbd5e1;
+      font-size: 0.95rem;
+      margin-bottom: 1rem;
+    }
+    ul {
+      margin-left: 1.5rem;
+      margin-bottom: 1rem;
+      color: #cbd5e1;
+      font-size: 0.95rem;
+    }
+    li { margin-bottom: 0.4rem; }
+    .rtl {
+      direction: rtl;
+      font-family: 'Assistant', 'Inter', system-ui, sans-serif;
+    }
+    .rtl ul { margin-left: 0; margin-right: 1.5rem; }
+    footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--card-border);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo-row">
+        <a href="/" class="brand">
+          <img src="/icons/app-icon.png" alt="Deliveree Logo">
+          <span class="brand-title">Deliveree</span>
+        </a>
+        <div class="lang-switcher">
+          <button class="lang-btn active" onclick="switchLang('en')">English</button>
+          <button class="lang-btn" onclick="switchLang('he')">עברית</button>
+        </div>
+      </div>
+      <div>
+        <h1 id="page-title">Terms of Service</h1>
+        <p class="updated" id="page-updated">Last updated: August 27, 2026</p>
+      </div>
+    </header>
+
+    <!-- English Content -->
+    <main id="content-en">
+      <div class="card">
+        <h2>1. Service Description</h2>
+        <p>Deliveree is an autonomous package-tracking application currently in alpha. It allows users to track shipments across multiple carriers, organize deliveries, and synchronize data across devices.</p>
+
+        <h2>2. Third-Party Carriers & Tracking Accuracy</h2>
+        <p>Deliveree retrieves tracking updates directly from third-party courier and postal services. Carrier names, marks, and logos belong to their respective owners. Deliveree is not affiliated with or endorsed by any carrier and is not responsible for postal delays or inaccurate carrier updates.</p>
+
+        <h2>3. Email Forwarding & Ingestion Integrations</h2>
+        <p>When you enable automated email forwarding (such as Gmail or Outlook sync), Deliveree creates an inbox forwarding rule solely for parcel shipment emails. Deliveree does not read or store private communications outside of shipment tracking numbers and carrier updates.</p>
+
+        <h2>4. User Responsibilities</h2>
+        <p>You agree not to use the service for any unlawful purposes or attempt automated abusive requests that exceed rate limits.</p>
+
+        <h2>5. Disclaimer & Limitation of Liability</h2>
+        <p>The service is provided "AS IS" without warranties of any kind. To the fullest extent permitted by law, Deliveree shall not be liable for indirect, incidental, or consequential damages.</p>
+
+        <h2>6. Contact & Support</h2>
+        <p>For questions or support, contact: <strong>saharaga97@gmail.com</strong>.</p>
+      </div>
+    </main>
+
+    <!-- Hebrew Content -->
+    <main id="content-he" class="rtl" style="display: none;">
+      <div class="card">
+        <h2>1. תיאור השירות</h2>
+        <p>Deliveree היא אפליקציה למעקב חכם אחר חבילות ומשלוחים בגרסת אלפא. השירות מאפשר מעקב מרוכז מול ספקי שילוח שונים, ניהול משלוחים וסנכרון ענן בין מכשירים.</p>
+
+        <h2>2. חברות שילוח ודיוק המעקב</h2>
+        <p>Deliveree מציגה מידע מעקב המתקבל ישירות ממערכות חברות השילוח והדואר. סימני המסחר ושמות הספקים שייכים לבעליהם. Deliveree אינה קשורה לחברות אלו ואינה אחראית לעיכובים במשלוחים או לדיוק נתוני הספקים.</p>
+
+        <h2>3. אינטגרציית אימייל והעברה אוטומטית</h2>
+        <p>בעת הפעלת סנכרון אימייל (כגון Gmail או Outlook), נוצר כלל העברה להודעות משלוחים בלבד. האפליקציה אינה קוראת או אוגרת הודעות פרטיות מעבר למספרי מעקב ועדכוני שילוח.</p>
+
+        <h2>4. אחריות המשתמש</h2>
+        <p>המשתמש מתחייב שלא לעשות שימוש בלתי חוקי בשירות ולא לבצע פניות אוטומטיות המעמיסות על המערכת מעבר למגבלות השימוש הסבירות.</p>
+
+        <h2>5. הגבלת אחריות</h2>
+        <p>השירות ניתן כמות שהוא ("AS IS"). במידה המרבית המותרת על פי דין, לא תחול אחריות על נזקים עקיפים או תוצאתיים כלשהם.</p>
+
+        <h2>6. יצירת קשר</h2>
+        <p>לשאלות, תמיכה או בירורים משפטיים: <strong>saharaga97@gmail.com</strong>.</p>
+      </div>
+    </main>
+
+    <footer>
+      <p>&copy; 2026 Deliveree. All rights reserved. | <a href="/privacy.html">Privacy Policy</a> | <a href="/">Open Deliveree App</a></p>
+    </footer>
+  </div>
+
+  <script>
+    function switchLang(lang) {
+      document.getElementById('content-en').style.display = lang === 'en' ? 'block' : 'none';
+      document.getElementById('content-he').style.display = lang === 'he' ? 'block' : 'none';
+      document.getElementById('page-title').innerText = lang === 'en' ? 'Terms of Service' : 'תנאי שימוש';
+      document.getElementById('page-updated').innerText = lang === 'en' ? 'Last updated: August 27, 2026' : 'עודכן לאחרונה: 27 באוגוסט 2026';
+      
+      const buttons = document.querySelectorAll('.lang-btn');
+      buttons[0].classList.toggle('active', lang === 'en');
+      buttons[1].classList.toggle('active', lang === 'he');
+    }
+  </script>
+</body>
+</html>
