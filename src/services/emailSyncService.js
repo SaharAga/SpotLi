@@ -329,20 +329,27 @@ export async function requestGmailForwardingSetup(ingestionEmail) {
     const { signInWithPopup, GoogleAuthProvider } = await import('firebase/auth');
     const provider = new GoogleAuthProvider();
     provider.addScope('https://www.googleapis.com/auth/gmail.settings.basic');
-    provider.setCustomParameters({ prompt: 'select_account' });
+    provider.setCustomParameters({ 
+      prompt: 'consent select_account',
+      access_type: 'offline'
+    });
 
     const result = await signInWithPopup(auth, provider);
     const credential = GoogleAuthProvider.credentialFromResult(result);
-    const accessToken = credential?.accessToken;
+    const accessToken = credential?.accessToken || result?._tokenResponse?.oauthAccessToken;
     const connectedEmail = result?.user?.email || 'Gmail Account';
 
     // Check if this account is already linked
     const currentServices = getConnectedServices();
     const isAlreadyConnected = currentServices.accounts.some(
-      (a) => a.email.toLowerCase() === connectedEmail.toLowerCase()
+      (a) => a.email.toLowerCase() === connectedEmail.toLowerCase() && a.status === 'active'
     );
     if (isAlreadyConnected) {
       return { ok: true, alreadyConnected: true, email: connectedEmail };
+    }
+
+    if (!accessToken) {
+      return { ok: false, error: 'Google did not grant an access token with Gmail permissions', email: connectedEmail };
     }
 
     // Add account initially as pending verification
@@ -353,15 +360,13 @@ export async function requestGmailForwardingSetup(ingestionEmail) {
       token: accessToken 
     });
 
-    if (!accessToken) {
-      return { ok: false, error: 'Google did not return an access token for Gmail API', email: connectedEmail };
-    }
-
     const forwardRes = await setupGmailAutoForward(accessToken, ingestionEmail, connectedEmail);
     if (!forwardRes.ok) {
+      removeConnectedAccount(connectedEmail);
       return { ok: false, error: forwardRes.error, email: connectedEmail };
     }
 
+    updateAccountStatus(connectedEmail, 'active');
     return { ok: true, email: connectedEmail };
   } catch (err) {
     console.error('[EmailSyncService] requestGmailForwardingSetup error:', err);
