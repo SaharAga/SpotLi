@@ -215,11 +215,13 @@ export function extractTrackingDetails(subject = '', body = '', from = '') {
     }
   }
 
-  // 3. DHL 10-digit or FedEx fallback when DHL/FedEx keyword or context is present
+  // 3. DHL 10-digit or FedEx fallback only when DHL/FedEx keyword is in proximity
   if (!foundTracking) {
-    if (/dhl/i.test(combinedText)) {
-      const dhlMatch = combinedText.match(/\b([0-9]{10})\b/);
-      if (dhlMatch && !isFalsePositive(dhlMatch[1])) {
+    const dhlMatch = combinedText.match(/\b([0-9]{10})\b/);
+    if (dhlMatch && !isFalsePositive(dhlMatch[1])) {
+      const windowStart = Math.max(0, (dhlMatch.index ?? 0) - 150);
+      const windowEnd = Math.min(combinedText.length, (dhlMatch.index ?? 0) + dhlMatch[0].length + 150);
+      if (/dhl/i.test(combinedText.slice(windowStart, windowEnd))) {
         foundTracking = dhlMatch[1];
         foundCarrier = 'dhl';
       }
@@ -229,8 +231,12 @@ export function extractTrackingDetails(subject = '', body = '', from = '') {
   if (!foundTracking) {
     const fedexMatch = combinedText.match(/\b(96\d{20}|[0-9]{12}|[0-9]{15})\b/);
     if (fedexMatch && !isFalsePositive(fedexMatch[1])) {
-      foundTracking = fedexMatch[1];
-      foundCarrier = 'fedex';
+      const windowStart = Math.max(0, (fedexMatch.index ?? 0) - 150);
+      const windowEnd = Math.min(combinedText.length, (fedexMatch.index ?? 0) + fedexMatch[0].length + 150);
+      if (/fedex/i.test(combinedText.slice(windowStart, windowEnd))) {
+        foundTracking = fedexMatch[1];
+        foundCarrier = 'fedex';
+      }
     }
   }
 

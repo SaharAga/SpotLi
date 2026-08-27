@@ -157,7 +157,7 @@ export function addConnectedAccount(account) {
  * clean up under the OAuth+push model.
  */
 export async function revokeGmailConnection() {
-  if (!functionsInstance) return;
+  if (!isFirebaseConfigured || !auth?.currentUser || !functionsInstance) return;
   try {
     const { httpsCallable } = await import('firebase/functions');
     const disconnect = httpsCallable(functionsInstance, 'gmailDisconnect');
