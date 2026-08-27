@@ -59,25 +59,41 @@ describe('emailSyncService Unit Tests', () => {
   });
 
   describe('Multi-Email Accounts Management', () => {
-    it('adds, lists, disconnects and removes connected accounts', async () => {
-      const { disconnectService: disconnect } = await import('./emailSyncService');
+    it('adds, lists, disconnects and removes connected accounts with token cleanup', async () => {
+      const { disconnectService: disconnect, updateAccountStatus } = await import('./emailSyncService');
+      const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+      global.fetch = fetchMock;
+
       expect(getConnectedAccounts()).toEqual([]);
 
-      addConnectedAccount({ email: 'sahar@gmail.com', service: 'gmail' });
+      addConnectedAccount({ email: 'sahar@gmail.com', service: 'gmail', status: 'pending', token: 'mock-token' });
       addConnectedAccount({ email: 'work@company.com', service: 'gmail' });
 
-      const accounts = getConnectedAccounts();
+      let accounts = getConnectedAccounts();
       expect(accounts.length).toBe(2);
-      expect(accounts.map((a) => a.email)).toEqual(['sahar@gmail.com', 'work@company.com']);
-      expect(getConnectedServices().gmail).toBe(true);
+      expect(accounts[0].status).toBe('pending');
 
-      removeConnectedAccount('sahar@gmail.com');
+      updateAccountStatus('sahar@gmail.com', 'active');
+      accounts = getConnectedAccounts();
+      expect(accounts[0].status).toBe('active');
+
+      await removeConnectedAccount('sahar@gmail.com', 'usr_123@in.deliveree.app');
       const remaining = getConnectedAccounts();
       expect(remaining.length).toBe(1);
       expect(remaining[0].email).toBe('work@company.com');
       expect(getConnectedServices().gmail).toBe(true);
 
-      disconnect('gmail');
+      // Verify Google delete endpoint and token revocation were called
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('forwardingAddresses'),
+        expect.objectContaining({ method: 'DELETE' })
+      );
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('oauth2.googleapis.com/revoke'),
+        expect.objectContaining({ method: 'POST' })
+      );
+
+      await disconnect('gmail', 'usr_123@in.deliveree.app');
       expect(getConnectedAccounts().length).toBe(0);
       expect(getConnectedServices().gmail).toBe(false);
     });
