@@ -1,7 +1,7 @@
 {
   "name": "deliveree",
   "private": true,
-  "version": "0.18.3",
+  "version": "0.19.0",
   "type": "module",
   "scripts": {
     "prebuild": "node scripts/generate-carrier-specs.mjs",

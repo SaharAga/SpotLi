@@ -7,6 +7,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.19.0] - 2026-08-28
+
+### Added
+- Implement candidate-constrained package detection v2.0.0, dual-boundary serializable carrier spec generation, canonical checksum validation, and stratified benchmarks.
+
+- Replaced the Gmail auto-sync integration's forwarding-rule + confirmation-scraping
+approach (which depended on guessing the shape of Google's unsupported
+confirmation page and required the Restricted `gmail.settings.sharing` scope)
+with standard read-only OAuth (`gmail.readonly`) backed by a server-side stored
+refresh token, real-time delivery via Gmail `users.watch()` + Cloud Pub/Sub push,
+and a one-time 30-day historical backfill on connect. No forwarding rule is ever
+created in a user's mailbox. The manual CloudMailin forwarding address remains
+available as the no-OAuth fallback, and Outlook's forwarding-rule flow is
+unchanged.
+
+- Refactored `usePackages` to use a `commit` based mutation system to prevent data loss in multi-tab offline scenarios.
+Extracted `trackingCooldownMap` from `trackingService` into a standalone `rateLimiter` util to unblock dynamic lazy loading.
+Extracted `LEGAL_VERSION` from `legal.js` to shrink initial load times and added code splitting for the legal terms.
+
+- Overhaul email auto-detection speed, HTML tracking link extraction, multi-factor confidence scoring, OTP false-positive suppression, and synthetic data generation tooling for model fine-tuning.
+
+- Implement Service Worker Web Push notification event handling and interactive notification click actions (TASK-13).
+
+- Added Dual Deadline Tracking Engine (`TASK-22`):
+- Pickup holding window countdown with urgent return-to-sender (RTS) warning for locker/store pickups (<24h / <48h).
+- Store return policy window countdown (14/30-day refund periods) with return notes and 1-click quick setters for delivered packages.
+- Integrated deadline countdown chips and badges into `PackageCard`, `PackageDetailModal`, and `AddEditPackageModal`.
+
+- Added Courier 1-Click WhatsApp & SMS Quick Actions (`TASK-25`):
+- Pre-filled message templates for Porch Drop, Gate/Entrance Code, Safe Place, and Proxy Pickup Authorization.
+- 1-Click action triggers for WhatsApp, SMS, and clipboard copying with interactive preview and inline gate-code entry.
+- Integrated into `PackageDetailModal` with full Hebrew RTL / English LTR bilingual symmetry.
+
+- Redesigned the `PackageDetailModal` to introduce the "Ultimate Package Page".
+Added support for tracking `pickupCode`, `pickupLocation`, and `pickupDeadline` directly in the local store and package schemas.
+Added a prominent floating UI card to highlight the pickup code.
+Added 1-tap navigation button, countdown timer for pickup deadlines, and quick WhatsApp proxy sharing.
+Added manual inputs for pickup details in the `AddEditPackageModal`.
+
+### Fixed
+- Add gmail.settings.sharing scope to Google OAuth provider to ensure Gmail API grants permission to create and manage forwarding addresses.
+
+- Add auto-confirmation for Google forwarding verification emails in Cloud Functions, poll for verification in client setup, and keep registered accounts visible in pending status with no ghost disappearances.
+
+- Ensure connected email accounts are immediately added to the inboxes manager on OAuth success, add duplicate linking guards, add direct Google & Microsoft account permission links, and auto-verify Google forwarding URLs.
+
+- Enable Gmail API in Google Cloud project, ensure setupGmailAutoForward error responses are surfaced directly to the user toast, and prevent accounts from getting stuck in pending state if Google API fails.
+
+- Fixed mobile touch tap handling in SideNavDrawer by eliminating duplicate fixed backdrop overlay and ensuring navigation callbacks trigger before drawer dismissal.
+
+- Persist and fetch user legal consent during Google OAuth login to avoid repeating the blocking terms gate, fix infinite re-render loop on unauthenticated modal, allow seamless Google sign-in when connecting Gmail, and ensure inbound Cloud Function writes to scoped user packages in Firestore.
+
+- Fixed the Gmail connection status showing as stuck/duplicated by replacing
+client-trusted localStorage writes with a server-verified status check
+(`gmailConnectionStatus`), consolidated the OAuth redirect handling into one
+place instead of two independent effects, granted the missing Cloud Run
+invoker IAM binding for `gmailOAuthStart`/`gmailDisconnect`, gated the
+ambiguous DHL/FedEx bare-digit tracking regexes behind a nearby carrier-name
+check to stop them matching phone numbers, and surfaced the 30-day backfill's
+scanned/saved counts (or its failure) in a toast instead of swallowing errors
+silently.
+
+- Refactor and harden scalability, maintainability, prototype pollution resilience, and storage key centralization:
+- Centralized application constants (`APP_NAME`, `INGESTION_EMAIL_DOMAIN`, `APP_COPYRIGHT`) in `src/constants/app.js`.
+- Centralized localStorage keys and domain key validator in `src/constants/storageKeys.js` (`STORAGE_KEYS`, `isAppStorageKey`).
+- Replaced direct `CARRIERS[carrierId]` bracket lookups with safe `getCarrier(carrierId)` helper across UI components, schemas, and utility modules.
+- Bounded local tombstones to 200 entries with LRU eviction in `CloudStorageAdapter` to prevent unbounded memory growth.
+- Added WeakMap and Map memoization cache in `detectStore` to prevent repeated regex evaluations on unchanged objects and strings during render frames.
+- Applied CSS rendering containment (`content-visibility: auto; contain-intrinsic-size: 140px;`) on `PackageCard` to optimize long list rendering performance.
+
+- Request incremental Google OAuth consent with prompt consent to ensure Google displays the Gmail scope permissions dialog and grants Gmail forwarding access token.
+
+- Add dedicated staging PWA manifest (manifest-staging.json) and high-res amber PNG/SVG icons so Staging installs with 'Deliveree (Stg)' and distinct amber app icon.
+
+- Standardized menu item styling in SideNavDrawer (Export Center and Admin Dashboard now match standard row styling) and relocated Settings to the system utilities section at the bottom of the drawer.
+
+- Add two-way Google and Gmail forwarding address deletion and token revocation upon unlinking in Deliveree, poll live verification status with pending/active badges, and simplify modal copy to remove unnecessary jargon.
+
 ## [0.18.3] - 2026-08-27
 
 ### Fixed
