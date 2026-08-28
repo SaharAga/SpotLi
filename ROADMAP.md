@@ -41,5 +41,5 @@
 
 ### 📱 Step 5: Native App Packaging & Post-Delivery Helpers
 * [x] Dual Deadline Tracking Engine (Pickup Holding Window RTS risk + Store Return Policies) (`TASK-22`).
-* [ ] Courier WhatsApp & SMS Quick Actions (Safe Place, Gate Code, Proxy Pickup) (`TASK-25`).
+* [x] Courier WhatsApp & SMS Quick Actions (Safe Place, Gate Code, Proxy Pickup) (`TASK-25`).
 * [ ] Wrap application with Capacitor for native iOS and Android store deployment.

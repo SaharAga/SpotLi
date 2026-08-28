@@ -181,6 +181,6 @@ This is an **agent-executable backlog** — every task here is something a squad
 
 ### `TASK-25-COURIER`: Courier WhatsApp & SMS Quick Actions
 * **Priority**: `P2`
-* **Status**: `Backlog`
+* **Status**: `Done`
 * **Squad**: Squad A (`feedback_telemetry_specialist`, `ui_ux_specialist`)
 * **Summary**: 1-Click WhatsApp & SMS buttons in `PackageDetailModal` with pre-filled message templates (Door/Gate Code, Safe Place, Porch Drop, Proxy Pickup Authorization).
