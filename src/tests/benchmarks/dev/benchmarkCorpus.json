@@ -1,0 +1,74 @@
+[
+  {
+    "id": "dev_ilpost_s10_01",
+    "templateFamily": "israel_post_sms",
+    "rawText": "שלום, דבר דואר שמספרו RR000000005IL הגיע ליחידת דואר הראשית. שעות פתיחה 08:00-18:00.",
+    "expectedTracking": "RR000000005IL",
+    "expectedCarrier": "israel-post",
+    "expectedStatus": "verified"
+  },
+  {
+    "id": "dev_chita_portal_01",
+    "templateFamily": "chita_dispatch",
+    "rawText": "החבילה שלך מ-KSP יצאה לדרך עם צ'יטה! מספר מעקב: CH10928491. למעקב: https://chita-il.com/runportal/tracking?num=CH10928491",
+    "expectedTracking": "CH10928491",
+    "expectedCarrier": "chita",
+    "expectedStatus": "verified"
+  },
+  {
+    "id": "dev_hfd_epost_01",
+    "templateFamily": "hfd_epost_locker",
+    "rawText": "משלוח HFD90481029 הגיע ללוקר אי-פוסט. קוד פתיחה: 8492. כתובת: ויצמן 14, תל אביב.",
+    "expectedTracking": "HFD90481029",
+    "expectedCarrier": "hfd",
+    "expectedStatus": "verified"
+  },
+  {
+    "id": "dev_boxit_sms_01",
+    "templateFamily": "boxit_notification",
+    "rawText": "חבילת בוקסיט BOX920194 מחכה לך בלוקר סופר פארם דיזנגוף. קוד איסוף 1234.",
+    "expectedTracking": "BOX920194",
+    "expectedCarrier": "boxit",
+    "expectedStatus": "verified"
+  },
+  {
+    "id": "dev_cainiao_aliexpress_01",
+    "templateFamily": "aliexpress_shipped",
+    "rawText": "Your AliExpress package has shipped! Tracking number: LP00582910482CN. Track at global.cainiao.com.",
+    "expectedTracking": "LP00582910482CN",
+    "expectedCarrier": "cainiao",
+    "expectedStatus": "verified"
+  },
+  {
+    "id": "dev_amazon_tba_01",
+    "templateFamily": "amazon_dispatch",
+    "rawText": "Your Amazon.com order has shipped. Tracking ID: TBA123456789012. Expected delivery tomorrow.",
+    "expectedTracking": "TBA123456789012",
+    "expectedCarrier": "other",
+    "expectedStatus": "verified"
+  },
+  {
+    "id": "dev_ups_1z_01",
+    "templateFamily": "ups_ground",
+    "rawText": "UPS Shipment Alert: Tracking Number 1Z999AA10123456784 scheduled for delivery by end of day.",
+    "expectedTracking": "1Z999AA10123456784",
+    "expectedCarrier": "ups",
+    "expectedStatus": "verified"
+  },
+  {
+    "id": "dev_otp_false_positive_01",
+    "templateFamily": "security_otp",
+    "rawText": "קוד אימות חד-פעמי לחשבונך הינו 492018. אין להעביר קוד זה לאיש.",
+    "expectedTracking": null,
+    "expectedCarrier": "other",
+    "expectedStatus": "none"
+  },
+  {
+    "id": "dev_phone_false_positive_01",
+    "templateFamily": "contact_card",
+    "rawText": "לבירורים ותמיכה חייגו 0541234567 או 036987654. שירות לקוחות פעיל בימים א-ה.",
+    "expectedTracking": null,
+    "expectedCarrier": "other",
+    "expectedStatus": "none"
+  }
+]

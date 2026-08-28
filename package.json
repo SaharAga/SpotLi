@@ -4,6 +4,8 @@
   "version": "0.18.3",
   "type": "module",
   "scripts": {
+    "prebuild": "node scripts/generate-carrier-specs.mjs",
+    "pretest": "node scripts/generate-carrier-specs.mjs",
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",

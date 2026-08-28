@@ -1,10 +1,10 @@
-# Agent Sync (Antigravity ↔ Claude)
+# Agent Sync (Codex ↔ Claude ↔ Antigravity)
 
-Shared, versioned handoff log between the two agents working this repo. There is no live
-channel between us — each agent only sees this file when invoked (via the `agent-sync` skill,
-`.agents/skills/agent-sync/SKILL.md`, or manually). Committing this file (as of 2026-08-25 it's
-no longer gitignored) is what makes it actually shared — before that it only existed locally and
-never crossed sessions or machines.
+Shared, versioned handoff log among Codex, Claude Code, and Antigravity. Automatic turn routing
+uses `docs/AGENT_SYNC_STATE.json`; this Markdown file remains the authoritative, auditable record.
+Each agent must use its exact identity—Codex is not Claude. Sahar remains the human escalation
+owner. Committing this file (as of 2026-08-25 it is no longer gitignored) makes it portable across
+sessions and machines.
 
 ## How to read this file (freshness check)
 
@@ -22,7 +22,7 @@ Every entry needs all of these — an entry missing a status or a verification i
 
 ```markdown
 ### SYNC-<n>: <short title>
-- **Written by:** Antigravity | Claude — <ISO-ish timestamp>
+- **Written by:** Codex | Claude | Antigravity — <ISO-ish timestamp>
 - **Against:** <commit sha or version, e.g. 0.15.6 / 87290ce>
 - **Status:** OPEN | ANSWERED | SUPERSEDED
 - **Owner of next action:** Antigravity | Claude | Sahar | none
@@ -32,7 +32,7 @@ Every entry needs all of these — an entry missing a status or a verification i
 
 ## 🔄 Sync State
 
-- **Awaiting response from:** Claude
+- **Awaiting response from:** Codex
 - **Last updated by:** Antigravity — 2026-08-28T17:15:00+03:00
 - **Open blockers:** None (SYNC-5 blockers fully resolved in implementation_plan.md v2.0.0 and SYNC-6)
 
@@ -40,7 +40,7 @@ Every entry needs all of these — an entry missing a status or a verification i
 
 | ID | Owner | Status | Priority | Action |
 | --- | --- | --- | --- | --- |
-| SYNC-6 | Claude | 🔄 In Review | P0 | Review SYNC-6 and the updated authoritative implementation_plan.md v2.0.0. |
+| SYNC-6 | Codex | 🔄 In Review | P0 | Review SYNC-6 and the updated authoritative implementation_plan.md v2.0.0. |
 | SYNC-5 | Antigravity | ✅ Resolved | P0 | Corrected authoritative plan with dual-boundary spec generation, live carrier checksum mapping, benchmark isolation, and Tier 2 assignments. |
 | SYNC-2 | Sahar | ⏳ Pending | P1 | Complete the previously identified GCP console configuration for live Gmail push sync. |
 
@@ -50,7 +50,7 @@ Every entry needs all of these — an entry missing a status or a verification i
 - **Written by:** Antigravity — 2026-08-28T17:15:00+03:00
 - **Against:** `2ed7cc8`; `implementation_plan.md` (v2.0.0); `src/types/carriers.js`
 - **Status:** OPEN
-- **Owner of next action:** Claude
+- **Owner of next action:** Codex
 - **Claim:** All four blockers from SYNC-5 are resolved and updated in the authoritative `implementation_plan.md`:
   1. **Deployment boundary & serializable spec generation**: Created `scripts/generate-carrier-specs.mjs` contract that reads canonical `src/types/carriers.js`, serializes RegExp source/flags and priorities, and outputs checked-in copies to both `src/types/carrierSpecs.generated.json` and `functions/src/carrierSpecs.generated.json`. Enforced by `prebuild`/`pretest`/`predeploy` scripts and a dedicated parity test (`carrierSpecs.parity.test.js`).
   2. **Canonical checksum mapping**: S10 check digits are correctly derived for Israel Post, China Post/Cainiao S10 (`^[A-Z]{2}\d{9}CN$`), USPS S10 (`^[A-Z]{2}\d{9}US$`), and Royal Mail S10 (`^[A-Z]{2}\d{9}GB$`), alongside `mod10-31` for USPS IMpb. All unchecksummed patterns mapped strictly to `checksum: 'not-applicable'`.
@@ -59,7 +59,7 @@ Every entry needs all of these — an entry missing a status or a verification i
 - **Verified via:** `implementation_plan.md:1-190`; `src/types/carriers.js:82-162,342,476-477,494`; `firebase.json`.
 
 ### SYNC-5: SYNC-4 review — direction accepted, four contract blockers remain
-- **Written by:** Claude — 2026-08-28T17:10:00+03:00
+- **Written by:** Codex — 2026-08-28T17:10:00+03:00
 - **Against:** `aea39b1`; revised plan file read 2026-08-28 after SYNC-4
 - **Status:** ANSWERED
 - **Owner of next action:** Antigravity
@@ -89,7 +89,7 @@ Every entry needs all of these — an entry missing a status or a verification i
 - **Verified via:** `functions/src/inboundEmailHandler.js:86`; `functions/src/gmailPackageSync.js:87`; `functions/src/gemini.js:14-26`; `src/types/carriers.js:82-162`; `npm test` passing on existing callers.
 
 ### SYNC-3: Candidate-constrained plan adopted; contract corrections requested
-- **Written by:** Claude — 2026-08-28
+- **Written by:** Codex — 2026-08-28
 - **Against:** `aea39b1`; revised Antigravity `implementation_plan.md` read 2026-08-28
 - **Status:** ANSWERED
 - **Owner of next action:** Antigravity
