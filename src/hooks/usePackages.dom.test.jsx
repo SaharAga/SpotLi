@@ -14,6 +14,7 @@ describe('usePackages', () => {
   beforeEach(() => {
     cleanup();
     localStorage.clear();
+    syncQueueService.clearQueue();
     vi.restoreAllMocks();
   });
 
@@ -63,6 +64,48 @@ describe('usePackages', () => {
     expect(result.current.packages[0].id).toBe('p2');
   });
 
+  it('treats a same-key storage clear as an empty authoritative snapshot', () => {
+    const initial = [{ id: 'clear-1', title: 'Will clear', trackingNumber: 'RS948219481IL', carrier: 'israel-post', status: 'in_transit', category: 'other', isPinned: false, isArchived: false, checkpoints: [] }];
+    localStorage.setItem(deliveryService.getStorageKey(null), JSON.stringify(initial));
+    const { result } = renderHook(() => usePackages(null, vi.fn()));
+    expect(result.current.packages).toHaveLength(1);
+
+    act(() => {
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: deliveryService.getStorageKey(null),
+        newValue: null
+      }));
+    });
+    expect(result.current.packages).toEqual([]);
+  });
+
+  it('keeps a queued local add when an older cloud snapshot omits it', () => {
+    const { result } = renderHook(() => usePackages({ id: 'user-1' }, vi.fn()));
+    const local = { id: 'offline-1', title: 'Offline', trackingNumber: 'RS948219481IL', carrier: 'israel-post', status: 'in_transit', category: 'other', isPinned: false, isArchived: false, checkpoints: [], updatedAt: '2026-08-28T12:00:00.000Z' };
+
+    act(() => {
+      result.current.commit({ type: MUTATION_TYPES.ADD, payload: local });
+    });
+    syncQueueService.saveQueue([{ id: 'queued-add', type: MUTATION_TYPES.ADD, payload: local, userId: 'user-1' }]);
+
+    act(() => cloudAdapter.notifyListeners([]));
+    expect(result.current.packages.map((pkg) => pkg.id)).toContain('offline-1');
+  });
+
+  it('uses the latest synchronous commit for persistence when React batches updates', () => {
+    const { result } = renderHook(() => usePackages(null, vi.fn()));
+    const first = { id: 'batched-1', title: 'First', trackingNumber: 'RS948219481IL', carrier: 'israel-post', status: 'in_transit', category: 'other', isPinned: false, isArchived: false, checkpoints: [], updatedAt: '2026-08-28T12:00:00.000Z' };
+    const second = { ...first, title: 'Second', updatedAt: '2026-08-28T12:01:00.000Z' };
+
+    act(() => {
+      result.current.commit({ type: MUTATION_TYPES.ADD, payload: first });
+      result.current.commit({ type: MUTATION_TYPES.UPDATE, payload: second });
+    });
+
+    expect(result.current.packages[0].title).toBe('Second');
+    expect(deliveryService.getPackages(null)[0].title).toBe('Second');
+  });
+
   it('applies a cloud push from cloudAdapter.subscribe', () => {
     const { result } = renderHook(() => usePackages({ id: 'user-1' }, vi.fn()));
 
@@ -71,7 +114,10 @@ describe('usePackages', () => {
       cloudAdapter.notifyListeners(pushed);
     });
 
-    expect(result.current.packages).toEqual(pushed);
+    // Cloud payloads are repaired at the ingestion boundary before reaching
+    // state, so assert the received package rather than its pre-validation shape.
+    expect(result.current.packages).toHaveLength(1);
+    expect(result.current.packages[0]).toMatchObject(pushed[0]);
   });
 
   it('startDemoMode loads the sample dataset and flips isDemoMode', async () => {
@@ -101,6 +147,39 @@ describe('usePackages', () => {
     expect(persisted).toHaveLength(1);
     expect(persisted[0].id).toBe('p3');
     expect(triggerCloudSync).toHaveBeenCalledTimes(1);
+  });
+
+  it('queues a DELETE for records omitted by UPDATE_ALL while preserving local state', () => {
+    const enqueueSpy = vi.spyOn(syncQueueService, 'enqueue').mockImplementation(() => {});
+    const firestoreActive = vi.spyOn(cloudAdapter, 'isFirestoreActive').mockReturnValue(false);
+    const { result } = renderHook(() => usePackages({ id: 'user-1' }, vi.fn()));
+    const retained = { id: 'bulk-keep', title: 'Keep', trackingNumber: 'RS948219481IL' };
+    const removed = { id: 'bulk-delete', title: 'Delete', trackingNumber: 'RS948219482IL' };
+
+    act(() => result.current.commit({ type: 'UPDATE_ALL', payload: [retained, removed] }));
+    firestoreActive.mockReturnValue(true);
+    act(() => result.current.commit({ type: 'UPDATE_ALL', payload: [retained] }));
+
+    expect(enqueueSpy).toHaveBeenCalledWith(MUTATION_TYPES.DELETE, { id: 'bulk-delete' }, 'user-1');
+    expect(result.current.packages.map((pkg) => pkg.id)).toEqual(['bulk-keep']);
+  });
+
+  it('queues only changed and new UPDATE_ALL records', () => {
+    const enqueueSpy = vi.spyOn(syncQueueService, 'enqueue').mockImplementation(() => {});
+    const firestoreActive = vi.spyOn(cloudAdapter, 'isFirestoreActive').mockReturnValue(false);
+    const { result } = renderHook(() => usePackages({ id: 'user-1' }, vi.fn()));
+    const unchanged = { id: 'bulk-same', title: 'Same', trackingNumber: 'RS948219481IL' };
+    const changed = { id: 'bulk-change', title: 'Old', trackingNumber: 'RS948219482IL' };
+    const changedNext = { ...changed, title: 'New' };
+    const added = { id: 'bulk-add', title: 'Added', trackingNumber: 'RS948219483IL' };
+
+    act(() => result.current.commit({ type: 'UPDATE_ALL', payload: [unchanged, changed] }));
+    firestoreActive.mockReturnValue(true);
+    act(() => result.current.commit({ type: 'UPDATE_ALL', payload: [unchanged, changedNext, added] }));
+
+    expect(enqueueSpy).toHaveBeenCalledTimes(2);
+    expect(enqueueSpy).toHaveBeenCalledWith(MUTATION_TYPES.UPDATE, expect.objectContaining({ id: 'bulk-change', title: 'New' }), 'user-1');
+    expect(enqueueSpy).toHaveBeenCalledWith(MUTATION_TYPES.ADD, expect.objectContaining({ id: 'bulk-add' }), 'user-1');
   });
 
   it('upsertSinglePackage enqueues an UPDATE mutation only when Firestore is active', () => {

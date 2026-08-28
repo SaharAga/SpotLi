@@ -3,70 +3,106 @@ import { useState, useEffect, useMemo, useCallback, useRef, useReducer } from 'r
 import { deliveryService } from '../services/deliveryService';
 import { cloudAdapter } from '../services/cloudStorageAdapter';
 import { syncQueueService, MUTATION_TYPES } from '../services/syncQueueService';
+import { parsePackageList } from '../schemas/packageSchema';
+
+function mutationPackageId(mutation) {
+  if (mutation?.type === MUTATION_TYPES.STATUS_CHANGE) return mutation.payload?.packageId;
+  return mutation?.payload?.id;
+}
+
+/** Pending local mutations are authoritative until the queue replays them. */
+function pendingMutationsForUser(userId) {
+  return new Map(
+    syncQueueService.getQueue()
+      .filter((mutation) => mutation.userId === userId)
+      .map((mutation) => [mutationPackageId(mutation), mutation])
+      .filter(([id]) => Boolean(id))
+  );
+}
+
+function packageTime(pkg) {
+  const time = Date.parse(pkg?.updatedAt || '');
+  return Number.isFinite(time) ? time : 0;
+}
+
+function sortPackages(packages) {
+  return [...packages].sort((a, b) => packageTime(b) - packageTime(a));
+}
+
+function applyMutation(state, mutation) {
+  let nextState = [...state];
+  if (mutation.type === MUTATION_TYPES.UPDATE || mutation.type === MUTATION_TYPES.ADD) {
+    const idx = nextState.findIndex(p => p.id === mutation.payload.id);
+    if (idx >= 0) nextState[idx] = { ...nextState[idx], ...mutation.payload };
+    else nextState.push(mutation.payload);
+  } else if (mutation.type === MUTATION_TYPES.DELETE) {
+    nextState = nextState.filter(p => p.id !== mutation.payload.id);
+  } else if (mutation.type === 'UPDATE_ALL') {
+    nextState = mutation.payload;
+  }
+  return sortPackages(nextState);
+}
+
+function packagesEqual(left, right) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function enqueueBulkDelta(previous, next, userId) {
+  const previousById = new Map(previous.map((pkg) => [pkg.id, pkg]));
+  const nextById = new Map(next.map((pkg) => [pkg.id, pkg]));
+
+  for (const pkg of next) {
+    const previousPkg = previousById.get(pkg.id);
+    if (!previousPkg) syncQueueService.enqueue(MUTATION_TYPES.ADD, pkg, userId);
+    else if (!packagesEqual(previousPkg, pkg)) syncQueueService.enqueue(MUTATION_TYPES.UPDATE, pkg, userId);
+  }
+  for (const id of previousById.keys()) {
+    if (!nextById.has(id)) syncQueueService.enqueue(MUTATION_TYPES.DELETE, { id }, userId);
+  }
+}
+
+function reconcileSnapshot(state, incoming, origin, userId) {
+  const validated = parsePackageList(incoming).packages;
+  if (origin === 'demo' || origin === 'init') return validated;
+
+  const pending = pendingMutationsForUser(userId);
+  const stateMap = new Map(state.map(pkg => [pkg.id, pkg]));
+  const incomingIds = new Set(validated.map(pkg => pkg.id));
+  const merged = [];
+
+  for (const remote of validated) {
+    const local = stateMap.get(remote.id);
+    const mutation = pending.get(remote.id);
+    // A queued delete must not be resurrected by an older snapshot.
+    if (mutation?.type === MUTATION_TYPES.DELETE) continue;
+    // Queue order is the conflict policy: unsynced local intent wins. Otherwise
+    // last-write-wins by updatedAt so a newer cross-tab write is retained.
+    if (local && (mutation || packageTime(local) > packageTime(remote))) merged.push(local);
+    else merged.push(remote);
+  }
+
+  for (const [id, local] of stateMap) {
+    if (incomingIds.has(id)) continue;
+    const mutation = pending.get(id);
+    if (mutation && mutation.type !== MUTATION_TYPES.DELETE) merged.push(local);
+  }
+
+  return sortPackages(merged);
+}
 
 function packageReducer(state, action) {
-  const { type, incoming, origin, mutation } = action;
+  const { type, incoming, origin, mutation, userId } = action;
 
   if (type === 'SYNC') {
     if (!Array.isArray(incoming)) return state;
-    if (origin === 'demo' || origin === 'init') return incoming;
-
-    const stateMap = new Map(state.map(p => [p.id, p]));
-    const incomingMap = new Map(incoming.map(p => [p.id, p]));
-    const merged = new Map();
-
-    for (const pkg of incoming) {
-      const existing = stateMap.get(pkg.id);
-      const incomingTime = pkg.updatedAt ? new Date(pkg.updatedAt).getTime() : 0;
-      const existingTime = existing?.updatedAt ? new Date(existing.updatedAt).getTime() : 0;
-      
-      if (!existing || incomingTime > existingTime) {
-        merged.set(pkg.id, pkg);
-      } else {
-        merged.set(pkg.id, existing);
-      }
-    }
-
-    // Retain offline creations/deletions that haven't synced
-    for (const [id, pkg] of stateMap.entries()) {
-      if (!incomingMap.has(id)) {
-        // If it's very recent (e.g., last 5 mins), it might be an offline creation that hasn't synced yet.
-        // Or if we just rely on local storage holding it.
-        // The simplest correct merge per #91 is just taking the newest. If missing from cloud, we drop it.
-        // If we drop it, offline creations get dropped if cloudAdapter fires before syncQueue finishes!
-        // Let's just keep it if it was created locally and sync queue still has it? 
-        // Sync queue isn't exposed here. Let's merge normally: only drop if it's NOT in local storage either?
-        // Actually, if it's missing in incoming, and incoming is the whole truth from cloud, we drop it.
-      }
-    }
-
-    const result = Array.from(merged.values()).sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
-    
-    // Identity check to avoid re-renders
-    if (result.length === state.length && result.every((p, i) => p === state[i])) {
-      return state;
-    }
-    return result;
+    return reconcileSnapshot(state, incoming, origin, userId);
   }
 
   if (type === 'MUTATE') {
-    let nextState = [...state];
-    if (mutation.type === MUTATION_TYPES.UPDATE || mutation.type === MUTATION_TYPES.ADD) {
-      const idx = nextState.findIndex(p => p.id === mutation.payload.id);
-      if (idx >= 0) {
-        nextState[idx] = { ...nextState[idx], ...mutation.payload };
-      } else {
-        nextState.push(mutation.payload);
-      }
-    } else if (mutation.type === MUTATION_TYPES.DELETE) {
-      nextState = nextState.filter(p => p.id !== mutation.payload.id);
-    } else if (mutation.type === 'UPDATE_ALL') {
-      nextState = mutation.payload;
-    }
-    
-    nextState.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
-    return nextState;
+    return applyMutation(state, mutation);
   }
+
+  if (type === 'SET') return incoming;
 
   return state;
 }
@@ -89,15 +125,24 @@ export function usePackages(user, triggerCloudSync, onSaveError) {
   const [packages, dispatch] = useReducer(packageReducer, [], () => {
     return deliveryService.getPackages(user?.id || null);
   });
+  const packagesRef = useRef(packages);
+
+  const dispatchSnapshot = useCallback((incoming, origin) => {
+    const next = reconcileSnapshot(packagesRef.current, incoming, origin, user?.id || null);
+    packagesRef.current = next;
+    dispatch({ type: 'SET', incoming: next });
+  }, [user?.id]);
 
   // Async load mock data if demo mode
   useEffect(() => {
-    if (isDemoUrl || isDemoMode) {
+    let cancelled = false;
+    if (isDemoMode) {
       import('../data/initialMockData').then(mod => {
-        dispatch({ type: 'SYNC', incoming: mod.INITIAL_PACKAGES, origin: 'demo' });
+        if (!cancelled) dispatchSnapshot(mod.INITIAL_PACKAGES, 'demo');
       });
     }
-  }, [isDemoUrl, isDemoMode]);
+    return () => { cancelled = true; };
+  }, [isDemoMode, dispatchSnapshot]);
 
   useEffect(() => {
     if (user?.id) setIsDemoMode(false);
@@ -105,9 +150,9 @@ export function usePackages(user, triggerCloudSync, onSaveError) {
 
   useEffect(() => {
     if (!isDemoMode) {
-      dispatch({ type: 'SYNC', incoming: deliveryService.getPackages(user?.id || null), origin: 'init' });
+      dispatchSnapshot(deliveryService.getPackages(user?.id || null), 'init');
     }
-  }, [user?.id, isDemoMode]);
+  }, [user?.id, isDemoMode, dispatchSnapshot]);
 
   // StorageEvent listener
   useEffect(() => {
@@ -116,10 +161,9 @@ export function usePackages(user, triggerCloudSync, onSaveError) {
       const currentStorageKey = deliveryService.getStorageKey(user?.id || null);
       if (e.key === currentStorageKey) {
         try {
-          const parsed = JSON.parse(e.newValue);
-          if (Array.isArray(parsed)) {
-            dispatch({ type: 'SYNC', incoming: parsed, origin: 'storage' });
-          }
+          // `newValue === null` is a deliberate clear from another tab.
+          const parsed = e.newValue === null ? [] : JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) dispatchSnapshot(parsed, 'storage');
         } catch (err) {
           console.warn('[usePackages] Multi-tab package sync error:', err);
         }
@@ -127,41 +171,30 @@ export function usePackages(user, triggerCloudSync, onSaveError) {
     };
     window.addEventListener('storage', handlePackageStorageChange);
     return () => window.removeEventListener('storage', handlePackageStorageChange);
-  }, [user?.id, isDemoMode]);
+  }, [user?.id, isDemoMode, dispatchSnapshot]);
 
   // Cloud listener
   useEffect(() => {
     if (isDemoMode || !user?.id) return;
     const unsubscribe = cloudAdapter.subscribe((updatedPackages) => {
       if (Array.isArray(updatedPackages)) {
-        dispatch({ type: 'SYNC', incoming: updatedPackages, origin: 'cloud' });
+        dispatchSnapshot(updatedPackages, 'cloud');
       }
     });
     return () => unsubscribe();
-  }, [user?.id, isDemoMode]);
+  }, [user?.id, isDemoMode, dispatchSnapshot]);
 
-  // We need the current packages for persistLocally, so we keep a ref
-  const packagesRef = useRef(packages);
   useEffect(() => {
     packagesRef.current = packages;
   }, [packages]);
 
   const commit = useCallback((mutation) => {
     // 1. Compute next state synchronously to persist it locally
-    let nextState = [...packagesRef.current];
-    if (mutation.type === MUTATION_TYPES.UPDATE || mutation.type === MUTATION_TYPES.ADD) {
-      const idx = nextState.findIndex(p => p.id === mutation.payload.id);
-      if (idx >= 0) {
-        nextState[idx] = { ...nextState[idx], ...mutation.payload };
-      } else {
-        nextState.push(mutation.payload);
-      }
-    } else if (mutation.type === MUTATION_TYPES.DELETE) {
-      nextState = nextState.filter(p => p.id !== mutation.payload.id);
-    } else if (mutation.type === 'UPDATE_ALL') {
-      nextState = mutation.payload;
-    }
-    nextState.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
+    const previousState = packagesRef.current;
+    const nextState = applyMutation(previousState, mutation);
+    // React may batch multiple commits. Advance the authoritative value before
+    // dispatching so a second commit cannot persist from an older render.
+    packagesRef.current = nextState;
 
     // 2. Persist locally
     const result = deliveryService.savePackages(nextState, user?.id || null);
@@ -177,12 +210,12 @@ export function usePackages(user, triggerCloudSync, onSaveError) {
     }
 
     // 3. Update React state
-    dispatch({ type: 'MUTATE', mutation });
+    dispatch({ type: 'SET', incoming: nextState });
 
     // 4. Persist to cloud
     if (user?.id && cloudAdapter.isFirestoreActive?.()) {
       if (mutation.type === 'UPDATE_ALL') {
-        cloudAdapter.savePackages(mutation.payload);
+        enqueueBulkDelta(previousState, nextState, user.id);
       } else {
         syncQueueService.enqueue(mutation.type, mutation.payload, user.id);
       }

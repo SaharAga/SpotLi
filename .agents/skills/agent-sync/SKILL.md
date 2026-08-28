@@ -1,6 +1,6 @@
 ---
 name: agent-sync
-description: Check in on the Antigravity <-> Claude collaboration workflow (docs/AGENT_SYNC.md), read the other agent's latest responses/critiques, ground verification in live code AND the working tree, update the action board and sync-state header, and post a reply. Use when the user asks to "sync with Claude"/"sync with Antigravity", "check agent sync", "reply to Claude"/"reply to Antigravity", or asks to coordinate next steps with the other agent.
+description: Check in on the Codex <-> Claude <-> Antigravity collaboration workflow (docs/AGENT_SYNC.md), read another agent's latest responses/critiques, ground verification in live code AND the working tree, update the action board and sync-state header, and post a reply. Use when the user asks to sync, check, or reply among Codex, Claude, and Antigravity, or asks to coordinate next steps with another agent.
 inputs:
   - The other agent's latest response, sync-state header, and open action-board items
   - Local repository ground truth: committed history (git log), the working tree (git status / git diff — uncommitted work from the other agent is real signal, not noise), PROJECT_STATE.md, AGY_TASKS.md, source code
@@ -11,9 +11,9 @@ outputs:
   - Concise user briefing
 ---
 
-# Agent Sync (Antigravity <-> Claude)
+# Agent Sync (Codex <-> Claude <-> Antigravity)
 
-Antigravity and Claude collaborate **asynchronously** using `docs/AGENT_SYNC.md`. There is no live channel — each agent only sees the doc when a human (or its own separate automation) invokes it. This skill is symmetric: it applies whichever agent is running it, substituting "the other agent" for whichever one isn't you.
+Codex, Claude, and Antigravity collaborate **asynchronously** using `docs/AGENT_SYNC.md` and route automatic turns through `docs/AGENT_SYNC_STATE.json`. Each agent must use its exact identity; Codex must never write itself as Claude. The skill is symmetric: the active agent reads the addressed message, verifies it, replies, and routes the next turn to one specific recipient. Sahar remains the escalation owner.
 
 ## Why this exists (read before skipping steps)
 
@@ -27,8 +27,8 @@ Every write to `docs/AGENT_SYNC.md` must update this block:
 
 ```markdown
 ## 🔄 Sync State
-- **Awaiting response from:** <Antigravity | Claude | Sahar | nobody — all clear>
-- **Last updated by:** <Antigravity | Claude> — <ISO-ish timestamp>
+- **Awaiting response from:** <Codex | Claude | Antigravity | Sahar | nobody — all clear>
+- **Last updated by:** <Codex | Claude | Antigravity> — <ISO-ish timestamp>
 - **Open blockers:** <SYNC-IDs that are 🔴/⏳ and need a specific person to act, or "none">
 ```
 

@@ -29,18 +29,17 @@
 
 ---
 
-### 🎨 Step 4: UI/UX & Native Ergonomics (IN PROGRESS — v0.19.0)
+### 🎨 Step 4: UI/UX & Native Ergonomics (COMPLETED — v0.19.0)
 * [x] Mobile Slide-Over Navigation Drawer with touch optimization ($\ge 48\text{px}$).
 * [x] Rich Cards vs Compact Feed toggle with stage filters.
 * [x] Interactive Locker & Service Point Map (`LockerMapModal.jsx`).
 * [x] Dedicated bilingual Export Center (Excel, CSV, PDF).
-* [ ] Direct FCM Web Push Notifications for status transitions (TASK-13).
-* [ ] Camera Barcode & Label OCR Scanner (`BarcodeDetector` API) (TASK-23).
+* [x] Image & Screenshot Paste/Drop OCR via Gemini AI (TASK-23).
+* [x] Direct FCM Web Push Notifications for status transitions (TASK-13).
 
 ---
 
-### 📱 Step 5: Native App Packaging & Omnichannel Extensions
+### 📱 Step 5: Native App Packaging & Post-Delivery Helpers
 * Wrap application with Capacitor for native iOS and Android store deployment.
-* $75 Customs Threshold Monitor & 72-hour tax alerts (TASK-21).
-* Return window countdown timer & waybill vault (TASK-22).
-* Courier WhatsApp Quick Replies & pickup proxy authorization (TASK-25).
+* Return window countdown timer & badge on delivered packages (TASK-22).
+* Courier WhatsApp & SMS Quick Actions (Safe Place, Gate Code, Proxy Pickup) (TASK-25).

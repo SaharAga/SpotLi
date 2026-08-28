@@ -25,7 +25,8 @@ service cloud.firestore {
         'id', 'title', 'titleHe', 'trackingNumber', 'carrier', 'carrierName',
         'status', 'category', 'orderDate', 'expectedDeliveryDate', 'origin',
         'destination', 'notes', 'notesHe', 'isPinned', 'isArchived',
-        'checkpoints', 'createdAt', 'updatedAt', 'userId'
+        'checkpoints', 'pickupCode', 'pickupLocation', 'pickupDeadline',
+        'createdAt', 'updatedAt', 'userId'
       ];
       
       let validStatuses = [
@@ -48,6 +49,9 @@ service cloud.firestore {
         (!('destination' in data) || (data.destination is string && data.destination.size() <= 150)) &&
         (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000)) &&
         (!('notesHe' in data) || (data.notesHe is string && data.notesHe.size() <= 1000)) &&
+        (!('pickupCode' in data) || (data.pickupCode is string && data.pickupCode.size() <= 50)) &&
+        (!('pickupLocation' in data) || (data.pickupLocation is string && data.pickupLocation.size() <= 250)) &&
+        (!('pickupDeadline' in data) || (data.pickupDeadline is string && data.pickupDeadline.size() <= 50)) &&
         (!('isPinned' in data) || data.isPinned is bool) &&
         (!('isArchived' in data) || data.isArchived is bool) &&
         (!('checkpoints' in data) || (data.checkpoints is list && data.checkpoints.size() <= 50)) &&
