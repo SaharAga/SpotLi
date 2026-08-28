@@ -146,11 +146,11 @@ This is an **agent-executable backlog** — every task here is something a squad
 * **Squad**: Squad A (`delivery_pipeline_specialist`)
 * **Summary**: Dropped per design review — Deliveree is a post-purchase package tracker, not an e-commerce checkout or purchasing app.
 
-### `TASK-22-RETURN`: Return Window Countdown Tracker
+### `TASK-22-DEADLINES`: Dual Deadline Tracking Engine (Pickup Holding + Store Returns)
 * **Priority**: `P2`
-* **Status**: `Backlog`
-* **Squad**: Squad A (`ui_ux_specialist`)
-* **Summary**: Lightweight return eligibility countdown (e.g. 14 / 30 days) and badge on delivered package cards and detail view.
+* **Status**: `Done`
+* **Squad**: Squad A (`delivery_pipeline_specialist`, `ui_ux_specialist`)
+* **Summary**: Dual deadline countdown engine with real-time pickup holding RTS risk warnings (<24h / <48h) and post-delivery store refund/return window trackers (14/30-day presets). Integrated into package cards, detail modal, and edit forms.
 
 ### `TASK-23-SCANNER`: Image/Screenshot Parsing OCR
 * **Priority**: `P2`
