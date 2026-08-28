@@ -86,9 +86,9 @@ This is an **agent-executable backlog** — every task here is something a squad
 
 ### `TASK-13-PUSH`: Direct Web Push Notifications (FCM / Service Worker)
 * **Priority**: `P1`
-* **Status**: `Backlog`
+* **Status**: `Done`
 * **Squad**: Squad A (`pwa_offline_specialist`) + Squad C (`adversarial_pentester`)
-* **Summary**: Configure FCM Web Push to deliver instant status transition alerts directly to mobile/desktop.
+* **Summary**: Configure FCM Web Push in `public/sw.js` to deliver real-time background status transition alerts (e.g. Out for Delivery, Ready for Pickup, Delivered).
 
 ### `TASK-14-SHORTCUTS`: PWA App Shortcuts & Web Share Target
 * **Priority**: `P1`
@@ -138,25 +138,25 @@ This is an **agent-executable backlog** — every task here is something a squad
 
 ---
 
-## Tier 3: Omnichannel P3 Customs, OCR & Automation Tasks
+## Tier 3: Omnichannel & Post-Delivery Helpers
 
 ### `TASK-21-CUSTOMS`: $75 Customs Threshold Monitor & Tax Alerts
 * **Priority**: `P3`
-* **Status**: `Backlog`
+* **Status**: `Dropped (Out of Scope)`
 * **Squad**: Squad A (`delivery_pipeline_specialist`)
-* **Summary**: Aggregate orders within 72h from same store to alert user before exceeding the $75 tax-free limit.
+* **Summary**: Dropped per design review — Deliveree is a post-purchase package tracker, not an e-commerce checkout or purchasing app.
 
-### `TASK-22-RETURN`: Return Window Countdown & Return Label Vault
-* **Priority**: `P3`
+### `TASK-22-RETURN`: Return Window Countdown Tracker
+* **Priority**: `P2`
 * **Status**: `Backlog`
 * **Squad**: Squad A (`ui_ux_specialist`)
-* **Summary**: Countdown timer for return eligibility window and return shipping waybill vault.
+* **Summary**: Lightweight return eligibility countdown (e.g. 14 / 30 days) and badge on delivered package cards and detail view.
 
-### `TASK-23-SCANNER`: Camera Barcode & Label OCR Scanner
-* **Priority**: `P3`
-* **Status**: `Backlog`
+### `TASK-23-SCANNER`: Image/Screenshot Parsing OCR
+* **Priority**: `P2`
+* **Status**: `Done (Re-scoped)`
 * **Squad**: Squad A (`delivery_pipeline_specialist`, `ui_ux_specialist`)
-* **Summary**: Browser native BarcodeDetector API for instant packaging label scanning via phone camera.
+* **Summary**: Live camera barcode scanning dropped as irrelevant. Screenshot and image paste/drop OCR is fully implemented via Gemini AI in `SmartImportModal`.
 
 ### `TASK-24-EMAIL`: Smart Email Ingestion & Zero-Touch Sync
 * **Priority**: `P0`
@@ -179,8 +179,8 @@ This is an **agent-executable backlog** — every task here is something a squad
 #### `TASK-24E`: Gmail OAuth 2.0 Push & Historical Backfill
 * **Priority**: `P0` | **Status**: `Done` | **Summary**: Server-side OAuth 2.0 (`gmail.readonly`), Cloud Pub/Sub push listener (`gmailPushNotification`), instant parallel 30-day historical order backfill (`gmailBackfill`), and weekly watch renewal (`gmailWatchRenewal`).
 
-### `TASK-25-COURIER`: Courier Interaction Hub (WhatsApp Quick Replies & Proxy)
-* **Priority**: `P3`
+### `TASK-25-COURIER`: Courier WhatsApp & SMS Quick Actions
+* **Priority**: `P2`
 * **Status**: `Backlog`
 * **Squad**: Squad A (`feedback_telemetry_specialist`, `ui_ux_specialist`)
-* **Summary**: 1-Click WhatsApp replies (safe place, gate code, neighbor), delivery cheat-sheet, and pickup proxy letter.
+* **Summary**: 1-Click WhatsApp & SMS buttons in `PackageDetailModal` with pre-filled message templates (Door/Gate Code, Safe Place, Porch Drop, Proxy Pickup Authorization).

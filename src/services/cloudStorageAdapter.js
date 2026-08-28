@@ -27,6 +27,55 @@ function validateList(packages) {
   return parsePackageList(packages).packages;
 }
 
+function packageTime(pkg) {
+  const time = Date.parse(pkg?.updatedAt || '');
+  return Number.isFinite(time) ? time : 0;
+}
+
+function pendingMutations(userId) {
+  try {
+    if (typeof localStorage === 'undefined') return new Map();
+    const raw = localStorage.getItem(STORAGE_KEYS.OFFLINE_SYNC_QUEUE);
+    const queue = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(queue)) return new Map();
+    return new Map(queue
+      .filter((mutation) => mutation?.userId === userId)
+      .map((mutation) => [
+        mutation.type === 'STATUS_CHANGE' ? mutation.payload?.packageId : mutation.payload?.id,
+        mutation
+      ])
+      .filter(([id]) => Boolean(id)));
+  } catch (err) {
+    console.warn('[CloudStorageAdapter] Failed to read sync queue:', err);
+    return new Map();
+  }
+}
+
+/**
+ * Full snapshots are authoritative except for mutations still waiting in the
+ * durable offline queue. For non-pending conflicts, the newer updatedAt wins.
+ */
+function reconcileRemoteSnapshot(remotePackages, localPackages, userId) {
+  const pending = pendingMutations(userId);
+  const localById = new Map(localPackages.map((pkg) => [pkg.id, pkg]));
+  const remoteIds = new Set(remotePackages.map((pkg) => pkg.id));
+  const merged = [];
+
+  for (const remote of remotePackages) {
+    const local = localById.get(remote.id);
+    const mutation = pending.get(remote.id);
+    if (mutation?.type === 'DELETE') continue;
+    if (local && (mutation || packageTime(local) > packageTime(remote))) merged.push(local);
+    else merged.push(remote);
+  }
+  for (const local of localPackages) {
+    if (remoteIds.has(local.id)) continue;
+    const mutation = pending.get(local.id);
+    if (mutation && mutation.type !== 'DELETE') merged.push(local);
+  }
+  return validateList(merged).sort((a, b) => packageTime(b) - packageTime(a));
+}
+
 function getTombstonesStorageKey(userId) {
   if (userId) {
     return `${STORAGE_KEYS.TOMBSTONES_PREFIX}${userId}`;
@@ -163,34 +212,13 @@ export class CloudStorageAdapter {
             (p) => !this.tombstones.has(p.id)
           );
 
-          // If remote is empty but local has packages, sync local up to cloud
-          if (remotePackages.length === 0 && localPackages.length > 0) {
-            this.savePackages(localPackages);
-            return;
-          }
-
-          // Merge remote with local unsynced packages to prevent data loss
-          const remoteIds = new Set(remotePackages.map(p => p.id || p.trackingNumber));
-          const unsyncedLocal = localPackages.filter(
-            p => !remoteIds.has(p.id || p.trackingNumber) && !this.tombstones.has(p.id)
+          const validated = reconcileRemoteSnapshot(
+            validateList(remotePackages),
+            localPackages,
+            this.userId
           );
-          const merged = [...remotePackages, ...unsyncedLocal];
-
-          const validated = validateList(merged);
           deliveryService.savePackages(validated, this.userId);
           this.notifyListeners(validated);
-
-          // Upload any unsynced local packages to Firestore so they persist in the cloud
-          if (unsyncedLocal.length > 0 && db && this.userId) {
-            for (const pkg of unsyncedLocal) {
-              if (pkg && pkg.id && !this.tombstones.has(pkg.id)) {
-                const docRef = doc(db, "users", this.userId, "packages", pkg.id);
-                setDoc(docRef, { ...pkg, userId: this.userId }, { merge: true }).catch((err) => {
-                  console.warn("[CloudStorageAdapter] Firestore background sync error for local package:", err);
-                });
-              }
-            }
-          }
         },
         (error) => {
           console.warn("[CloudStorageAdapter] Firestore onSnapshot warning:", error.message);
@@ -228,7 +256,11 @@ export class CloudStorageAdapter {
         }
       });
 
-      const validated = validateList(remotePackages);
+      const validated = reconcileRemoteSnapshot(
+        validateList(remotePackages),
+        deliveryService.getPackages(this.userId).filter((p) => !this.tombstones.has(p.id)),
+        this.userId
+      );
       deliveryService.savePackages(validated, this.userId);
       return validated;
     } catch (err) {
@@ -248,7 +280,10 @@ export class CloudStorageAdapter {
 
     if (this.isFirestoreActive()) {
       try {
-        // Batch sync up to 500 packages per batch atomically into subcollection
+        // This method is intentionally upsert-only. A full collection
+        // read/replace races concurrent clients and turns an offline import
+        // into accidental remote deletion. Callers that replace a local list
+        // enqueue explicit per-record deletes through the durable sync queue.
         const BATCH_LIMIT = 500;
         for (let i = 0; i < validated.length; i += BATCH_LIMIT) {
           const chunk = validated.slice(i, i + BATCH_LIMIT);
