@@ -14,6 +14,7 @@ import { getPickupCountdown, getReturnCountdown, calculateDefaultReturnDeadline 
 import { canTransition, TRANSITION_MATRIX } from '../services/deliveryService';
 import { checkRateLimit } from '../utils/rateLimiter';
 import { isLiveTrackingSupported } from '../services/carrierApiProxy';
+import { CourierActionHub } from './CourierActionHub';
 import { Modal } from './Modal';
 
 export function PackageDetailModal({
@@ -388,6 +389,9 @@ export function PackageDetailModal({
               )}
             </div>
           )}
+
+          {/* 1-Click Courier & WhatsApp Actions Hub */}
+          <CourierActionHub pkg={pkg} onShowToast={onShowToast} />
 
           {/* Quick Tracking & Official Link Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-slate-950/80 border border-slate-800">
