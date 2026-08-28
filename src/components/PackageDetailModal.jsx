@@ -11,7 +11,7 @@ import { STAGES, CATEGORIES } from '../types/stages';
 import { useLanguage } from '../context/LanguageContext';
 import { formatDate, formatDateTime, getDaysRemaining } from '../utils/dateUtils';
 import { canTransition, TRANSITION_MATRIX } from '../services/deliveryService';
-import { checkRateLimit } from '../services/trackingService';
+import { checkRateLimit } from '../utils/rateLimiter';
 import { isLiveTrackingSupported } from '../services/carrierApiProxy';
 import { Modal } from './Modal';
 
@@ -223,6 +223,91 @@ export function PackageDetailModal({
 
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-6 flex-1">
+          {/* Pickup Information Card */}
+          {(pkg.pickupCode || pkg.pickupLocation) && (
+            <div className="flex flex-col gap-3 p-5 rounded-3xl bg-gradient-to-br from-emerald-500/10 to-teal-900/40 border-2 border-emerald-500/30 shadow-lg shadow-emerald-900/20 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl" />
+              
+              <div className="flex flex-wrap items-start justify-between gap-4 relative z-10">
+                <div className="flex flex-col gap-2 flex-1">
+                  {pkg.pickupCode && (
+                    <div className="flex items-center gap-3">
+                      <div className="flex flex-col">
+                        <span className="text-[11px] text-emerald-400 uppercase tracking-widest font-extrabold mb-1">
+                          {language === 'he' ? 'קוד איסוף' : 'Pickup Code'}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-3xl sm:text-4xl font-black text-emerald-50 tracking-wider font-mono">
+                            {pkg.pickupCode}
+                          </span>
+                          <button
+                            onClick={async () => {
+                              const success = await copyToClipboard(pkg.pickupCode);
+                              if (success && onShowToast) onShowToast(language === 'he' ? 'קוד איסוף הועתק' : 'Pickup code copied', 'success');
+                            }}
+                            className="p-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 transition-colors"
+                            title={language === 'he' ? 'העתק קוד' : 'Copy code'}
+                          >
+                            <Copy className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {pkg.pickupDeadline && (
+                    <div className="mt-2">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold ${
+                        (getDaysRemaining(pkg.pickupDeadline, 'en').includes('-') || getDaysRemaining(pkg.pickupDeadline, 'en') === '0')
+                        ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' 
+                        : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      }`}>
+                        <Clock className="w-3.5 h-3.5" />
+                        {language === 'he' ? 'תוקף: ' : 'Deadline: '}
+                        {formatDate(pkg.pickupDeadline)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-2 min-w-[140px] items-stretch">
+                  {pkg.pickupLocation && (
+                    <a
+                      href={`geo:0,0?q=${encodeURIComponent(pkg.pickupLocation)}`}
+                      className="flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold transition-all shadow-md min-h-[48px]"
+                    >
+                      <MapPin className="w-4 h-4" />
+                      {language === 'he' ? 'נווט לאיסוף' : 'Navigate'}
+                    </a>
+                  )}
+                  
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent(
+                      language === 'he'
+                        ? `היי, אשמח שתיקח עבורי חבילה!\nקוד איסוף: ${pkg.pickupCode || 'אין'}\nמיקום: ${pkg.pickupLocation || 'לא צוין'}`
+                        : `Hey, could you pick up a package for me?\nCode: ${pkg.pickupCode || 'N/A'}\nLocation: ${pkg.pickupLocation || 'N/A'}`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-emerald-400 text-sm font-bold transition-all min-h-[48px] border border-emerald-900"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    {language === 'he' ? 'שתף בוואטסאפ' : 'Share Proxy'}
+                  </a>
+                </div>
+              </div>
+
+              {pkg.pickupLocation && (
+                <div className="mt-3 pt-3 border-t border-emerald-500/20 relative z-10 flex items-start gap-2">
+                  <MapPin className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span className="text-sm text-emerald-100/90 leading-tight">
+                    {pkg.pickupLocation}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Quick Tracking & Official Link Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-slate-950/80 border border-slate-800">
             <div className="flex items-center gap-3">

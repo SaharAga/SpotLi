@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ShieldCheck, FileText, Sparkles, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { LegalDocumentModal } from './LegalDocumentModal';
+const LegalDocumentModal = React.lazy(() => import('./LegalDocumentModal').then(module => ({ default: module.LegalDocumentModal })));
 import { Modal } from './Modal';
 
 /**
@@ -148,7 +148,7 @@ export function LegalConsentGate({ onShowToast }) {
           </div>
         </Modal>
 
-      <LegalDocumentModal isOpen={!!openDoc} onClose={() => setOpenDoc(null)} docType={openDoc || 'terms'} />
+      <React.Suspense fallback={null}><LegalDocumentModal isOpen={!!openDoc} onClose={() => setOpenDoc(null)} docType={openDoc || 'terms'} /></React.Suspense>
     </>
   );
 }

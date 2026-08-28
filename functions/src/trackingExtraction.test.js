@@ -87,5 +87,43 @@ describe('extractTrackingDetails', () => {
     const result = extractTrackingDetails(subject, body, from);
     expect(result.trackingNumber).toBe('1Z999AA10123456784');
     expect(result.carrier).toBe('ups');
+    expect(result.confidence).toBe('high');
+  });
+
+  it('extracts tracking number embedded only inside HTML anchor tags', () => {
+    const subject = 'החבילה שלך בדרך!';
+    const from = 'info@terminalx.com';
+    const htmlBody = `
+      <html>
+        <body>
+          <h2>שלום סהר,</h2>
+          <p>החבילה שלך מטרמינל איקס נשלחה!</p>
+          <p><a href="https://chtr.co.il/t/CH98765432">לחצו כאן למעקב אחר המשלוח</a></p>
+        </body>
+      </html>
+    `;
+    const result = extractTrackingDetails(subject, htmlBody, from);
+    expect(result.store).toBe('Terminal X');
+    expect(result.trackingNumber).toBe('CH98765432');
+    expect(result.carrier).toBe('chita');
+    expect(result.confidence).toBe('high');
+  });
+
+  it('suppresses 6-digit OTP verification codes from being mistaken as tracking numbers', () => {
+    const subject = 'קוד אימות לחשבון שלך';
+    const from = 'security@service.com';
+    const body = 'קוד אימות חד-פעמי שלך הוא: 582910. אין להעביר קוד זה לאיש.';
+    const result = extractTrackingDetails(subject, body, from);
+    expect(result.trackingNumber).toBe(null);
+  });
+
+  it('extracts E-Post / HFD tracking from link', () => {
+    const subject = 'חבילתך ממתינה בלוקר';
+    const from = 'no-reply@hfd.co.il';
+    const htmlBody = '<a href="https://epost.co.il/tracking?num=HFD998877">לחץ למעקב</a>';
+    const result = extractTrackingDetails(subject, htmlBody, from);
+    expect(result.trackingNumber).toBe('HFD998877');
+    expect(result.carrier).toBe('hfd');
   });
 });
+

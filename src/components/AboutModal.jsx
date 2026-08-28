@@ -7,7 +7,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { CARRIER_LIST } from '../types/carriers';
 import { APP_VERSION, RELEASE_DATE, BUILD_CHANNEL } from '../constants/version';
 import { runAllBistDiagnostics } from '../utils/bistDiagnostics';
-import { LegalDocumentModal } from './LegalDocumentModal';
+const LegalDocumentModal = React.lazy(() => import('./LegalDocumentModal').then(module => ({ default: module.LegalDocumentModal })));
 import { Modal } from './Modal';
 
 export function AboutModal({
@@ -531,11 +531,11 @@ export function AboutModal({
         </div>
       </Modal>
 
-      <LegalDocumentModal
+      <React.Suspense fallback={null}><LegalDocumentModal
         isOpen={!!openLegalDoc}
         onClose={() => setOpenLegalDoc(null)}
         docType={openLegalDoc || 'terms'}
-      />
+      /></React.Suspense>
     </>
   );
 }

@@ -41,6 +41,9 @@ export function AddEditPackageModal({
   const [destination, setDestination] = useState('');
   const [notes, setNotes] = useState('');
   const [status, setStatus] = useState('in_transit');
+  const [pickupCode, setPickupCode] = useState('');
+  const [pickupLocation, setPickupLocation] = useState('');
+  const [pickupDeadline, setPickupDeadline] = useState('');
 
   // Snapshot of what Smart Import auto-filled, so a save can detect which
   // fields the user corrected before submitting — the implicit half of the
@@ -94,6 +97,9 @@ export function AddEditPackageModal({
       setDestination(editPackage.destination || '');
       setNotes(editPackage.notes || '');
       setStatus(editPackage.status || 'in_transit');
+      setPickupCode(editPackage.pickupCode || '');
+      setPickupLocation(editPackage.pickupLocation || '');
+      setPickupDeadline(editPackage.pickupDeadline || '');
       autoFillSnapshotRef.current = null;
     } else if (initialValues) {
       const title = initialValues.title || '';
@@ -144,6 +150,9 @@ export function AddEditPackageModal({
       setDestination('Tel Aviv, Israel');
       setNotes('');
       setStatus('in_transit');
+      setPickupCode('');
+      setPickupLocation('');
+      setPickupDeadline('');
       autoFillSnapshotRef.current = null;
     }
   }, [editPackage, initialValues, isOpen]);
@@ -242,6 +251,9 @@ export function AddEditPackageModal({
       notes: notes.trim(),
       notesHe: notes.trim(),
       status: status,
+      pickupCode: pickupCode.trim(),
+      pickupLocation: pickupLocation.trim(),
+      pickupDeadline: pickupDeadline.trim(),
       isPinned: editPackage ? editPackage.isPinned : false,
       isArchived: editPackage ? editPackage.isArchived : false,
       checkpoints: editPackage?.checkpoints || [
@@ -526,6 +538,50 @@ export function AddEditPackageModal({
             placeholder={t('modal.notesPlaceholder')}
             className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl p-3 focus:outline-none focus:border-blue-500 transition-all resize-none min-h-[48px]"
           />
+        </div>
+
+        {/* Pickup Details */}
+        <div className="space-y-4 pt-4 border-t border-slate-800">
+          <h3 className="text-sm font-bold text-slate-200">{language === 'he' ? 'פרטי איסוף (אופציונלי)' : 'Pickup Details (Optional)'}</h3>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                {language === 'he' ? 'קוד איסוף' : 'Pickup Code'}
+              </label>
+              <input
+                type="text"
+                value={pickupCode}
+                onChange={(e) => setPickupCode(e.target.value)}
+                placeholder={language === 'he' ? 'למשל: 12345' : 'e.g. 12345'}
+                className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors min-h-[48px]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                {language === 'he' ? 'תאריך אחרון לאיסוף' : 'Last Day to Pickup'}
+              </label>
+              <input
+                type="date"
+                value={pickupDeadline}
+                onChange={(e) => setPickupDeadline(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors min-h-[48px]"
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+              {language === 'he' ? 'נקודת איסוף (כתובת)' : 'Pickup Location (Address)'}
+            </label>
+            <input
+              type="text"
+              value={pickupLocation}
+              onChange={(e) => setPickupLocation(e.target.value)}
+              placeholder={language === 'he' ? 'רחוב הרצל 1, תל אביב' : '1 Herzl St, Tel Aviv'}
+              className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors min-h-[48px]"
+            />
+          </div>
         </div>
 
         {/* Modal Actions */}

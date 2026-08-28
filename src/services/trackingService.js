@@ -1,81 +1,33 @@
 import { fetchLiveCarrierTracking, UNTRACKED_REASONS } from './carrierApiProxy';
 import { detectCarrier } from '../utils/carrierDetector';
 import { parsePackage } from '../schemas/packageSchema';
+import { checkRateLimit, recordTrackingFetch, resetTrackingCooldown, RATE_LIMIT_COOLDOWN_MS } from '../utils/rateLimiter';
+
 
 /**
  * Cooldown duration in milliseconds per tracking number (60 seconds)
  */
-export const RATE_LIMIT_COOLDOWN_MS = 60 * 1000;
 
 /**
  * In-memory map of tracking number -> timestamp of last successful tracking fetch.
  * Maximum capacity bounded to avoid memory exhaustion attacks.
  */
-const trackingCooldownMap = new Map();
-const MAX_COOLDOWN_MAP_SIZE = 1000;
 
 /**
  * Reset all or specific cooldowns (useful for testing and manual resets)
  * @param {string} [trackingNumber]
  */
-export function resetTrackingCooldown(trackingNumber) {
-  if (typeof trackingNumber === 'string' && trackingNumber.length > 0) {
-    trackingCooldownMap.delete(trackingNumber.trim().toUpperCase().slice(0, 100));
-  } else if (!trackingNumber) {
-    trackingCooldownMap.clear();
-  }
-}
 
 /**
  * Check if a tracking number is currently rate-limited
  * @param {string} trackingNumber
  * @returns {{ isLimited: boolean, remainingMs: number }}
  */
-export function checkRateLimit(trackingNumber) {
-  if (!trackingNumber || typeof trackingNumber !== 'string') return { isLimited: false, remainingMs: 0 };
-  const key = trackingNumber.trim().toUpperCase().slice(0, 100);
-  const lastFetch = trackingCooldownMap.get(key);
-  if (!lastFetch || typeof lastFetch !== 'number') {
-    return { isLimited: false, remainingMs: 0 };
-  }
-
-  const elapsed = Date.now() - lastFetch;
-  if (elapsed >= 0 && elapsed < RATE_LIMIT_COOLDOWN_MS) {
-    return {
-      isLimited: true,
-      remainingMs: RATE_LIMIT_COOLDOWN_MS - elapsed
-    };
-  }
-
-  // Auto prune expired entry
-  trackingCooldownMap.delete(key);
-  return { isLimited: false, remainingMs: 0 };
-}
 
 /**
  * Record a successful fetch timestamp for a tracking number with bounded memory cleanup.
  * @param {string} trackingNumber
  */
-export function recordTrackingFetch(trackingNumber) {
-  if (!trackingNumber || typeof trackingNumber !== 'string') return;
-  const key = trackingNumber.trim().toUpperCase().slice(0, 100);
-
-  // Evict expired entries or oldest if max capacity reached
-  if (trackingCooldownMap.size >= MAX_COOLDOWN_MAP_SIZE) {
-    const now = Date.now();
-    for (const [k, ts] of trackingCooldownMap.entries()) {
-      if (now - ts >= RATE_LIMIT_COOLDOWN_MS) {
-        trackingCooldownMap.delete(k);
-      }
-    }
-    if (trackingCooldownMap.size >= MAX_COOLDOWN_MAP_SIZE) {
-      const oldestKey = trackingCooldownMap.keys().next().value;
-      if (oldestKey) trackingCooldownMap.delete(oldestKey);
-    }
-  }
-
-  trackingCooldownMap.set(key, Date.now());
-}
 
 /**
  * Normalizes checkpoints into the schema-conforming structure
@@ -326,3 +278,4 @@ export const trackingService = {
   batchRefreshTracking,
   debounce
 };
+export { checkRateLimit, recordTrackingFetch, resetTrackingCooldown, RATE_LIMIT_COOLDOWN_MS };

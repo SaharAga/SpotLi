@@ -26,7 +26,8 @@
  * still in alpha.
  */
 
-export const LEGAL_VERSION = '2026-08-23.2';
+import { LEGAL_VERSION } from './legalVersion';
+export { LEGAL_VERSION };
 
 const CONTACT_EMAIL = 'saharaga97@gmail.com';
 

@@ -21,5 +21,7 @@ This skill provides essential guidelines for writing maintainable, modular, and 
 3. **Lifecycle & Cleanup**: Always clean up timers, intervals, event listeners, and `AbortController` instances in component unmount effects.
 4. **Co-located Tests**: Write unit/integration tests alongside source files (`Component.jsx` $\rightarrow$ `Component.test.jsx`).
 5. **FinOps & Cache-First**: Prefer local cache (IndexedDB) and batched writes to conserve free-tier cloud quotas.
+6. **Data Ingestion & Extraction Heuristics**: Inbound data parsers (email, SMS, OCR) must combine context proximity checks, format validation, and false-positive guards (e.g. carrier keyword distances) before accepting regex matches.
+7. **OAuth Revocation & Sync Security**: External connection revocation must always enforce server-side auth identity verification and idempotent cleanup across Firestore tokens and subscriptions.
 
 *(For detailed architectural layers and error sanitization examples, see `references/development_standards_guide.md`)*

@@ -21,7 +21,7 @@ import {
 import { cloudAdapter } from '../services/cloudStorageAdapter';
 import { deliveryService } from '../services/deliveryService';
 import { sanitizeString } from '../utils/packageValidator';
-import { LEGAL_VERSION } from '../constants/legal';
+import { LEGAL_VERSION } from '../constants/legalVersion';
 import { STORAGE_KEYS } from '../constants/storageKeys';
 
 const AuthContext = createContext();

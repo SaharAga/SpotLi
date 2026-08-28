@@ -184,6 +184,61 @@ export const STORES = {
     borderColor: 'border-sky-500/30',
     icon: 'Heart',
     website: 'https://shop.super-pharm.co.il'
+  },
+  wolt: {
+    id: 'wolt',
+    name: 'Wolt',
+    hebrewName: 'וולט (Wolt)',
+    brandColor: '#009DE0',
+    badgeBg: 'bg-sky-500/10',
+    textColor: 'text-sky-400',
+    borderColor: 'border-sky-500/30',
+    icon: 'ShoppingBag',
+    website: 'https://wolt.com'
+  },
+  bug: {
+    id: 'bug',
+    name: 'Bug',
+    hebrewName: 'באג (Bug)',
+    brandColor: '#FFD700',
+    badgeBg: 'bg-yellow-500/10',
+    textColor: 'text-yellow-400',
+    borderColor: 'border-yellow-500/30',
+    icon: 'Laptop',
+    website: 'https://www.bug.co.il'
+  },
+  shufersal: {
+    id: 'shufersal',
+    name: 'Shufersal',
+    hebrewName: 'שופרסל',
+    brandColor: '#E20613',
+    badgeBg: 'bg-red-500/10',
+    textColor: 'text-red-400',
+    borderColor: 'border-red-500/30',
+    icon: 'ShoppingBag',
+    website: 'https://www.shufersal.co.il'
+  },
+  castro: {
+    id: 'castro',
+    name: 'Castro',
+    hebrewName: 'קסטרו (Castro)',
+    brandColor: '#E60000',
+    badgeBg: 'bg-red-500/10',
+    textColor: 'text-red-400',
+    borderColor: 'border-red-500/30',
+    icon: 'Shirt',
+    website: 'https://www.castro.com'
+  },
+  renuar: {
+    id: 'renuar',
+    name: 'Renuar',
+    hebrewName: 'רנואר (Renuar)',
+    brandColor: '#1A1A1A',
+    badgeBg: 'bg-stone-500/10',
+    textColor: 'text-stone-300',
+    borderColor: 'border-stone-500/30',
+    icon: 'Shirt',
+    website: 'https://www.renuar.co.il'
   }
 };
 
@@ -247,6 +302,26 @@ const STORE_MATCHERS = [
   {
     id: 'superpharm',
     patterns: [/super-?pharm/i, /סופר-?פארם/i]
+  },
+  {
+    id: 'wolt',
+    patterns: [/\bwolt\b/i, /וולט/i]
+  },
+  {
+    id: 'bug',
+    patterns: [/\bbug\b/i, /באג/i]
+  },
+  {
+    id: 'shufersal',
+    patterns: [/\bshufersal\b/i, /שופרסל/i]
+  },
+  {
+    id: 'castro',
+    patterns: [/\bcastro\b/i, /קסטרו/i]
+  },
+  {
+    id: 'renuar',
+    patterns: [/\brenuar\b/i, /רנואר/i]
   }
 ];
 
