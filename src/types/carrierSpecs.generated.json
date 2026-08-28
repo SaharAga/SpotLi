@@ -1,0 +1,1229 @@
+{
+  "version": "2.0.0",
+  "carriers": {
+    "israel-post": {
+      "id": "israel-post",
+      "name": "Israel Post",
+      "hebrewName": "דואר ישראל",
+      "website": "https://mypost.israelpost.co.il",
+      "country": "Israel",
+      "domains": [
+        "mypost.israelpost.co.il"
+      ],
+      "patterns": [
+        {
+          "source": "^[A-Z]{2}\\d{9}IL$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "upu-s10",
+          "priority": 10
+        },
+        {
+          "source": "^[A-Z0-9]{7,}IL$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 20
+        },
+        {
+          "source": "^[A-Z]{2}\\d{8,9}$",
+          "flags": "i",
+          "confidence": "medium",
+          "checksum": "not-applicable",
+          "priority": 1000
+        }
+      ]
+    },
+    "chita": {
+      "id": "chita",
+      "name": "Cheetah Delivery (Chita)",
+      "hebrewName": "צ'יטה שליחויות",
+      "website": "https://chita-il.com",
+      "country": "Israel",
+      "domains": [
+        "chita-il.com"
+      ],
+      "patterns": [
+        {
+          "source": "^(CH|CT)\\d{8,12}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 30
+        },
+        {
+          "source": "^CHT[A-Z0-9]{7,12}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 31
+        },
+        {
+          "source": "^CHTR[A-Z0-9]{6,12}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 32
+        }
+      ]
+    },
+    "hfd": {
+      "id": "hfd",
+      "name": "HFD / E-Post",
+      "hebrewName": "HFD שליחויות / אי-פוסט",
+      "website": "https://hfd.co.il",
+      "country": "Israel",
+      "domains": [
+        "hfd.co.il"
+      ],
+      "patterns": [
+        {
+          "source": "^HFD\\d{8,12}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 50
+        },
+        {
+          "source": "^EP\\d{8,12}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 51
+        },
+        {
+          "source": "^5\\d{8,9}$",
+          "flags": "",
+          "confidence": "medium",
+          "checksum": "not-applicable",
+          "priority": 1000
+        }
+      ]
+    },
+    "boxit": {
+      "id": "boxit",
+      "name": "BoxIt",
+      "hebrewName": "בוקסיט (BoxIt)",
+      "website": "https://boxit.co.il",
+      "country": "Israel",
+      "domains": [
+        "boxit.co.il"
+      ],
+      "patterns": [
+        {
+          "source": "^BOX[0-9A-Z]{6,12}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 40
+        },
+        {
+          "source": "^BX\\d{7,10}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 41
+        }
+      ]
+    },
+    "tapuz": {
+      "id": "tapuz",
+      "name": "Tapuz Delivery",
+      "hebrewName": "תפוז שליחויות",
+      "website": "https://tapuzdelivery.co.il",
+      "country": "Israel",
+      "domains": [
+        "tapuzdelivery.co.il"
+      ],
+      "patterns": [
+        {
+          "source": "^(TPZ|YDM|TAPUZ)\\d{6,12}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 60
+        },
+        {
+          "source": "^7\\d{8}$",
+          "flags": "",
+          "confidence": "medium",
+          "checksum": "not-applicable",
+          "priority": 1000
+        }
+      ]
+    },
+    "cargo": {
+      "id": "cargo",
+      "name": "Cargo Express",
+      "hebrewName": "קרגו שליחויות",
+      "website": "https://cargoexpress.co.il",
+      "country": "Israel",
+      "domains": [
+        "cargoexpress.co.il"
+      ],
+      "patterns": [
+        {
+          "source": "^CRG\\d{7,12}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 70
+        },
+        {
+          "source": "^CARGO\\d{6,10}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 71
+        }
+      ]
+    },
+    "getpackage": {
+      "id": "getpackage",
+      "name": "GetPackage",
+      "hebrewName": "גט פקג' (GetPackage)",
+      "website": "https://getpackage.com",
+      "country": "Israel",
+      "domains": [
+        "getpackage.com"
+      ],
+      "patterns": [
+        {
+          "source": "^GP[A-Z0-9]{8,12}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 80
+        },
+        {
+          "source": "^GET\\d{8,10}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 81
+        }
+      ]
+    },
+    "flying-cargo": {
+      "id": "flying-cargo",
+      "name": "Flying Cargo / FedEx Israel",
+      "hebrewName": "פליינג קרגו / פדאקס ישראל",
+      "website": "https://www.flying-cargo.com",
+      "country": "Israel",
+      "domains": [
+        "flying-cargo.com"
+      ],
+      "patterns": [
+        {
+          "source": "^FC\\d{8,12}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 90
+        },
+        {
+          "source": "^4\\d{9}$",
+          "flags": "",
+          "confidence": "medium",
+          "checksum": "not-applicable",
+          "priority": 1000
+        }
+      ]
+    },
+    "orian": {
+      "id": "orian",
+      "name": "Orian / UPS Israel",
+      "hebrewName": "אוריאן / UPS ישראל",
+      "website": "https://orian.com",
+      "country": "Israel",
+      "domains": [
+        "orian.com"
+      ],
+      "patterns": [
+        {
+          "source": "^(OR|ORN)\\d{8,12}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 100
+        }
+      ]
+    },
+    "bar-distribution": {
+      "id": "bar-distribution",
+      "name": "Bar Distribution",
+      "hebrewName": "בר הפצה",
+      "website": "https://bardistribution.co.il",
+      "country": "Israel",
+      "domains": [
+        "bardistribution.co.il",
+        "barexpress.co.il"
+      ],
+      "patterns": [
+        {
+          "source": "^(BAR|BD)\\d{6,12}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 110
+        },
+        {
+          "source": "^9\\d{8}$",
+          "flags": "",
+          "confidence": "medium",
+          "checksum": "not-applicable",
+          "priority": 1000
+        }
+      ]
+    },
+    "bar": {
+      "id": "bar",
+      "name": "Bar Distribution",
+      "hebrewName": "בר הפצה",
+      "website": "https://bardistribution.co.il",
+      "country": "Israel",
+      "domains": [
+        "bardistribution.co.il",
+        "barexpress.co.il"
+      ],
+      "patterns": [
+        {
+          "source": "^(BAR|BD)\\d{6,12}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 110
+        },
+        {
+          "source": "^9\\d{8}$",
+          "flags": "",
+          "confidence": "medium",
+          "checksum": "not-applicable",
+          "priority": 1000
+        }
+      ]
+    },
+    "lionwheel": {
+      "id": "lionwheel",
+      "name": "LionWheel",
+      "hebrewName": "ליאון וויל (LionWheel)",
+      "website": "https://lionwheel.com",
+      "country": "Israel",
+      "domains": [
+        "lionwheel.com",
+        "tracking.lionwheel.com"
+      ],
+      "patterns": [
+        {
+          "source": "^(LW|LION)\\d{6,14}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 115
+        },
+        {
+          "source": "^LW[A-Z0-9]{6,14}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 116
+        }
+      ]
+    },
+    "buzzr": {
+      "id": "buzzr",
+      "name": "Buzzr",
+      "hebrewName": "באזר (Buzzr)",
+      "website": "https://buzzr.co.il",
+      "country": "Israel",
+      "domains": [
+        "buzzr.co.il"
+      ],
+      "patterns": [
+        {
+          "source": "^(BZR|BUZZR)\\d{6,12}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 125
+        },
+        {
+          "source": "^BZ[A-Z0-9]{7,12}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 126
+        }
+      ]
+    },
+    "zigzag": {
+      "id": "zigzag",
+      "name": "ZigZag Express",
+      "hebrewName": "זיגזג שליחויות",
+      "website": "https://zigzag24.co.il",
+      "country": "Israel",
+      "domains": [
+        "zigzag24.co.il"
+      ],
+      "patterns": [
+        {
+          "source": "^ZZ\\d{7,12}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 120
+        },
+        {
+          "source": "^ZIG\\d{6,10}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 121
+        }
+      ]
+    },
+    "cainiao": {
+      "id": "cainiao",
+      "name": "AliExpress / Cainiao",
+      "hebrewName": "קאיניאו / עליאקספרס",
+      "website": "https://global.cainiao.com",
+      "country": "China",
+      "domains": [
+        "global.cainiao.com"
+      ],
+      "patterns": [
+        {
+          "source": "^[A-Z]{2}\\d{9}CN$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "upu-s10",
+          "priority": 140
+        },
+        {
+          "source": "^(LP|CAINIAO)\\d+",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 141
+        },
+        {
+          "source": "^AE[A-Z0-9]{10,18}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 142
+        },
+        {
+          "source": "^S0000\\d{8,18}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 144
+        },
+        {
+          "source": "^S\\d{12,18}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 145
+        },
+        {
+          "source": "^CN\\d{10,}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 143
+        },
+        {
+          "source": "^CN\\d{10,}",
+          "flags": "i",
+          "confidence": "medium",
+          "checksum": "not-applicable",
+          "priority": 1000
+        }
+      ]
+    },
+    "shein": {
+      "id": "shein",
+      "name": "SHEIN Express",
+      "hebrewName": "שיין (SHEIN)",
+      "website": "https://www.shein.com",
+      "country": "Global",
+      "domains": [
+        "shein.com"
+      ],
+      "patterns": [
+        {
+          "source": "^GSH[A-Z0-9]{8,20}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 146
+        }
+      ]
+    },
+    "yunexpress": {
+      "id": "yunexpress",
+      "name": "YunExpress",
+      "hebrewName": "יון אקספרס (YunExpress)",
+      "website": "https://www.yunexpress.com",
+      "country": "China / Global",
+      "domains": [
+        "yunexpress.com",
+        "yuntrack.com"
+      ],
+      "patterns": [
+        {
+          "source": "^YT\\d{16,18}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 130
+        }
+      ]
+    },
+    "4px": {
+      "id": "4px",
+      "name": "4PX Express",
+      "hebrewName": "4PX אקספרס",
+      "website": "https://express.4px.com",
+      "country": "China / Global",
+      "domains": [
+        "express.4px.com",
+        "t.17track.net"
+      ],
+      "patterns": [
+        {
+          "source": "^4PX\\d+",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 150
+        },
+        {
+          "source": "^FPX\\d+",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 151
+        }
+      ]
+    },
+    "dhl": {
+      "id": "dhl",
+      "name": "DHL Express",
+      "hebrewName": "DHL אקספרס",
+      "website": "https://www.dhl.com",
+      "country": "Germany / Global",
+      "domains": [
+        "dhl.com"
+      ],
+      "patterns": [
+        {
+          "source": "^\\d{10}$",
+          "flags": "",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 210
+        },
+        {
+          "source": "^JJD\\d+",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 211
+        },
+        {
+          "source": "^GM\\d{16,18}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 212
+        }
+      ]
+    },
+    "fedex": {
+      "id": "fedex",
+      "name": "FedEx",
+      "hebrewName": "פדאקס (FedEx)",
+      "website": "https://www.fedex.com",
+      "country": "USA / Global",
+      "domains": [
+        "fedex.com"
+      ],
+      "patterns": [
+        {
+          "source": "^\\d{12}$",
+          "flags": "",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 220
+        },
+        {
+          "source": "^\\d{15}$",
+          "flags": "",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 221
+        },
+        {
+          "source": "^\\d{20}$",
+          "flags": "",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 222
+        },
+        {
+          "source": "^\\d{22}$",
+          "flags": "",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 223
+        }
+      ]
+    },
+    "ups": {
+      "id": "ups",
+      "name": "UPS",
+      "hebrewName": "יו-פי-אס (UPS)",
+      "website": "https://www.ups.com",
+      "country": "USA / Global",
+      "domains": [
+        "ups.com"
+      ],
+      "patterns": [
+        {
+          "source": "^1Z[0-9A-Z]{16}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 160
+        },
+        {
+          "source": "^\\d{9}$",
+          "flags": "",
+          "confidence": "medium",
+          "checksum": "not-applicable",
+          "priority": 1000
+        },
+        {
+          "source": "^\\d{11}$",
+          "flags": "",
+          "confidence": "medium",
+          "checksum": "not-applicable",
+          "priority": 1000
+        }
+      ]
+    },
+    "usps": {
+      "id": "usps",
+      "name": "USPS",
+      "hebrewName": "שירות הדואר של ארה\"ב (USPS)",
+      "website": "https://www.usps.com",
+      "country": "USA",
+      "domains": [
+        "tools.usps.com",
+        "usps.com"
+      ],
+      "patterns": [
+        {
+          "source": "^9[234]\\d{20}$",
+          "flags": "",
+          "confidence": "high",
+          "checksum": "mod10-31",
+          "priority": 180
+        },
+        {
+          "source": "^[A-Z]{2}\\d{9}US$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "upu-s10",
+          "priority": 181
+        }
+      ]
+    },
+    "royal-mail": {
+      "id": "royal-mail",
+      "name": "Royal Mail",
+      "hebrewName": "רויאל מייל (בריטניה)",
+      "website": "https://www.royalmail.com",
+      "country": "United Kingdom",
+      "domains": [
+        "royalmail.com"
+      ],
+      "patterns": [
+        {
+          "source": "^[A-Z]{2}\\d{9}GB$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "upu-s10",
+          "priority": 170
+        }
+      ]
+    },
+    "aramex": {
+      "id": "aramex",
+      "name": "Aramex",
+      "hebrewName": "אראמקס (Aramex)",
+      "website": "https://www.aramex.com",
+      "country": "Middle East / Global",
+      "domains": [
+        "aramex.com"
+      ],
+      "patterns": [
+        {
+          "source": "^3\\d{9}$",
+          "flags": "",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 200
+        },
+        {
+          "source": "^\\d{11}$",
+          "flags": "",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 201
+        },
+        {
+          "source": "^\\d{10,11}$",
+          "flags": "",
+          "confidence": "medium",
+          "checksum": "not-applicable",
+          "priority": 1000
+        }
+      ]
+    },
+    "yanwen": {
+      "id": "yanwen",
+      "name": "Yanwen Express",
+      "hebrewName": "ינוואן (Yanwen)",
+      "website": "https://www.yw56.com.cn",
+      "country": "China",
+      "domains": [
+        "t.17track.net",
+        "yw56.com.cn"
+      ],
+      "patterns": [
+        {
+          "source": "^U[A-Z]\\d{9}YP$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 190
+        },
+        {
+          "source": "^VR\\d{9}YP$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 191
+        },
+        {
+          "source": "^LP\\d{14}YP$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 192
+        },
+        {
+          "source": "^[\\s\\S]{8,}YP$",
+          "flags": "",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 193
+        }
+      ]
+    }
+  },
+  "rules": [
+    {
+      "carrierId": "israel-post",
+      "source": "^[A-Z]{2}\\d{9}IL$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "upu-s10",
+      "priority": 10
+    },
+    {
+      "carrierId": "israel-post",
+      "source": "^[A-Z0-9]{7,}IL$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 20
+    },
+    {
+      "carrierId": "chita",
+      "source": "^(CH|CT)\\d{8,12}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 30
+    },
+    {
+      "carrierId": "chita",
+      "source": "^CHT[A-Z0-9]{7,12}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 31
+    },
+    {
+      "carrierId": "chita",
+      "source": "^CHTR[A-Z0-9]{6,12}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 32
+    },
+    {
+      "carrierId": "boxit",
+      "source": "^BOX[0-9A-Z]{6,12}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 40
+    },
+    {
+      "carrierId": "boxit",
+      "source": "^BX\\d{7,10}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 41
+    },
+    {
+      "carrierId": "hfd",
+      "source": "^HFD\\d{8,12}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 50
+    },
+    {
+      "carrierId": "hfd",
+      "source": "^EP\\d{8,12}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 51
+    },
+    {
+      "carrierId": "tapuz",
+      "source": "^(TPZ|YDM|TAPUZ)\\d{6,12}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 60
+    },
+    {
+      "carrierId": "cargo",
+      "source": "^CRG\\d{7,12}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 70
+    },
+    {
+      "carrierId": "cargo",
+      "source": "^CARGO\\d{6,10}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 71
+    },
+    {
+      "carrierId": "getpackage",
+      "source": "^GP[A-Z0-9]{8,12}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 80
+    },
+    {
+      "carrierId": "getpackage",
+      "source": "^GET\\d{8,10}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 81
+    },
+    {
+      "carrierId": "flying-cargo",
+      "source": "^FC\\d{8,12}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 90
+    },
+    {
+      "carrierId": "orian",
+      "source": "^(OR|ORN)\\d{8,12}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 100
+    },
+    {
+      "carrierId": "bar-distribution",
+      "source": "^(BAR|BD)\\d{6,12}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 110
+    },
+    {
+      "carrierId": "bar",
+      "source": "^(BAR|BD)\\d{6,12}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 110
+    },
+    {
+      "carrierId": "lionwheel",
+      "source": "^(LW|LION)\\d{6,14}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 115
+    },
+    {
+      "carrierId": "lionwheel",
+      "source": "^LW[A-Z0-9]{6,14}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 116
+    },
+    {
+      "carrierId": "zigzag",
+      "source": "^ZZ\\d{7,12}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 120
+    },
+    {
+      "carrierId": "zigzag",
+      "source": "^ZIG\\d{6,10}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 121
+    },
+    {
+      "carrierId": "buzzr",
+      "source": "^(BZR|BUZZR)\\d{6,12}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 125
+    },
+    {
+      "carrierId": "buzzr",
+      "source": "^BZ[A-Z0-9]{7,12}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 126
+    },
+    {
+      "carrierId": "yunexpress",
+      "source": "^YT\\d{16,18}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 130
+    },
+    {
+      "carrierId": "cainiao",
+      "source": "^[A-Z]{2}\\d{9}CN$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "upu-s10",
+      "priority": 140
+    },
+    {
+      "carrierId": "cainiao",
+      "source": "^(LP|CAINIAO)\\d+",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 141
+    },
+    {
+      "carrierId": "cainiao",
+      "source": "^AE[A-Z0-9]{10,18}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 142
+    },
+    {
+      "carrierId": "cainiao",
+      "source": "^CN\\d{10,}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 143
+    },
+    {
+      "carrierId": "cainiao",
+      "source": "^S0000\\d{8,18}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 144
+    },
+    {
+      "carrierId": "cainiao",
+      "source": "^S\\d{12,18}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 145
+    },
+    {
+      "carrierId": "shein",
+      "source": "^GSH[A-Z0-9]{8,20}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 146
+    },
+    {
+      "carrierId": "4px",
+      "source": "^4PX\\d+",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 150
+    },
+    {
+      "carrierId": "4px",
+      "source": "^FPX\\d+",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 151
+    },
+    {
+      "carrierId": "ups",
+      "source": "^1Z[0-9A-Z]{16}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 160
+    },
+    {
+      "carrierId": "royal-mail",
+      "source": "^[A-Z]{2}\\d{9}GB$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "upu-s10",
+      "priority": 170
+    },
+    {
+      "carrierId": "usps",
+      "source": "^9[234]\\d{20}$",
+      "flags": "",
+      "confidence": "high",
+      "checksum": "mod10-31",
+      "priority": 180
+    },
+    {
+      "carrierId": "usps",
+      "source": "^[A-Z]{2}\\d{9}US$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "upu-s10",
+      "priority": 181
+    },
+    {
+      "carrierId": "yanwen",
+      "source": "^U[A-Z]\\d{9}YP$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 190
+    },
+    {
+      "carrierId": "yanwen",
+      "source": "^VR\\d{9}YP$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 191
+    },
+    {
+      "carrierId": "yanwen",
+      "source": "^LP\\d{14}YP$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 192
+    },
+    {
+      "carrierId": "yanwen",
+      "source": "^[\\s\\S]{8,}YP$",
+      "flags": "",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 193
+    },
+    {
+      "carrierId": "aramex",
+      "source": "^3\\d{9}$",
+      "flags": "",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 200
+    },
+    {
+      "carrierId": "aramex",
+      "source": "^\\d{11}$",
+      "flags": "",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 201
+    },
+    {
+      "carrierId": "dhl",
+      "source": "^\\d{10}$",
+      "flags": "",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 210
+    },
+    {
+      "carrierId": "dhl",
+      "source": "^JJD\\d+",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 211
+    },
+    {
+      "carrierId": "dhl",
+      "source": "^GM\\d{16,18}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 212
+    },
+    {
+      "carrierId": "fedex",
+      "source": "^\\d{12}$",
+      "flags": "",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 220
+    },
+    {
+      "carrierId": "fedex",
+      "source": "^\\d{15}$",
+      "flags": "",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 221
+    },
+    {
+      "carrierId": "fedex",
+      "source": "^\\d{20}$",
+      "flags": "",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 222
+    },
+    {
+      "carrierId": "fedex",
+      "source": "^\\d{22}$",
+      "flags": "",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 223
+    },
+    {
+      "carrierId": "israel-post",
+      "source": "^[A-Z]{2}\\d{8,9}$",
+      "flags": "i",
+      "confidence": "medium",
+      "checksum": "not-applicable",
+      "priority": 1000
+    },
+    {
+      "carrierId": "hfd",
+      "source": "^5\\d{8,9}$",
+      "flags": "",
+      "confidence": "medium",
+      "checksum": "not-applicable",
+      "priority": 1000
+    },
+    {
+      "carrierId": "tapuz",
+      "source": "^7\\d{8}$",
+      "flags": "",
+      "confidence": "medium",
+      "checksum": "not-applicable",
+      "priority": 1000
+    },
+    {
+      "carrierId": "flying-cargo",
+      "source": "^4\\d{9}$",
+      "flags": "",
+      "confidence": "medium",
+      "checksum": "not-applicable",
+      "priority": 1000
+    },
+    {
+      "carrierId": "bar-distribution",
+      "source": "^9\\d{8}$",
+      "flags": "",
+      "confidence": "medium",
+      "checksum": "not-applicable",
+      "priority": 1000
+    },
+    {
+      "carrierId": "bar",
+      "source": "^9\\d{8}$",
+      "flags": "",
+      "confidence": "medium",
+      "checksum": "not-applicable",
+      "priority": 1000
+    },
+    {
+      "carrierId": "cainiao",
+      "source": "^CN\\d{10,}",
+      "flags": "i",
+      "confidence": "medium",
+      "checksum": "not-applicable",
+      "priority": 1000
+    },
+    {
+      "carrierId": "ups",
+      "source": "^\\d{9}$",
+      "flags": "",
+      "confidence": "medium",
+      "checksum": "not-applicable",
+      "priority": 1000
+    },
+    {
+      "carrierId": "ups",
+      "source": "^\\d{11}$",
+      "flags": "",
+      "confidence": "medium",
+      "checksum": "not-applicable",
+      "priority": 1000
+    },
+    {
+      "carrierId": "aramex",
+      "source": "^\\d{10,11}$",
+      "flags": "",
+      "confidence": "medium",
+      "checksum": "not-applicable",
+      "priority": 1000
+    }
+  ]
+}

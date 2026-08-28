@@ -8,6 +8,8 @@
   },
   "main": "src/index.js",
   "scripts": {
+    "pretest": "node ../scripts/generate-carrier-specs.mjs",
+    "predeploy": "node ../scripts/generate-carrier-specs.mjs",
     "test": "vitest run",
     "lint": "oxlint src"
   },

@@ -1,0 +1,42 @@
+[
+  {
+    "id": "val_shein_global_01",
+    "templateFamily": "shein_order_update",
+    "rawText": "Your SHEIN package is on its way! Tracking number: GSH12345678901. Estimated delivery 5-8 business days.",
+    "expectedTracking": "GSH12345678901",
+    "expectedCarrier": "shein",
+    "expectedStatus": "verified"
+  },
+  {
+    "id": "val_tapuz_sms_01",
+    "templateFamily": "tapuz_sms_dispatch",
+    "rawText": "שלום! חבילתך מתפוז שליחויות שמספרה TPZ84920194 תמסר היום בין 14:00 ל-18:00.",
+    "expectedTracking": "TPZ84920194",
+    "expectedCarrier": "tapuz",
+    "expectedStatus": "verified"
+  },
+  {
+    "id": "val_buzzr_link_01",
+    "templateFamily": "buzzr_smart_link",
+    "rawText": "משלוח באזר מספר BZR84920194 בדרך אליך! למעקב בזמן אמת: https://buzzr.co.il/track/BZR84920194",
+    "expectedTracking": "BZR84920194",
+    "expectedCarrier": "buzzr",
+    "expectedStatus": "verified"
+  },
+  {
+    "id": "val_fedex_priority_01",
+    "templateFamily": "fedex_international_dispatch",
+    "rawText": "FedEx Express tracking update: Shipment 794820194821 is in transit. Signed by receptionist.",
+    "expectedTracking": "794820194821",
+    "expectedCarrier": "fedex",
+    "expectedStatus": "verified"
+  },
+  {
+    "id": "val_price_date_false_positive_01",
+    "templateFamily": "receipt_statement",
+    "rawText": "סך הכל לתשלום בתאריך 2026-08-28 הינו 249.90 ₪. תודה שקנית אצלנו!",
+    "expectedTracking": null,
+    "expectedCarrier": "other",
+    "expectedStatus": "none"
+  }
+]

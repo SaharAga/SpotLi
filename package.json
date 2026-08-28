@@ -4,6 +4,8 @@
   "version": "0.18.3",
   "type": "module",
   "scripts": {
+    "prebuild": "node scripts/generate-carrier-specs.mjs",
+    "pretest": "node scripts/generate-carrier-specs.mjs",
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
@@ -16,7 +18,10 @@
     "feedback:daemon": "python3 scripts/feedback_daemon.py",
     "prepare": "git config core.hooksPath .githooks || true",
     "release": "node scripts/release.mjs",
-    "triage:fetch": "node scripts/triage_reports.mjs fetch all"
+    "triage:fetch": "node scripts/triage_reports.mjs fetch all",
+    "sync:start": "node scripts/agent-sync-start.mjs",
+    "sync:stop": "node scripts/agent-sync-stop.mjs",
+    "sync:status": "node scripts/agent-sync-channel.mjs status"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
