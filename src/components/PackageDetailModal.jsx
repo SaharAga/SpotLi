@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   X, ExternalLink, Copy, Check, Calendar, MapPin, Plus, 
-  Truck, Clock, RefreshCw, Info
+  Truck, Clock, RefreshCw, Info, RotateCcw
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { getCarrier } from '../types/carriers';
@@ -10,6 +10,7 @@ import { copyToClipboard } from '../utils/clipboard';
 import { STAGES, CATEGORIES } from '../types/stages';
 import { useLanguage } from '../context/LanguageContext';
 import { formatDate, formatDateTime, getDaysRemaining } from '../utils/dateUtils';
+import { getPickupCountdown, getReturnCountdown, calculateDefaultReturnDeadline } from '../utils/deadlineUtils';
 import { canTransition, TRANSITION_MATRIX } from '../services/deliveryService';
 import { checkRateLimit } from '../utils/rateLimiter';
 import { isLiveTrackingSupported } from '../services/carrierApiProxy';
@@ -43,6 +44,8 @@ export function PackageDetailModal({
   const currentStage = STAGES[effectiveIndex];
   const category = CATEGORIES.find(c => c.id === pkg.category) || CATEGORIES[CATEGORIES.length - 1];
   const daysInfo = getDaysRemaining(pkg.expectedDeliveryDate, language);
+  const pickupCountdown = getPickupCountdown(pkg.pickupDeadline);
+  const returnCountdown = getReturnCountdown(pkg.returnDeadline);
 
   const handleCopy = async () => {
     const success = await copyToClipboard(pkg.trackingNumber);
@@ -255,16 +258,18 @@ export function PackageDetailModal({
                     </div>
                   )}
 
-                  {pkg.pickupDeadline && (
+                  {pickupCountdown.hasDeadline && (
                     <div className="mt-2">
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold ${
-                        (getDaysRemaining(pkg.pickupDeadline, 'en').includes('-') || getDaysRemaining(pkg.pickupDeadline, 'en') === '0')
-                        ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' 
-                        : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                        pickupCountdown.urgency === 'critical' || pickupCountdown.urgency === 'expired'
+                          ? 'bg-rose-500/25 text-rose-300 border border-rose-500/40 animate-pulse' 
+                          : pickupCountdown.urgency === 'warning'
+                            ? 'bg-amber-500/25 text-amber-300 border border-amber-500/40'
+                            : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                       }`}>
                         <Clock className="w-3.5 h-3.5" />
-                        {language === 'he' ? 'תוקף: ' : 'Deadline: '}
-                        {formatDate(pkg.pickupDeadline)}
+                        {language === 'he' ? pickupCountdown.formattedHe : pickupCountdown.formattedEn}
+                        <span className="opacity-70 font-normal">({formatDate(pkg.pickupDeadline, language)})</span>
                       </span>
                     </div>
                   )}
@@ -304,6 +309,82 @@ export function PackageDetailModal({
                     {pkg.pickupLocation}
                   </span>
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* Return Policy & Window Box (Delivered or Return Set) */}
+          {(pkg.status === 'delivered' || pkg.returnDeadline) && (
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-950/40 to-slate-900 border border-blue-500/30 flex flex-col gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400">
+                    <RotateCcw className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-100">
+                      {language === 'he' ? 'חלון החזרה לחנות' : 'Store Return Window'}
+                    </h3>
+                    <p className="text-[11px] text-slate-400">
+                      {language === 'he' ? 'מעקב אחר מדיניות ההחזרה ומועד אחרון לזיכוי' : 'Track return policy deadline and refunds'}
+                    </p>
+                  </div>
+                </div>
+
+                {onUpdatePackage && (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = calculateDefaultReturnDeadline(pkg.updatedAt || new Date(), 14);
+                        onUpdatePackage({ ...pkg, returnDeadline: target, updatedAt: new Date().toISOString() });
+                        if (onShowToast) onShowToast(language === 'he' ? 'חלון החזרה הוגדר ל-14 ימים' : 'Return window set to 14 days', 'success');
+                      }}
+                      className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors"
+                    >
+                      +14 {language === 'he' ? 'ימים' : 'days'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = calculateDefaultReturnDeadline(pkg.updatedAt || new Date(), 30);
+                        onUpdatePackage({ ...pkg, returnDeadline: target, updatedAt: new Date().toISOString() });
+                        if (onShowToast) onShowToast(language === 'he' ? 'חלון החזרה הוגדר ל-30 ימים' : 'Return window set to 30 days', 'success');
+                      }}
+                      className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors"
+                    >
+                      +30 {language === 'he' ? 'ימים' : 'days'}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {returnCountdown.hasDeadline ? (
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${
+                    returnCountdown.urgency === 'critical' || returnCountdown.urgency === 'expired'
+                      ? 'bg-rose-500/25 text-rose-300 border-rose-500/40'
+                      : returnCountdown.urgency === 'warning'
+                        ? 'bg-amber-500/25 text-amber-300 border-amber-500/40'
+                        : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                  }`}>
+                    <Clock className="w-3.5 h-3.5" />
+                    {language === 'he' ? returnCountdown.formattedHe : returnCountdown.formattedEn}
+                    <span className="opacity-70 font-normal">({formatDate(pkg.returnDeadline, language)})</span>
+                  </span>
+
+                  {pkg.returnNotes && (
+                    <span className="text-xs text-slate-300 bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-xl">
+                      {pkg.returnNotes}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 italic">
+                  {language === 'he' 
+                    ? 'לא הוגדר מועד החזרה לחבילה זו. השתמש בכפתורים למעלה להגדרה מהירה.'
+                    : 'No return deadline set. Use the quick buttons above to track refund eligibility.'}
+                </p>
               )}
             </div>
           )}

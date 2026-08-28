@@ -42,6 +42,8 @@ export const packageSchema = z.object({
   pickupCode: z.string().max(50).optional().transform(s => (s ? sanitizeString(s, 50) : undefined)),
   pickupLocation: z.string().max(250).optional().transform(s => (s ? sanitizeString(s, 250) : undefined)),
   pickupDeadline: z.string().max(50).optional().transform(s => (s ? sanitizeString(s, 50) : undefined)),
+  returnDeadline: z.string().max(50).optional().transform(s => (s ? sanitizeString(s, 50) : undefined)),
+  returnNotes: z.string().max(500).optional().transform(s => (s ? sanitizeString(s, 500) : undefined)),
   isPinned: z.boolean().default(false),
   isArchived: z.boolean().default(false),
   checkpoints: z.array(checkpointSchema).max(50).default([]),

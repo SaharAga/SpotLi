@@ -44,6 +44,8 @@ export function AddEditPackageModal({
   const [pickupCode, setPickupCode] = useState('');
   const [pickupLocation, setPickupLocation] = useState('');
   const [pickupDeadline, setPickupDeadline] = useState('');
+  const [returnDeadline, setReturnDeadline] = useState('');
+  const [returnNotes, setReturnNotes] = useState('');
 
   // Snapshot of what Smart Import auto-filled, so a save can detect which
   // fields the user corrected before submitting — the implicit half of the
@@ -100,6 +102,8 @@ export function AddEditPackageModal({
       setPickupCode(editPackage.pickupCode || '');
       setPickupLocation(editPackage.pickupLocation || '');
       setPickupDeadline(editPackage.pickupDeadline || '');
+      setReturnDeadline(editPackage.returnDeadline || '');
+      setReturnNotes(editPackage.returnNotes || '');
       autoFillSnapshotRef.current = null;
     } else if (initialValues) {
       const title = initialValues.title || '';
@@ -428,7 +432,6 @@ export function AddEditPackageModal({
             </select>
           </div>
 
-          {/* Category Selector */}
           <div>
             <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
               {t('modal.category')}
@@ -542,7 +545,7 @@ export function AddEditPackageModal({
 
         {/* Pickup Details */}
         <div className="space-y-4 pt-4 border-t border-slate-800">
-          <h3 className="text-sm font-bold text-slate-200">{language === 'he' ? 'פרטי איסוף (אופציונלי)' : 'Pickup Details (Optional)'}</h3>
+          <h3 className="text-sm font-bold text-slate-200">{language === 'he' ? 'פרטי איסוף ולוקר (אופציונלי)' : 'Pickup & Locker Details (Optional)'}</h3>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -581,6 +584,66 @@ export function AddEditPackageModal({
               placeholder={language === 'he' ? 'רחוב הרצל 1, תל אביב' : '1 Herzl St, Tel Aviv'}
               className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors min-h-[48px]"
             />
+          </div>
+        </div>
+
+        {/* Return Window Details */}
+        <div className="space-y-4 pt-4 border-t border-slate-800">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-200">
+              {language === 'he' ? 'חלון החזרה לחנות (אופציונלי)' : 'Store Return Window (Optional)'}
+            </h3>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  const d = new Date();
+                  d.setDate(d.getDate() + 14);
+                  setReturnDeadline(d.toISOString().slice(0, 10));
+                }}
+                className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-semibold transition-colors"
+              >
+                +14 {language === 'he' ? 'ימים' : 'days'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const d = new Date();
+                  d.setDate(d.getDate() + 30);
+                  setReturnDeadline(d.toISOString().slice(0, 10));
+                }}
+                className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-semibold transition-colors"
+              >
+                +30 {language === 'he' ? 'ימים' : 'days'}
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                {language === 'he' ? 'תאריך אחרון להחזרה' : 'Return Deadline Date'}
+              </label>
+              <input
+                type="date"
+                value={returnDeadline}
+                onChange={(e) => setReturnDeadline(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors min-h-[48px]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                {language === 'he' ? 'הערות החזרה / מספר שטר' : 'Return Notes / Waybill #'}
+              </label>
+              <input
+                type="text"
+                value={returnNotes}
+                onChange={(e) => setReturnNotes(e.target.value)}
+                placeholder={language === 'he' ? 'למשל: דרוש שובר החזרה מסניף דואר' : 'e.g. Return label generated'}
+                className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors min-h-[48px]"
+              />
+            </div>
           </div>
         </div>
 
