@@ -26,6 +26,7 @@ service cloud.firestore {
         'status', 'category', 'orderDate', 'expectedDeliveryDate', 'origin',
         'destination', 'notes', 'notesHe', 'isPinned', 'isArchived',
         'checkpoints', 'pickupCode', 'pickupLocation', 'pickupDeadline',
+        'returnDeadline', 'returnNotes',
         'createdAt', 'updatedAt', 'userId'
       ];
       
@@ -52,6 +53,8 @@ service cloud.firestore {
         (!('pickupCode' in data) || (data.pickupCode is string && data.pickupCode.size() <= 50)) &&
         (!('pickupLocation' in data) || (data.pickupLocation is string && data.pickupLocation.size() <= 250)) &&
         (!('pickupDeadline' in data) || (data.pickupDeadline is string && data.pickupDeadline.size() <= 50)) &&
+        (!('returnDeadline' in data) || (data.returnDeadline is string && data.returnDeadline.size() <= 50)) &&
+        (!('returnNotes' in data) || (data.returnNotes is string && data.returnNotes.size() <= 500)) &&
         (!('isPinned' in data) || data.isPinned is bool) &&
         (!('isArchived' in data) || data.isArchived is bool) &&
         (!('checkpoints' in data) || (data.checkpoints is list && data.checkpoints.size() <= 50)) &&

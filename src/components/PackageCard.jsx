@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import {
   Copy, Check, MoreVertical, Pin, Archive, Trash2, Edit3,
-  Calendar, CheckCircle, ArrowUpRight, RefreshCw, Loader2, Package
+  Calendar, CheckCircle, ArrowUpRight, RefreshCw, Loader2, Package,
+  Clock, RotateCcw
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { getCarrier } from '../types/carriers';
@@ -10,6 +11,7 @@ import { copyToClipboard } from '../utils/clipboard';
 import { STAGES } from '../types/stages';
 import { useLanguage } from '../context/LanguageContext';
 import { formatDate, getDaysRemaining } from '../utils/dateUtils';
+import { getPickupCountdown, getReturnCountdown } from '../utils/deadlineUtils';
 import { triggerHapticFeedback } from '../utils/haptics';
 import { checkRateLimit } from '../utils/rateLimiter';
 
@@ -39,6 +41,8 @@ function PackageCardImpl({
   const carrier = getCarrier(pkg.carrier);
   const store = detectStore(pkg);
   const daysInfo = getDaysRemaining(pkg.expectedDeliveryDate, language);
+  const pickupCountdown = getPickupCountdown(pkg.pickupDeadline);
+  const returnCountdown = getReturnCountdown(pkg.returnDeadline);
 
   const trackingUrl = carrier.getTrackingUrl(pkg.trackingNumber);
 
@@ -213,6 +217,33 @@ function PackageCardImpl({
             {language === 'he' ? stage.hebrewLabel : stage.label}
           </span>
         </div>
+
+        {/* Optional Countdown Banner for Pickup or Return */}
+        {pkg.status !== 'delivered' && pickupCountdown.hasDeadline && (
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-bold border ${
+            pickupCountdown.urgency === 'critical' || pickupCountdown.urgency === 'expired'
+              ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+              : pickupCountdown.urgency === 'warning'
+                ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+          }`}>
+            <Clock className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{language === 'he' ? pickupCountdown.formattedHe : pickupCountdown.formattedEn}</span>
+          </div>
+        )}
+
+        {pkg.status === 'delivered' && returnCountdown.hasDeadline && (
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-bold border ${
+            returnCountdown.urgency === 'critical' || returnCountdown.urgency === 'expired'
+              ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+              : returnCountdown.urgency === 'warning'
+                ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                : 'bg-blue-500/15 text-blue-300 border-blue-500/30'
+          }`}>
+            <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{language === 'he' ? returnCountdown.formattedHe : returnCountdown.formattedEn}</span>
+          </div>
+        )}
 
         {/* Row 2: expected date + quick actions, all on one line */}
         <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800">
