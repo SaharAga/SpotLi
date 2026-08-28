@@ -8,7 +8,7 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   require-change-declaration:
@@ -209,12 +209,23 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v5
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - id: check
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
         run: |
           HEAD_VERSION=$(node -e 'process.stdout.write(require("./package.json").version)')
-          PREV_VERSION=$(git show HEAD~1:package.json 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).version))' || echo "")
+          
+          # Check previous version from the commit before this push, falling back to HEAD~1
+          PREV_VERSION=""
+          if [ -n "$BEFORE_SHA" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ] && git cat-file -e "$BEFORE_SHA" 2>/dev/null; then
+            PREV_VERSION=$(git show "$BEFORE_SHA:package.json" 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).version))' || echo "")
+          fi
+          if [ -z "$PREV_VERSION" ]; then
+            PREV_VERSION=$(git show HEAD~1:package.json 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).version))' || echo "")
+          fi
+
           echo "version=$HEAD_VERSION" >> "$GITHUB_OUTPUT"
           if [ "$HEAD_VERSION" != "$PREV_VERSION" ]; then
             echo "Release commit: $PREV_VERSION -> $HEAD_VERSION"
