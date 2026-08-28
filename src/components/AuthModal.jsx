@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { LegalDocumentModal } from './LegalDocumentModal';
+const LegalDocumentModal = React.lazy(() => import('./LegalDocumentModal').then(module => ({ default: module.LegalDocumentModal })));
 import { APP_VERSION } from '../constants/version';
 import { Modal } from './Modal';
 
@@ -732,11 +732,11 @@ export function AuthModal({
         </div>
       </Modal>
 
-      <LegalDocumentModal
+      <React.Suspense fallback={null}><LegalDocumentModal
         isOpen={!!openLegalDoc}
         onClose={() => setOpenLegalDoc(null)}
         docType={openLegalDoc || 'terms'}
-      />
+      /></React.Suspense>
     </>
   );
 }

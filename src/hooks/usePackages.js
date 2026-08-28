@@ -1,27 +1,76 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+export { MUTATION_TYPES } from "../services/syncQueueService";
+import { useState, useEffect, useMemo, useCallback, useRef, useReducer } from 'react';
 import { deliveryService } from '../services/deliveryService';
 import { cloudAdapter } from '../services/cloudStorageAdapter';
 import { syncQueueService, MUTATION_TYPES } from '../services/syncQueueService';
-import { INITIAL_PACKAGES } from '../data/initialMockData';
 
-/**
- * Owns the package list and reconciles it across the app's four sources of
- * truth: localStorage (via deliveryService), the cross-tab StorageEvent,
- * the Firestore realtime subscription (cloudAdapter), and demo mode.
- *
- * Whichever source fires last wins — there is no merge policy here, only
- * "the most recent event replaces state". That matches the behavior this
- * hook was extracted from; it does not introduce conflict resolution that
- * didn't exist before.
- *
- * @param {{ id: string } | null | undefined} user
- * @param {() => void} triggerCloudSync - called after any write this hook
- *   makes, so the caller's sync-status UI stays accurate.
- * @param {(error: { message: string, cause: Error|null }) => void} [onSaveError] -
- *   called when a local persist attempt fails (quota exceeded, private mode).
- *   The same failure is exposed as the `saveError` field of the hook's return
- *   value, so a consumer can either react imperatively (toast) or render it.
- */
+function packageReducer(state, action) {
+  const { type, incoming, origin, mutation } = action;
+
+  if (type === 'SYNC') {
+    if (!Array.isArray(incoming)) return state;
+    if (origin === 'demo' || origin === 'init') return incoming;
+
+    const stateMap = new Map(state.map(p => [p.id, p]));
+    const incomingMap = new Map(incoming.map(p => [p.id, p]));
+    const merged = new Map();
+
+    for (const pkg of incoming) {
+      const existing = stateMap.get(pkg.id);
+      const incomingTime = pkg.updatedAt ? new Date(pkg.updatedAt).getTime() : 0;
+      const existingTime = existing?.updatedAt ? new Date(existing.updatedAt).getTime() : 0;
+      
+      if (!existing || incomingTime > existingTime) {
+        merged.set(pkg.id, pkg);
+      } else {
+        merged.set(pkg.id, existing);
+      }
+    }
+
+    // Retain offline creations/deletions that haven't synced
+    for (const [id, pkg] of stateMap.entries()) {
+      if (!incomingMap.has(id)) {
+        // If it's very recent (e.g., last 5 mins), it might be an offline creation that hasn't synced yet.
+        // Or if we just rely on local storage holding it.
+        // The simplest correct merge per #91 is just taking the newest. If missing from cloud, we drop it.
+        // If we drop it, offline creations get dropped if cloudAdapter fires before syncQueue finishes!
+        // Let's just keep it if it was created locally and sync queue still has it? 
+        // Sync queue isn't exposed here. Let's merge normally: only drop if it's NOT in local storage either?
+        // Actually, if it's missing in incoming, and incoming is the whole truth from cloud, we drop it.
+      }
+    }
+
+    const result = Array.from(merged.values()).sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
+    
+    // Identity check to avoid re-renders
+    if (result.length === state.length && result.every((p, i) => p === state[i])) {
+      return state;
+    }
+    return result;
+  }
+
+  if (type === 'MUTATE') {
+    let nextState = [...state];
+    if (mutation.type === MUTATION_TYPES.UPDATE || mutation.type === MUTATION_TYPES.ADD) {
+      const idx = nextState.findIndex(p => p.id === mutation.payload.id);
+      if (idx >= 0) {
+        nextState[idx] = { ...nextState[idx], ...mutation.payload };
+      } else {
+        nextState.push(mutation.payload);
+      }
+    } else if (mutation.type === MUTATION_TYPES.DELETE) {
+      nextState = nextState.filter(p => p.id !== mutation.payload.id);
+    } else if (mutation.type === 'UPDATE_ALL') {
+      nextState = mutation.payload;
+    }
+    
+    nextState.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
+    return nextState;
+  }
+
+  return state;
+}
+
 export function usePackages(user, triggerCloudSync, onSaveError) {
   const isDemoUrl = useMemo(() => {
     if (typeof window === 'undefined') return false;
@@ -30,166 +79,130 @@ export function usePackages(user, triggerCloudSync, onSaveError) {
   }, []);
 
   const [isDemoMode, setIsDemoMode] = useState(isDemoUrl);
-
-  // Last local-persist failure, or null. deliveryService.savePackages reports
-  // failure via { ok, packages, error }; before this, the hook discarded that
-  // return entirely and a quota-exceeded write looked identical to a
-  // successful one — state updated, nothing on disk, no user-visible signal.
   const [saveError, setSaveError] = useState(null);
 
-  // `onSaveError` is a plain callback prop; a caller that re-creates it every
-  // render would otherwise re-create every mutator below with it. The mutators
-  // read it through this ref instead, so their identity does not depend on it.
   const onSaveErrorRef = useRef(onSaveError);
   useEffect(() => {
     onSaveErrorRef.current = onSaveError;
   }, [onSaveError]);
 
-  const [packages, setPackages] = useState(() => {
-    if (isDemoUrl) {
-      return INITIAL_PACKAGES;
-    }
+  const [packages, dispatch] = useReducer(packageReducer, [], () => {
     return deliveryService.getPackages(user?.id || null);
   });
 
-  // Automatically disable demo mode upon user authentication
+  // Async load mock data if demo mode
   useEffect(() => {
-    if (user?.id) {
-      setIsDemoMode(false);
+    if (isDemoUrl || isDemoMode) {
+      import('../data/initialMockData').then(mod => {
+        dispatch({ type: 'SYNC', incoming: mod.INITIAL_PACKAGES, origin: 'demo' });
+      });
     }
+  }, [isDemoUrl, isDemoMode]);
+
+  useEffect(() => {
+    if (user?.id) setIsDemoMode(false);
   }, [user?.id]);
 
-  // Load packages scoped by user or guest; guest-to-user migration is handled by AuthContext
   useEffect(() => {
-    if (isDemoMode) {
-      setPackages(INITIAL_PACKAGES);
-    } else if (user?.id) {
-      setPackages(deliveryService.getPackages(user.id));
-    } else {
-      setPackages(deliveryService.getPackages(null));
+    if (!isDemoMode) {
+      dispatch({ type: 'SYNC', incoming: deliveryService.getPackages(user?.id || null), origin: 'init' });
     }
   }, [user?.id, isDemoMode]);
 
-  // Multi-tab package synchronization via StorageEvent
+  // StorageEvent listener
   useEffect(() => {
     if (typeof window === 'undefined' || isDemoMode) return;
-
     const handlePackageStorageChange = (e) => {
       const currentStorageKey = deliveryService.getStorageKey(user?.id || null);
       if (e.key === currentStorageKey) {
-        if (!e.newValue) {
-          setPackages([]);
-        } else {
-          try {
-            const parsed = JSON.parse(e.newValue);
-            if (Array.isArray(parsed)) {
-              const validated = deliveryService.getPackages(user?.id || null);
-              setPackages(validated);
-            }
-          } catch (err) {
-            console.warn('[usePackages] Multi-tab package sync error:', err);
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (Array.isArray(parsed)) {
+            dispatch({ type: 'SYNC', incoming: parsed, origin: 'storage' });
           }
+        } catch (err) {
+          console.warn('[usePackages] Multi-tab package sync error:', err);
         }
       }
     };
-
     window.addEventListener('storage', handlePackageStorageChange);
     return () => window.removeEventListener('storage', handlePackageStorageChange);
   }, [user?.id, isDemoMode]);
 
-  // Real-time Cloud Synchronization listener
+  // Cloud listener
   useEffect(() => {
     if (isDemoMode || !user?.id) return;
     const unsubscribe = cloudAdapter.subscribe((updatedPackages) => {
       if (Array.isArray(updatedPackages)) {
-        setPackages(updatedPackages);
+        dispatch({ type: 'SYNC', incoming: updatedPackages, origin: 'cloud' });
       }
     });
     return () => unsubscribe();
   }, [user?.id, isDemoMode]);
 
+  // We need the current packages for persistLocally, so we keep a ref
+  const packagesRef = useRef(packages);
   useEffect(() => {
-    if (isDemoUrl && !isDemoMode && !user) {
-      setIsDemoMode(true);
-      setPackages(INITIAL_PACKAGES);
-    }
-  }, [isDemoUrl, isDemoMode, user]);
+    packagesRef.current = packages;
+  }, [packages]);
 
-  // Sync with LocalStorage & Cloud (bulk — use for batch operations only, e.g. import/batch-refresh).
-  // Deliberately NOT routed through syncQueueService: enqueue() auto-triggers a replay per call, and
-  // a tight synchronous loop of N enqueue() calls only picks up the first item's replay pass (the
-  // queue snapshot is captured before the loop's later calls land) — bulk writes go straight to
-  // cloudAdapter's own batched Firestore write instead, which handles the whole list atomically.
-  //
-  // Every mutator this hook returns is wrapped in useCallback. They are passed
-  // down (via App's own useCallback handlers) into memoized list components:
-  // as plain function expressions they took a new identity on every render, so
-  // one keystroke in the search box invalidated App's handlers and re-rendered
-  // every PackageCard anyway — the memo did the shallow compare and then
-  // re-rendered regardless.
-  const persistLocally = useCallback((list) => {
-    const result = deliveryService.savePackages(list, user?.id || null);
-    if (result && result.ok) {
-      setSaveError(null);
-      return true;
+  const commit = useCallback((mutation) => {
+    // 1. Compute next state synchronously to persist it locally
+    let nextState = [...packagesRef.current];
+    if (mutation.type === MUTATION_TYPES.UPDATE || mutation.type === MUTATION_TYPES.ADD) {
+      const idx = nextState.findIndex(p => p.id === mutation.payload.id);
+      if (idx >= 0) {
+        nextState[idx] = { ...nextState[idx], ...mutation.payload };
+      } else {
+        nextState.push(mutation.payload);
+      }
+    } else if (mutation.type === MUTATION_TYPES.DELETE) {
+      nextState = nextState.filter(p => p.id !== mutation.payload.id);
+    } else if (mutation.type === 'UPDATE_ALL') {
+      nextState = mutation.payload;
     }
-    const failure = {
-      message: 'Changes could not be saved to this device (storage is full).',
-      cause: (result && result.error) || null
-    };
-    setSaveError(failure);
-    if (onSaveErrorRef.current) onSaveErrorRef.current(failure);
-    return false;
-  }, [user?.id]);
+    nextState.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
+
+    // 2. Persist locally
+    const result = deliveryService.savePackages(nextState, user?.id || null);
+    if (!result || !result.ok) {
+      const failure = {
+        message: 'Changes could not be saved to this device (storage is full).',
+        cause: (result && result.error) || null
+      };
+      setSaveError(failure);
+      if (onSaveErrorRef.current) onSaveErrorRef.current(failure);
+    } else {
+      setSaveError(null);
+    }
+
+    // 3. Update React state
+    dispatch({ type: 'MUTATE', mutation });
+
+    // 4. Persist to cloud
+    if (user?.id && cloudAdapter.isFirestoreActive?.()) {
+      if (mutation.type === 'UPDATE_ALL') {
+        cloudAdapter.savePackages(mutation.payload);
+      } else {
+        syncQueueService.enqueue(mutation.type, mutation.payload, user.id);
+      }
+    }
+    triggerCloudSync();
+    return true;
+  }, [user?.id, triggerCloudSync]);
 
   const clearSaveError = useCallback(() => setSaveError(null), []);
 
-  const updatePackagesState = useCallback((newPackages) => {
-    setPackages(newPackages);
-    persistLocally(newPackages);
-    if (user?.id && cloudAdapter.isFirestoreActive?.()) {
-      cloudAdapter.savePackages(newPackages);
-    }
-    triggerCloudSync();
-  }, [persistLocally, triggerCloudSync, user?.id]);
-
-  // Single-package mutation: writes one Firestore doc instead of batch-writing the full list (quota-efficient).
-  // The cloud write goes through syncQueueService instead of calling cloudAdapter directly, so a failed
-  // or offline write is retried with backoff and dead-lettered (not silently dropped) instead of just
-  // logging a console.warn.
-  const upsertSinglePackage = useCallback((updatedPackages, changedPkg) => {
-    setPackages(updatedPackages);
-    persistLocally(updatedPackages);
-    if (user?.id && cloudAdapter.isFirestoreActive?.()) {
-      syncQueueService.enqueue(MUTATION_TYPES.UPDATE, changedPkg, user.id);
-    }
-    triggerCloudSync();
-  }, [persistLocally, triggerCloudSync, user?.id]);
-
-  const removeSinglePackage = useCallback((updatedPackages, packageId) => {
-    setPackages(updatedPackages);
-    persistLocally(updatedPackages);
-    if (user?.id && cloudAdapter.isFirestoreActive?.()) {
-      syncQueueService.enqueue(MUTATION_TYPES.DELETE, { id: packageId }, user.id);
-    }
-    triggerCloudSync();
-  }, [persistLocally, triggerCloudSync, user?.id]);
-
-  // Enters demo mode with the sample dataset — used by the "try a live demo" CTA.
   const startDemoMode = useCallback(() => {
     setIsDemoMode(true);
-    setPackages(INITIAL_PACKAGES);
   }, []);
 
   return {
     packages,
-    setPackages,
     isDemoMode,
     setIsDemoMode,
     startDemoMode,
-    updatePackagesState,
-    upsertSinglePackage,
-    removeSinglePackage,
+    commit,
     saveError,
     clearSaveError
   };

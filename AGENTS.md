@@ -51,12 +51,14 @@ flowchart LR
 
 ### Stage 2: UI/UX & Human Factors (UI/UX Architect Subagent)
 * **Mobile-First & Touch Ergonomics**: Minimum $48 \times 48\text{px}$ touch targets, thumb-friendly navigation, notch/safe-area insets.
+* **Backdrop & Gesture Disambiguation**: Isolate slide-over/modal backdrops with dedicated click targets and stop propagation to prevent accidental backdrop dismissals during touch swipes.
 * **Bilingual RTL/LTR Symmetry**: Pixel-perfect layout mirroring between Hebrew (RTL) and English (LTR) using CSS logical properties.
 * **Accessibility**: Strict WCAG 2.2 AAA color contrast, focus states, and semantic ARIA tree.
 
 ### Stage 3: Implementation (Developer & Component Specialists)
 * **`developer` / `ui_ux_specialist` / `auth_cloud_specialist` / `delivery_pipeline_specialist` / `pwa_offline_specialist`**:
   * Follow Clean Architecture: decouple Presentation, Domain Logic, and Storage Adapters.
+  * Inbound Ingestion Guardrails: Use keyword proximity checks and format validators to eliminate false-positive regex detections during email/tracking extraction.
   * Co-locate unit tests alongside implementation (`*.test.jsx`, `*.test.js`).
   * Guard cloud free-tier quotas (Firebase Spark read/write budgets, IndexedDB client caching).
 

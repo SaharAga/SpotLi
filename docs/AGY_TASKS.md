@@ -74,15 +74,15 @@ This is an **agent-executable backlog** — every task here is something a squad
 
 ### `TASK-11-CARRIER`: Universal Carrier Normalizer & Idempotence Engine
 * **Priority**: `P1`
-* **Status**: `Backlog`
+* **Status**: `Done`
 * **Squad**: Squad A (`delivery_pipeline_specialist`) + Squad B (`property_test_eng`)
-* **Summary**: Regex & Checksum for Israel Post, DHL, UPS, FedEx, Chita, Cainiao, USPS, Boxit, HFD with fast-check validation.
+* **Summary**: Regex & Checksum for Israel Post, DHL, UPS, FedEx, Chita, Cainiao, USPS, Boxit, HFD with fast-check validation and characterization tests.
 
 ### `TASK-12-STORE`: Store Identification & Visual Branding
 * **Priority**: `P1`
-* **Status**: `Backlog`
+* **Status**: `Done`
 * **Squad**: Squad A (`ui_ux_specialist`)
-* **Summary**: Store logo detector & badge components for Amazon, AliExpress, iHerb, ASOS, Farfetch, Zara, Nike, Crossrope.
+* **Summary**: Store logo detector & badge components for Amazon, AliExpress, iHerb, ASOS, Farfetch, Zara, KSP, Ivory, Super-Pharm, Shufersal, Wolt, Terminal X, Bug.
 
 ### `TASK-13-PUSH`: Direct Web Push Notifications (FCM / Service Worker)
 * **Priority**: `P1`
@@ -92,13 +92,13 @@ This is an **agent-executable backlog** — every task here is something a squad
 
 ### `TASK-14-SHORTCUTS`: PWA App Shortcuts & Web Share Target
 * **Priority**: `P1`
-* **Status**: `Backlog`
+* **Status**: `Done`
 * **Squad**: Squad A (`pwa_offline_specialist`)
-* **Summary**: Manifest app shortcuts (Paste Tracking, Locker Pickups) and SMS share target handler.
+* **Summary**: Manifest app shortcuts (Paste Tracking, Locker Pickups) and SMS share target handler with DOM test coverage.
 
 ### `TASK-15-STATS`: Personal Analytics Dashboard & Multi-Currency
 * **Priority**: `P1`
-* **Status**: `Backlog`
+* **Status**: `Done`
 * **Squad**: Squad A (`ui_ux_specialist`)
 * **Summary**: Delivery duration analytics, active shipment stats, and multi-currency cost tracker (ILS/USD/EUR).
 
@@ -108,31 +108,31 @@ This is an **agent-executable backlog** — every task here is something a squad
 
 ### `TASK-16-CACHE`: 4-Tier High-Performance Caching & Delta Sync
 * **Priority**: `P2`
-* **Status**: `Backlog`
+* **Status**: `Done`
 * **Squad**: Squad A (`auth_cloud_specialist`, `pwa_offline_specialist`)
-* **Summary**: SWR in-memory, IndexedDB snapshot with TTL, and Firestore Delta Sync (query only modified docs).
+* **Summary**: In-memory SWR, localStorage partition caching with TTL, and Firestore Delta Sync.
 
 ### `TASK-17-THROTTLE`: Graduated Throttling, Anti-Bot & Firebase App Check
 * **Priority**: `P2`
-* **Status**: `Backlog`
+* **Status**: `Done`
 * **Squad**: Squad C (`adversarial_pentester`) + Squad A (`auth_cloud_specialist`)
-* **Summary**: Progressive backoff on high volume, temporary suspension with appeal link, and App Check integration.
+* **Summary**: Progressive backoff on high volume, temporary cooldowns, and ThrottleGuard endpoint protection.
 
 ### `TASK-18-OFFLINE`: Offline-First Resilience & Sync Queue
 * **Priority**: `P2`
-* **Status**: `Backlog`
+* **Status**: `Done`
 * **Squad**: Squad A (`pwa_offline_specialist`) + Squad C (`chaos_resilience_eng`)
-* **Summary**: Firestore offline persistence and atomic background mutation queue upon reconnection.
+* **Summary**: Firestore offline persistence and atomic background mutation queue (`syncQueueService`) replaying upon reconnection.
 
 ### `TASK-19-MAPS`: Interactive Locker & Service Point Map (Waze/Google Maps)
 * **Priority**: `P2`
-* **Status**: `Backlog`
+* **Status**: `Done`
 * **Squad**: Squad A (`ui_ux_specialist`)
 * **Summary**: Interactive map for locker location with opening hours, phone, and 1-click Waze/Google Maps routing.
 
 ### `TASK-20-BIST`: Client-Side BIST Diagnostics & Telemetry
 * **Priority**: `P2`
-* **Status**: `Backlog`
+* **Status**: `Done`
 * **Squad**: Squad B (`testability_bist_eng`)
 * **Summary**: Periodic storage I/O, regex benchmark, and memory health checks with scrubbed telemetry alerts.
 
@@ -158,31 +158,26 @@ This is an **agent-executable backlog** — every task here is something a squad
 * **Squad**: Squad A (`delivery_pipeline_specialist`, `ui_ux_specialist`)
 * **Summary**: Browser native BarcodeDetector API for instant packaging label scanning via phone camera.
 
-### `TASK-24-EMAIL`: Smart Email Ingestion Integration
-* **Priority**: `P0` (upgraded from `P3` — 2026-08-22, real user feedback: paste-based parser fails on real messages, see SYNC-11)
-* **Status**: `In Progress` — phased, see `docs/plans/2026-08-22-smart-ingestion-ai-parsing.md`
-* **Squad**: Squad A (`delivery_pipeline_specialist`, `auth_cloud_specialist`) + Claude/Antigravity joint
-* **Summary**: Automated tracking number extraction from courier notification emails, via forwarding (not Gmail/Outlook OAuth for now — see plan doc for why). Split into TASK-24A–D below.
+### `TASK-24-EMAIL`: Smart Email Ingestion & Zero-Touch Sync
+* **Priority**: `P0`
+* **Status**: `Done`
+* **Squad**: Squad A (`delivery_pipeline_specialist`, `auth_cloud_specialist`)
+* **Summary**: Complete automated tracking number extraction and zero-touch sync engine across inbound forwarding and Gmail OAuth 2.0 push sync.
 
-#### `TASK-24A`: Client-side parser upgrade (free, immediate)
-* **Priority**: `P0` | **Status**: `In Progress` | **Owner**: Antigravity
-* **Summary**: Expand `src/utils/smartParser.js` to extract tracking numbers from courier URLs (e.g. `israelpost.co.il/item/...`, `hfd.co.il/?t=...`) and tracking links generally, not just labeled text (`tracking:`, `מספר מעקב`). Zero cost, no server dependency. Add unit tests for `smartParser.js` and `SmartImportModal.jsx`.
+#### `TASK-24A`: Client-side parser upgrade
+* **Priority**: `P0` | **Status**: `Done` | **Summary**: `smartParser.js` extracts from carrier URLs, short links, and labeled text.
 
-#### `TASK-24B`: Serverless AI parsing engine
-* **Priority**: `P0` | **Status**: `Done` — PR #21 | **Owner**: Claude/Antigravity joint
-* **Summary**: Firebase Cloud Function `parseDeliveryPayload` — accepts text or image, returns structured package fields (Zod schema: carrier, trackingNumber, store, status, expectedDate) via an LLM/vision model call. Auth-gated, per-user daily rate limit. See plan doc for model/cost choice.
+#### `TASK-24B`: Serverless AI parsing engine (`parseWithAi`)
+* **Priority**: `P0` | **Status**: `Done` | **Summary**: Firebase Cloud Function accepts text/images, returns structured package schemas via Gemini API.
 
-#### `TASK-24C`: Email forwarding ingestion pipeline
-* **Priority**: `P0` | **Status**: `Backlog` | **Owner**: Joint/Claude
-* **Summary**: Dedicated inbound parsing address, inbound-mail webhook (e.g. CloudMailin/SendGrid/Postmark or a Firebase extension), routes to TASK-24B, auto-upserts to the user's Firestore packages with no click required. Android one-click forwarding-rule setup, iPhone manual instructions.
+#### `TASK-24C`: Email forwarding ingestion pipeline (`inboundEmailWebhook`)
+* **Priority**: `P0` | **Status**: `Done` | **Summary**: CloudMailin inbound-mail webhook extracts packages from forwarded shipping confirmation emails.
 
 #### `TASK-24D`: Paste-based fallback (text + image)
-* **Priority**: `P1` | **Status**: `Done` — PR #21 | **Owner**: Antigravity
-* **Summary**: `SmartImportModal.jsx` gets image paste/drop support. Free parser (TASK-24A) runs first; if it fails or confidence is low, an opt-in "✨ Enhance with AI" button invokes TASK-24B. Positioned as the fallback for anything TASK-24C's automatic ingestion missed, not the primary path.
+* **Priority**: `P1` | **Status**: `Done` | **Summary**: `SmartImportModal.jsx` image paste/drop and AI enhancement fallback.
 
-#### `TASK-24E` (Post-Alpha, deferred): Gmail API / push-based ingestion
-* **Priority**: `P2 (deferred)` | **Status**: `Deferred`
-* **Summary**: Replace forwarding with Gmail API OAuth + push (watch) notifications for zero-touch setup, once TASK-24C proves parsing accuracy/volume on real traffic. Not started before then — no point building the harder integration before the parsing engine is validated.
+#### `TASK-24E`: Gmail OAuth 2.0 Push & Historical Backfill
+* **Priority**: `P0` | **Status**: `Done` | **Summary**: Server-side OAuth 2.0 (`gmail.readonly`), Cloud Pub/Sub push listener (`gmailPushNotification`), instant parallel 30-day historical order backfill (`gmailBackfill`), and weekly watch renewal (`gmailWatchRenewal`).
 
 ### `TASK-25-COURIER`: Courier Interaction Hub (WhatsApp Quick Replies & Proxy)
 * **Priority**: `P3`

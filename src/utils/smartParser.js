@@ -566,7 +566,7 @@ export function extractPickupLocation(text) {
 }
 
 /**
- * Extracts potential tracking numbers from unstructured text.
+ * Extracts potential tracking numbers from unstructured text with OTP and false-positive suppression.
  * @param {string} text 
  * @returns {string[]}
  */
@@ -575,28 +575,52 @@ export function extractTrackingCandidates(text) {
 
   const candidates = new Set();
 
-  const urlExtracted = extractUrlsAndTrackings(text);
+  // 1. If text has HTML tags, extract href links as well
+  let workingText = text;
+  if (/<a\s+(?:[^>]*?\s+)?href=["']([^"']+)["']/i.test(text)) {
+    const linkRegex = /<a\s+(?:[^>]*?\s+)?href=["']([^"']+)["'][^>]*>(.*?)<\/a>/gi;
+    let linkMatch;
+    while ((linkMatch = linkRegex.exec(text)) !== null) {
+      const href = linkMatch[1];
+      if (href && !href.startsWith('mailto:') && !href.startsWith('javascript:')) {
+        workingText += ` ${href} `;
+      }
+    }
+  }
+
+  const urlExtracted = extractUrlsAndTrackings(workingText);
   for (const item of urlExtracted) {
     if (item.trackingNumber) {
       candidates.add(item.trackingNumber);
     }
   }
   
-  const labeledRegex = /(?:tracking(?:\s*number|\s*no|\s*code)?|מעקב(?:\s*משלוח|\s*הזמנה)?|מספר\s*מעקב|חבילה\s*מספר|מס['׳`״]\s*מעקב|מספר\s*משלוח|משלוח\s*מספר|דבר\s*דואר(?:\s*שמספרו)?|חבילתך\s*יצאה(?:\s*במשלוח)?|החבילה\s*שלך\s*מחכה(?:\s*במספר)?|איסוף\s*חבילה(?:\s*מספר)?|קוד\s*חבילה|קוד\s*משלוח|ברקוד(?:\s*משלוח)?|שליח\s*בדרך(?:\s*משלוח)?|order\s*#|shipment\s*#|package\s*id|waybill|awb)[\s:=#-]+([A-Za-z0-9_-]{5,35})/gi;
+  const labeledRegex = /(?:tracking(?:\s*number|\s*no|\s*code|\s*id|\s*#)?|מעקב(?:\s*משלוח|\s*הזמנה)?|מספר\s*מעקב|חבילה\s*מספר|מס['׳`״]\s*מעקב|קוד\s*מעקב|מספר\s*משלוח|משלוח\s*מספר|דבר\s*דואר(?:\s*שמספרו)?|חבילתך\s*יצאה(?:\s*במשלוח)?|חבילתך\s*במספר|החבילה\s*שלך\s*מחכה(?:\s*במספר)?|איסוף\s*חבילה(?:\s*מספר)?|קוד\s*חבילה|קוד\s*משלוח|ברקוד(?:\s*משלוח)?|שליח\s*בדרך(?:\s*משלוח)?|order\s*#|shipment\s*#|package\s*id|waybill|awb)[\s:=#-]+([A-Za-z0-9_-]{5,35})/gi;
   let match;
-  while ((match = labeledRegex.exec(text)) !== null) {
+  while ((match = labeledRegex.exec(workingText)) !== null) {
     if (match[1]) {
       const candidate = match[1].trim();
-      if (!/^(?:number|no|code|id|pin)$/i.test(candidate)) {
+      if (!/^(?:number|no|code|id|pin|null|undefined)$/i.test(candidate)) {
         candidates.add(candidate);
       }
     }
   }
 
-  const words = text.replace(/[,;:"'()<>[\]{}?&=/\\#%*+!|`^~]/g, ' ').split(/\s+/);
+  const words = workingText.replace(/[,;:"'()<>[\]{}?&=/\\#%*+!|`^~]/g, ' ').split(/\s+/);
   for (const word of words) {
     const cleaned = word.trim().replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, '');
     if (!cleaned) continue;
+
+    // Suppress OTP verification codes
+    if (/^\d{4,8}$/.test(cleaned)) {
+      const idx = workingText.indexOf(cleaned);
+      if (idx !== -1) {
+        const window = workingText.slice(Math.max(0, idx - 40), Math.min(workingText.length, idx + cleaned.length + 40));
+        if (/(?:קוד\s*אימות|קוד\s*חד-?פעמי|אימות\s*חשבון|verification\s*code|otp|security\s*code)/i.test(window)) {
+          continue;
+        }
+      }
+    }
 
     if (/^[A-Z]{2}\d{9}[A-Z]{2}$/i.test(cleaned)) candidates.add(cleaned);
     else if (/^1Z[0-9A-Z]{16}$/i.test(cleaned)) candidates.add(cleaned);

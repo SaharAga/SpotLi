@@ -64,8 +64,8 @@ export async function runBackfillForUser({ db, uid, refreshToken, clientSecret }
     return { ok: true, scanned: 0, saved: 0, skipped: 0 };
   }
 
-  // Fetch messages in parallel chunks of 10 to avoid sequential latency
-  const CHUNK_SIZE = 10;
+  // Fetch messages in parallel chunks of 25 to reduce sequential network latency
+  const CHUNK_SIZE = 25;
   const rawMessages = [];
   for (let i = 0; i < messageRefs.length; i += CHUNK_SIZE) {
     const chunk = messageRefs.slice(i, i + CHUNK_SIZE);

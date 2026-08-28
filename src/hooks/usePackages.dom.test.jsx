@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { act, renderHook, cleanup } from '@testing-library/react';
-import { usePackages } from './usePackages';
+import { usePackages, MUTATION_TYPES } from './usePackages';
 import { deliveryService } from '../services/deliveryService';
 import { cloudAdapter } from '../services/cloudStorageAdapter';
 import { syncQueueService } from '../services/syncQueueService';
@@ -74,13 +74,15 @@ describe('usePackages', () => {
     expect(result.current.packages).toEqual(pushed);
   });
 
-  it('startDemoMode loads the sample dataset and flips isDemoMode', () => {
+  it('startDemoMode loads the sample dataset and flips isDemoMode', async () => {
     const { result } = renderHook(() => usePackages(null, vi.fn()));
-    act(() => {
+    await act(async () => {
       result.current.startDemoMode();
     });
+    await vi.waitFor(() => {
+      expect(result.current.packages.length).toBeGreaterThan(0);
+    });
     expect(result.current.isDemoMode).toBe(true);
-    expect(result.current.packages.length).toBeGreaterThan(0);
   });
 
   it('updatePackagesState persists locally and calls triggerCloudSync', () => {
@@ -89,7 +91,7 @@ describe('usePackages', () => {
 
     const next = [{ id: 'p3', title: 'Bulk', trackingNumber: 'RS948219481IL', carrier: 'israel-post', status: 'in_transit', category: 'other', isPinned: false, isArchived: false, checkpoints: [] }];
     act(() => {
-      result.current.updatePackagesState(next);
+      result.current.commit({ type: 'UPDATE_ALL', payload: next });
     });
 
     expect(result.current.packages).toEqual(next);
@@ -109,7 +111,7 @@ describe('usePackages', () => {
     const changed = { id: 'p4', title: 'Solo update', trackingNumber: 'RS948219481IL', carrier: 'israel-post', status: 'in_transit', category: 'other', isPinned: false, isArchived: false, checkpoints: [] };
 
     act(() => {
-      result.current.upsertSinglePackage([changed], changed);
+      result.current.commit({ type: MUTATION_TYPES.UPDATE, payload: changed });
     });
 
     expect(enqueueSpy).toHaveBeenCalledWith('UPDATE', changed, 'user-1');
@@ -121,7 +123,7 @@ describe('usePackages', () => {
     const { result } = renderHook(() => usePackages({ id: 'user-1' }, vi.fn()));
 
     act(() => {
-      result.current.removeSinglePackage([], 'p5');
+      result.current.commit({ type: MUTATION_TYPES.DELETE, payload: { id: 'p5' } });
     });
 
     expect(enqueueSpy).not.toHaveBeenCalled();
@@ -141,9 +143,7 @@ describe('usePackages', () => {
       vi.spyOn(Storage.prototype, 'setItem').mockImplementation(quotaThrower);
 
       act(() => {
-        result.current.updatePackagesState([
-          { id: 'q1', title: 'Quota', trackingNumber: 'TRKQ' }
-        ]);
+        result.current.commit({ type: 'UPDATE_ALL', payload: [{ id: 'q1', title: 'Quota', trackingNumber: 'TRKQ' }] });
       });
 
       expect(result.current.saveError).not.toBeNull();
@@ -161,15 +161,12 @@ describe('usePackages', () => {
       vi.spyOn(Storage.prototype, 'setItem').mockImplementation(quotaThrower);
 
       act(() => {
-        result.current.upsertSinglePackage(
-          [{ id: 'q2', title: 'One', trackingNumber: 'TRK2' }],
-          { id: 'q2' }
-        );
+        result.current.commit({ type: MUTATION_TYPES.UPDATE, payload: { id: 'q2', title: 'One', trackingNumber: 'TRK2' } });
       });
       expect(result.current.saveError).not.toBeNull();
 
       act(() => {
-        result.current.removeSinglePackage([], 'q2');
+        result.current.commit({ type: MUTATION_TYPES.DELETE, payload: { id: 'q2' } });
       });
       expect(onSaveError).toHaveBeenCalledTimes(2);
     });
@@ -179,13 +176,13 @@ describe('usePackages', () => {
 
       const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(quotaThrower);
       act(() => {
-        result.current.updatePackagesState([{ id: 'q3', title: 'X', trackingNumber: 'TRK3' }]);
+        result.current.commit({ type: 'UPDATE_ALL', payload: [{ id: 'q3', title: 'X', trackingNumber: 'TRK3' }] });
       });
       expect(result.current.saveError).not.toBeNull();
 
       setItem.mockRestore();
       act(() => {
-        result.current.updatePackagesState([{ id: 'q3', title: 'X', trackingNumber: 'TRK3' }]);
+        result.current.commit({ type: 'UPDATE_ALL', payload: [{ id: 'q3', title: 'X', trackingNumber: 'TRK3' }] });
       });
       expect(result.current.saveError).toBeNull();
     });
@@ -195,7 +192,7 @@ describe('usePackages', () => {
       vi.spyOn(Storage.prototype, 'setItem').mockImplementation(quotaThrower);
 
       act(() => {
-        result.current.updatePackagesState([{ id: 'q4', title: 'Y', trackingNumber: 'TRK4' }]);
+        result.current.commit({ type: 'UPDATE_ALL', payload: [{ id: 'q4', title: 'Y', trackingNumber: 'TRK4' }] });
       });
       expect(result.current.saveError).not.toBeNull();
 

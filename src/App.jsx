@@ -54,7 +54,7 @@ import { STORAGE_KEYS } from './constants/storageKeys';
 import { APP_NAME, APP_COPYRIGHT } from './constants/app';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { usePackages } from './hooks/usePackages';
+import { usePackages, MUTATION_TYPES } from './hooks/usePackages';
 import { triggerGmailBackfill } from './services/emailSyncService';
 
 /**
@@ -182,12 +182,7 @@ export function DashboardContent() {
 
   const {
     packages,
-    setPackages,
-    isDemoMode,
-    startDemoMode,
-    updatePackagesState,
-    upsertSinglePackage,
-    removeSinglePackage,
+    isDemoMode, startDemoMode, commit,
     saveError,
     clearSaveError
   } = usePackages(user, triggerCloudSync);
@@ -447,12 +442,10 @@ export function DashboardContent() {
     const currentPref = getAutoArchiveSetting();
     if (currentPref === true) {
       // Auto-archive directly
-      setPackages(prev => {
-        const updated = prev.map(p => p.id === pkgId ? { ...p, isArchived: true } : p);
-        const changed = updated.find(p => p.id === pkgId);
-        if (changed) upsertSinglePackage(updated, changed);
-        return updated;
-      });
+      const existing = packagesRef.current.find(p => p.id === pkgId);
+      if (existing) {
+        commit({ type: MUTATION_TYPES.UPDATE, payload: { ...existing, isArchived: true, updatedAt: new Date().toISOString() } });
+      }
     } else if (currentPref === null) {
       // First time reaching delivered without preference set
       const prompted = typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEYS.AUTO_ARCHIVE_PROMPTED) === 'true';
@@ -460,7 +453,7 @@ export function DashboardContent() {
         openModal(MODAL.AUTO_ARCHIVE, { packageId: pkgId });
       }
     }
-  }, [getAutoArchiveSetting, openModal, setPackages, upsertSinglePackage]);
+  }, [getAutoArchiveSetting, openModal, commit]);
 
   const handleConfirmAutoArchive = () => {
     if (user) {
@@ -478,12 +471,10 @@ export function DashboardContent() {
     } catch {}
 
     if (pendingDeliveredPkgId) {
-      setPackages(prev => {
-        const updated = prev.map(p => p.id === pendingDeliveredPkgId ? { ...p, isArchived: true } : p);
-        const changed = updated.find(p => p.id === pendingDeliveredPkgId);
-        if (changed) upsertSinglePackage(updated, changed);
-        return updated;
-      });
+      const existing = packagesRef.current.find(p => p.id === pendingDeliveredPkgId);
+      if (existing) {
+        commit({ type: MUTATION_TYPES.UPDATE, payload: { ...existing, isArchived: true, updatedAt: new Date().toISOString() } });
+      }
     }
     closeModal(MODAL.AUTO_ARCHIVE);
     showToast(language === 'he' ? 'החבילה הועברה לארכיון וההגדרה נשמרה' : 'Package archived and preference saved', 'success');
@@ -552,8 +543,7 @@ export function DashboardContent() {
       showToast(language === "he" ? "החבילה נוספה למעקב!" : "New package added to tracking!", "success");
     }
 
-    const changedPkg = updated.find(p => p.id === targetId);
-    upsertSinglePackage(updated, changedPkg);
+    commit({ type: MUTATION_TYPES.UPDATE, payload: changedPkg });
 
     setModalPayload(MODAL.DETAIL, (pkg) => (pkg?.id === targetId ? changedPkg : pkg));
 
@@ -564,7 +554,7 @@ export function DashboardContent() {
 
   const handleDeletePackage = (id) => {
     const updated = packages.filter(p => p.id !== id);
-    removeSinglePackage(updated, id);
+    commit(updated, id);
     if (selectedDetailPackage?.id === id) {
       closeModal(MODAL.DETAIL);
     }
@@ -579,8 +569,8 @@ export function DashboardContent() {
       return p;
     });
     const changedPkg = updated.find(p => p.id === id);
-    if (changedPkg) upsertSinglePackage(updated, changedPkg);
-  }, [upsertSinglePackage]);
+    if (changedPkg) commit({ type: MUTATION_TYPES.UPDATE, payload: changedPkg });
+  }, [commit]);
 
   const handleToggleArchive = useCallback((id) => {
     const updated = packagesRef.current.map(p => {
@@ -597,43 +587,30 @@ export function DashboardContent() {
       return p;
     });
     const changedPkg = updated.find(p => p.id === id);
-    if (changedPkg) upsertSinglePackage(updated, changedPkg);
-  }, [language, showToast, upsertSinglePackage]);
+    if (changedPkg) commit({ type: MUTATION_TYPES.UPDATE, payload: changedPkg });
+  }, [language, showToast, commit]);
 
   const handleStatusChange = useCallback((id, newStatus) => {
     const existingPkg = packagesRef.current.find(p => p.id === id);
     if (existingPkg && existingPkg.status !== newStatus && !deliveryService.canTransition(existingPkg.status, newStatus)) {
       showToast(
-        language === "he"
-          ? `מעבר לא חוקי מ-${existingPkg.status} אל ${newStatus}`
-          : `Invalid state transition from ${existingPkg.status} to ${newStatus}`,
-        "error"
+        language === 'he' ? 'מעבר סטטוס לא חוקי' : 'Invalid status transition',
+        'error'
       );
       return;
     }
-
-    const isNewlyDelivered = newStatus === "delivered" && existingPkg?.status !== "delivered";
-
-    // packagesRef, not `packages`: reading the list through the ref is what
-    // keeps this handler referentially stable for the memoized PackageCard.
-    // (The status-change notification used to be fired from here; it now
-    // lives in deliveryService, which is why there is no call left.)
-    const updated = packagesRef.current.map(p => {
-      if (p.id === id) {
-        return { ...p, status: newStatus, updatedAt: new Date().toISOString() };
-      }
-      return p;
-    });
-    const changedPkg = updated.find(p => p.id === id);
-    if (changedPkg) upsertSinglePackage(updated, changedPkg);
+    const isNewlyDelivered = newStatus === 'delivered' && existingPkg?.status !== 'delivered';
+    const changedPkg = { ...existingPkg, status: newStatus, updatedAt: new Date().toISOString() };
+    
+    commit({ type: MUTATION_TYPES.UPDATE, payload: changedPkg });
     setModalPayload(MODAL.DETAIL, (pkg) => (
-      pkg?.id === id ? { ...pkg, status: newStatus, updatedAt: new Date().toISOString() } : pkg
+      pkg?.id === id ? changedPkg : pkg
     ));
 
     if (isNewlyDelivered) {
       checkAndHandleAutoArchive(id, true);
     }
-  }, [checkAndHandleAutoArchive, language, setModalPayload, showToast, upsertSinglePackage]);
+  }, [checkAndHandleAutoArchive, language, setModalPayload, showToast, commit]);
 
   // Display name for a carrier, in the active language.
   const carrierLabel = useCallback((pkg) => {
@@ -659,7 +636,7 @@ export function DashboardContent() {
 
     if (res.success && res.updatedPackage) {
       const updatedList = packagesRef.current.map(p => (p.id === pkg.id ? res.updatedPackage : p));
-      upsertSinglePackage(updatedList, res.updatedPackage);
+      commit(updatedList, res.updatedPackage);
       setModalPayload(MODAL.DETAIL, (open) => (open?.id === pkg.id ? res.updatedPackage : open));
       showToast(t('tracking.refreshSuccessSingle'), 'success');
     } else if (res.rateLimited) {
@@ -667,7 +644,7 @@ export function DashboardContent() {
     } else {
       showToast(res.error || 'Failed to refresh tracking', 'error');
     }
-  }, [carrierLabel, setModalPayload, showToast, t, upsertSinglePackage, user?.id]);
+  }, [carrierLabel, setModalPayload, showToast, t, commit, user?.id]);
 
   // Passed straight into the memoized list components, so they must be
   // referentially stable — an inline arrow here re-rendered every card on
@@ -695,7 +672,7 @@ export function DashboardContent() {
     const res = await trackingService.batchRefreshTracking(packages);
 
     if (res.updatedPackages && res.updatedPackages.length > 0) {
-      updatePackagesState(res.updatedPackages);
+      commit({ type: 'UPDATE_ALL', payload: res.updatedPackages });
       setModalPayload(MODAL.DETAIL, (open) => (
         (open && res.updatedPackages.find(p => p.id === open.id)) || open
       ));
@@ -729,7 +706,7 @@ export function DashboardContent() {
     // this fix shipped in #67; this is the call site it needed.
     const res = deliveryService.importData(jsonString, user?.id || null);
     if (res.success) {
-      updatePackagesState(res.packages);
+      commit({ type: 'UPDATE_ALL', payload: res.packages });
       showToast(t('backup.imported'), 'success');
     } else {
       showToast(res.error || 'Failed to import', 'error');
@@ -740,14 +717,13 @@ export function DashboardContent() {
     if (isDemoMode) {
       if (window.confirm(t('backup.resetConfirm'))) {
         const demo = deliveryService.resetToDemo(user?.id || null);
-        setPackages(demo);
+        commit({ type: 'UPDATE_ALL', payload: demo });
         showToast(t('backup.resetDone'), 'success');
       }
     } else {
       if (window.confirm(t('backup.clearAllDeliveriesConfirm'))) {
         const cleared = deliveryService.clearUserPackages(user?.id || null);
-        setPackages(cleared);
-        triggerCloudSync();
+        commit({ type: 'UPDATE_ALL', payload: cleared });
         showToast(t('backup.clearedDone'), 'info');
       }
     }

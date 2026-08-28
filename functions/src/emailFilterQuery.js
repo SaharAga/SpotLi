@@ -15,13 +15,26 @@ const SUPPORTED_STORE_DOMAINS = [
   'shein.com',
   'temu.com',
   'israelpost.co.il',
+  'chtr.co.il',
+  'chita.co.il',
+  'epost.co.il',
+  'hfd.co.il',
+  'boxit.co.il',
+  'buzzr.co.il',
+  'tapuzdelivery.co.il',
+  'bardistribution.co.il',
+  'lionwheel.com',
   'dhl.com',
   'fedex.com',
   'ups.com',
   'iherb.com',
   'asos.com',
   'zara.com',
-  'next.co.il'
+  'next.co.il',
+  'ksp.co.il',
+  'ivory.co.il',
+  'terminalx.com',
+  'wolt.com'
 ];
 
 const SHIPPING_KEYWORD_TERMS = [
@@ -31,8 +44,14 @@ const SHIPPING_KEYWORD_TERMS = [
   '"מספר מעקב"',
   '"נשלחה חבילה"',
   '"אישור הזמנה"',
-  '"ההזמנה בדרך"'
+  '"ההזמנה בדרך"',
+  '"החבילה בדרך"',
+  '"דבר דואר"',
+  '"קוד איסוף"',
+  '"נקודת איסוף"',
+  '"החבילה שלך מחכה"'
 ];
 
 export const DEFAULT_FORWARDING_FILTER_QUERY =
   `subject:(${SHIPPING_KEYWORD_TERMS.join(' OR ')}) OR from:(${SUPPORTED_STORE_DOMAINS.join(' OR ')})`;
+

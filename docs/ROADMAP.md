@@ -19,28 +19,26 @@ The codebase is developed and maintained using an autonomous **3-Squad Topology*
 
 ## 3. Sprint Breakdown & Milestones
 
-### Sprint 1: Architecture & Security Hardening (Completed — v0.2.1)
-- [x] **TASK-101: Data Integrity & Schema Validation Layer**
-- [x] **TASK-102: Multi-Tier Authentication & Firestore Adapter**
-
-### Sprint 2: Multi-Carrier Auto-Tracking & State Transitions (Completed — v0.2.2)
-- [x] **TASK-201: Multi-Carrier Resolution Engine & Rate-Limiting Cache**
-- [x] **TASK-202: Israeli & Global Couriers Direct Parsers**
-- [x] **TASK-203: State Machine Transition Pipeline & UI Controls**
-
-### Sprint 3: Smart Notifications, Offline & Export (Active — v0.4.1 -> v0.5.0)
+### Sprint 3: Smart Notifications, Offline & Export (Completed — v0.6.0)
 - [x] **TASK-301: Dedicated Export Center & Extended Courier Support** (Completed — v0.4.0)
 - [x] **TASK-302: Navbar & Triage Ergonomics Cleanup** (Completed — v0.4.1)
-- [ ] **TASK-303: Web Push Notifications via Service Worker** (Active)
-- [ ] **TASK-304: Telegram User Notification Bridge** (Active)
-- [ ] **TASK-305: Advanced PWA Offline Storage (IndexedDB Migration)** (Planned)
-- [ ] **TASK-306: Service Worker Background Sync API** (Planned)
+- [x] **TASK-303: Graduated Throttling & Offline Mutation Queue** (Completed — v0.6.0)
+- [x] **TASK-304: Telegram Feedback Relay Bridge** (Completed — v0.2.0)
+- [x] **TASK-305: Interactive Locker & Pickup Map** (Completed — v0.6.0)
+- [x] **TASK-306: Built-in Self-Test (BIST) Diagnostics** (Completed — v0.6.0)
 
-### Sprint 4: AI Smart Ingestion & Omnichannel Ecosystem (Planned — v0.6.0)
-- [ ] **TASK-401: Gemini AI Smart Ingestion Engine** (Planned)
-- [ ] **TASK-402: Gmail OAuth Integration** (Planned)
-- [ ] **TASK-403: Inbound Email Delivery Webhook Parser** (Planned)
-- [ ] **TASK-404: Multilingual Checkpoint Translation Engine** (Planned)
+### Sprint 4: Automated Email Ingestion & Gmail OAuth (Completed — v0.18.3)
+- [x] **TASK-401: Gemini AI Smart Ingestion Engine (`parseWithAi`)** (Completed — v0.18.0)
+- [x] **TASK-402: Inbound Email Delivery Webhook (`inboundEmailWebhook`)** (Completed — v0.18.0)
+- [x] **TASK-403: 1-Click Gmail OAuth 2.0 (`gmail.readonly`) & Real-Time Push Sync** (Completed — v0.18.3)
+- [x] **TASK-404: 30-Day Historical Parallel Backfill & Multi-Carrier Heuristics** (Completed — v0.18.3)
+
+### Sprint 5: Native Push & Omnichannel Tooling (Active / Next)
+- [ ] **TASK-501: Direct FCM Web Push Notifications** (TASK-13)
+- [ ] **TASK-502: Camera Barcode & Label OCR Scanner** (TASK-23)
+- [ ] **TASK-503: $75 Customs Exemption Monitor** (TASK-21)
+- [ ] **TASK-504: Return Window Countdown Vault** (TASK-22)
+- [ ] **TASK-505: Courier WhatsApp Quick-Reply Assistant** (TASK-25)
 
 ---
 

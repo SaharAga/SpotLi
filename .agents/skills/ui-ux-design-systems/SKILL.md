@@ -26,6 +26,11 @@ This skill provides exhaustive guidelines for ensuring world-class, frictionless
 * **Progressive Disclosure**: Show primary metrics and actions first; disclose advanced details, technical JSON, or full raw history via explicit expandable drawers or modals.
 * **Predictive Prefill**: Auto-populate inputs from pasted tracking numbers, SMS snippets, or clipboard payloads without requiring the user to select carrier dropdowns manually.
 
+### C. Mobile Overlay & Backdrop Hit-Testing
+* **Dedicated Backdrop Element**: Separate modal/drawer backdrops from their container content. Avoid binding backdrop click listeners to large wrapper containers that wrap interactive sheets.
+* **Touch Event Disambiguation**: On mobile touch surfaces, ensure backdrop dismiss handlers do not swallow or conflict with swipe gestures or taps inside the slide-over panel. Use `e.stopPropagation()` or explicit backdrop click targets.
+* **Touch Target Isolation**: Interactive buttons and swipe handles inside drawers must retain distinct tap targets ($\ge 48\times 48\text{px}$) that do not trigger backdrop dismissal.
+
 ---
 
 ## 2. Bilingual RTL/LTR Symmetrical Geometry

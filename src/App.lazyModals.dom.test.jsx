@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { DashboardContent } from './App';
 import { renderWithLanguage } from './test-utils/renderWithProviders';
 import { deliveryService } from './services/deliveryService';
-import { LEGAL_VERSION } from './constants/legal';
+import { LEGAL_VERSION } from './constants/legalVersion';
 
 // P3.3: every dialog is now behind `React.lazy`, so opening one is an async
 // module fetch rather than a state flip on an already-mounted component.

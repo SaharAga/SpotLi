@@ -11,7 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { CARRIERS, CARRIER_LIST } from '../types/carriers';
 import { APP_VERSION, RELEASE_DATE, BUILD_CHANNEL } from '../constants/version';
 import { notificationService } from '../services/notificationService';
-import { LegalDocumentModal } from './LegalDocumentModal';
+const LegalDocumentModal = React.lazy(() => import('./LegalDocumentModal').then(module => ({ default: module.LegalDocumentModal })));
 import { exportRawToJSON } from '../utils/exportUtils';
 import { deliveryService } from '../services/deliveryService';
 import { todayISO } from '../utils/dateUtils';
@@ -916,11 +916,11 @@ export function AccountModal({
 
       </Modal>
 
-      <LegalDocumentModal
+      <React.Suspense fallback={null}><LegalDocumentModal
         isOpen={!!openLegalDoc}
         onClose={() => setOpenLegalDoc(null)}
         docType={openLegalDoc || 'terms'}
-      />
+      /></React.Suspense>
     </>
   );
 }

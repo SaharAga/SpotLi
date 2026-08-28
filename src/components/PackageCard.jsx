@@ -11,7 +11,7 @@ import { STAGES } from '../types/stages';
 import { useLanguage } from '../context/LanguageContext';
 import { formatDate, getDaysRemaining } from '../utils/dateUtils';
 import { triggerHapticFeedback } from '../utils/haptics';
-import { checkRateLimit } from '../services/trackingService';
+import { checkRateLimit } from '../utils/rateLimiter';
 
 function PackageCardImpl({
   pkg,
