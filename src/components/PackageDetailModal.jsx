@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   X, ExternalLink, Copy, Check, Calendar, MapPin, Plus, 
-  Truck, Clock, RefreshCw, Info, RotateCcw
+  Truck, Clock, RefreshCw, Info, RotateCcw, Edit3
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { getCarrier } from '../types/carriers';
@@ -21,6 +21,7 @@ export function PackageDetailModal({
   pkg,
   isOpen,
   onClose,
+  onEdit,
   onUpdatePackage,
   onRefreshTracking,
   onOpenLockerMap,
@@ -216,9 +217,24 @@ export function PackageDetailModal({
           </div>
 
           <div className="flex items-center gap-2">
+            {onEdit && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onEdit(pkg);
+                }}
+                className="p-2.5 px-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white transition-all flex items-center gap-1.5 border border-slate-700/80 shadow-sm min-h-[40px]"
+                title={language === 'he' ? 'עריכת פרטי חבילה' : 'Edit package details'}
+                aria-label={language === 'he' ? 'עריכת פרטי חבילה' : 'Edit package details'}
+              >
+                <Edit3 className="w-4 h-4 text-blue-400" />
+                <span className="text-xs font-semibold">{language === 'he' ? 'עריכה' : 'Edit'}</span>
+              </button>
+            )}
             <button
               onClick={onClose}
-              className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+              className="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+              aria-label={t('common.close') || 'Close'}
             >
               <X className="w-5 h-5" />
             </button>

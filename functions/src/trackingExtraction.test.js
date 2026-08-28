@@ -3,8 +3,61 @@ import {
   sanitizeEmailHtml,
   isFalsePositive,
   detectStore,
-  extractTrackingDetails
+  extractTrackingDetails,
+  inferDeliveryStatus,
+  generateCleanTitle
 } from './trackingExtraction.js';
+
+describe('inferDeliveryStatus', () => {
+  it('infers ready_for_pickup correctly from English and Hebrew phrases', () => {
+    expect(inferDeliveryStatus('AliExpress - Package EP903057886 is ready for pickup', '')).toBe('ready_for_pickup');
+    expect(inferDeliveryStatus('חבילתך ממתינה לאיסוף בלוקר אי-פוסט', '')).toBe('ready_for_pickup');
+    expect(inferDeliveryStatus('Your package is available for collection', '')).toBe('ready_for_pickup');
+    expect(inferDeliveryStatus('החבילה מוכנה לאיסוף בנקודת חלוקה', '')).toBe('ready_for_pickup');
+  });
+
+  it('infers out_for_delivery correctly', () => {
+    expect(inferDeliveryStatus('Your package is out for delivery today', '')).toBe('out_for_delivery');
+    expect(inferDeliveryStatus('השליח בדרך אליך עם החבילה', '')).toBe('out_for_delivery');
+  });
+
+  it('infers delivered correctly', () => {
+    expect(inferDeliveryStatus('Your package has been delivered', '')).toBe('delivered');
+    expect(inferDeliveryStatus('החבילה נמסרה בהצלחה ליעד', '')).toBe('delivered');
+  });
+
+  it('infers exception correctly', () => {
+    expect(inferDeliveryStatus('AliExpress - Delivery issue for your package', '')).toBe('exception');
+    expect(inferDeliveryStatus('עיכוב במכס עבור משלוח', '')).toBe('exception');
+  });
+
+  it('infers in_transit correctly', () => {
+    expect(inferDeliveryStatus('Your package has shipped and is on its way', '')).toBe('in_transit');
+    expect(inferDeliveryStatus('ההזמנה שלך בדרך', '')).toBe('in_transit');
+  });
+});
+
+describe('generateCleanTitle', () => {
+  it('cleans AliExpress status and boilerplate to store order', () => {
+    const title = generateCleanTitle('AliExpress - Package EP903057886 is ready for pickup', 'AliExpress', 'hfd');
+    expect(title).toBe('AliExpress Order');
+  });
+
+  it('cleans delivery issue boilerplate to store order', () => {
+    const title = generateCleanTitle('AliExpress - Delivery issue for package EP903057886', 'AliExpress', 'hfd');
+    expect(title).toBe('AliExpress Order');
+  });
+
+  it('preserves real product title in quotes', () => {
+    const title = generateCleanTitle('Your Amazon order for "Wireless Earbuds Pro" has shipped', 'Amazon', 'amazon');
+    expect(title).toBe('Amazon - Wireless Earbuds Pro');
+  });
+
+  it('cleans Hebrew boilerplate when no store detected', () => {
+    const title = generateCleanTitle('חבילה EP903057886 ממתינה לאיסוף מ-HFD', null, 'hfd');
+    expect(title).toBe('Package via HFD');
+  });
+});
 
 describe('sanitizeEmailHtml', () => {
   it('strips tags and scripts and styles', () => {

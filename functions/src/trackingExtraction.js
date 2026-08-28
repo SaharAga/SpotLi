@@ -174,6 +174,58 @@ export function detectStore(from = '', text = '') {
 }
 
 /**
+ * Infers the package lifecycle status from email subject and body text.
+ * @param {string} subject
+ * @param {string} body
+ * @returns {'ordered' | 'in_transit' | 'out_for_delivery' | 'ready_for_pickup' | 'delivered' | 'exception'}
+ */
+export function inferDeliveryStatus(subject = '', body = '') {
+  const combined = `${subject} ${body}`.toLowerCase();
+
+  // 1. Delivered
+  if (
+    /\b(delivered|successfully delivered|package delivered|item delivered)\b/i.test(combined) ||
+    /(?:נמסרה בהצלחה|נמסר ליעד|החבילה נמסרה|נמסר בהצלחה)/i.test(combined)
+  ) {
+    return 'delivered';
+  }
+
+  // 2. Ready for Pickup / Locker / Collection point
+  if (
+    /\b(ready for (?:pickup|collection)|available for (?:pickup|collection)|waiting for (?:pickup|collection)|arrived at (?:pickup|collection) point|delivered to locker|ready to collect)\b/i.test(combined) ||
+    /(?:מוכנה לאיסוף|ממתינה לאיסוף|הגיעה לנקודת איסוף|הגיעה לנקודת חלוקה|הגיעה ללוקר|הגיע ללוקר|החבילה ממתינה לך|מחכה לך בנקודת|איסוף עצמי מ)/i.test(combined)
+  ) {
+    return 'ready_for_pickup';
+  }
+
+  // 3. Out for delivery (courier on the road)
+  if (
+    /\b(out for delivery|with (?:the\s+)?courier|on its way to you today|delivery today|arriving today)\b/i.test(combined) ||
+    /(?:יוצאת למסירה|יצאה עם שליח|נמסרה לשליח|השליח בדרך אליך|חלוקה היום|מגיע היום)/i.test(combined)
+  ) {
+    return 'out_for_delivery';
+  }
+
+  // 4. Exception / Customs issue
+  if (
+    /\b(delivery issue|delivery failed|delivery exception|customs clearance required|undeliverable)\b/i.test(combined) ||
+    /(?:עיכוב במכס|בעיה במסירה|מסירה נכשלה|נכשל ניסיון מסירה)/i.test(combined)
+  ) {
+    return 'exception';
+  }
+
+  // 5. In Transit / Shipped
+  if (
+    /\b(shipped|in transit|dispatched|on its way|departed|in delivery)\b/i.test(combined) ||
+    /(?:נשלחה|נשלח|בדרך|נמסרה לחברת השליחויות|יצאה לדרך)/i.test(combined)
+  ) {
+    return 'in_transit';
+  }
+
+  return 'ordered';
+}
+
+/**
  * Derives a clean, user-friendly package title from store and subject.
  * @param {string} subject
  * @param {string|null} store
@@ -181,20 +233,62 @@ export function detectStore(from = '', text = '') {
  * @returns {string}
  */
 export function generateCleanTitle(subject = '', store = null, carrier = 'other') {
+  if (!subject || typeof subject !== 'string') {
+    if (store) return `${store} Order`;
+    if (carrier !== 'other') return `Package via ${carrier.toUpperCase()}`;
+    return 'Online Order';
+  }
+
+  // 1. Check for product enclosed in quotes first: e.g. Your order for "Mechanical Keyboard" has shipped
+  const productInQuotes = subject.match(/["'״”]([^"'״”]{3,60})["'״”]/);
+  if (productInQuotes && productInQuotes[1]) {
+    const item = productInQuotes[1].trim();
+    if (!/^[A-Z0-9_-]{8,35}$/i.test(item) && !/^(?:order|package|tracking|delivery|shipment)/i.test(item)) {
+      return store ? `${store} - ${item}` : item;
+    }
+  }
+
+  // 2. Check for "for <Item Name>" pattern: e.g. "Delivery update for Running Shoes"
+  const forProductMatch = subject.match(/(?:for|עבור)\s+([A-Za-z0-9\u0590-\u05FF\s-]{3,40})(?:\s+(?:has|is|was|נשלח|הגיע|בדרך)|$)/i);
+  if (forProductMatch && forProductMatch[1]) {
+    const itemCandidate = forProductMatch[1].trim();
+    if (!/^(?:order|package|delivery|shipment|pickup|collection|חבילה|משלוח|הזמנה|איסוף|your\s+package)/i.test(itemCandidate) && itemCandidate.length >= 3) {
+      return store ? `${store} - ${itemCandidate}` : itemCandidate;
+    }
+  }
+
   let clean = subject
-    .replace(/^(fwd|fw|re|הועבר|תגובה):\s*/gi, '')
-    .replace(/(your order has shipped|order confirmation|shipping confirmation|shipment update|update on order|is on its way|has been dispatched|נשלחה חבילה|אישור הזמנה|ההזמנה שלך נשלחה|ההזמנה בדרך|החבילה שלך בדרך)/gi, '')
-    .replace(/[#[\](){}:|]/g, ' ')
+    // Strip email forwards / replies
+    .replace(/^(?:fwd|fw|re|הועבר|תגובה):\s*/gi, '')
+    // Strip common store prefixes like "AliExpress - ", "Amazon.com: ", "SHEIN: "
+    .replace(/^(?:aliexpress|amazon(?:\.com)?|shein|temu|ebay|zara|asos|ksp|ivory|super-pharm|wolt)\s*[-:|–—]\s*/gi, '')
+    // Strip delivery issue phrases
+    .replace(/delivery\s*issue(?:\s*for)?/gi, '')
+    // Strip "Package <TRACKING_ID>" or "חבילה <TRACKING_ID>"
+    .replace(/(?:package|shipment|order|חבילה|משלוח|הזמנה)\s+[A-Za-z0-9_-]{5,35}/gi, '')
+    // Strip tracking numbers
+    .replace(/\b[A-Za-z0-9_-]{8,35}\b/g, '')
+    // Strip delivery status sentences / phrases
+    .replace(/(?:is\s+)?(?:ready|available|waiting)\s+for\s+(?:pickup|collection|delivery)/gi, '')
+    .replace(/(?:your\s+order\s+has\s+shipped|order\s+confirmation|shipping\s+confirmation|shipment\s+update|update\s+on\s+order|is\s+on\s+its\s+way|has\s+been\s+dispatched|has\s+been\s+delivered|out\s+for\s+delivery)/gi, '')
+    .replace(/(?:נשלחה\s+חבילה|אישור\s+הזמנה|ההזמנה\s+שלך\s+נשלחה|ההזמנה\s+בדרך|החבילה\s+שלך\s+בדרך|הודעה\s+על\s+הגעת\s+חבילה|ממתינה\s+לאיסוף|מוכנה\s+לאיסוף|איסוף\s+מלוקר|איסוף\s+מנקודה|אי-פוסט|שליחויות)/gi, '')
+    // Strip remaining generic delivery keywords
+    .replace(/\b(?:package|shipment|order|delivery|pickup|collection|delivered|shipped|tracking|item)\b/gi, '')
+    .replace(/(?:חבילה|משלוח|הזמנה|איסוף|לוקר|דואר|נקודת\s*חלוקה)/g, '')
+    // Strip carrier suffixes like "מ-HFD" or "from HFD" or "via Chita"
+    .replace(/(?:מ-|from\s+|via\s+|ב-)(?:hfd|chita|boxit|buzzr|tapuz|bar|lionwheel|israel\s*post|dhl|fedex|ups)/gi, '')
+    // Strip punctuation
+    .replace(/[#[\](){}:|–—.,/\\-]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 
-  const productInQuotes = subject.match(/["']([^"']{3,60})["']/);
-  if (productInQuotes && productInQuotes[1]) {
-    const item = productInQuotes[1].trim();
-    return store ? `${store} - ${item}` : item;
-  }
+  // If the remaining clean text is generic, too short (<3 chars), or purely digits/symbols
+  const isGeneric = !clean || 
+    clean.length < 3 || 
+    /^[0-9_-]+$/.test(clean) ||
+    /^(?:package|order|delivery|pickup|collection|delivered|shipped|tracking|item|חבילה|משלוח|הזמנה|איסוף|דואר)$/i.test(clean);
 
-  if (clean && clean.length >= 3) {
+  if (!isGeneric) {
     if (store && !clean.toLowerCase().includes(store.toLowerCase())) {
       return `${store} - ${clean.slice(0, 60)}`.trim();
     }

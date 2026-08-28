@@ -1,27 +1,162 @@
 /**
  * Courier Quick Action Templates & Deep Link Utilities
  * Facilitates 1-click WhatsApp, SMS, and clipboard responses to delivery drivers.
+ * Supports built-in preset library + user-defined custom responses with dynamic placeholders.
  */
 
 /**
- * Supported message template types
+ * Built-in template types
  */
 export const TEMPLATE_TYPES = {
   PORCH_DROP: 'porch_drop',
   GATE_CODE: 'gate_code',
   SAFE_PLACE: 'safe_place',
-  PROXY_PICKUP: 'proxy_pickup'
+  PROXY_PICKUP: 'proxy_pickup',
+  CALL_BEFORE: 'call_before',
+  LOBBY_DESK: 'lobby_desk',
+  AFTER_HOURS: 'after_hours'
 };
 
 /**
- * Generate a pre-filled delivery message for couriers.
- *
- * @param {string} type - One of TEMPLATE_TYPES
- * @param {Object} data - Context data: { trackingNumber, carrierName, pickupCode, pickupLocation, gateCode, notes, title }
- * @param {'he' | 'en'} language - Target language
- * @returns {string} Formatted text message
+ * Built-in Presets with bilingual labels, templates, and icons
  */
-export function generateCourierMessage(type, data = {}, language = 'he') {
+export const BUILTIN_PRESETS = [
+  {
+    id: TEMPLATE_TYPES.PORCH_DROP,
+    labelHe: 'השאר ליד הדלת',
+    labelEn: 'Leave at Doorstep',
+    icon: 'DoorOpen',
+    templateHe: 'שלום, לגבי המשלוח{tracking}: אפשר בבקשה להשאיר ליד דלת הכניסה / ארון חשמל. תודה רבה!',
+    templateEn: 'Hello, regarding delivery{tracking}: Please leave the package by the front door / porch. Thank you!'
+  },
+  {
+    id: TEMPLATE_TYPES.GATE_CODE,
+    labelHe: 'קוד כניסה / שער',
+    labelEn: 'Gate / Door Code',
+    icon: 'Key',
+    templateHe: 'שלום, לגבי המשלוח{tracking}: קוד הכניסה לבניין / שער הוא: {gateCode}. אפשר להשאיר ליד הדלת. תודה!',
+    templateEn: 'Hello, regarding delivery{tracking}: The gate/entrance code is: {gateCode}. Please leave by the door. Thank you!'
+  },
+  {
+    id: TEMPLATE_TYPES.SAFE_PLACE,
+    labelHe: 'מקום בטוח / שכן',
+    labelEn: 'Safe Place / Neighbor',
+    icon: 'ShieldCheck',
+    templateHe: 'שלום, לגבי המשלוח{tracking}: אינני בבית, אשמח אם תוכל להשאיר {notesOrSafePlace}. תודה!',
+    templateEn: 'Hello, regarding delivery{tracking}: I am not home, please leave the package {notesOrSafePlace}. Thank you!'
+  },
+  {
+    id: TEMPLATE_TYPES.PROXY_PICKUP,
+    labelHe: 'ייפוי כוח לאיסוף',
+    labelEn: 'Proxy Authorization',
+    icon: 'UserCheck',
+    templateHe: 'שלום, ייפוי כוח לאיסוף חבילה{titleRef}:\n📦 מספר מעקב: {trackingNumber}{pickupPinLine}{pickupLocationLine}\nמאשר/ת את איסוף החבילה עבורי.',
+    templateEn: 'Hello, authorization to pick up package{titleRef}:\n📦 Tracking #: {trackingNumber}{pickupPinLine}{pickupLocationLine}\nI authorize the pickup of this package on my behalf.'
+  },
+  {
+    id: TEMPLATE_TYPES.CALL_BEFORE,
+    labelHe: 'התקשר לפני הגעה',
+    labelEn: 'Call Before Arrival',
+    icon: 'PhoneCall',
+    templateHe: 'שלום, לגבי המשלוח{tracking}: אשמח שתיצור איתי קשר טלפוני 5 דקות לפני הגעתך. תודה רבה!',
+    templateEn: 'Hello, regarding delivery{tracking}: Please call me 5 minutes before arriving. Thank you!'
+  },
+  {
+    id: TEMPLATE_TYPES.LOBBY_DESK,
+    labelHe: 'השאר בלובי / קבלה',
+    labelEn: 'Leave at Lobby',
+    icon: 'Building',
+    templateHe: 'שלום, לגבי המשלוח{tracking}: אפשר בבקשה להשאיר את החבילה בלובי הבניין / בעמדת הקבלה. תודה!',
+    templateEn: 'Hello, regarding delivery{tracking}: Please leave the package at the building lobby / reception desk. Thank you!'
+  },
+  {
+    id: TEMPLATE_TYPES.AFTER_HOURS,
+    labelHe: 'מסירה אחה״צ / ערב',
+    labelEn: 'Deliver After Hours',
+    icon: 'Clock',
+    templateHe: 'שלום, לגבי המשלוח{tracking}: אהיה בבית החל מהשעה 17:00, אשמח אם ניתן לתאם מסירה לאחר שעה זו. תודה!',
+    templateEn: 'Hello, regarding delivery{tracking}: I will be home starting at 17:00, please deliver after that time if possible. Thank you!'
+  }
+];
+
+export const STORAGE_KEY_CUSTOM_TEMPLATES = 'deliveree_custom_courier_templates';
+
+/**
+ * Loads user custom templates from localStorage.
+ * @returns {Array<object>}
+ */
+export function getCustomTemplates() {
+  try {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY_CUSTOM_TEMPLATES) : null;
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Saves or updates a custom template in localStorage.
+ * @param {object} template - { id?: string, label: string, templateText: string, icon?: string }
+ * @returns {Array<object>}
+ */
+export function saveCustomTemplate(template) {
+  try {
+    const existing = getCustomTemplates();
+    const cleanId = template.id || `custom_${Date.now()}`;
+    const newEntry = {
+      ...template,
+      id: cleanId,
+      isCustom: true,
+      updatedAt: new Date().toISOString()
+    };
+    const index = existing.findIndex((t) => t.id === cleanId);
+    let updated;
+    if (index >= 0) {
+      updated = [...existing];
+      updated[index] = newEntry;
+    } else {
+      updated = [...existing, newEntry];
+    }
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY_CUSTOM_TEMPLATES, JSON.stringify(updated));
+    }
+    return updated;
+  } catch (err) {
+    console.error('Failed to save custom template:', err);
+    return getCustomTemplates();
+  }
+}
+
+/**
+ * Deletes a custom template from localStorage.
+ * @param {string} id
+ * @returns {Array<object>}
+ */
+export function deleteCustomTemplate(id) {
+  try {
+    const existing = getCustomTemplates();
+    const updated = existing.filter((t) => t.id !== id);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY_CUSTOM_TEMPLATES, JSON.stringify(updated));
+    }
+    return updated;
+  } catch (err) {
+    console.error('Failed to delete custom template:', err);
+    return getCustomTemplates();
+  }
+}
+
+/**
+ * Interpolates variables into a template string.
+ *
+ * @param {string} templateString
+ * @param {object} data
+ * @param {'he' | 'en'} language
+ * @returns {string}
+ */
+export function interpolateCourierMessage(templateString = '', data = {}, language = 'he') {
   const {
     trackingNumber = '',
     carrierName = '',
@@ -32,60 +167,56 @@ export function generateCourierMessage(type, data = {}, language = 'he') {
     title = ''
   } = data;
 
-  const pkgRef = trackingNumber ? ` (${trackingNumber})` : '';
+  const tracking = trackingNumber ? ` (${trackingNumber})` : '';
+  const titleRef = title ? (language === 'he' ? ` עבור "${title}"` : ` for "${title}"`) : '';
+  const pickupPinLine = pickupCode ? (language === 'he' ? `\n🔑 קוד איסוף: ${pickupCode}` : `\n🔑 Pickup PIN: ${pickupCode}`) : '';
+  const pickupLocationLine = pickupLocation ? (language === 'he' ? `\n📍 מיקום: ${pickupLocation}` : `\n📍 Location: ${pickupLocation}`) : '';
+  const gateCodeStr = gateCode || (language === 'he' ? '[קוד שער]' : '[Gate Code]');
+  const notesOrSafePlace = notes ? (language === 'he' ? `במקום: ${notes}` : `at: ${notes}`) : (language === 'he' ? 'אצל השכנים / בארון חשמל' : 'with a neighbor or in a safe place');
 
-  if (language === 'he') {
-    switch (type) {
-      case TEMPLATE_TYPES.PORCH_DROP:
-        return `שלום, לגבי המשלוח${pkgRef}: אפשר בבקשה להשאיר ליד דלת הכניסה / ארון חשמל. תודה רבה!`;
-      
-      case TEMPLATE_TYPES.GATE_CODE: {
-        const codeText = gateCode ? `הוא: ${gateCode}` : 'רשום בהערות למשלוח';
-        return `שלום, לגבי המשלוח${pkgRef}: קוד הכניסה לבניין / שער ${codeText}. אפשר להשאיר ליד הדלת. תודה!`;
-      }
+  return templateString
+    .replace(/\{tracking\}/g, tracking)
+    .replace(/\{trackingNumber\}/g, trackingNumber || (language === 'he' ? 'לפי הודעה' : 'As notified'))
+    .replace(/\{gateCode\}/g, gateCodeStr)
+    .replace(/\{pickupCode\}/g, pickupCode || '')
+    .replace(/\{pickupLocation\}/g, pickupLocation || '')
+    .replace(/\{title\}/g, title || '')
+    .replace(/\{titleRef\}/g, titleRef)
+    .replace(/\{pickupPinLine\}/g, pickupPinLine)
+    .replace(/\{pickupLocationLine\}/g, pickupLocationLine)
+    .replace(/\{notesOrSafePlace\}/g, notesOrSafePlace)
+    .replace(/\{carrier\}/g, carrierName || '');
+}
 
-      case TEMPLATE_TYPES.SAFE_PLACE: {
-        const placeText = notes ? `במקום הבא: ${notes}` : 'אצל השכנים / בארון חשמל';
-        return `שלום, לגבי המשלוח${pkgRef}: אינני בבית, אשמח אם תוכל להשאיר ${placeText}. תודה!`;
-      }
-
-      case TEMPLATE_TYPES.PROXY_PICKUP: {
-        const codeInfo = pickupCode ? `\n🔑 קוד איסוף: ${pickupCode}` : '';
-        const locInfo = pickupLocation ? `\n📍 מיקום איסוף: ${pickupLocation}` : '';
-        const titleInfo = title ? ` עבור "${title}"` : '';
-        return `שלום, ייפוי כוח לאיסוף חבילה${titleInfo}:\n📦 מספר מעקב: ${trackingNumber || 'לפי הודעה'}${codeInfo}${locInfo}\nמאשר/ת את איסוף החבילה עבורי.`;
-      }
-
-      default:
-        return `שלום, לגבי המשלוח${pkgRef}: תודה רבה!`;
-    }
+/**
+ * Generate a pre-filled delivery message for couriers (built-in or custom).
+ *
+ * @param {string} type - Template ID
+ * @param {Object} data - Context data: { trackingNumber, carrierName, pickupCode, pickupLocation, gateCode, notes, title }
+ * @param {'he' | 'en'} language - Target language
+ * @param {Array<object>} [customTemplates=[]]
+ * @returns {string} Formatted text message
+ */
+export function generateCourierMessage(type, data = {}, language = 'he', customTemplates = []) {
+  // 1. Check custom templates first
+  const custom = customTemplates.find((t) => t.id === type);
+  if (custom) {
+    const rawTemplate = custom.templateText || (language === 'he' ? custom.templateHe : custom.templateEn) || '';
+    return interpolateCourierMessage(rawTemplate, data, language);
   }
 
-  // English fallback
-  switch (type) {
-    case TEMPLATE_TYPES.PORCH_DROP:
-      return `Hello, regarding delivery${pkgRef}: Please leave the package by the front door / porch. Thank you!`;
-    
-    case TEMPLATE_TYPES.GATE_CODE: {
-      const codeText = gateCode ? `is: ${gateCode}` : 'is provided in the delivery notes';
-      return `Hello, regarding delivery${pkgRef}: The gate/entrance code ${codeText}. Please leave by the door. Thank you!`;
-    }
-
-    case TEMPLATE_TYPES.SAFE_PLACE: {
-      const placeText = notes ? `at: ${notes}` : 'with a neighbor or in a safe place';
-      return `Hello, regarding delivery${pkgRef}: I am not home, please leave the package ${placeText}. Thank you!`;
-    }
-
-    case TEMPLATE_TYPES.PROXY_PICKUP: {
-      const codeInfo = pickupCode ? `\n🔑 Pickup PIN: ${pickupCode}` : '';
-      const locInfo = pickupLocation ? `\n📍 Pickup Location: ${pickupLocation}` : '';
-      const titleInfo = title ? ` for "${title}"` : '';
-      return `Hello, authorization to pick up package${titleInfo}:\n📦 Tracking #: ${trackingNumber || 'As notified'}${codeInfo}${locInfo}\nI authorize the pickup of this package on my behalf.`;
-    }
-
-    default:
-      return `Hello, regarding delivery${pkgRef}: Thank you!`;
+  // 2. Check built-in presets
+  const preset = BUILTIN_PRESETS.find((p) => p.id === type);
+  if (preset) {
+    const rawTemplate = language === 'he' ? preset.templateHe : preset.templateEn;
+    return interpolateCourierMessage(rawTemplate, data, language);
   }
+
+  // 3. Fallback
+  const pkgRef = data.trackingNumber ? ` (${data.trackingNumber})` : '';
+  return language === 'he'
+    ? `שלום, לגבי המשלוח${pkgRef}: תודה רבה!`
+    : `Hello, regarding delivery${pkgRef}: Thank you!`;
 }
 
 /**

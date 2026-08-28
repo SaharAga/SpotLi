@@ -778,6 +778,20 @@ export function parseSmartText(rawText) {
   if (notesText.length > 300) {
     notesText = notesText.slice(0, 300) + '...';
   }
+  // Infer delivery status from text
+  let status = 'ordered';
+  const lowerText = cleanText.toLowerCase();
+  if (/\b(delivered|successfully delivered)\b/i.test(lowerText) || /(?:נמסרה בהצלחה|נמסר ליעד|החבילה נמסרה)/i.test(lowerText)) {
+    status = 'delivered';
+  } else if (/\b(ready for pickup|ready for collection|available for pickup|waiting for pickup|delivered to locker)\b/i.test(lowerText) || /(?:מוכנה לאיסוף|ממתינה לאיסוף|הגיעה לנקודת|הגיעה ללוקר|הגיע ללוקר|מחכה לך בנקודת)/i.test(lowerText)) {
+    status = 'ready_for_pickup';
+  } else if (/\b(out for delivery|with courier)\b/i.test(lowerText) || /(?:יוצאת למסירה|יצאה עם שליח|נמסרה לשליח|השליח בדרך אליך)/i.test(lowerText)) {
+    status = 'out_for_delivery';
+  } else if (/\b(delivery issue|delivery failed|customs clearance)\b/i.test(lowerText) || /(?:עיכוב במכס|בעיה במסירה|מסירה נכשלה)/i.test(lowerText)) {
+    status = 'exception';
+  } else if (bestTracking || /\b(shipped|in transit|dispatched|on its way)\b/i.test(lowerText) || /(?:נשלחה|נשלח|בדרך)/i.test(lowerText)) {
+    status = 'in_transit';
+  }
 
   return {
     title,
@@ -786,6 +800,7 @@ export function parseSmartText(rawText) {
     carrier: bestCarrier,
     carrierName: carrierObj.name,
     category,
+    status,
     origin: carrierObj.country || '',
     destination: 'Israel',
     notes: notesText,

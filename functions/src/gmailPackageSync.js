@@ -5,7 +5,7 @@
  * user already has.
  */
 
-import { extractTrackingDetails, sanitizeEmailHtml } from './trackingExtraction.js';
+import { extractTrackingDetails, sanitizeEmailHtml, inferDeliveryStatus } from './trackingExtraction.js';
 
 /**
  * Rough "looks already delivered" heuristic for backfill — mirrors the
@@ -99,7 +99,7 @@ export function buildPackageFromGmailMessage({
     title,
     trackingNumber,
     carrier,
-    status: 'ordered',
+    status: inferDeliveryStatus(subject, body),
     source: 'gmail_sync',
     notes: store ? `${store} order` : (subject ? `From Gmail: ${subject.slice(0, 80)}` : ''),
     createdAt: nowIso,

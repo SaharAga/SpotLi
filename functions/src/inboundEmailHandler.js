@@ -11,9 +11,9 @@
  * see gmailPushHandler.js — and never sends mail to this webhook.
  */
 
-import { sanitizeEmailHtml, extractTrackingDetails } from './trackingExtraction.js';
+import { sanitizeEmailHtml, extractTrackingDetails, inferDeliveryStatus } from './trackingExtraction.js';
 
-export { sanitizeEmailHtml, extractTrackingDetails };
+export { sanitizeEmailHtml, extractTrackingDetails, inferDeliveryStatus };
 
 /**
  * Extracts userId from the recipient email address.
@@ -103,7 +103,7 @@ export function createInboundEmailHandler({ db }) {
         title,
         trackingNumber,
         carrier,
-        status: 'ordered',
+        status: inferDeliveryStatus(subject, cleanText),
         source: 'email_forwarding',
         notes: subject ? `From Email: ${subject.slice(0, 100)}` : '',
         createdAt: nowIso,

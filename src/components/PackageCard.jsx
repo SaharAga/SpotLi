@@ -157,12 +157,12 @@ function PackageCardImpl({
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl"
+      className={`relative rounded-2xl transition-all ${menuOpen ? 'z-30' : 'z-0'}`}
       style={{ contentVisibility: 'auto', containIntrinsicSize: '140px' }}
     >
       {/* Swipe Action Background Indicator */}
       {isSwiping && (
-        <div className="absolute inset-0 flex items-center justify-between px-6 rounded-2xl transition-colors">
+        <div className="absolute inset-0 overflow-hidden flex items-center justify-between px-6 rounded-2xl transition-colors">
           <div className={`flex items-center gap-2 font-bold text-xs ${swipeOffset > 40 ? 'text-amber-400 opacity-100' : 'opacity-0'}`}>
             <Archive className="w-5 h-5" />
             <span>{pkg.isArchived ? t('card.unarchive') : t('card.archive')}</span>
@@ -304,9 +304,9 @@ function PackageCardImpl({
 
               {menuOpen && (
                 <>
-                  <div className="fixed inset-0 z-30" onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }} />
+                  <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }} />
                   <div
-                    className={`absolute z-40 top-full mt-1 w-48 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-1 text-xs ${
+                    className={`absolute z-50 top-full mt-1.5 w-48 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl py-1 text-xs ${
                       isRTL ? 'left-0' : 'right-0'
                     }`}
                   >

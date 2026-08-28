@@ -47,10 +47,10 @@ describe('CourierActionHub', () => {
     renderWithLanguage(<CourierActionHub pkg={mockPkg} />, { language: 'en' });
 
     expect(screen.getByText(/Courier Quick Actions/)).toBeInTheDocument();
-    expect(screen.getByText('Porch Drop')).toBeInTheDocument();
-    expect(screen.getByText('Gate Code')).toBeInTheDocument();
-    expect(screen.getByText('Safe Place')).toBeInTheDocument();
-    expect(screen.getByText('Proxy Pickup')).toBeInTheDocument();
+    expect(screen.getByText('Leave at Doorstep')).toBeInTheDocument();
+    expect(screen.getByText('Gate / Door Code')).toBeInTheDocument();
+    expect(screen.getByText('Safe Place / Neighbor')).toBeInTheDocument();
+    expect(screen.getByText('Proxy Authorization')).toBeInTheDocument();
     expect(screen.getByText('WhatsApp')).toBeInTheDocument();
     expect(screen.getByText('SMS')).toBeInTheDocument();
     expect(screen.getByText('Copy Text')).toBeInTheDocument();
@@ -75,5 +75,22 @@ describe('CourierActionHub', () => {
 
     fireEvent.change(input, { target: { value: '9988#' } });
     expect(screen.getByText(/קוד הכניסה לבניין \/ שער הוא: 9988#/)).toBeInTheDocument();
+  });
+
+  it('allows creating and saving a custom response template', () => {
+    renderWithLanguage(<CourierActionHub pkg={mockPkg} />, { language: 'he' });
+
+    fireEvent.click(screen.getByText('תגובה חדשה'));
+    expect(screen.getByPlaceholderText(/שם התגובה/)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText(/שם התגובה/), { target: { value: 'אצל השומר' } });
+    fireEvent.change(screen.getByPlaceholderText(/טקסט ההודעה לשליח/), {
+      target: { value: 'שלום, אפשר להשאיר אצל השומר בכניסה.' }
+    });
+
+    fireEvent.click(screen.getByText('שמור תגובה'));
+
+    expect(screen.getByText('אצל השומר')).toBeInTheDocument();
+    expect(screen.getByText(/אפשר להשאיר אצל השומר בכניסה/)).toBeInTheDocument();
   });
 });
