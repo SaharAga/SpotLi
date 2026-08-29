@@ -247,6 +247,18 @@ export const translations = {
       navigate: 'Navigate to Location',
       wakeLockActive: 'Screen kept awake for easy locker keypad entry',
       wakeLockFallback: 'Screen wake lock active'
+    },
+    locationBundling: {
+      bundleBannerTitleSingle: '1 other package waiting here!',
+      bundleBannerTitleMultiple: '{count} other packages waiting here!',
+      storePickupTitle: 'Store Pickup Details',
+      collectAll: 'Mark All as Collected ({count})',
+      collectAllSuccess: '{count} packages marked as collected! 🎉',
+      shareAllWhatsApp: 'Share All PINs (WhatsApp)',
+      siblingPackagesWaiting: 'Packages waiting at this location:',
+      pinCode: 'PIN:',
+      noPin: 'No PIN required',
+      storeClerkHint: 'Show these PINs/tracking numbers to the store clerk for pickup.'
     }
   },
   he: {
@@ -497,6 +509,18 @@ export const translations = {
       navigate: 'נווט למיקום',
       wakeLockActive: 'מסך דולק ברציפות לנוחות ההקלדה בלוקר',
       wakeLockFallback: 'שמירת מסך דולק פעילה'
+    },
+    locationBundling: {
+      bundleBannerTitleSingle: 'עוד חבילה אחת ממתינה בנקודה זו!',
+      bundleBannerTitleMultiple: 'עוד {count} חבילות ממתינות בנקודה זו!',
+      storePickupTitle: 'פרטי איסוף בחנות',
+      collectAll: 'סמן את כולן כנאספו ({count})',
+      collectAllSuccess: '{count} חבילות סומנו כנאספו בהצלחה! 🎉',
+      shareAllWhatsApp: 'שתף את כל הקודים בוואטסאפ',
+      siblingPackagesWaiting: 'חבילות נוספות שממתינות כאן:',
+      pinCode: 'קוד איסוף:',
+      noPin: 'ללא קוד איסוף',
+      storeClerkHint: 'הצג את קודי האיסוף או מספרי המעקב לנציג בחנות.'
     }
   }
 };

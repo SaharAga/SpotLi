@@ -149,4 +149,45 @@ describe('PackageDetailModal — Pickup Navigation Integration', () => {
       'success'
     );
   });
+
+  it('renders smart same-location sibling banner and collects all packages on click', async () => {
+    const user = userEvent.setup();
+    const siblingPkg = {
+      id: 'pkg-nav-2',
+      title: 'Sony Headphones WH-1000XM5',
+      trackingNumber: 'IL998877665',
+      carrier: 'israel-post',
+      status: 'available_for_pickup',
+      pickupCode: '1204',
+      pickupLocation: 'Dizengoff Center BoxIt Locker #142'
+    };
+
+    const onStatusChange = vi.fn().mockResolvedValue(undefined);
+    const onClose = vi.fn();
+    const onShowToast = vi.fn();
+
+    renderWithLanguage(
+      <PackageDetailModal
+        isOpen={true}
+        pkg={mockPackageWithPickup}
+        packages={[mockPackageWithPickup, siblingPkg]}
+        onClose={onClose}
+        onStatusChange={onStatusChange}
+        onShowToast={onShowToast}
+      />
+    );
+
+    // Sibling alert appears
+    expect(screen.getByText('1 other package waiting here!')).toBeInTheDocument();
+    expect(screen.getByText('Sony Headphones WH-1000XM5')).toBeInTheDocument();
+    expect(screen.getByText('PIN: 1204')).toBeInTheDocument();
+
+    // Click "Mark All as Collected (2)"
+    const collectAllBtn = screen.getByRole('button', { name: /Mark All as Collected \(2\)/i });
+    await user.click(collectAllBtn);
+
+    expect(onStatusChange).toHaveBeenCalledWith('pkg-nav-1', 'delivered');
+    expect(onStatusChange).toHaveBeenCalledWith('pkg-nav-2', 'delivered');
+    expect(onClose).toHaveBeenCalled();
+  });
 });

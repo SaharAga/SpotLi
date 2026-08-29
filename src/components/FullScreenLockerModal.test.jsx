@@ -77,7 +77,7 @@ describe('FullScreenLockerModal Component', () => {
     );
 
     expect(screen.getByText('Full-Screen Locker Mode')).toBeInTheDocument();
-    expect(screen.getByText('Anker USB-C Fast Charger')).toBeInTheDocument();
+    expect(screen.getAllByText('Anker USB-C Fast Charger').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Dizengoff Center BoxIt #142')).toBeInTheDocument();
 
     // Digits: 8, 4, 9, 2
@@ -148,25 +148,51 @@ describe('FullScreenLockerModal Component', () => {
     });
   });
 
-  it('triggers navigation callback when clicking Navigate button', async () => {
+  it('renders stacked PIN cards and batch collects when multiple packages share the same location', async () => {
     const user = userEvent.setup();
-    const onOpenNavigation = vi.fn();
+    const siblingPkg = {
+      id: 'pkg-locker-2',
+      title: 'Sony Wireless Earbuds',
+      trackingNumber: 'BX998811223IL',
+      carrier: 'boxit',
+      status: 'ready_for_pickup',
+      pickupCode: '1204',
+      pickupLocation: 'Dizengoff Center BoxIt #142'
+    };
+
+    const onMarkDelivered = vi.fn().mockResolvedValue(undefined);
+    const onClose = vi.fn();
+    const onShowToast = vi.fn();
 
     renderWithLanguage(
       <FullScreenLockerModal
         isOpen={true}
         pkg={mockPackage}
-        onClose={vi.fn()}
-        onOpenNavigation={onOpenNavigation}
+        packages={[mockPackage, siblingPkg]}
+        onClose={onClose}
+        onMarkDelivered={onMarkDelivered}
+        onShowToast={onShowToast}
       />
     );
 
-    const navButtons = screen.getAllByTitle(/Navigate to Location/i);
-    await user.click(navButtons[0]);
+    // Shows bundled header
+    expect(screen.getByText(/Bundled Pickup \(2 Packages\)/i)).toBeInTheDocument();
+    expect(screen.getByText('Anker USB-C Fast Charger')).toBeInTheDocument();
+    expect(screen.getByText('Sony Wireless Earbuds')).toBeInTheDocument();
 
-    expect(onOpenNavigation).toHaveBeenCalledWith({
-      location: 'Dizengoff Center BoxIt #142',
-      title: 'Anker USB-C Fast Charger'
+    // Digits for both: 8492 and 1204
+    expect(screen.getByText('8')).toBeInTheDocument();
+    expect(screen.getByText('1')).toBeInTheDocument();
+    expect(screen.getByText('0')).toBeInTheDocument();
+
+    // Click "Mark All as Collected (2)"
+    const collectAllBtn = screen.getByRole('button', { name: /Mark All as Collected \(2\)/i });
+    await user.click(collectAllBtn);
+
+    expect(onMarkDelivered).toHaveBeenCalledWith('pkg-locker-1', 'delivered');
+    expect(onMarkDelivered).toHaveBeenCalledWith('pkg-locker-2', 'delivered');
+    await waitFor(() => {
+      expect(onClose).toHaveBeenCalled();
     });
   });
 });

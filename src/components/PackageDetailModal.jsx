@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, ExternalLink, Copy, Check, Calendar, MapPin, Plus, 
-  Truck, Clock, RefreshCw, Info, RotateCcw, Edit3, AlertCircle, ChevronDown, ChevronUp, Flag, Maximize2
+  Truck, Clock, RefreshCw, Info, RotateCcw, Edit3, AlertCircle, ChevronDown, ChevronUp, Flag, Maximize2, Layers
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { getCarrier } from '../types/carriers';
@@ -19,13 +19,16 @@ import { Modal } from './Modal';
 import { getPreferredNavigationApp, openNavigationApp } from '../utils/navigationService';
 import { getLiveStoreStatus, resolveStoreHours } from '../utils/openingHoursService';
 import { submitFeedback } from '../services/feedbackService';
+import { findSameLocationPackages } from '../utils/locationBundling';
 
 export function PackageDetailModal({
   pkg,
+  packages = [],
   isOpen,
   onClose,
   onEdit,
   onUpdatePackage,
+  onStatusChange,
   onRefreshTracking,
   onOpenLockerMap,
   onOpenLockerMode,
@@ -65,6 +68,7 @@ export function PackageDetailModal({
   const returnCountdown = getReturnCountdown(pkg.returnDeadline);
   const resolvedHours = resolveStoreHours(pkg.pickupLocation, pkg.pickupHours, pkg.carrier);
   const storeStatus = getLiveStoreStatus(pkg.pickupHours, { now, locationName: pkg.pickupLocation, carrier: pkg.carrier });
+  const siblingPackages = findSameLocationPackages(pkg, packages);
 
   const handleCopy = async () => {
     const success = await copyToClipboard(pkg.trackingNumber);
@@ -410,6 +414,68 @@ export function PackageDetailModal({
                   </a>
                 </div>
               </div>
+
+              {/* Sibling Same-Location Bundling Alert */}
+              {siblingPackages.length > 0 && (
+                <div className="mt-3 p-3.5 rounded-2xl bg-indigo-950/60 border border-indigo-500/40 text-xs space-y-2.5 relative z-10 shadow-inner">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-300">
+                        <Layers className="w-4 h-4" />
+                      </div>
+                      <span className="font-bold text-indigo-100">
+                        {siblingPackages.length === 1
+                          ? t('locationBundling.bundleBannerTitleSingle')
+                          : (t('locationBundling.bundleBannerTitleMultiple') || 'עוד {count} חבילות ממתינות כאן!').replace('{count}', String(siblingPackages.length))}
+                      </span>
+                    </div>
+
+                    {onStatusChange && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (typeof confetti === 'function') {
+                            confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
+                          }
+                          await onStatusChange(pkg.id, 'delivered');
+                          for (const sibling of siblingPackages) {
+                            await onStatusChange(sibling.id, 'delivered');
+                          }
+                          if (onShowToast) {
+                            const msg = (t('locationBundling.collectAllSuccess') || '{count} packages marked as collected! 🎉')
+                              .replace('{count}', String(siblingPackages.length + 1));
+                            onShowToast(msg, 'success');
+                          }
+                          onClose();
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition-all cursor-pointer min-h-[36px]"
+                      >
+                        {(t('locationBundling.collectAll') || 'Mark All as Collected ({count})').replace('{count}', String(siblingPackages.length + 1))}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Sibling List pills */}
+                  <div className="space-y-1.5 pt-1">
+                    <span className="text-[11px] text-slate-400 font-medium block">
+                      {t('locationBundling.siblingPackagesWaiting')}
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {siblingPackages.map((sib) => {
+                        const sibTitle = (language === 'he' && sib.titleHe) ? sib.titleHe : sib.title;
+                        return (
+                          <div key={sib.id} className="flex items-center justify-between p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px]">
+                            <span className="font-semibold text-slate-200 truncate max-w-[150px]">{sibTitle}</span>
+                            <span className="font-mono text-emerald-400 font-bold">
+                              {sib.pickupCode ? `PIN: ${sib.pickupCode}` : sib.trackingNumber}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Location Bar & Operating Hours Details */}
               {pkg.pickupLocation && (

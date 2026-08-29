@@ -859,10 +859,12 @@ export function DashboardContent() {
         return (
           <PackageDetailModal
             pkg={livePkg}
+            packages={packages}
             isOpen={isOpen && !!livePkg}
             onClose={() => closeModal(MODAL.DETAIL)}
             onEdit={(p) => openModal(MODAL.ADD_EDIT, { editPackage: p })}
             onUpdatePackage={handleAddOrUpdatePackage}
+            onStatusChange={handleStatusChange}
             onRefreshTracking={handleRefreshSinglePackage}
             onOpenLockerMap={() => openModal(MODAL.LOCKER_MAP)}
             onOpenLockerMode={(p) => openModal(MODAL.FULL_SCREEN_LOCKER, p)}
@@ -971,6 +973,7 @@ export function DashboardContent() {
           <FullScreenLockerModal
             isOpen={isOpen && !!livePkg}
             pkg={livePkg}
+            packages={packages}
             onClose={() => closeModal(MODAL.FULL_SCREEN_LOCKER)}
             onMarkDelivered={handleStatusChange}
             onOpenNavigation={(target) => openModal(MODAL.NAVIGATION_CHOICE, target)}
