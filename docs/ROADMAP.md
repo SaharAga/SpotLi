@@ -47,12 +47,23 @@ The authoritative end-state product vision and detailed Q&A specification is doc
 ### 🌊 Wave 2: Omni-Channel Ingestion & Candidate Intelligence (Sprint 7)
 *Objective: Zero manual tracking entry with 100% accurate, hallucination-free package capture.*
 
-- [ ] **TASK-701: Grounded Candidate Scorer & Production Verification (SYNC-7)** (Verified-only auto-creation + grounded Gemini selection).
+- [ ] **TASK-701: Grounded Candidate Scorer & Israeli SMS Corpus Testbench** (30+ canonical SMS/Email formats across Israel Post, HFD, Cheetah, BoxIt, Buzzr, Tapuz, AliExpress, DHL, FedEx with 100% extraction accuracy).
 - [ ] **TASK-702: Direct Push Notifications Engine** (Status changes, morning Out-for-Delivery digest, urgent RTS holding countdowns).
 - [ ] **TASK-703: Automatic Courier SMS Ingestion** (Background/native detection of tracking numbers and locker PINs).
 - [ ] **TASK-704: Multi-Email Ingestion Expansion** (Microsoft Outlook / Office 365, Apple iCloud Mail, generic IMAP/App-Password).
 - [ ] **TASK-705: Multi-Item Bundling View** (Consolidated shipments / AliExpress Combined Delivery display).
 - [ ] **TASK-706: Camera Barcode & Label Scanner** (Physical label OCR & locker barcode scanner).
+
+---
+
+### 🎨 Milestone: Pre-Alpha UI/UX Design System Polish & Human Factors Audit (Sprint 7.5)
+*Objective: Systematically audit and refine every screen, button, modal, card, and micro-interaction to deliver a world-class, premium user experience before public Alpha release.*
+
+- [ ] **TASK-751: Dashboard & List Ergonomics Overhaul** (Refined card hierarchy, subtle glassmorphism, fluid responsive grid, crisp store logos, and smooth swipe gestures).
+- [ ] **TASK-752: Modal & Interaction System Polish** (Consistent header actions, responsive bottom sheets on mobile, keyboard navigation, and streamlined Add/Edit forms).
+- [ ] **TASK-753: Full-Screen Locker Mode Aesthetic Polish** (Ultra-high contrast ambient night mode, refined typography for PIN digits, and clear action buttons).
+- [ ] **TASK-754: Micro-Interactions, Skeletons & Haptics** (Fluid spring transitions, shimmer skeleton loading states, haptic click feedback, and error states).
+- [ ] **TASK-755: Bilingual Hebrew RTL / English LTR Symmetry Audit** (Zero layout shift, 48px minimum touch targets, WCAG AAA contrast compliance, and font readability).
 
 ---
 
