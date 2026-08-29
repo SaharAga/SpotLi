@@ -76,20 +76,37 @@ service cloud.firestore {
 
     // Alpha Tester Feedback Collection
     match /feedback/{feedbackId} {
-      allow create: if request.resource.data.message is string &&
+      allow create: if request.resource.data.keys().hasOnly([
+          'id', 'status', 'type', 'message', 'rating', 'isAnonymous',
+          'appVersion', 'buildChannel', 'user', 'userAgent', 'screenWidth',
+          'screenHeight', 'timestamp', 'screenshot'
+        ]) &&
+        request.resource.data.message is string &&
         request.resource.data.message.size() > 0 &&
         request.resource.data.message.size() <= 1500 &&
+        request.resource.data.id is string &&
+        request.resource.data.id.size() > 0 && request.resource.data.id.size() <= 64 &&
+        request.resource.data.status is string &&
+        request.resource.data.status == 'pending' &&
         request.resource.data.type in ['bug', 'feature', 'praise'] &&
         request.resource.data.rating is number &&
         request.resource.data.rating >= 1 &&
         request.resource.data.rating <= 5 &&
+        request.resource.data.isAnonymous is bool &&
+        request.resource.data.isAnonymous == true &&
+        request.resource.data.appVersion is string && request.resource.data.appVersion.size() <= 30 &&
+        request.resource.data.buildChannel is string && request.resource.data.buildChannel.size() <= 30 &&
+        request.resource.data.user is string && request.resource.data.user.size() <= 100 &&
+        request.resource.data.userAgent is string && request.resource.data.userAgent.size() <= 300 &&
+        request.resource.data.screenWidth is number && request.resource.data.screenWidth >= 0 && request.resource.data.screenWidth <= 10000 &&
+        request.resource.data.screenHeight is number && request.resource.data.screenHeight >= 0 && request.resource.data.screenHeight <= 10000 &&
         (!('timestamp' in request.resource.data) || (request.resource.data.timestamp is string && request.resource.data.timestamp.size() <= 60)) &&
         // Optional base64 screenshot. Capped so a single document cannot
         // approach Firestore's 1MiB ceiling and must be an image data URL.
         (!('screenshot' in request.resource.data) || (
           request.resource.data.screenshot is string &&
           request.resource.data.screenshot.size() <= 750000 &&
-          request.resource.data.screenshot.matches('^data:image/(png|jpeg|webp|gif);base64,.*')
+          request.resource.data.screenshot.matches('^data:image/(png|jpe?g|webp|gif)(;[a-z0-9=_-]+)*;base64,.*')
         ));
       // Readable only by allowlisted admins (the Alpha Feedback Inspector).
       // Still never writable or deletable from any client.
@@ -107,11 +124,23 @@ service cloud.firestore {
     // signature client-side rather than aggregating server-side, to avoid
     // giving anonymous clients any Firestore update permission.
     match /crashReports/{crashId} {
-      allow create: if request.resource.data.message is string &&
+      allow create: if request.resource.data.keys().hasOnly([
+          'id', 'signature', 'componentName', 'message', 'appVersion',
+          'buildChannel', 'userAgent', 'screenWidth', 'screenHeight',
+          'timestamp'
+        ]) &&
+        request.resource.data.message is string &&
         request.resource.data.message.size() > 0 &&
         request.resource.data.message.size() <= 1500 &&
+        request.resource.data.id is string && request.resource.data.id.size() > 0 && request.resource.data.id.size() <= 64 &&
         request.resource.data.signature is string &&
+        request.resource.data.signature.size() > 0 &&
         request.resource.data.signature.size() <= 64 &&
+        request.resource.data.appVersion is string && request.resource.data.appVersion.size() <= 30 &&
+        request.resource.data.buildChannel is string && request.resource.data.buildChannel.size() <= 30 &&
+        request.resource.data.userAgent is string && request.resource.data.userAgent.size() <= 300 &&
+        request.resource.data.screenWidth is number && request.resource.data.screenWidth >= 0 && request.resource.data.screenWidth <= 10000 &&
+        request.resource.data.screenHeight is number && request.resource.data.screenHeight >= 0 && request.resource.data.screenHeight <= 10000 &&
         (!('componentName' in request.resource.data) || (request.resource.data.componentName is string && request.resource.data.componentName.size() <= 100)) &&
         (!('timestamp' in request.resource.data) || (request.resource.data.timestamp is string && request.resource.data.timestamp.size() <= 60));
       // Readable only by allowlisted admins. Never writable or deletable
@@ -127,7 +156,10 @@ service cloud.firestore {
     // low-stakes as /feedback's write side, so it stays open to guests too
     // (Smart Import works without an account).
     match /parseCorrections/{docId} {
-      allow create: if request.resource.data.source in ['regex', 'ai'] &&
+      allow create: if request.resource.data.keys().hasOnly([
+          'source', 'confidence', 'editedFields', 'timestamp'
+        ]) &&
+        request.resource.data.source in ['regex', 'ai'] &&
         (!('confidence' in request.resource.data) || request.resource.data.confidence == null ||
           request.resource.data.confidence in ['high', 'medium', 'low', 'none']) &&
         request.resource.data.editedFields is list &&
