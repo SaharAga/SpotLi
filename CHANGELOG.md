@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.20.0] - 2026-08-29
+
+### Added
+- Overhaul email and inbound package parser to clean status boilerplates from titles, infer real-time package status (ready_for_pickup, out_for_delivery, delivered), fix 3-dots dropdown menu visibility on cards, add 1-click edit package action from detail view, and introduce custom courier response manager with preset library.
+
 ## [0.19.0] - 2026-08-28
 
 ### Added

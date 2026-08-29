@@ -49,6 +49,9 @@ export function CourierActionHub({ pkg, onShowToast }) {
   const [customText, setCustomText] = useState('');
   const [editingId, setEditingId] = useState(null);
 
+  const formRef = React.useRef(null);
+  const titleInputRef = React.useRef(null);
+
   const refreshTemplates = () => {
     setCustomTemplates(getCustomTemplates());
     setHiddenPresetIds(getHiddenPresetIds());
@@ -127,6 +130,21 @@ export function CourierActionHub({ pkg, onShowToast }) {
     setCustomLabel(activeTemplate.label || '');
     setCustomText(activeTemplate.templateText || '');
     setIsCreatingCustom(true);
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      titleInputRef.current?.focus();
+    }, 50);
+  };
+
+  const handleOpenNew = () => {
+    setEditingId(null);
+    setCustomLabel('');
+    setCustomText('');
+    setIsCreatingCustom(true);
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      titleInputRef.current?.focus();
+    }, 50);
   };
 
   const handleDeleteActive = () => {
@@ -213,12 +231,7 @@ export function CourierActionHub({ pkg, onShowToast }) {
 
           <button
             type="button"
-            onClick={() => {
-              setEditingId(null);
-              setCustomLabel('');
-              setCustomText('');
-              setIsCreatingCustom(!isCreatingCustom);
-            }}
+            onClick={handleOpenNew}
             className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-xs font-semibold text-emerald-300 transition-colors min-h-[36px] cursor-pointer"
             title={isHe ? 'הוסף תגובה חדשה' : 'Add custom template'}
           >
@@ -230,7 +243,11 @@ export function CourierActionHub({ pkg, onShowToast }) {
 
       {/* Custom Template Editor Drawer/Form */}
       {isCreatingCustom && (
-        <form onSubmit={handleSaveCustom} className="p-3.5 rounded-xl bg-slate-900 border border-emerald-500/30 flex flex-col gap-2.5">
+        <form
+          ref={formRef}
+          onSubmit={handleSaveCustom}
+          className="p-3.5 rounded-xl bg-slate-900 border-2 border-emerald-500/60 shadow-lg shadow-emerald-950/40 flex flex-col gap-2.5 animate-fade-in"
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5" />
@@ -239,13 +256,14 @@ export function CourierActionHub({ pkg, onShowToast }) {
             <button
               type="button"
               onClick={() => setIsCreatingCustom(false)}
-              className="p-1 text-slate-400 hover:text-white"
+              className="p-1 text-slate-400 hover:text-white cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
           <input
+            ref={titleInputRef}
             type="text"
             value={customLabel}
             onChange={(e) => setCustomLabel(e.target.value)}
