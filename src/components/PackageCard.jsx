@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import {
   Copy, Check, MoreVertical, Pin, Archive, Trash2, Edit3,
   Calendar, CheckCircle, ArrowUpRight, RefreshCw, Loader2, Package,
-  Clock, RotateCcw, Sun
+  Clock, RotateCcw, Sun, AlertTriangle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { getCarrier } from '../types/carriers';
@@ -223,6 +223,15 @@ function PackageCardImpl({
                 >
                   <span>PIN {pkg.pickupCode}</span>
                 </button>
+              )}
+              {pkg.isRedirected && (
+                <span
+                  title={language === 'he' ? 'חברת השילוח העבירה את החבילה לנקודה חלופית' : 'Package was redirected to an alternate pickup location'}
+                  className="ms-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold shrink-0"
+                >
+                  <AlertTriangle className="w-2.5 h-2.5" />
+                  <span>{t('redirectDetection.badge')}</span>
+                </span>
               )}
             </div>
           </div>

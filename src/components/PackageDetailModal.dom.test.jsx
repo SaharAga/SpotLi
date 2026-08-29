@@ -9,6 +9,10 @@ import { LanguageProvider } from '../context/LanguageContext';
 import { STORAGE_KEYS } from '../constants/storageKeys';
 import { NAV_APPS } from '../utils/navigationService';
 
+vi.mock('canvas-confetti', () => ({
+  default: vi.fn()
+}));
+
 vi.mock('../services/feedbackService', () => ({
   submitFeedback: vi.fn().mockResolvedValue({ success: true, id: 'fb-123' })
 }));
@@ -189,5 +193,32 @@ describe('PackageDetailModal — Pickup Navigation Integration', () => {
     expect(onStatusChange).toHaveBeenCalledWith('pkg-nav-1', 'delivered');
     expect(onStatusChange).toHaveBeenCalledWith('pkg-nav-2', 'delivered');
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('renders courier redirect notice and original requested location note when package was rerouted', () => {
+    const redirectedPkg = {
+      ...mockPackageWithPickup,
+      isRedirected: true,
+      pickupLocation: 'Super Yuda Ben Yehuda 45',
+      originalPickupLocation: 'Dizengoff Center BoxIt Locker #142',
+      redirectReason: 'locker_capacity'
+    };
+
+    renderWithLanguage(
+      <PackageDetailModal
+        isOpen={true}
+        pkg={redirectedPkg}
+        onClose={vi.fn()}
+      />
+    );
+
+    // Redirect banner is displayed
+    expect(screen.getByText('Pickup Location Changed')).toBeInTheDocument();
+    expect(screen.getByText(/The courier redirected this package to an alternate pickup point/i)).toBeInTheDocument();
+    // Original location note is displayed
+    expect(screen.getByText('Original requested location:')).toBeInTheDocument();
+    expect(screen.getByText('Dizengoff Center BoxIt Locker #142')).toBeInTheDocument();
+    // New destination is rendered in the location bar
+    expect(screen.getByText('Super Yuda Ben Yehuda 45')).toBeInTheDocument();
   });
 });

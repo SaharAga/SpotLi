@@ -278,9 +278,22 @@ export function FullScreenLockerModal({
             <div className="flex items-start gap-2.5">
               <MapPin className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
               <div>
-                <h4 className="text-xs sm:text-sm font-bold text-slate-100">
-                  {pkg.pickupLocation}
-                </h4>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="text-xs sm:text-sm font-bold text-slate-100">
+                    {pkg.pickupLocation}
+                  </h4>
+                  {pkg.isRedirected && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
+                      {t('redirectDetection.badge')}
+                    </span>
+                  )}
+                </div>
+                {pkg.isRedirected && pkg.originalPickupLocation && (
+                  <p className="text-[10px] text-amber-300/80 mt-0.5">
+                    <span className="opacity-75">{t('redirectDetection.originalLocation')} </span>
+                    <span className="line-through">{pkg.originalPickupLocation}</span>
+                  </p>
+                )}
                 <div className="flex items-center gap-2 mt-1">
                   <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold border ${storeStatus.badgeClass}`}>
                     {language === 'he' ? storeStatus.badgeTextHe : storeStatus.badgeTextEn}

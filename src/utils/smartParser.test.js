@@ -255,4 +255,25 @@ describe('smartParser - parseSmartText', () => {
     expect(parsed.carrier).toBe('other');
     expect(parsed.pickupLocation).toBe('');
   });
+
+  it('detects courier rerouting/redirects with original location in SMS text', () => {
+    const text = 'שלום! עקב עומס בלוקר, החבילה מס׳ HFD90481029 הועברה לנקודת איסוף סופר פארם דיזנגוף 50 (במקום לוקר כיכר רבין). קוד איסוף: 4892';
+    const parsed = parseSmartText(text);
+
+    expect(parsed.trackingNumber).toBe('HFD90481029');
+    expect(parsed.isRedirected).toBe(true);
+    expect(parsed.pickupLocation).toBe('סופר פארם דיזנגוף 50');
+    expect(parsed.originalPickupLocation).toBe('לוקר כיכר רבין');
+    expect(parsed.lockerPin).toBe('4892');
+  });
+
+  it('detects English courier reroute notices', () => {
+    const text = 'Due to locker capacity, shipment RR948219483IL was redirected to pickup point Super Yuda Ben Yehuda 45 instead of Dizengoff Locker. PIN: 9912';
+    const parsed = parseSmartText(text);
+
+    expect(parsed.isRedirected).toBe(true);
+    expect(parsed.pickupLocation).toBe('Super Yuda Ben Yehuda 45');
+    expect(parsed.originalPickupLocation).toBe('Dizengoff Locker');
+    expect(parsed.lockerPin).toBe('9912');
+  });
 });

@@ -415,6 +415,25 @@ export function PackageDetailModal({
                 </div>
               </div>
 
+              {/* Courier Redirect Alert & Original Location Note */}
+              {pkg.isRedirected && (
+                <div className="mt-3 p-3.5 rounded-2xl bg-amber-950/60 border border-amber-500/40 text-xs space-y-1.5 relative z-10 shadow-inner">
+                  <div className="flex items-center gap-2 text-amber-300 font-bold">
+                    <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>{t('redirectDetection.bannerTitle')}</span>
+                  </div>
+                  <p className="text-amber-200/90 text-[11px] leading-relaxed">
+                    {t('redirectDetection.bannerDesc')}
+                  </p>
+                  {pkg.originalPickupLocation && (
+                    <div className="pt-1 text-[11px] text-amber-300/80 flex items-center gap-1.5 flex-wrap">
+                      <span className="font-semibold">{t('redirectDetection.originalLocation')}</span>
+                      <span className="line-through opacity-75">{pkg.originalPickupLocation}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Sibling Same-Location Bundling Alert */}
               {siblingPackages.length > 0 && (
                 <div className="mt-3 p-3.5 rounded-2xl bg-indigo-950/60 border border-indigo-500/40 text-xs space-y-2.5 relative z-10 shadow-inner">

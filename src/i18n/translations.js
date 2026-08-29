@@ -259,6 +259,13 @@ export const translations = {
       pinCode: 'PIN:',
       noPin: 'No PIN required',
       storeClerkHint: 'Show these PINs/tracking numbers to the store clerk for pickup.'
+    },
+    redirectDetection: {
+      badge: 'Redirected',
+      bannerTitle: 'Pickup Location Changed',
+      bannerDesc: 'The courier redirected this package to an alternate pickup point (due to locker capacity or store hours).',
+      originalLocation: 'Original requested location:',
+      redirectedNotice: 'Rerouted by courier'
     }
   },
   he: {
@@ -521,6 +528,13 @@ export const translations = {
       pinCode: 'קוד איסוף:',
       noPin: 'ללא קוד איסוף',
       storeClerkHint: 'הצג את קודי האיסוף או מספרי המעקב לנציג בחנות.'
+    },
+    redirectDetection: {
+      badge: 'הועבר למיקום חלופי',
+      bannerTitle: 'שינוי נקודת איסוף',
+      bannerDesc: 'חברת השילוח העבירה את החבילה לנקודה חלופית (עקב עומס בלוקר או שינוי תפעולי).',
+      originalLocation: 'מיקום מקורי שבוקש:',
+      redirectedNotice: 'הועבר ע״י חברת השילוח'
     }
   }
 };
