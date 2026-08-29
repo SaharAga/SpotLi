@@ -421,7 +421,7 @@ export function IngestionGuideModal({
               </div>
               <div>
                 <h3 className="font-bold text-sm text-slate-100">
-                  {language === 'he' ? 'הדבקה חכמה מהירה מהלוח' : 'Rapid 1-Click Clipboard Paste'}
+                  {language === 'he' ? 'הדבקה חכמה מהירה מהלוח' : 'Rapid Clipboard Paste'}
                 </h3>
                 <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
                   {language === 'he' ? 'עובד מכל אפליקציה ו-SMS ⚡' : 'Works with any App & SMS ⚡'}

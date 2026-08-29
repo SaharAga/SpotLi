@@ -200,7 +200,7 @@ export const translations = {
     },
     lockerMap: {
       title: 'Pickup Points & Locker Locator',
-      subtitle: '1-Click Waze & Google Maps navigation, hours & details',
+      subtitle: 'Waze & Google Maps navigation, hours & details',
       searchPlaceholder: 'Search locker name, branch, city or carrier...',
       driveWithWaze: 'Drive with Waze',
       googleMaps: 'Google Maps',

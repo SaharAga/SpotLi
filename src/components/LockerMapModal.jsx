@@ -114,7 +114,7 @@ export function LockerMapModal({
                 {isRTL ? 'איתור נקודת איסוף ולוקרים' : 'Pickup Points & Locker Locator'}
               </h3>
               <p className="text-xs text-slate-400">
-                {isRTL ? 'ניווט בלחיצה אחת, שעות פעילות ומידע על לוקרים קרובים' : '1-Click Waze & Google Maps navigation, hours & details'}
+                {isRTL ? 'ניווט, שעות פעילות ומידע על לוקרים קרובים' : 'Waze & Google Maps navigation, hours & details'}
               </p>
             </div>
           </div>
@@ -239,7 +239,7 @@ export function LockerMapModal({
                 {/* 1-Click Navigation Buttons */}
                 <div className="space-y-2 pt-4 border-t border-slate-800">
                   <span className="text-[11px] text-slate-400 font-semibold uppercase block">
-                    {isRTL ? 'ניווט מהיר ליעד' : '1-Click Direct Navigation'}
+                    {isRTL ? 'ניווט מהיר ליעד' : 'Direct Navigation'}
                   </span>
                   <div className="grid grid-cols-2 gap-2.5">
                     <a

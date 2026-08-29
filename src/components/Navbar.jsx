@@ -219,7 +219,7 @@ export function Navbar({
                   </div>
                   <div>
                     <span className="text-sm font-bold text-slate-100 block">
-                      {language === 'he' ? 'הדבקה חכמה מלוח ההעתקה (1-Click)' : 'Smart Clipboard Auto-Paste (1-Click)'}
+                      {language === 'he' ? 'הדבקה חכמה מלוח ההעתקה' : 'Smart Clipboard Auto-Paste'}
                     </span>
                     <span className="text-[11px] text-blue-300">
                       {language === 'he' ? 'זיהוי אוטומטי מ-SMS, אימייל או מספר מעקב' : 'Auto-detect carrier and code from SMS or email'}
