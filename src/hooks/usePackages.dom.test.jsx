@@ -150,7 +150,7 @@ describe('usePackages', () => {
   });
 
   it('queues a DELETE for records omitted by UPDATE_ALL while preserving local state', () => {
-    const enqueueSpy = vi.spyOn(syncQueueService, 'enqueue').mockImplementation(() => {});
+    const enqueueBatchSpy = vi.spyOn(syncQueueService, 'enqueueBatch').mockImplementation(() => []);
     const firestoreActive = vi.spyOn(cloudAdapter, 'isFirestoreActive').mockReturnValue(false);
     const { result } = renderHook(() => usePackages({ id: 'user-1' }, vi.fn()));
     const retained = { id: 'bulk-keep', title: 'Keep', trackingNumber: 'RS948219481IL' };
@@ -160,12 +160,14 @@ describe('usePackages', () => {
     firestoreActive.mockReturnValue(true);
     act(() => result.current.commit({ type: 'UPDATE_ALL', payload: [retained] }));
 
-    expect(enqueueSpy).toHaveBeenCalledWith(MUTATION_TYPES.DELETE, { id: 'bulk-delete' }, 'user-1');
+    expect(enqueueBatchSpy).toHaveBeenCalledWith([
+      { type: MUTATION_TYPES.DELETE, payload: { id: 'bulk-delete' }, userId: 'user-1' }
+    ]);
     expect(result.current.packages.map((pkg) => pkg.id)).toEqual(['bulk-keep']);
   });
 
   it('queues only changed and new UPDATE_ALL records', () => {
-    const enqueueSpy = vi.spyOn(syncQueueService, 'enqueue').mockImplementation(() => {});
+    const enqueueBatchSpy = vi.spyOn(syncQueueService, 'enqueueBatch').mockImplementation(() => []);
     const firestoreActive = vi.spyOn(cloudAdapter, 'isFirestoreActive').mockReturnValue(false);
     const { result } = renderHook(() => usePackages({ id: 'user-1' }, vi.fn()));
     const unchanged = { id: 'bulk-same', title: 'Same', trackingNumber: 'RS948219481IL' };
@@ -177,9 +179,11 @@ describe('usePackages', () => {
     firestoreActive.mockReturnValue(true);
     act(() => result.current.commit({ type: 'UPDATE_ALL', payload: [unchanged, changedNext, added] }));
 
-    expect(enqueueSpy).toHaveBeenCalledTimes(2);
-    expect(enqueueSpy).toHaveBeenCalledWith(MUTATION_TYPES.UPDATE, expect.objectContaining({ id: 'bulk-change', title: 'New' }), 'user-1');
-    expect(enqueueSpy).toHaveBeenCalledWith(MUTATION_TYPES.ADD, expect.objectContaining({ id: 'bulk-add' }), 'user-1');
+    expect(enqueueBatchSpy).toHaveBeenCalledTimes(1);
+    expect(enqueueBatchSpy).toHaveBeenCalledWith(expect.arrayContaining([
+      expect.objectContaining({ type: MUTATION_TYPES.UPDATE, payload: expect.objectContaining({ id: 'bulk-change', title: 'New' }), userId: 'user-1' }),
+      expect.objectContaining({ type: MUTATION_TYPES.ADD, payload: expect.objectContaining({ id: 'bulk-add' }), userId: 'user-1' })
+    ]));
   });
 
   it('upsertSinglePackage enqueues an UPDATE mutation only when Firestore is active', () => {

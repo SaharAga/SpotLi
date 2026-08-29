@@ -1,11 +1,17 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { GEMINI_MODEL } from './config.js';
+import carrierSpecs from './carrierSpecs.generated.json' with { type: 'json' };
+import { validateUPUS10Mod11 } from './trackingExtraction.js';
 
 const CARRIER_IDS = [
   'israel-post', 'chita', 'hfd', 'boxit', 'tapuz', 'cargo', 'getpackage',
   'flying-cargo', 'orian', 'bar', 'zigzag', 'cainiao', 'yunexpress', 'dhl',
   'fedex', 'ups', 'usps', 'royal-mail', 'aramex', 'yanwen', 'other'
 ];
+const CANDIDATE_ID_RE = /^cand_[A-Za-z0-9_-]{1,32}$/;
+const MAX_CANDIDATES = 10;
+const MAX_CANDIDATE_VALUE_LENGTH = 35;
+const MAX_CANDIDATE_PROMPT_BYTES = 512;
 
 // Matches the shape parseSmartText() already returns, so the client treats
 // a Gemini result identically to a regex-parser result — one code path,
@@ -14,7 +20,7 @@ const CARRIER_IDS = [
 const RESPONSE_SCHEMA = {
   type: Type.OBJECT,
   properties: {
-    trackingNumber: { type: Type.STRING },
+    selectedCandidateId: { type: Type.STRING },
     carrier: { type: Type.STRING, enum: CARRIER_IDS },
     title: { type: Type.STRING },
     pickupLocation: { type: Type.STRING },
@@ -22,15 +28,14 @@ const RESPONSE_SCHEMA = {
     notes: { type: Type.STRING },
     confidence: { type: Type.STRING, enum: ['high', 'medium', 'low', 'none'] }
   },
-  required: ['trackingNumber', 'carrier', 'confidence'],
-  propertyOrdering: ['trackingNumber', 'carrier', 'title', 'pickupLocation', 'origin', 'notes', 'confidence']
+  required: ['selectedCandidateId', 'confidence'],
+  propertyOrdering: ['selectedCandidateId', 'title', 'pickupLocation', 'origin', 'notes', 'confidence']
 };
 
 const SYSTEM_INSTRUCTION = `You extract package tracking details from a short message or a screenshot for a bilingual (Hebrew/English) package-tracking app. The user has already tried a deterministic parser that found nothing usable, or the input is an image only a vision model can read.
 
 Rules:
-- trackingNumber: the shipment tracking/AWB number if present, else an empty string. Never invent one.
-- carrier: your best guess from the given list; "other" if unclear.
+- selectedCandidateId: choose exactly one ID from the deterministic candidate list supplied in the user message, or "" if none is a shipment tracking number. Never output a tracking number or an ID that was not supplied.
 - confidence: "none" if you found no real tracking number, "low"/"medium"/"high" based on how sure you are of the whole result.
 - title: a short human label (e.g. "AliExpress Order", "Israel Post Package"), empty string if you can't tell.
 - pickupLocation: a locker/branch/pickup point name if mentioned, else empty string.
@@ -52,7 +57,7 @@ function emptyResult() {
 }
 
 /**
- * @param {{ mode: 'text-fallback' | 'image', text?: string, imageBase64?: string }} payload
+ * @param {{ mode: 'text-fallback' | 'image', text?: string, imageBase64?: string, candidates?: Array<{id: string, value: string, carrierCandidates?: string[]}> }} payload
  * @param {string} apiKey - passed explicitly (from Secret Manager via the
  *   caller) rather than read from process.env here, so this module has no
  *   hidden global state and is easy to unit test with a fake key.
@@ -64,10 +69,21 @@ export async function parseWithGemini(payload, apiKey) {
   }
   const ai = new GoogleGenAI({ apiKey });
 
+  const candidates = normalizeCandidates(payload.candidates);
+  // A model cannot be allowed to invent a tracking number.  For images this
+  // deliberately fails closed until deterministic OCR candidates are added.
+  if (candidates.length === 0) return emptyResult();
+
+  const candidatePrompt = JSON.stringify(candidates);
+  if (Buffer.byteLength(candidatePrompt, 'utf8') > MAX_CANDIDATE_PROMPT_BYTES) return emptyResult();
+
   const contentParts =
     payload.mode === 'text-fallback'
-      ? [{ text: payload.text }]
-      : [{ inlineData: { mimeType: 'image/jpeg', data: stripDataUrlPrefix(payload.imageBase64) } }];
+      ? [{ text: `${payload.text}\n\nDeterministic candidates (select an ID or none):\n${candidatePrompt}` }]
+      : [
+        { inlineData: { mimeType: 'image/jpeg', data: stripDataUrlPrefix(payload.imageBase64) } },
+        { text: `Deterministic candidates (select an ID or none):\n${candidatePrompt}` }
+      ];
 
   const response = await ai.models.generateContent({
     model: GEMINI_MODEL,
@@ -87,12 +103,90 @@ export async function parseWithGemini(payload, apiKey) {
 
   try {
     const parsed = JSON.parse(text);
-    return { ...emptyResult(), ...parsed };
+    const selected = candidates.find((candidate) => candidate.id === parsed.selectedCandidateId);
+    if (!selected) return emptyResult();
+    return {
+      ...emptyResult(),
+      trackingNumber: selected.value,
+      carrier: selected.carrierCandidates[0] || 'other',
+      title: typeof parsed.title === 'string' ? parsed.title : '',
+      pickupLocation: typeof parsed.pickupLocation === 'string' ? parsed.pickupLocation : '',
+      origin: typeof parsed.origin === 'string' ? parsed.origin : '',
+      notes: typeof parsed.notes === 'string' ? parsed.notes : '',
+      confidence: ['high', 'medium', 'low'].includes(parsed.confidence) ? parsed.confidence : 'none'
+    };
   } catch {
     // A malformed response is a Gemini-side anomaly, not a caller error —
     // fail closed to "nothing found" rather than surfacing a 500.
     return emptyResult();
   }
+}
+
+function normalizeCandidates(candidates) {
+  if (!Array.isArray(candidates)) return [];
+  const suppliedIds = new Set();
+  for (const candidate of candidates) {
+    if (candidate && typeof candidate.id === 'string' && CANDIDATE_ID_RE.test(candidate.id)) {
+      if (suppliedIds.has(candidate.id)) return [];
+      suppliedIds.add(candidate.id);
+    }
+  }
+  const ids = new Set();
+  const normalized = [];
+  for (const candidate of candidates.slice(0, MAX_CANDIDATES)) {
+    if (!candidate || typeof candidate.id !== 'string' || typeof candidate.value !== 'string') continue;
+    if (!CANDIDATE_ID_RE.test(candidate.id) || ids.has(candidate.id)) continue;
+    const value = candidate.value.trim().toUpperCase();
+    if (value.length < 6 || value.length > MAX_CANDIDATE_VALUE_LENGTH) continue;
+    const carrierCandidates = deriveCarrierCandidates(value);
+    if (carrierCandidates.length === 0 || !passesChecksumPolicy(value, carrierCandidates)) continue;
+    ids.add(candidate.id);
+    normalized.push({
+      id: candidate.id,
+      value,
+      // Carrier hints arrive from an untrusted callable payload. Derive the
+      // carrier from the generated server-side spec instead of accepting the
+      // candidate's first claimed carrier.
+      carrierCandidates
+    });
+  }
+  return normalized;
+}
+
+function deriveCarrierCandidates(value) {
+  const matches = [];
+  for (const rule of carrierSpecs.rules || []) {
+    const expression = new RegExp(rule.source, rule.flags);
+    if (expression.test(value) && CARRIER_IDS.includes(rule.carrierId) && !matches.includes(rule.carrierId)) {
+      matches.push(rule.carrierId);
+    }
+  }
+  return matches;
+}
+
+function passesChecksumPolicy(value, carrierIds) {
+  const matchingRules = (carrierSpecs.rules || []).filter((rule) => {
+    const expression = new RegExp(rule.source, rule.flags);
+    return carrierIds.includes(rule.carrierId) && expression.test(value);
+  });
+  // A matching checksum rule must pass. Rules without a checksum remain
+  // legitimate deterministic candidates.
+  return !matchingRules.some((rule) => {
+    if (rule.checksum === 'upu-s10') return !validateUPUS10Mod11(value);
+    if (rule.checksum === 'mod10-31') return !validateMod10(value);
+    return false;
+  });
+}
+
+function validateMod10(value) {
+  if (!/^\d+$/.test(value)) return false;
+  let sum = 0;
+  let weight = 3;
+  for (let index = value.length - 2; index >= 0; index -= 1) {
+    sum += Number(value[index]) * weight;
+    weight = weight === 3 ? 1 : 3;
+  }
+  return (10 - (sum % 10)) % 10 === Number(value[value.length - 1]);
 }
 
 function stripDataUrlPrefix(imageBase64) {

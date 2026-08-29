@@ -2,6 +2,8 @@ import { detectCarrier, sanitizeTrackingNumber } from './carrierDetector.js';
 import { detectStore } from './storeDetector.js';
 import { getCarrier } from '../types/carriers.js';
 import { sanitizeString } from './packageValidator.js';
+import { extractAndScoreCandidates, classifyConfidenceTier } from './candidateScorer.js';
+import { extractOpeningHours } from './openingHoursService.js';
 
 /** Known shortened domains used by Israeli & Global logistics providers and SMS gateways */
 export const SHORT_DOMAINS = [
@@ -521,7 +523,7 @@ export function extractLockerPin(text) {
 
   const patterns = [
     /(?:קוד\s*(?:לפתיחת\s*(?:ה)?לוקר|לאיסוף|איסוף|לוקר|סודי|פתיחה|משיכה|אימות|פתיחת\s*תא))[\s:-]+([A-Za-z0-9]{3,8})\b/i,
-    /(?:pickup\s*(?:pin|code)|collection\s*(?:pin|code)|locker\s*(?:pin|code|password)|pin\s*code|entry\s*code)[\s:-]+([A-Za-z0-9]{3,8})\b/i
+    /(?:pickup\s*(?:pin|code)|collection\s*(?:pin|code)|locker\s*(?:pin|code|password)|pin\s*code|\bpin|entry\s*code)[\s:-]+([A-Za-z0-9]{3,8})\b/i
   ];
 
   for (const pattern of patterns) {
@@ -563,6 +565,91 @@ export function extractPickupLocation(text) {
   }
 
   return '';
+}
+
+/**
+ * Extracts a store, courier, or pickup contact phone number from text.
+ * Handles Israeli landline formats (02/03/04/08/09-XXXXXXX), mobile (05X-XXXXXXX),
+ * VoIP/special (07X-XXXXXXX, 1-700/1-800), and international (+972...).
+ * @param {string} text
+ * @returns {string}
+ */
+export function extractPickupPhone(text) {
+  if (!text || typeof text !== 'string') return '';
+
+  const patterns = [
+    /(?:טלפון(?:\s*לבירורים|\s*ליצירת\s*קשר|\s*סניף|\s*חנות)?|טל['׳]|נייד|שליח\s*בטלפון|phone|tel|call)[\s:-]+(\+?972[- ]?[0-9]{1,2}[- ]?[0-9]{3}[- ]?[0-9]{4}|0[2-9][- ]?[0-9]{7}|05[0-9][- ]?[0-9]{7}|1-[78]00[- ]?[0-9]{3}[- ]?[0-9]{3})\b/i,
+    /(?:\+972[- ]?[2-9][- ]?[0-9]{7}|0[23489][- ]?[0-9]{7}|05[0-9][- ]?[0-9]{7})\b/
+  ];
+
+  for (const pattern of patterns) {
+    const match = pattern.exec(text);
+    if (match && match[1]) {
+      const phone = match[1].trim().replace(/[^\d+]/g, '');
+      if (phone.length >= 9 && phone.length <= 15) {
+        return match[1].trim();
+      }
+    } else if (match && match[0]) {
+      const phone = match[0].trim().replace(/[^\d+]/g, '');
+      if (phone.length >= 9 && phone.length <= 15) {
+        return match[0].trim();
+      }
+    }
+  }
+
+  return '';
+}
+
+/**
+ * Detects whether a delivery was rerouted / redirected to an alternate pickup point.
+ * Extracts the redirect flag, reason, and original location if mentioned.
+ * @param {string} text
+ * @returns {{ isRedirected: boolean, originalPickupLocation?: string, redirectReason?: string, newPickupLocation?: string }}
+ */
+export function extractRedirectInfo(text) {
+  if (!text || typeof text !== 'string') return { isRedirected: false };
+
+  const redirectPatterns = [
+    /(?:עקב\s*(?:עומס|ביקוש|תפוסה|סגירה|תקלה|אילוץ\s*תפעולי)[^.\r\n]*?(?:הועברה|הופנתה|נותבה|נשלחה)\s*(?:ל|אל)?\s*(?:נקודת\s*איסוף|סניף|לוקר|חנות)?[\s:-]+)([^,.\r\n]{2,60})/i,
+    /(?:נקודת\s*(?:ה)?איסוף\s*(?:שונתה|הוחלפה|עודכנה)\s*(?:ל|אל)?[\s:-]+)([^,.\r\n]{2,60})/i,
+    /(?:הועברה\s*לנקודת\s*איסוף\s*חלופית[\s:-]+)([^,.\r\n]{2,60})/i,
+    /(?:חבילתך\s*הועברה\s*(?:ל|אל)?\s*(?:נקודת\s*איסוף|סניף|לוקר)?[\s:-]+)([^,.\r\n]{2,60})/i,
+    /(?:(?:redirected|rerouted|transferred)\s+(?:to\s+(?:pickup\s+(?:point|location)|locker|branch)?|at)[\s:-]+)([^,.\r\n]{2,60})/i,
+    /(?:pickup\s+(?:point|location)\s+(?:changed|redirected|updated)\s+to[\s:-]+)([^,.\r\n]{2,60})/i
+  ];
+
+  for (const pattern of redirectPatterns) {
+    const match = pattern.exec(text);
+    if (match && match[1]) {
+      let newLoc = match[1].trim();
+      // Remove trailing parenthetical or "instead of" clause from the new location string
+      newLoc = newLoc.replace(/(?:\s*\(?(?:במקום|במקור|instead\s+of).*\)?)$/i, '');
+      newLoc = newLoc.replace(/(?:\s*[-–—|/]?\s*(?:שעות\s*פתיחה|קוד\s*איסוף|שעות\s*פעילות|טלפון|phone|hours).*)$/i, '');
+      newLoc = newLoc.replace(/^['":\-–—\s()]+|['":\-–—\s()]+$/g, '');
+
+      let origLoc = '';
+      const origMatch = /(?:במקום|במקור|originally|instead\s+of)[\s:-]+([^,.)\r\n]{2,60})/i.exec(text);
+      if (origMatch && origMatch[1]) {
+        origLoc = origMatch[1].trim().replace(/^['":\-–—\s()]+|['":\-–—\s()]+$/g, '');
+      }
+
+      return {
+        isRedirected: true,
+        newPickupLocation: newLoc,
+        originalPickupLocation: origLoc || undefined,
+        redirectReason: /(?:עומס|capacity|overflow)/i.test(text) ? 'locker_capacity' : 'operational'
+      };
+    }
+  }
+
+  if (/(?:הועברה\s*לנקודת\s*איסוף\s*חלופית|עקב\s*עומס\s*בלוקר|שונתה\s*נקודת\s*האיסוף|package\s*redirected|was\s*redirected|rerouted\s*to\s*alternate)/i.test(text)) {
+    return {
+      isRedirected: true,
+      redirectReason: /(?:עומס|capacity|overflow)/i.test(text) ? 'locker_capacity' : 'operational'
+    };
+  }
+
+  return { isRedirected: false };
 }
 
 /**
@@ -682,8 +769,16 @@ export function parseSmartText(rawText) {
 
   const cleanText = sanitizeString(rawText, 5000);
   const candidates = extractTrackingCandidates(cleanText);
+  const scoredCandidates = extractAndScoreCandidates(cleanText).map((candidate) => ({
+    ...candidate,
+    status: classifyConfidenceTier(candidate.score, candidate)
+  }));
   const urlExtracted = extractUrlsAndTrackings(cleanText);
   const pickupLocation = extractPickupLocation(cleanText);
+  const redirectInfo = extractRedirectInfo(cleanText);
+  const effectivePickupLocation = redirectInfo.newPickupLocation || pickupLocation;
+  const pickupHours = extractOpeningHours(cleanText);
+  const pickupPhone = extractPickupPhone(cleanText);
   const lockerPin = extractLockerPin(cleanText);
   const phraseCarrier = detectCarrierFromPhrasing(cleanText);
 
@@ -793,6 +888,11 @@ export function parseSmartText(rawText) {
     status = 'in_transit';
   }
 
+  const selectedCandidate = scoredCandidates.find((candidate) => candidate.value === bestTracking)
+    || scoredCandidates[0]
+    || null;
+  const candidateStatus = selectedCandidate?.status || (bestTracking ? 'uncertain' : 'none');
+
   return {
     title,
     titleHe,
@@ -805,10 +905,20 @@ export function parseSmartText(rawText) {
     destination: 'Israel',
     notes: notesText,
     notesHe: notesText,
-    pickupLocation,
+    pickupLocation: effectivePickupLocation,
+    pickupHours,
+    pickupPhone,
     lockerPin,
+    isRedirected: redirectInfo.isRedirected || false,
+    originalPickupLocation: redirectInfo.originalPickupLocation || undefined,
+    redirectReason: redirectInfo.redirectReason || undefined,
     store: detectedStore,
     storeHe: detectedStoreHe,
-    storeInfo
+    storeInfo,
+    // Additive metadata for callers that need an accuracy-aware decision.
+    // `trackingNumber` remains for backwards compatibility; Smart Import
+    // gates unattended auto-fill on `candidateStatus` below.
+    candidateStatus,
+    candidates: scoredCandidates
   };
 }

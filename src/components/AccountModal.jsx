@@ -3,7 +3,7 @@ import {
   X, User, Settings, ShieldAlert, Database,
   Download, Trash2, CheckCircle2, Moon, Sun, Globe,
   Truck, Calendar, Mail, Check, AlertTriangle, Cloud,
-  Info, Sparkles, Package, ShieldCheck, Bell
+  Info, Sparkles, Package, ShieldCheck, Bell, Navigation
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
@@ -17,6 +17,7 @@ import { deliveryService } from '../services/deliveryService';
 import { todayISO } from '../utils/dateUtils';
 import { STORAGE_KEYS } from '../constants/storageKeys';
 import { Modal } from './Modal';
+import { NAV_APPS, getPreferredNavigationApp, setPreferredNavigationApp, clearPreferredNavigationApp } from '../utils/navigationService';
 
 const ACCOUNT_SECTIONS = [
   { id: 'preferences', icon: Settings, label: { en: 'Appearance & Language', he: 'תצוגה ושפה' } },
@@ -81,12 +82,14 @@ export function AccountModal({
   const [permissionStatus, setPermissionStatus] = useState(() => notificationService.getNotificationPermission());
   const [openLegalDoc, setOpenLegalDoc] = useState(null); // 'terms' | 'privacy' | null
   const [isTogglingAiOptIn, setIsTogglingAiOptIn] = useState(false);
+  const [preferredNavApp, setPreferredNavApp] = useState(() => getPreferredNavigationApp() || 'auto');
 
   useEffect(() => {
     if (isOpen) {
       setActiveTab(initialTab);
       setNotificationPrefs(notificationService.getPreferences());
       setPermissionStatus(notificationService.getNotificationPermission());
+      setPreferredNavApp(getPreferredNavigationApp() || 'auto');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -187,6 +190,19 @@ export function AccountModal({
     });
     if (onShowToast) {
       onShowToast(language === 'he' ? 'פורמט תאריכים עודכן' : 'Date format updated', 'success');
+    }
+  };
+
+  const handleNavAppChange = (e) => {
+    const val = e.target.value;
+    setPreferredNavApp(val);
+    if (val === 'auto') {
+      clearPreferredNavigationApp();
+    } else {
+      setPreferredNavigationApp(val);
+    }
+    if (onShowToast) {
+      onShowToast(language === 'he' ? 'אפליקציית הניווט המועדפת עודכנה' : 'Preferred navigation app updated', 'success');
     }
   };
 
@@ -688,6 +704,30 @@ export function AccountModal({
                     </p>
                   )}
                 </div>
+              </div>
+
+              {/* Preferred Navigation App Selector */}
+              <div className={`${card} space-y-2`}>
+                <label className={sectionTitle}>
+                  <Navigation className="w-4 h-4 text-[var(--stg-accent)]" />
+                  <span>{language === 'he' ? 'אפליקציית ניווט מועדפת' : 'Preferred Navigation App'}</span>
+                </label>
+                <select
+                  value={preferredNavApp}
+                  onChange={handleNavAppChange}
+                  className={selectCls}
+                >
+                  <option value="auto">{language === 'he' ? 'שאל בכל פעם (תפריט בחירה)' : 'Always Ask (Choice Menu)'}</option>
+                  <option value={NAV_APPS.WAZE}>{language === 'he' ? 'Waze (ווייז)' : 'Waze'}</option>
+                  <option value={NAV_APPS.GOOGLE_MAPS}>{language === 'he' ? 'Google Maps (גוגל מפות)' : 'Google Maps'}</option>
+                  <option value={NAV_APPS.APPLE_MAPS}>{language === 'he' ? 'Apple Maps (אפל מפות)' : 'Apple Maps'}</option>
+                  <option value={NAV_APPS.MOOVIT}>{language === 'he' ? 'Moovit (תחבורה ציבורית)' : 'Moovit (Public Transit)'}</option>
+                </select>
+                <p className="text-[10px] text-[var(--stg-text-muted)]">
+                  {language === 'he' 
+                    ? 'משמש לפתיחה מיידית בלחיצה אחת על כפתור הניווט בפרטי החבילה' 
+                    : 'Used for instant 1-click navigation from package pickup details'}
+                </p>
               </div>
             </div>
           )}

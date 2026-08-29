@@ -208,6 +208,70 @@ export const translations = {
       noLocationsFound: 'No pickup locations match your search',
       openHours: 'Hours',
       phone: 'Phone'
+    },
+    navigation: {
+      title: 'Choose Navigation App',
+      subtitle: 'Select how you would like to navigate to the pickup location',
+      destination: 'Destination',
+      alwaysUse: 'Always open with this app',
+      clearPreference: 'Reset saved default app',
+      preferredBadge: 'Default App',
+      navigateBtn: 'Navigate',
+      osDefault: 'Android System Default (App Chooser)',
+      osDefaultDesc: 'Open with your Android default map selector'
+    },
+    openingHours: {
+      openNow: 'Open Now',
+      closedNow: 'Closed',
+      closingSoon: 'Closes Soon',
+      opensSoon: 'Opens Soon',
+      open24_7: 'Open 24/7',
+      alwaysOpen: 'Always Open (24/7 Locker)',
+      shabbatClosed: 'Closed for Shabbat',
+      holidayClosed: 'Closed for Holiday',
+      reportWrongHours: 'Report incorrect hours',
+      reportPromptTitle: 'Report Incorrect Opening Hours',
+      reportPlaceholder: 'Please enter the correct opening hours for this location...',
+      weeklySchedule: 'Weekly Operating Schedule',
+      estimatedNotice: 'Estimated Israeli business hours'
+    },
+    lockerMode: {
+      title: 'Full-Screen Locker Mode',
+      subtitle: 'High-contrast sunlight-proof PIN display',
+      pickupPin: 'Pickup PIN Code',
+      tapToCopy: 'Tap to copy PIN',
+      copied: 'PIN code copied!',
+      markDelivered: 'Mark as Collected',
+      markingDelivered: 'Updating...',
+      shareWhatsApp: 'Share Proxy (WhatsApp)',
+      navigate: 'Navigate to Location',
+      wakeLockActive: 'Screen kept awake for easy locker keypad entry',
+      wakeLockFallback: 'Screen wake lock active'
+    },
+    locationBundling: {
+      bundleBannerTitleSingle: '1 other package waiting here!',
+      bundleBannerTitleMultiple: '{count} other packages waiting here!',
+      storePickupTitle: 'Store Pickup Details',
+      collectAll: 'Mark All as Collected ({count})',
+      collectAllSuccess: '{count} packages marked as collected! 🎉',
+      shareAllWhatsApp: 'Share All PINs (WhatsApp)',
+      siblingPackagesWaiting: 'Packages waiting at this location:',
+      pinCode: 'PIN:',
+      noPin: 'No PIN required',
+      storeClerkHint: 'Show these PINs/tracking numbers to the store clerk for pickup.'
+    },
+    redirectDetection: {
+      badge: 'Redirected',
+      bannerTitle: 'Pickup Location Changed',
+      bannerDesc: 'The courier redirected this package to an alternate pickup point (due to locker capacity or store hours).',
+      originalLocation: 'Original requested location:',
+      redirectedNotice: 'Rerouted by courier'
+    },
+    phoneActions: {
+      callStore: 'Call Store',
+      callCourier: 'Call Courier',
+      callPickupPoint: 'Call Pickup Point',
+      phoneCopied: 'Phone number copied!'
     }
   },
   he: {
@@ -419,6 +483,70 @@ export const translations = {
       noLocationsFound: 'לא נמצאו נקודות איסוף תואמות',
       openHours: 'שעות פעילות',
       phone: 'טלפון'
+    },
+    navigation: {
+      title: 'בחירת אפליקציית ניווט',
+      subtitle: 'בחר כיצד ברצונך לנווט לנקודת האיסוף / הלוקר',
+      destination: 'יעד הניווט',
+      alwaysUse: 'זכור את בחירתי לפעמים הבאות',
+      clearPreference: 'איפוס אפליקציית ברירת המחדל',
+      preferredBadge: 'ברירת מחדל',
+      navigateBtn: 'נווט ליעד',
+      osDefault: 'ברירת מחדל של מערכת ההפעלה (Android)',
+      osDefaultDesc: 'פתיחה באמצעות בורר האפליקציות של אנדרואיד'
+    },
+    openingHours: {
+      openNow: 'פתוח עכשיו',
+      closedNow: 'סגור כעת',
+      closingSoon: 'נסגר בקרוב',
+      opensSoon: 'נפתח בקרוב',
+      open24_7: 'פתוח 24/7',
+      alwaysOpen: 'פתוח תמיד (לוקר 24/7)',
+      shabbatClosed: 'סגור לרגל שבת',
+      holidayClosed: 'סגור לרגל חג',
+      reportWrongHours: 'שעות לא נכונות? דווח כאן',
+      reportPromptTitle: 'דיווח ותיקון שעות פתיחה',
+      reportPlaceholder: 'נא להזין את שעות הפעילות הנכונות של המקום...',
+      weeklySchedule: 'שעות פעילות שבועיות',
+      estimatedNotice: 'שעות משוערות לפי שבוע מסחר ישראלי'
+    },
+    lockerMode: {
+      title: 'מצב לוקר מוגדל',
+      subtitle: 'תצוגת קוד איסוף בניגודיות גבוהה מול השמש',
+      pickupPin: 'קוד איסוף לוקר',
+      tapToCopy: 'לחץ להעתקת הקוד',
+      copied: 'קוד האיסוף הועתק בהצלחה!',
+      markDelivered: 'סמן שנאסף',
+      markingDelivered: 'מעדכן...',
+      shareWhatsApp: 'שתף לאיסוף בוואטסאפ',
+      navigate: 'נווט למיקום',
+      wakeLockActive: 'מסך דולק ברציפות לנוחות ההקלדה בלוקר',
+      wakeLockFallback: 'שמירת מסך דולק פעילה'
+    },
+    locationBundling: {
+      bundleBannerTitleSingle: 'עוד חבילה אחת ממתינה בנקודה זו!',
+      bundleBannerTitleMultiple: 'עוד {count} חבילות ממתינות בנקודה זו!',
+      storePickupTitle: 'פרטי איסוף בחנות',
+      collectAll: 'סמן את כולן כנאספו ({count})',
+      collectAllSuccess: '{count} חבילות סומנו כנאספו בהצלחה! 🎉',
+      shareAllWhatsApp: 'שתף את כל הקודים בוואטסאפ',
+      siblingPackagesWaiting: 'חבילות נוספות שממתינות כאן:',
+      pinCode: 'קוד איסוף:',
+      noPin: 'ללא קוד איסוף',
+      storeClerkHint: 'הצג את קודי האיסוף או מספרי המעקב לנציג בחנות.'
+    },
+    redirectDetection: {
+      badge: 'הועבר למיקום חלופי',
+      bannerTitle: 'שינוי נקודת איסוף',
+      bannerDesc: 'חברת השילוח העבירה את החבילה לנקודה חלופית (עקב עומס בלוקר או שינוי תפעולי).',
+      originalLocation: 'מיקום מקורי שבוקש:',
+      redirectedNotice: 'הועבר ע״י חברת השילוח'
+    },
+    phoneActions: {
+      callStore: 'התקשר לחנות',
+      callCourier: 'התקשר לשליח',
+      callPickupPoint: 'התקשר לנקודת האיסוף',
+      phoneCopied: 'מספר הטלפון הועתק!'
     }
   }
 };

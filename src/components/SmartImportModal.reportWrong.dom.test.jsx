@@ -25,16 +25,16 @@ describe('SmartImportModal — "this wasn\'t right" report', () => {
       <SmartImportModal isOpen onClose={vi.fn()} onParsedResult={vi.fn()} onShowToast={onShowToast} />
     );
 
-    await user.type(screen.getByPlaceholderText(/paste|text|sms/i), 'RS948219481IL arrived');
+    await user.type(screen.getByPlaceholderText(/paste|text|sms/i), 'Tracking RS948219483IL arrived');
     await user.click(screen.getByRole('button', { name: /extract shipping details/i }));
-    await screen.findByText('RS948219481IL');
+    await screen.findByText('RS948219483IL');
 
     await user.click(screen.getByRole('button', { name: /wasn.t right/i }));
 
     expect(submitFeedback).toHaveBeenCalledTimes(1);
     const payload = submitFeedback.mock.calls[0][0];
     expect(payload.type).toBe('bug');
-    expect(payload.message).toContain('RS948219481IL');
+    expect(payload.message).toContain('RS948219483IL');
     expect(payload.message).toContain('israel-post');
     expect(onShowToast).toHaveBeenCalledWith(expect.stringMatching(/reported/i), 'success');
   });
@@ -44,9 +44,9 @@ describe('SmartImportModal — "this wasn\'t right" report', () => {
     const user = userEvent.setup();
     renderWithLanguage(<SmartImportModal isOpen onClose={vi.fn()} onParsedResult={vi.fn()} />);
 
-    await user.type(screen.getByPlaceholderText(/paste|text|sms/i), 'RS948219481IL arrived');
+    await user.type(screen.getByPlaceholderText(/paste|text|sms/i), 'Tracking RS948219483IL arrived');
     await user.click(screen.getByRole('button', { name: /extract shipping details/i }));
-    await screen.findByText('RS948219481IL');
+    await screen.findByText('RS948219483IL');
 
     const reportButton = screen.getByRole('button', { name: /wasn.t right/i });
     await user.click(reportButton);
@@ -64,9 +64,9 @@ describe('SmartImportModal — "this wasn\'t right" report', () => {
       <SmartImportModal isOpen onClose={vi.fn()} onParsedResult={vi.fn()} onShowToast={onShowToast} />
     );
 
-    await user.type(screen.getByPlaceholderText(/paste|text|sms/i), 'RS948219481IL arrived');
+    await user.type(screen.getByPlaceholderText(/paste|text|sms/i), 'Tracking RS948219483IL arrived');
     await user.click(screen.getByRole('button', { name: /extract shipping details/i }));
-    await screen.findByText('RS948219481IL');
+    await screen.findByText('RS948219483IL');
 
     await user.click(screen.getByRole('button', { name: /wasn.t right/i }));
 
@@ -80,14 +80,14 @@ describe('SmartImportModal — "this wasn\'t right" report', () => {
     renderWithLanguage(<SmartImportModal isOpen onClose={vi.fn()} onParsedResult={vi.fn()} />);
 
     const textarea = screen.getByPlaceholderText(/paste|text|sms/i);
-    await user.type(textarea, 'RS948219481IL arrived');
+    await user.type(textarea, 'Tracking RS948219483IL arrived');
     await user.click(screen.getByRole('button', { name: /extract shipping details/i }));
-    await screen.findByText('RS948219481IL');
+    await screen.findByText('RS948219483IL');
     await user.click(screen.getByRole('button', { name: /wasn.t right/i }));
     await screen.findByRole('button', { name: /reported, thanks/i });
 
     await user.clear(textarea);
-    await user.type(textarea, 'AliExpress order LP00582910482CN has arrived in Israel.');
+    await user.type(textarea, 'Tracking RR123456785IL from Israel Post arrived.');
     await user.click(screen.getByRole('button', { name: /extract shipping details/i }));
 
     expect(await screen.findByRole('button', { name: /wasn.t right/i })).toBeInTheDocument();

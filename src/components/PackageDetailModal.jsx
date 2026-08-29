@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, ExternalLink, Copy, Check, Calendar, MapPin, Plus, 
-  Truck, Clock, RefreshCw, Info, RotateCcw, Edit3
+  Truck, Clock, RefreshCw, Info, RotateCcw, Edit3, AlertCircle, ChevronDown, ChevronUp, Flag, Maximize2, Layers, Phone
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { getCarrier } from '../types/carriers';
@@ -16,21 +16,39 @@ import { checkRateLimit } from '../utils/rateLimiter';
 import { isLiveTrackingSupported } from '../services/carrierApiProxy';
 import { CourierActionHub } from './CourierActionHub';
 import { Modal } from './Modal';
+import { getPreferredNavigationApp, openNavigationApp } from '../utils/navigationService';
+import { getLiveStoreStatus, resolveStoreHours } from '../utils/openingHoursService';
+import { submitFeedback } from '../services/feedbackService';
+import { findSameLocationPackages } from '../utils/locationBundling';
 
 export function PackageDetailModal({
   pkg,
+  packages = [],
   isOpen,
   onClose,
   onEdit,
   onUpdatePackage,
+  onStatusChange,
   onRefreshTracking,
   onOpenLockerMap,
+  onOpenLockerMode,
+  onOpenNavigation,
   onShowToast
 }) {
   const { t, language } = useLanguage();
   const [copied, setCopied] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isAddingCheckpoint, setIsAddingCheckpoint] = useState(false);
+  const [now, setNow] = useState(() => new Date());
+  const [isReportingHours, setIsReportingHours] = useState(false);
+  const [reportedHours, setReportedHours] = useState('');
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+  const [showFullSchedule, setShowFullSchedule] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   // New Checkpoint Form State
   const [newTitle, setNewTitle] = useState('');
@@ -48,6 +66,9 @@ export function PackageDetailModal({
   const daysInfo = getDaysRemaining(pkg.expectedDeliveryDate, language);
   const pickupCountdown = getPickupCountdown(pkg.pickupDeadline);
   const returnCountdown = getReturnCountdown(pkg.returnDeadline);
+  const resolvedHours = resolveStoreHours(pkg.pickupLocation, pkg.pickupHours, pkg.carrier);
+  const storeStatus = getLiveStoreStatus(pkg.pickupHours, { now, locationName: pkg.pickupLocation, carrier: pkg.carrier });
+  const siblingPackages = findSameLocationPackages(pkg, packages);
 
   const handleCopy = async () => {
     const success = await copyToClipboard(pkg.trackingNumber);
@@ -188,6 +209,51 @@ export function PackageDetailModal({
   const itemTitle = (language === 'he' && pkg.titleHe) ? pkg.titleHe : pkg.title;
   const itemNotes = (language === 'he' && pkg.notesHe) ? pkg.notesHe : pkg.notes;
 
+  const handleNavigate = () => {
+    if (!pkg.pickupLocation) return;
+    const preferred = getPreferredNavigationApp();
+    if (preferred) {
+      openNavigationApp(preferred, { location: pkg.pickupLocation, title: itemTitle });
+    } else if (onOpenNavigation) {
+      onOpenNavigation({ location: pkg.pickupLocation, title: itemTitle });
+    } else {
+      openNavigationApp('google_maps', { location: pkg.pickupLocation, title: itemTitle });
+    }
+  };
+
+  const handleReportWrongHours = async (e) => {
+    e.preventDefault();
+    if (!reportedHours.trim()) return;
+    setIsSubmittingReport(true);
+    try {
+      await submitFeedback({
+        type: 'bug',
+        message: `[שעות פתיחה שגויות] נקודת איסוף: "${pkg.pickupLocation || pkg.title}" (מספר מעקב: ${pkg.trackingNumber}, ספק: ${pkg.carrier}). שעות שדווחו על ידי המשתמש: ${reportedHours.trim()}`,
+        rating: 5,
+        isAnonymous: true
+      });
+      setIsReportingHours(false);
+      setReportedHours('');
+      if (onShowToast) {
+        onShowToast(
+          language === 'he'
+            ? 'תודה! הדיווח נשלח לצוות לבדיקה ועדכון ❤️'
+            : 'Thank you! Report submitted for verification ❤️',
+          'success'
+        );
+      }
+    } catch {
+      if (onShowToast) {
+        onShowToast(
+          language === 'he' ? 'שגיאה בשליחת הדיווח' : 'Error sending report',
+          'error'
+        );
+      }
+    } finally {
+      setIsSubmittingReport(false);
+    }
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -268,13 +334,26 @@ export function PackageDetailModal({
                           >
                             <Copy className="w-5 h-5" />
                           </button>
+
+                          {onOpenLockerMode && (
+                            <button
+                              type="button"
+                              onClick={() => onOpenLockerMode(pkg)}
+                              className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500/25 hover:bg-emerald-500/40 text-emerald-200 hover:text-white border border-emerald-500/40 text-xs font-bold transition-all shadow-sm cursor-pointer min-h-[36px]"
+                              title={language === 'he' ? 'פתח מצב לוקר מוגדל' : 'Open Full-Screen Locker Mode'}
+                            >
+                              <Maximize2 className="w-3.5 h-3.5" />
+                              <span>{language === 'he' ? 'מצב לוקר' : 'Locker Mode'}</span>
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
                   )}
 
-                  {pickupCountdown.hasDeadline && (
-                    <div className="mt-2">
+                  {/* Deadline & Live Opening Hours Badges */}
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                    {pickupCountdown.hasDeadline && (
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold ${
                         pickupCountdown.urgency === 'critical' || pickupCountdown.urgency === 'expired'
                           ? 'bg-rose-500/25 text-rose-300 border border-rose-500/40 animate-pulse' 
@@ -286,19 +365,38 @@ export function PackageDetailModal({
                         {language === 'he' ? pickupCountdown.formattedHe : pickupCountdown.formattedEn}
                         <span className="opacity-70 font-normal">({formatDate(pkg.pickupDeadline, language)})</span>
                       </span>
+                    )}
+
+                    {/* Live Operating Status Badge */}
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${storeStatus.badgeClass}`}>
+                      <span className={`w-2 h-2 rounded-full ${storeStatus.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'}`} />
+                      <span>{language === 'he' ? storeStatus.badgeTextHe : storeStatus.badgeTextEn}</span>
+                      <span className="opacity-80 font-normal">
+                        • {language === 'he' ? storeStatus.nextChangeHe : storeStatus.nextChangeEn}
+                      </span>
+                    </span>
+                  </div>
+
+                  {/* Friday / Shabbat / Holiday Contextual Alerts */}
+                  {(storeStatus.warningHe || storeStatus.warningEn) && (
+                    <div className="flex items-center gap-2 mt-1.5 p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-xs">
+                      <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span>{language === 'he' ? storeStatus.warningHe : storeStatus.warningEn}</span>
                     </div>
                   )}
                 </div>
 
                 <div className="flex flex-col gap-2 min-w-[140px] items-stretch">
                   {pkg.pickupLocation && (
-                    <a
-                      href={`geo:0,0?q=${encodeURIComponent(pkg.pickupLocation)}`}
-                      className="flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold transition-all shadow-md min-h-[48px]"
+                    <button
+                      type="button"
+                      onClick={handleNavigate}
+                      className="flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold transition-all shadow-md min-h-[48px] cursor-pointer"
+                      title={language === 'he' ? 'פתח ניווט לנקודת האיסוף' : 'Open navigation to pickup location'}
                     >
                       <MapPin className="w-4 h-4" />
-                      {language === 'he' ? 'נווט לאיסוף' : 'Navigate'}
-                    </a>
+                      <span>{language === 'he' ? 'נווט לאיסוף' : 'Navigate'}</span>
+                    </button>
                   )}
                   
                   <a
@@ -314,15 +412,179 @@ export function PackageDetailModal({
                     <ExternalLink className="w-4 h-4" />
                     {language === 'he' ? 'שתף בוואטסאפ' : 'Share Proxy'}
                   </a>
+
+                  {pkg.pickupPhone && (
+                    <a
+                      href={`tel:${pkg.pickupPhone}`}
+                      className="flex justify-center items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-800/40 hover:bg-emerald-700/50 text-emerald-200 hover:text-white text-xs font-bold transition-all min-h-[40px] border border-emerald-500/30"
+                      title={language === 'he' ? `התקשר: ${pkg.pickupPhone}` : `Call: ${pkg.pickupPhone}`}
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      <span>{t('phoneActions.callStore')}</span>
+                    </a>
+                  )}
                 </div>
               </div>
 
+              {/* Courier Redirect Alert & Original Location Note */}
+              {pkg.isRedirected && (
+                <div className="mt-3 p-3.5 rounded-2xl bg-amber-950/60 border border-amber-500/40 text-xs space-y-1.5 relative z-10 shadow-inner">
+                  <div className="flex items-center gap-2 text-amber-300 font-bold">
+                    <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span>{t('redirectDetection.bannerTitle')}</span>
+                  </div>
+                  <p className="text-amber-200/90 text-[11px] leading-relaxed">
+                    {t('redirectDetection.bannerDesc')}
+                  </p>
+                  {pkg.originalPickupLocation && (
+                    <div className="pt-1 text-[11px] text-amber-300/80 flex items-center gap-1.5 flex-wrap">
+                      <span className="font-semibold">{t('redirectDetection.originalLocation')}</span>
+                      <span className="line-through opacity-75">{pkg.originalPickupLocation}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Sibling Same-Location Bundling Alert */}
+              {siblingPackages.length > 0 && (
+                <div className="mt-3 p-3.5 rounded-2xl bg-indigo-950/60 border border-indigo-500/40 text-xs space-y-2.5 relative z-10 shadow-inner">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-300">
+                        <Layers className="w-4 h-4" />
+                      </div>
+                      <span className="font-bold text-indigo-100">
+                        {siblingPackages.length === 1
+                          ? t('locationBundling.bundleBannerTitleSingle')
+                          : (t('locationBundling.bundleBannerTitleMultiple') || 'עוד {count} חבילות ממתינות כאן!').replace('{count}', String(siblingPackages.length))}
+                      </span>
+                    </div>
+
+                    {onStatusChange && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (typeof confetti === 'function') {
+                            confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
+                          }
+                          await onStatusChange(pkg.id, 'delivered');
+                          for (const sibling of siblingPackages) {
+                            await onStatusChange(sibling.id, 'delivered');
+                          }
+                          if (onShowToast) {
+                            const msg = (t('locationBundling.collectAllSuccess') || '{count} packages marked as collected! 🎉')
+                              .replace('{count}', String(siblingPackages.length + 1));
+                            onShowToast(msg, 'success');
+                          }
+                          onClose();
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition-all cursor-pointer min-h-[36px]"
+                      >
+                        {(t('locationBundling.collectAll') || 'Mark All as Collected ({count})').replace('{count}', String(siblingPackages.length + 1))}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Sibling List pills */}
+                  <div className="space-y-1.5 pt-1">
+                    <span className="text-[11px] text-slate-400 font-medium block">
+                      {t('locationBundling.siblingPackagesWaiting')}
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {siblingPackages.map((sib) => {
+                        const sibTitle = (language === 'he' && sib.titleHe) ? sib.titleHe : sib.title;
+                        return (
+                          <div key={sib.id} className="flex items-center justify-between p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px]">
+                            <span className="font-semibold text-slate-200 truncate max-w-[150px]">{sibTitle}</span>
+                            <span className="font-mono text-emerald-400 font-bold">
+                              {sib.pickupCode ? `PIN: ${sib.pickupCode}` : sib.trackingNumber}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Location Bar & Operating Hours Details */}
               {pkg.pickupLocation && (
-                <div className="mt-3 pt-3 border-t border-emerald-500/20 relative z-10 flex items-start gap-2">
-                  <MapPin className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span className="text-sm text-emerald-100/90 leading-tight">
-                    {pkg.pickupLocation}
-                  </span>
+                <div className="mt-3 pt-3 border-t border-emerald-500/20 relative z-10 flex flex-col gap-2">
+                  <div
+                    onClick={handleNavigate}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleNavigate();
+                      }
+                    }}
+                    className="flex items-start gap-2 cursor-pointer group hover:opacity-90 transition-opacity"
+                    title={language === 'he' ? 'לחץ לפתיחת ניווט' : 'Click to navigate'}
+                  >
+                    <MapPin className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
+                    <span className="text-sm text-emerald-100/90 leading-tight group-hover:underline">
+                      {pkg.pickupLocation}
+                    </span>
+                  </div>
+
+                  {/* Hours detail strip & Report wrong hours trigger */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-300 bg-slate-950/40 p-2.5 rounded-xl border border-emerald-500/20">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <span className="text-slate-300 font-medium">
+                        {language === 'he' ? resolvedHours.hoursHe : resolvedHours.hoursEn}
+                      </span>
+                      {resolvedHours.isEstimated && (
+                        <span className="text-[10px] text-amber-400/90 italic">
+                          ({language === 'he' ? 'משוער' : 'Estimated'})
+                        </span>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsReportingHours(!isReportingHours)}
+                      className="text-[11px] text-indigo-300 hover:text-indigo-200 underline font-medium flex items-center gap-1 cursor-pointer"
+                    >
+                      <Flag className="w-3 h-3" />
+                      <span>{t('openingHours.reportWrongHours')}</span>
+                    </button>
+                  </div>
+
+                  {/* Inline Report Incorrect Hours Box */}
+                  {isReportingHours && (
+                    <form onSubmit={handleReportWrongHours} className="p-3 rounded-xl bg-slate-900 border border-indigo-500/30 space-y-2 animate-fade-in text-xs">
+                      <label className="block text-[11px] font-bold text-indigo-200">
+                        {t('openingHours.reportPromptTitle')}
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={reportedHours}
+                        onChange={(e) => setReportedHours(e.target.value)}
+                        placeholder={t('openingHours.reportPlaceholder')}
+                        className="w-full bg-slate-950 border border-slate-700 text-xs text-slate-100 rounded-lg p-2 focus:border-indigo-500 focus:outline-none"
+                      />
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsReportingHours(false)}
+                          className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 text-xs"
+                        >
+                          {t('modal.cancel')}
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={isSubmittingReport}
+                          className="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-sm"
+                        >
+                          {isSubmittingReport ? '...' : (language === 'he' ? 'שלח דיווח' : 'Submit')}
+                        </button>
+                      </div>
+                    </form>
+                  )}
                 </div>
               )}
             </div>

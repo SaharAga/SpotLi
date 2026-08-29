@@ -40,6 +40,8 @@ const ExportModal = lazyModal(() => import('./components/ExportModal'), 'ExportM
 const LockerMapModal = lazyModal(() => import('./components/LockerMapModal'), 'LockerMapModal');
 const DeleteConfirmDialog = lazyModal(() => import('./components/DeleteConfirmDialog'), 'DeleteConfirmDialog');
 const AutoArchivePromptModal = lazyModal(() => import('./components/AutoArchivePromptModal'), 'AutoArchivePromptModal');
+const NavigationChoiceModal = lazyModal(() => import('./components/NavigationChoiceModal'), 'NavigationChoiceModal');
+const FullScreenLockerModal = lazyModal(() => import('./components/FullScreenLockerModal'), 'FullScreenLockerModal');
 
 import { Toast } from './components/Toast';
 import { InstallPwaBanner } from './components/InstallPwaBanner';
@@ -78,7 +80,9 @@ export const MODAL = {
   FEEDBACK: 'feedback',
   ADMIN_FEEDBACK: 'adminFeedback',
   AUTO_ARCHIVE: 'autoArchive',
-  DELETE_CONFIRM: 'deleteConfirm'
+  DELETE_CONFIRM: 'deleteConfirm',
+  NAVIGATION_CHOICE: 'navigationChoice',
+  FULL_SCREEN_LOCKER: 'fullScreenLocker'
 };
 
 /**
@@ -235,7 +239,6 @@ export function DashboardContent() {
   // The payloads a few handlers still read directly, named as they were.
   const selectedDetailPackage = getModalPayload(MODAL.DETAIL);
   const pendingDeliveredPkgId = getModalPayload(MODAL.AUTO_ARCHIVE)?.packageId ?? null;
-  const deletePackageId = getModalPayload(MODAL.DELETE_CONFIRM)?.packageId ?? null;
 
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
 
@@ -542,7 +545,7 @@ export function DashboardContent() {
   };
 
   const handleDeletePackage = (id) => {
-    commit({ type: MUTATION_TYPES.DELETE, payload: id });
+    commit({ type: MUTATION_TYPES.DELETE, payload: { id } });
     if (selectedDetailPackage?.id === id) {
       closeModal(MODAL.DETAIL);
     }
@@ -637,6 +640,7 @@ export function DashboardContent() {
   // referentially stable — an inline arrow here re-rendered every card on
   // every keystroke.
   const handleOpenDetails = useCallback((p) => openModal(MODAL.DETAIL, p), [openModal]);
+  const handleOpenLockerMode = useCallback((p) => openModal(MODAL.FULL_SCREEN_LOCKER, p), [openModal]);
 
   const handleEditFromList = useCallback(
     (p) => openModal(MODAL.ADD_EDIT, { editPackage: p }),
@@ -855,12 +859,16 @@ export function DashboardContent() {
         return (
           <PackageDetailModal
             pkg={livePkg}
+            packages={packages}
             isOpen={isOpen && !!livePkg}
             onClose={() => closeModal(MODAL.DETAIL)}
             onEdit={(p) => openModal(MODAL.ADD_EDIT, { editPackage: p })}
             onUpdatePackage={handleAddOrUpdatePackage}
+            onStatusChange={handleStatusChange}
             onRefreshTracking={handleRefreshSinglePackage}
             onOpenLockerMap={() => openModal(MODAL.LOCKER_MAP)}
+            onOpenLockerMode={(p) => openModal(MODAL.FULL_SCREEN_LOCKER, p)}
+            onOpenNavigation={(target) => openModal(MODAL.NAVIGATION_CHOICE, target)}
             onShowToast={showToast}
           />
         );
@@ -933,8 +941,46 @@ export function DashboardContent() {
       id: MODAL.LOCKER_MAP,
       componentName: 'LockerMapModal',
       render: (isOpen) => (
-        <LockerMapModal isOpen={isOpen} onClose={() => closeModal(MODAL.LOCKER_MAP)} />
+        <LockerMapModal
+          isOpen={isOpen}
+          onClose={() => closeModal(MODAL.LOCKER_MAP)}
+          onOpenNavigation={(target) => openModal(MODAL.NAVIGATION_CHOICE, target)}
+          onShowToast={showToast}
+        />
       )
+    },
+    {
+      id: MODAL.NAVIGATION_CHOICE,
+      componentName: 'NavigationChoiceModal',
+      render: (isOpen, payload) => (
+        <NavigationChoiceModal
+          isOpen={isOpen}
+          onClose={() => closeModal(MODAL.NAVIGATION_CHOICE)}
+          location={payload?.location || ''}
+          lat={payload?.lat ?? null}
+          lng={payload?.lng ?? null}
+          title={payload?.title || ''}
+          onShowToast={showToast}
+        />
+      )
+    },
+    {
+      id: MODAL.FULL_SCREEN_LOCKER,
+      componentName: 'FullScreenLockerModal',
+      render: (isOpen, payload) => {
+        const livePkg = packages.find((p) => p.id === (payload?.id || payload)) || payload;
+        return (
+          <FullScreenLockerModal
+            isOpen={isOpen && !!livePkg}
+            pkg={livePkg}
+            packages={packages}
+            onClose={() => closeModal(MODAL.FULL_SCREEN_LOCKER)}
+            onMarkDelivered={handleStatusChange}
+            onOpenNavigation={(target) => openModal(MODAL.NAVIGATION_CHOICE, target)}
+            onShowToast={showToast}
+          />
+        );
+      }
     },
     {
       id: MODAL.ABOUT,
@@ -1191,6 +1237,7 @@ export function DashboardContent() {
                     onToggleArchive={handleToggleArchive}
                     onStatusChange={handleStatusChange}
                     onRefreshTracking={handleRefreshSinglePackage}
+                    onOpenLockerMode={handleOpenLockerMode}
                     onShowToast={showToast}
                   />
                 ))}

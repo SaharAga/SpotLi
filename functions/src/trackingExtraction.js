@@ -137,6 +137,46 @@ export function validateUPUS10Mod11(s10Identifier) {
 }
 
 /**
+ * USPS IMpb weighted modulo-10 checksum (weights alternate 3, 1 from the
+ * right-most data digit). The final digit is the check digit.
+ *
+ * This intentionally mirrors the client-side `validateMod10(value, [3, 1])`
+ * implementation without importing client code into the Functions deploy.
+ * @param {string} value
+ * @returns {boolean}
+ */
+export function validateMod10(value) {
+  if (!value || typeof value !== 'string' || !/^\d+$/.test(value) || value.length < 2) {
+    return false;
+  }
+
+  let sum = 0;
+  let weight = 3;
+  for (let index = value.length - 2; index >= 0; index -= 1) {
+    sum += Number(value[index]) * weight;
+    weight = weight === 3 ? 1 : 3;
+  }
+
+  return (10 - (sum % 10)) % 10 === Number(value[value.length - 1]);
+}
+
+/**
+ * Evaluates a checksum algorithm named by the generated carrier spec.
+ * @param {string} value
+ * @param {string} checksumAlgorithm
+ * @returns {'pass' | 'fail' | 'not-applicable'}
+ */
+function evaluateChecksum(value, checksumAlgorithm) {
+  if (checksumAlgorithm === 'upu-s10') {
+    return validateUPUS10Mod11(value) ? 'pass' : 'fail';
+  }
+  if (checksumAlgorithm === 'mod10-31') {
+    return validateMod10(value) ? 'pass' : 'fail';
+  }
+  return 'not-applicable';
+}
+
+/**
  * Checks if a string is a false-positive tracking candidate.
  * @param {string} candidate
  * @param {string} [context='']
@@ -380,9 +420,7 @@ export function extractTrackingDetails(subject = '', body = '', from = '') {
     for (const rule of COMPILED_RULES) {
       if (rule.re.test(cleanVal)) {
         matchedCarrier = rule.carrierId;
-        if (rule.checksum === 'upu-s10') {
-          checksum = validateUPUS10Mod11(cleanVal) ? 'pass' : 'fail';
-        }
+        checksum = evaluateChecksum(cleanVal, rule.checksum);
         break;
       }
     }
@@ -441,9 +479,7 @@ export function extractTrackingDetails(subject = '', body = '', from = '') {
     for (const rule of COMPILED_RULES) {
       if (rule.re.test(cleanVal)) {
         let checksum = 'not-applicable';
-        if (rule.checksum === 'upu-s10') {
-          checksum = validateUPUS10Mod11(cleanVal) ? 'pass' : 'fail';
-        }
+        checksum = evaluateChecksum(cleanVal, rule.checksum);
 
         // Check proximity if rule is generic digits (e.g. 10 digits for DHL or 12 for FedEx)
         let proximityBoost = 0;

@@ -21,10 +21,10 @@ describe('SmartImportModal (rendered)', () => {
     );
 
     const textarea = screen.getByPlaceholderText(/paste|text|sms/i);
-    await user.type(textarea, 'Tracking RS948219481IL has arrived at the branch.');
+    await user.type(textarea, 'Tracking RS948219483IL has arrived at the branch.');
     await user.click(screen.getByRole('button', { name: /extract shipping details/i }));
 
-    expect(await screen.findByText('RS948219481IL')).toBeInTheDocument();
+    expect(await screen.findByText('RS948219483IL')).toBeInTheDocument();
     expect(screen.getByText('Israel Post')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /add this package to tracker/i })).toBeInTheDocument();
   });
@@ -60,14 +60,14 @@ describe('SmartImportModal (rendered)', () => {
     );
 
     const textarea = screen.getByPlaceholderText(/paste|text|sms/i);
-    await user.type(textarea, 'AliExpress order LP00582910482CN has arrived in Israel.');
+    await user.type(textarea, 'Tracking RS948219483IL from Israel Post has arrived.');
     await user.click(screen.getByRole('button', { name: /extract shipping details/i }));
     await user.click(await screen.findByRole('button', { name: /add this package to tracker/i }));
 
     expect(onParsedResult).toHaveBeenCalledTimes(1);
     const arg = onParsedResult.mock.calls[0][0];
-    expect(arg.trackingNumber).toBe('LP00582910482CN');
-    expect(arg.carrierId).toBe('cainiao');
+    expect(arg.trackingNumber).toBe('RS948219483IL');
+    expect(arg.carrierId).toBe('israel-post');
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -78,7 +78,7 @@ describe('SmartImportModal (rendered)', () => {
     );
 
     await user.click(screen.getByRole('button', { name: /israel post sms example/i }));
-    expect(await screen.findByText('RS948219481IL')).toBeInTheDocument();
+    expect(await screen.findByText('RS948219483IL')).toBeInTheDocument();
   });
 
   it('the close button calls onClose', () => {

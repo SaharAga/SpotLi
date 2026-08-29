@@ -1,0 +1,59 @@
+// @vitest-environment jsdom
+import React from 'react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import { PackageCard } from './PackageCard';
+import { LanguageProvider } from '../context/LanguageContext';
+
+function renderWithLanguage(ui, language = 'en') {
+  localStorage.setItem('deliveree_lang', language);
+  return render(
+    <LanguageProvider>
+      {ui}
+    </LanguageProvider>
+  );
+}
+
+describe('PackageCard Component', () => {
+  const basePkg = {
+    id: 'pkg-1',
+    title: 'Wireless Keyboard',
+    trackingNumber: 'IL123456789',
+    carrier: 'boxit',
+    status: 'ready_for_pickup',
+    pickupCode: '8492',
+    pickupLocation: 'Dizengoff Center BoxIt #142'
+  };
+
+  it('renders package title, tracking number, and PIN badge', () => {
+    renderWithLanguage(
+      <PackageCard
+        pkg={basePkg}
+        onOpenDetails={vi.fn()}
+        onOpenLockerMode={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Wireless Keyboard')).toBeInTheDocument();
+    expect(screen.getByText('IL123456789')).toBeInTheDocument();
+    expect(screen.getByText('PIN 8492')).toBeInTheDocument();
+  });
+
+  it('renders amber redirect badge when isRedirected is true', () => {
+    const redirectedPkg = {
+      ...basePkg,
+      isRedirected: true,
+      originalPickupLocation: 'Old Locker'
+    };
+
+    renderWithLanguage(
+      <PackageCard
+        pkg={redirectedPkg}
+        onOpenDetails={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Redirected')).toBeInTheDocument();
+  });
+});

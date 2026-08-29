@@ -266,11 +266,28 @@ describe('AccountModal — account deletion keyword', () => {
   });
 });
 
-describe('AccountModal — notification preference schema', () => {
-  it('merges partial updates onto the defaults', () => {
-    const updated = { ...DEFAULT_NOTIFICATION_PREFS, pushEnabled: true, notifyOnException: false };
-    expect(updated.pushEnabled).toBe(true);
-    expect(updated.notifyOnException).toBe(false);
-    expect(updated.notifyOnStatusChange).toBe(true);
+describe('AccountModal — preferred navigation app', () => {
+  it('updates preferred navigation app in localStorage on select change', async () => {
+    const user = userEvent.setup();
+    const onShowToast = vi.fn();
+
+    renderWithLanguage(
+      <AccountModal
+        isOpen
+        initialTab="preferences"
+        onClose={vi.fn()}
+        onShowToast={onShowToast}
+      />
+    );
+
+    const navSelect = screen.getByDisplayValue(/Always Ask/i);
+    await user.selectOptions(navSelect, 'waze');
+
+    expect(localStorage.getItem('deliveree_preferred_nav_app')).toBe('waze');
+    expect(onShowToast).toHaveBeenCalledWith(
+      expect.stringContaining('Preferred navigation app updated'),
+      'success'
+    );
   });
 });
+

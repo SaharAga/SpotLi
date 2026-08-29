@@ -222,6 +222,13 @@ describe('smartParser - parseSmartText', () => {
     expect(parsed.carrier).toBe('israel-post');
   });
 
+  it('exposes a scored candidate tier without changing the legacy tracking field', () => {
+    const parsed = parseSmartText('Tracking: RR000000005IL');
+    expect(parsed.trackingNumber).toBe('RR000000005IL');
+    expect(parsed.candidateStatus).toBe('verified');
+    expect(parsed.candidates[0]).toMatchObject({ id: 'cand_1', value: 'RR000000005IL', status: 'verified' });
+  });
+
   it('parses Israel Post URL SMS with pickup location', () => {
     const text = 'שלום, דבר דואר שמספרו RS948219481IL נמסר לחלוקה בסניף דיזנגוף סנטר. למעקב: https://mypost.israelpost.co.il/itemtrace?itemcode=RS948219481IL';
     const parsed = parseSmartText(text);
@@ -248,5 +255,33 @@ describe('smartParser - parseSmartText', () => {
     expect(parsed.carrier).toBe('other');
     expect(parsed.pickupLocation).toBe('');
   });
-});
 
+  it('detects courier rerouting/redirects with original location in SMS text', () => {
+    const text = 'שלום! עקב עומס בלוקר, החבילה מס׳ HFD90481029 הועברה לנקודת איסוף סופר פארם דיזנגוף 50 (במקום לוקר כיכר רבין). קוד איסוף: 4892';
+    const parsed = parseSmartText(text);
+
+    expect(parsed.trackingNumber).toBe('HFD90481029');
+    expect(parsed.isRedirected).toBe(true);
+    expect(parsed.pickupLocation).toBe('סופר פארם דיזנגוף 50');
+    expect(parsed.originalPickupLocation).toBe('לוקר כיכר רבין');
+    expect(parsed.lockerPin).toBe('4892');
+  });
+
+  it('detects English courier reroute notices', () => {
+    const text = 'Due to locker capacity, shipment RR948219483IL was redirected to pickup point Super Yuda Ben Yehuda 45 instead of Dizengoff Locker. PIN: 9912';
+    const parsed = parseSmartText(text);
+
+    expect(parsed.isRedirected).toBe(true);
+    expect(parsed.pickupLocation).toBe('Super Yuda Ben Yehuda 45');
+    expect(parsed.originalPickupLocation).toBe('Dizengoff Locker');
+    expect(parsed.lockerPin).toBe('9912');
+  });
+
+  it('extracts Israeli store phone number from pickup notice text', () => {
+    const text = 'החבילה מחכה בסניף סופר יודה בן יהודה 45. לבירורים טלפון: 03-5123456. שעות פעילות: 08:00-22:00';
+    const parsed = parseSmartText(text);
+
+    expect(parsed.pickupLocation).toBe('סופר יודה בן יהודה 45');
+    expect(parsed.pickupPhone).toBe('03-5123456');
+  });
+});

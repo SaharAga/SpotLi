@@ -38,11 +38,31 @@ describe('SmartImportModal — AI fallback (rendered)', () => {
     const user = userEvent.setup();
     renderWithLanguage(<SmartImportModal isOpen onClose={vi.fn()} onParsedResult={vi.fn()} />);
 
-    await user.type(screen.getByPlaceholderText(/paste|text|sms/i), 'RS948219481IL is on its way');
+    await user.type(screen.getByPlaceholderText(/paste|text|sms/i), 'Tracking: RR000000005IL is on its way');
     await user.click(screen.getByRole('button', { name: /extract shipping details/i }));
 
-    await screen.findByText('RS948219481IL');
+    await screen.findByText('RR000000005IL');
     expect(parseWithAi).not.toHaveBeenCalled();
+  });
+
+  it('does not auto-populate an uncertain initialText candidate', async () => {
+    renderWithLanguage(
+      <SmartImportModal isOpen initialText="1Z999AA10123456784" onClose={vi.fn()} onParsedResult={vi.fn()} onSwitchToManual={vi.fn()} />
+    );
+    expect(await screen.findByRole('button', { name: 'Enter Details Manually' })).toBeInTheDocument();
+    expect(screen.queryByText('1Z999AA10123456784', { selector: 'p' })).not.toBeInTheDocument();
+  });
+
+  it('does not auto-populate an uncertain candidate read from the clipboard', async () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { readText: vi.fn().mockResolvedValue('1Z999AA10123456784') }
+    });
+    renderWithLanguage(
+      <SmartImportModal isOpen onClose={vi.fn()} onParsedResult={vi.fn()} onSwitchToManual={vi.fn()} />
+    );
+    expect(await screen.findByRole('button', { name: 'Enter Details Manually' })).toBeInTheDocument();
+    expect(screen.queryByText('1Z999AA10123456784', { selector: 'p' })).not.toBeInTheDocument();
   });
 
   it('falls back to AI when the regex parser finds nothing, and shows the AI result', async () => {
@@ -68,8 +88,24 @@ describe('SmartImportModal — AI fallback (rendered)', () => {
     expect(await screen.findByText('ZZ999888777IL')).toBeInTheDocument();
     expect(parseWithAi).toHaveBeenCalledWith({
       mode: 'text-fallback',
-      text: 'some ambiguous message with no obvious pattern'
+      text: 'some ambiguous message with no obvious pattern',
+      candidates: []
     });
+  });
+
+  it('sends a non-verified deterministic candidate to AI for explicit selection, not auto-fill', async () => {
+    parseWithAi.mockResolvedValue({ success: true, data: { trackingNumber: '', confidence: 'none' } });
+    const user = userEvent.setup();
+    renderWithLanguage(<SmartImportModal isOpen onClose={vi.fn()} onParsedResult={vi.fn()} />);
+
+    await user.type(screen.getByPlaceholderText(/paste|text|sms/i), '1Z999AA10123456784');
+    await user.click(screen.getByRole('button', { name: /extract shipping details/i }));
+
+    expect(parseWithAi).toHaveBeenCalledWith(expect.objectContaining({
+      mode: 'text-fallback',
+      candidates: [expect.objectContaining({ value: '1Z999AA10123456784', status: 'uncertain' })]
+    }));
+    expect(screen.queryByText('1Z999AA10123456784', { selector: 'p' })).not.toBeInTheDocument();
   });
 
   it('shows a double-check hint for a low-confidence AI result', async () => {
@@ -118,7 +154,7 @@ describe('SmartImportModal — AI fallback (rendered)', () => {
     expect(await screen.findByRole('button', { name: 'Enter Details Manually' })).toBeInTheDocument();
   });
 
-  it('includes the AI source and confidence when applying an AI-derived result', async () => {
+  it('does not apply an AI result without a locally verified candidate', async () => {
     parseWithAi.mockResolvedValue({
       success: true,
       data: {
@@ -133,15 +169,30 @@ describe('SmartImportModal — AI fallback (rendered)', () => {
 
     await user.type(screen.getByPlaceholderText(/paste|text|sms/i), 'ambiguous text');
     await user.click(screen.getByRole('button', { name: /extract shipping details/i }));
-    await user.click(await screen.findByRole('button', { name: /add this package to tracker/i }));
+    const addButton = await screen.findByRole('button', { name: /add this package to tracker/i });
+    expect(addButton).toBeDisabled();
+    await user.click(addButton);
+    expect(onParsedResult).not.toHaveBeenCalled();
+  });
 
-    expect(onParsedResult).toHaveBeenCalledWith(
-      expect.objectContaining({
-        trackingNumber: 'ZZ999888777IL',
-        _autoFillSource: 'ai',
-        _autoFillConfidence: 'medium'
-      })
-    );
+  it('keeps Add disabled and does not apply an AI-selected uncertain candidate', async () => {
+    parseWithAi.mockResolvedValue({
+      success: true,
+      data: {
+        trackingNumber: '1Z999AA10123456784', carrier: 'ups', title: 'Package',
+        pickupLocation: '', origin: '', notes: '', confidence: 'medium'
+      }
+    });
+    const user = userEvent.setup();
+    const onParsedResult = vi.fn();
+    renderWithLanguage(<SmartImportModal isOpen onClose={vi.fn()} onParsedResult={onParsedResult} />);
+
+    await user.type(screen.getByPlaceholderText(/paste|text|sms/i), '1Z999AA10123456784');
+    await user.click(screen.getByRole('button', { name: /extract shipping details/i }));
+    const addButton = await screen.findByRole('button', { name: /add this package to tracker/i });
+    expect(addButton).toBeDisabled();
+    await user.click(addButton);
+    expect(onParsedResult).not.toHaveBeenCalled();
   });
 
   it('attaching a screenshot calls the AI parser in image mode and shows the result', async () => {
@@ -162,7 +213,7 @@ describe('SmartImportModal — AI fallback (rendered)', () => {
 
     expect(await screen.findByText('IMG12345IL')).toBeInTheDocument();
     expect(parseWithAi).toHaveBeenCalledWith(
-      expect.objectContaining({ mode: 'image' })
+      expect.objectContaining({ mode: 'image', candidates: [] })
     );
   });
 });
