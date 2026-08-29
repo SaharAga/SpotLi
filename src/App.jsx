@@ -869,6 +869,7 @@ export function DashboardContent() {
             onOpenLockerMap={() => openModal(MODAL.LOCKER_MAP)}
             onOpenLockerMode={(p) => openModal(MODAL.FULL_SCREEN_LOCKER, p)}
             onOpenNavigation={(target) => openModal(MODAL.NAVIGATION_CHOICE, target)}
+            onSelectPackage={(p) => openModal(MODAL.DETAIL, p)}
             onShowToast={showToast}
           />
         );
@@ -1230,6 +1231,7 @@ export function DashboardContent() {
                   <PackageCard
                     key={pkg.id}
                     pkg={pkg}
+                    packages={packages}
                     onOpenDetails={handleOpenDetails}
                     onEdit={handleEditFromList}
                     onDelete={handleRequestDelete}

@@ -33,6 +33,7 @@ export function PackageDetailModal({
   onOpenLockerMap,
   onOpenLockerMode,
   onOpenNavigation,
+  onSelectPackage,
   onShowToast
 }) {
   const { t, language } = useLanguage();
@@ -494,12 +495,18 @@ export function PackageDetailModal({
                       {siblingPackages.map((sib) => {
                         const sibTitle = (language === 'he' && sib.titleHe) ? sib.titleHe : sib.title;
                         return (
-                          <div key={sib.id} className="flex items-center justify-between p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px]">
-                            <span className="font-semibold text-slate-200 truncate max-w-[150px]">{sibTitle}</span>
-                            <span className="font-mono text-emerald-400 font-bold">
+                          <button
+                            key={sib.id}
+                            type="button"
+                            onClick={() => onSelectPackage && onSelectPackage(sib)}
+                            className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-indigo-500/50 text-[11px] cursor-pointer transition-all text-start group/sib shadow-sm hover:scale-[1.02] active:scale-[0.98]"
+                            title={language === 'he' ? `עבור לחבילה ${sibTitle}` : `Switch to ${sibTitle}`}
+                          >
+                            <span className="font-semibold text-slate-200 group-hover/sib:text-indigo-300 truncate max-w-[140px]">{sibTitle}</span>
+                            <span className="font-mono text-emerald-400 font-bold shrink-0">
                               {sib.pickupCode ? `PIN: ${sib.pickupCode}` : sib.trackingNumber}
                             </span>
-                          </div>
+                          </button>
                         );
                       })}
                     </div>

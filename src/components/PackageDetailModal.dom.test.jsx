@@ -240,4 +240,31 @@ describe('PackageDetailModal — Pickup Navigation Integration', () => {
     expect(callLink).toBeInTheDocument();
     expect(callLink).toHaveAttribute('href', 'tel:03-5123456');
   });
+
+  it('triggers onSelectPackage when a sibling package in the bundle banner is clicked', async () => {
+    const user = userEvent.setup();
+    const onSelectPackage = vi.fn();
+    const siblingPkg = {
+      id: 'pkg-nav-2',
+      title: 'Second Package',
+      pickupLocation: 'Dizengoff Center BoxIt Locker #142',
+      status: 'ready_for_pickup',
+      pickupCode: '1122'
+    };
+
+    renderWithLanguage(
+      <PackageDetailModal
+        isOpen={true}
+        pkg={mockPackageWithPickup}
+        packages={[mockPackageWithPickup, siblingPkg]}
+        onClose={vi.fn()}
+        onSelectPackage={onSelectPackage}
+      />
+    );
+
+    const siblingBtn = screen.getByRole('button', { name: /Switch to Second Package|Second Package/i });
+    await user.click(siblingBtn);
+
+    expect(onSelectPackage).toHaveBeenCalledWith(siblingPkg);
+  });
 });

@@ -14,9 +14,12 @@ import { formatDate, getDaysRemaining } from '../utils/dateUtils';
 import { getPickupCountdown, getReturnCountdown } from '../utils/deadlineUtils';
 import { triggerHapticFeedback } from '../utils/haptics';
 import { checkRateLimit } from '../utils/rateLimiter';
+import { findSameLocationPackages } from '../utils/locationBundling';
+import { MapPin } from 'lucide-react';
 
 function PackageCardImpl({
   pkg,
+  packages = [],
   onOpenDetails,
   onEdit,
   onDelete,
@@ -44,6 +47,9 @@ function PackageCardImpl({
   const daysInfo = getDaysRemaining(pkg.expectedDeliveryDate, language);
   const pickupCountdown = getPickupCountdown(pkg.pickupDeadline);
   const returnCountdown = getReturnCountdown(pkg.returnDeadline);
+  const sameLocationSiblings = React.useMemo(() => {
+    return findSameLocationPackages(pkg, packages);
+  }, [pkg, packages]);
 
   const trackingUrl = carrier.getTrackingUrl(pkg.trackingNumber);
 
@@ -240,6 +246,21 @@ function PackageCardImpl({
             {language === 'he' ? stage.hebrewLabel : stage.label}
           </span>
         </div>
+
+        {/* Pickup Location & Same-Location Bundling Tag */}
+        {pkg.pickupLocation && (
+          <div className="flex items-center justify-between gap-1.5 text-[11px] px-2.5 py-1.5 rounded-xl bg-slate-950/60 border border-slate-800/80 text-slate-300">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+              <span className="truncate">{pkg.pickupLocation}</span>
+            </div>
+            {sameLocationSiblings.length > 0 && (
+              <span className="shrink-0 px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-bold">
+                {language === 'he' ? `עוד ${sameLocationSiblings.length} כאן` : `+${sameLocationSiblings.length} here`}
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Optional Countdown Banner for Pickup or Return */}
         {pkg.status !== 'delivered' && pickupCountdown.hasDeadline && (

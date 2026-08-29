@@ -522,7 +522,8 @@ export function extractLockerPin(text) {
   if (!text || typeof text !== 'string') return '';
 
   const patterns = [
-    /(?:קוד\s*(?:לפתיחת\s*(?:ה)?לוקר|לאיסוף|איסוף|לוקר|סודי|פתיחה|משיכה|אימות|פתיחת\s*תא))[\s:-]+([A-Za-z0-9]{3,8})\b/i,
+    /(?:קוד\s*(?:לפתיחת\s*(?:ה)?לוקר|לאיסוף|איסוף|לוקר|סודי|פתיחה|משיכה|אימות|פתיחת\s*תא|אימות\s*לאיסוף|איסוף\s*חבילה))[\s:-]+([A-Za-z0-9]{3,8})\b/i,
+    /(?:קוד)[\s:-]+([A-Za-z0-9]{4,8})\b/i,
     /(?:pickup\s*(?:pin|code)|collection\s*(?:pin|code)|locker\s*(?:pin|code|password)|pin\s*code|\bpin|entry\s*code)[\s:-]+([A-Za-z0-9]{3,8})\b/i
   ];
 
@@ -548,15 +549,15 @@ export function extractPickupLocation(text) {
   if (!text || typeof text !== 'string') return '';
 
   const patterns = [
-    /(?:נקודת\s*איסוף|בנקודת\s*איסוף|מרכז\s*מסירה|במרכז\s*מסירה|בלוקר|לוקר|ביחידת\s*(?:ה)?דואר|יחידת\s*(?:ה)?דואר|בסוכנות\s*(?:ה)?דואר|סוכנות\s*(?:ה)?דואר|בסניף\s*מסירה|סניף\s*מסירה|בסניף|סניף|בכתובת|כתובת\s*לאיסוף|בחנות|בבית\s*עסק|נקודת\s*חלוקה|איסוף\s*מ)[\s:-]+([^,.\r\n]{2,60})/i,
-    /(?:at\s+(?:the\s+)?pickup\s+point|at\s+(?:the\s+)?locker|at\s+(?:the\s+)?branch|pickup\s+location|pickup\s+point|locker\s+location)[\s:-]+([^,.\r\n]{2,60})/i
+    /(?:נקודת\s*איסוף|בנקודת\s*איסוף|מרכז\s*מסירה|במרכז\s*מסירה|בלוקר|לוקר|ביחידת\s*(?:ה)?דואר|יחידת\s*(?:ה)?דואר|בסוכנות\s*(?:ה)?דואר|סוכנות\s*(?:ה)?דואר|בסניף\s*מסירה|סניף\s*מסירה|בסניף|סניף|בכתובת|כתובת\s*לאיסוף|בחנות|בבית\s*עסק|נקודת\s*חלוקה|איסוף\s*מ|מחכה\s*לך\s*ב|ממתינה\s*לך\s*ב|נמצאת\s*ב)[\s:-]+([^,.\r\n]{2,60})/i,
+    /(?:at\s+(?:the\s+)?pickup\s+point|at\s+(?:the\s+)?locker|at\s+(?:the\s+)?branch|pickup\s+location|pickup\s+point|locker\s+location|waiting\s+(?:for\s+you\s+)?at)[\s:-]+([^,.\r\n]{2,60})/i
   ];
 
   for (const pattern of patterns) {
     const match = pattern.exec(text);
     if (match && match[1]) {
       let loc = match[1].trim();
-      loc = loc.replace(/(?:\s*[-–—|/]?\s*(?:שעות\s*פתיחה|קוד\s*איסוף|שעות\s*פעילות|טלפון|phone|hours).*)$/i, '');
+      loc = loc.replace(/(?:\s*[-–—|/]?\s*(?:שעות\s*פתיחה|שעות\s*פעילות|קוד\s*איסוף|קוד\s*לאיסוף|קוד|טלפון|טל|בירורים|לינק|כתובת|הוראות|phone|tel|hours|open\s+until|open|pin|code|http|https).*)$/i, '');
       loc = loc.replace(/^['":\-–—\s]+|['":\-–—\s]+$/g, '');
       if (loc && loc.length >= 2 && !/^(?:http|https|www|israelpost|hfd|boxit|chita|buzzr)$/i.test(loc)) {
         return loc;

@@ -56,4 +56,26 @@ describe('PackageCard Component', () => {
 
     expect(screen.getByText('Redirected')).toBeInTheDocument();
   });
+
+  it('renders pickup location and same-location sibling counter badge', () => {
+    const siblingPkg = {
+      id: 'pkg-2',
+      title: 'Second Package',
+      trackingNumber: 'IL987654321',
+      carrier: 'boxit',
+      status: 'ready_for_pickup',
+      pickupLocation: 'Dizengoff Center BoxIt #142'
+    };
+
+    renderWithLanguage(
+      <PackageCard
+        pkg={basePkg}
+        packages={[basePkg, siblingPkg]}
+        onOpenDetails={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Dizengoff Center BoxIt #142')).toBeInTheDocument();
+    expect(screen.getByText('+1 here')).toBeInTheDocument();
+  });
 });
