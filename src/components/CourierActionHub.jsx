@@ -207,7 +207,7 @@ export function CourierActionHub({ pkg, onShowToast }) {
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-100">
-              {isHe ? 'תגובה מהירה לשליח (1-Click)' : 'Courier Quick Actions (1-Click)'}
+              {isHe ? 'תגובה מהירה לשליח' : 'Courier Quick Response'}
             </h3>
             <p className="text-[11px] text-slate-400">
               {isHe

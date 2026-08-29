@@ -850,18 +850,21 @@ export function DashboardContent() {
     {
       id: MODAL.DETAIL,
       componentName: 'PackageDetailModal',
-      render: (isOpen, payload) => (
-        <PackageDetailModal
-          pkg={payload}
-          isOpen={isOpen && !!payload}
-          onClose={() => closeModal(MODAL.DETAIL)}
-          onEdit={(p) => openModal(MODAL.ADD_EDIT, { editPackage: p })}
-          onUpdatePackage={handleAddOrUpdatePackage}
-          onRefreshTracking={handleRefreshSinglePackage}
-          onOpenLockerMap={() => openModal(MODAL.LOCKER_MAP)}
-          onShowToast={showToast}
-        />
-      )
+      render: (isOpen, payload) => {
+        const livePkg = packages.find((p) => p.id === (payload?.id || payload)) || payload;
+        return (
+          <PackageDetailModal
+            pkg={livePkg}
+            isOpen={isOpen && !!livePkg}
+            onClose={() => closeModal(MODAL.DETAIL)}
+            onEdit={(p) => openModal(MODAL.ADD_EDIT, { editPackage: p })}
+            onUpdatePackage={handleAddOrUpdatePackage}
+            onRefreshTracking={handleRefreshSinglePackage}
+            onOpenLockerMap={() => openModal(MODAL.LOCKER_MAP)}
+            onShowToast={showToast}
+          />
+        );
+      }
     },
     {
       id: MODAL.ANALYTICS,

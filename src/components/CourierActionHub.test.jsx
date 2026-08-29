@@ -46,7 +46,7 @@ describe('CourierActionHub', () => {
   it('renders template tabs and action buttons in English', () => {
     renderWithLanguage(<CourierActionHub pkg={mockPkg} />, { language: 'en' });
 
-    expect(screen.getByText(/Courier Quick Actions/)).toBeInTheDocument();
+    expect(screen.getByText(/Courier Quick Response/)).toBeInTheDocument();
     expect(screen.getByText('Leave at Doorstep')).toBeInTheDocument();
     expect(screen.getByText('Gate / Door Code')).toBeInTheDocument();
     expect(screen.getByText('Safe Place / Neighbor')).toBeInTheDocument();
