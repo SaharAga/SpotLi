@@ -3,6 +3,7 @@ import { detectStore } from './storeDetector.js';
 import { getCarrier } from '../types/carriers.js';
 import { sanitizeString } from './packageValidator.js';
 import { extractAndScoreCandidates, classifyConfidenceTier } from './candidateScorer.js';
+import { extractOpeningHours } from './openingHoursService.js';
 
 /** Known shortened domains used by Israeli & Global logistics providers and SMS gateways */
 export const SHORT_DOMAINS = [
@@ -689,6 +690,7 @@ export function parseSmartText(rawText) {
   }));
   const urlExtracted = extractUrlsAndTrackings(cleanText);
   const pickupLocation = extractPickupLocation(cleanText);
+  const pickupHours = extractOpeningHours(cleanText);
   const lockerPin = extractLockerPin(cleanText);
   const phraseCarrier = detectCarrierFromPhrasing(cleanText);
 
@@ -816,6 +818,7 @@ export function parseSmartText(rawText) {
     notes: notesText,
     notesHe: notesText,
     pickupLocation,
+    pickupHours,
     lockerPin,
     store: detectedStore,
     storeHe: detectedStoreHe,

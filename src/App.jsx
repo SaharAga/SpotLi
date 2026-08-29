@@ -939,6 +939,7 @@ export function DashboardContent() {
           isOpen={isOpen}
           onClose={() => closeModal(MODAL.LOCKER_MAP)}
           onOpenNavigation={(target) => openModal(MODAL.NAVIGATION_CHOICE, target)}
+          onShowToast={showToast}
         />
       )
     },

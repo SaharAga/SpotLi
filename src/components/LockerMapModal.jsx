@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  X, MapPin, Clock, Phone, Navigation, ExternalLink, ShieldCheck, Search
+  X, MapPin, Clock, Phone, Navigation, ExternalLink, ShieldCheck, Search, Flag, AlertCircle
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { Modal } from './Modal';
 import { getPreferredNavigationApp, openNavigationApp } from '../utils/navigationService';
+import { getLiveStoreStatus } from '../utils/openingHoursService';
+import { submitFeedback } from '../services/feedbackService';
 
 export const POPULAR_PICKUP_POINTS = [
   {
@@ -74,13 +76,56 @@ export function LockerMapModal({
   onClose,
   initialSearch = '',
   selectedLocation = null,
-  onOpenNavigation
+  onOpenNavigation,
+  onShowToast
 }) {
-  const { isRTL, language } = useLanguage();
+  const { t, isRTL, language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [activePoint, setActivePoint] = useState(selectedLocation || POPULAR_PICKUP_POINTS[0]);
+  const [now, setNow] = useState(() => new Date());
+  const [isReportingHours, setIsReportingHours] = useState(false);
+  const [reportedHours, setReportedHours] = useState('');
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   if (!isOpen) return null;
+
+  const handleReportWrongHours = async (e) => {
+    e.preventDefault();
+    if (!reportedHours.trim() || !activePoint) return;
+    setIsSubmittingReport(true);
+    try {
+      await submitFeedback({
+        type: 'bug',
+        message: `[שעות פתיחה שגויות] נקודת איסוף בלוקר מפה: "${activePoint.nameHe || activePoint.name}" (${activePoint.addressHe || activePoint.address}). שעות שדווחו: ${reportedHours.trim()}`,
+        rating: 5,
+        isAnonymous: true
+      });
+      setIsReportingHours(false);
+      setReportedHours('');
+      if (onShowToast) {
+        onShowToast(
+          language === 'he'
+            ? 'תודה! הדיווח נשלח לצוות לבדיקה ועדכון ❤️'
+            : 'Thank you! Report submitted for verification ❤️',
+          'success'
+        );
+      }
+    } catch {
+      if (onShowToast) {
+        onShowToast(
+          language === 'he' ? 'שגיאה בשליחת הדיווח' : 'Error sending report',
+          'error'
+        );
+      }
+    } finally {
+      setIsSubmittingReport(false);
+    }
+  };
 
   const filteredPoints = POPULAR_PICKUP_POINTS.filter((point) => {
     if (!searchQuery.trim()) return true;
@@ -127,6 +172,8 @@ export function LockerMapModal({
       });
     }
   };
+
+  const activeStatus = activePoint ? getLiveStoreStatus(activePoint.hours, { now, locationName: activePoint.name }) : null;
 
   return (
     <Modal
@@ -189,6 +236,7 @@ export function LockerMapModal({
                 const name = language === 'he' ? point.nameHe : point.name;
                 const address = language === 'he' ? point.addressHe : point.address;
                 const hours = language === 'he' ? point.hoursHe : point.hours;
+                const pointStatus = getLiveStoreStatus(point.hours, { now, locationName: point.name });
 
                 return (
                   <div
@@ -202,9 +250,14 @@ export function LockerMapModal({
                   >
                     <div className="flex items-start justify-between gap-2">
                       <h4 className="text-xs sm:text-sm font-bold text-slate-100">{name}</h4>
-                      <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 text-blue-400 font-semibold shrink-0">
-                        {point.distance}
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className={`text-[10px] px-2 py-0.5 rounded-md font-semibold border ${pointStatus.badgeClass}`}>
+                          {language === 'he' ? pointStatus.badgeTextHe : pointStatus.badgeTextEn}
+                        </span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 text-blue-400 font-semibold">
+                          {point.distance}
+                        </span>
+                      </div>
                     </div>
 
                     <p className="text-xs text-slate-400 mt-1 flex items-center gap-1.5">
@@ -251,6 +304,73 @@ export function LockerMapModal({
                       <MapPin className="w-4 h-4 text-rose-400 shrink-0" />
                       <span>{language === 'he' ? activePoint.addressHe : activePoint.address}</span>
                     </div>
+
+                    {/* Live Operating Hours Badge */}
+                    {activeStatus && (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold border ${activeStatus.badgeClass}`}>
+                              <span className={`w-2 h-2 rounded-full ${activeStatus.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'}`} />
+                              <span>{language === 'he' ? activeStatus.badgeTextHe : activeStatus.badgeTextEn}</span>
+                            </span>
+                            <span className="text-slate-300 text-[11px]">
+                              {language === 'he' ? activeStatus.nextChangeHe : activeStatus.nextChangeEn}
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => setIsReportingHours(!isReportingHours)}
+                            className="text-[10px] text-indigo-300 hover:text-indigo-200 underline font-medium flex items-center gap-1 cursor-pointer"
+                          >
+                            <Flag className="w-3 h-3" />
+                            <span>{t('openingHours.reportWrongHours')}</span>
+                          </button>
+                        </div>
+
+                        {(activeStatus.warningHe || activeStatus.warningEn) && (
+                          <div className="flex items-center gap-2 p-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-xs">
+                            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                            <span>{language === 'he' ? activeStatus.warningHe : activeStatus.warningEn}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Inline Report Incorrect Hours Box */}
+                    {isReportingHours && (
+                      <form onSubmit={handleReportWrongHours} className="p-3 rounded-xl bg-slate-900 border border-indigo-500/30 space-y-2 animate-fade-in text-xs">
+                        <label className="block text-[11px] font-bold text-indigo-200">
+                          {t('openingHours.reportPromptTitle')}
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={reportedHours}
+                          onChange={(e) => setReportedHours(e.target.value)}
+                          placeholder={t('openingHours.reportPlaceholder')}
+                          className="w-full bg-slate-950 border border-slate-700 text-xs text-slate-100 rounded-lg p-2 focus:border-indigo-500 focus:outline-none"
+                        />
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setIsReportingHours(false)}
+                            className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 text-xs"
+                          >
+                            {t('modal.cancel')}
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={isSubmittingReport}
+                            className="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-sm"
+                          >
+                            {isSubmittingReport ? '...' : (language === 'he' ? 'שלח דיווח' : 'Submit')}
+                          </button>
+                        </div>
+                      </form>
+                    )}
+
                     <div className="flex items-center gap-2 text-xs text-slate-300">
                       <Clock className="w-4 h-4 text-emerald-400 shrink-0" />
                       <span>{language === 'he' ? activePoint.hoursHe : activePoint.hours}</span>

@@ -9,6 +9,10 @@ import { LanguageProvider } from '../context/LanguageContext';
 import { STORAGE_KEYS } from '../constants/storageKeys';
 import { NAV_APPS } from '../utils/navigationService';
 
+vi.mock('../services/feedbackService', () => ({
+  submitFeedback: vi.fn().mockResolvedValue({ success: true, id: 'fb-123' })
+}));
+
 function renderWithLanguage(ui, language = 'en') {
   localStorage.setItem('deliveree_lang', language);
   return render(
@@ -110,5 +114,39 @@ describe('PackageDetailModal — Pickup Navigation Integration', () => {
       location: 'Dizengoff Center BoxIt Locker #142',
       title: 'Logitech MX Master 3S'
     });
+  });
+
+  it('renders live opening hours badge and allows reporting wrong hours', async () => {
+    const user = userEvent.setup();
+    const onShowToast = vi.fn();
+
+    renderWithLanguage(
+      <PackageDetailModal
+        isOpen={true}
+        pkg={mockPackageWithPickup}
+        onClose={vi.fn()}
+        onShowToast={onShowToast}
+      />
+    );
+
+    // BoxIt matches 24/7 directory
+    expect(screen.getByText(/Open 24\/7/i)).toBeInTheDocument();
+
+    // Click "Report incorrect hours"
+    const reportBtn = screen.getByRole('button', { name: /Report incorrect hours/i });
+    await user.click(reportBtn);
+
+    // The inline form opens
+    const input = screen.getByPlaceholderText(/Please enter the correct opening hours/i);
+    expect(input).toBeInTheDocument();
+
+    await user.type(input, 'Sun-Thu 08:00-20:00');
+    const submitBtn = screen.getByRole('button', { name: /Submit/i });
+    await user.click(submitBtn);
+
+    expect(onShowToast).toHaveBeenCalledWith(
+      expect.stringContaining('Thank you'),
+      'success'
+    );
   });
 });

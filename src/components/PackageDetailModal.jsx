@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, ExternalLink, Copy, Check, Calendar, MapPin, Plus, 
-  Truck, Clock, RefreshCw, Info, RotateCcw, Edit3
+  Truck, Clock, RefreshCw, Info, RotateCcw, Edit3, AlertCircle, ChevronDown, ChevronUp, Flag
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { getCarrier } from '../types/carriers';
@@ -17,6 +17,8 @@ import { isLiveTrackingSupported } from '../services/carrierApiProxy';
 import { CourierActionHub } from './CourierActionHub';
 import { Modal } from './Modal';
 import { getPreferredNavigationApp, openNavigationApp } from '../utils/navigationService';
+import { getLiveStoreStatus, resolveStoreHours } from '../utils/openingHoursService';
+import { submitFeedback } from '../services/feedbackService';
 
 export function PackageDetailModal({
   pkg,
@@ -33,6 +35,16 @@ export function PackageDetailModal({
   const [copied, setCopied] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isAddingCheckpoint, setIsAddingCheckpoint] = useState(false);
+  const [now, setNow] = useState(() => new Date());
+  const [isReportingHours, setIsReportingHours] = useState(false);
+  const [reportedHours, setReportedHours] = useState('');
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+  const [showFullSchedule, setShowFullSchedule] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   // New Checkpoint Form State
   const [newTitle, setNewTitle] = useState('');
@@ -50,6 +62,8 @@ export function PackageDetailModal({
   const daysInfo = getDaysRemaining(pkg.expectedDeliveryDate, language);
   const pickupCountdown = getPickupCountdown(pkg.pickupDeadline);
   const returnCountdown = getReturnCountdown(pkg.returnDeadline);
+  const resolvedHours = resolveStoreHours(pkg.pickupLocation, pkg.pickupHours, pkg.carrier);
+  const storeStatus = getLiveStoreStatus(pkg.pickupHours, { now, locationName: pkg.pickupLocation, carrier: pkg.carrier });
 
   const handleCopy = async () => {
     const success = await copyToClipboard(pkg.trackingNumber);
@@ -202,6 +216,39 @@ export function PackageDetailModal({
     }
   };
 
+  const handleReportWrongHours = async (e) => {
+    e.preventDefault();
+    if (!reportedHours.trim()) return;
+    setIsSubmittingReport(true);
+    try {
+      await submitFeedback({
+        type: 'bug',
+        message: `[שעות פתיחה שגויות] נקודת איסוף: "${pkg.pickupLocation || pkg.title}" (מספר מעקב: ${pkg.trackingNumber}, ספק: ${pkg.carrier}). שעות שדווחו על ידי המשתמש: ${reportedHours.trim()}`,
+        rating: 5,
+        isAnonymous: true
+      });
+      setIsReportingHours(false);
+      setReportedHours('');
+      if (onShowToast) {
+        onShowToast(
+          language === 'he'
+            ? 'תודה! הדיווח נשלח לצוות לבדיקה ועדכון ❤️'
+            : 'Thank you! Report submitted for verification ❤️',
+          'success'
+        );
+      }
+    } catch {
+      if (onShowToast) {
+        onShowToast(
+          language === 'he' ? 'שגיאה בשליחת הדיווח' : 'Error sending report',
+          'error'
+        );
+      }
+    } finally {
+      setIsSubmittingReport(false);
+    }
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -287,8 +334,9 @@ export function PackageDetailModal({
                     </div>
                   )}
 
-                  {pickupCountdown.hasDeadline && (
-                    <div className="mt-2">
+                  {/* Deadline & Live Opening Hours Badges */}
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                    {pickupCountdown.hasDeadline && (
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold ${
                         pickupCountdown.urgency === 'critical' || pickupCountdown.urgency === 'expired'
                           ? 'bg-rose-500/25 text-rose-300 border border-rose-500/40 animate-pulse' 
@@ -300,6 +348,23 @@ export function PackageDetailModal({
                         {language === 'he' ? pickupCountdown.formattedHe : pickupCountdown.formattedEn}
                         <span className="opacity-70 font-normal">({formatDate(pkg.pickupDeadline, language)})</span>
                       </span>
+                    )}
+
+                    {/* Live Operating Status Badge */}
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${storeStatus.badgeClass}`}>
+                      <span className={`w-2 h-2 rounded-full ${storeStatus.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'}`} />
+                      <span>{language === 'he' ? storeStatus.badgeTextHe : storeStatus.badgeTextEn}</span>
+                      <span className="opacity-80 font-normal">
+                        • {language === 'he' ? storeStatus.nextChangeHe : storeStatus.nextChangeEn}
+                      </span>
+                    </span>
+                  </div>
+
+                  {/* Friday / Shabbat / Holiday Contextual Alerts */}
+                  {(storeStatus.warningHe || storeStatus.warningEn) && (
+                    <div className="flex items-center gap-2 mt-1.5 p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-xs">
+                      <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span>{language === 'he' ? storeStatus.warningHe : storeStatus.warningEn}</span>
                     </div>
                   )}
                 </div>
@@ -333,24 +398,84 @@ export function PackageDetailModal({
                 </div>
               </div>
 
+              {/* Location Bar & Operating Hours Details */}
               {pkg.pickupLocation && (
-                <div
-                  onClick={handleNavigate}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      handleNavigate();
-                    }
-                  }}
-                  className="mt-3 pt-3 border-t border-emerald-500/20 relative z-10 flex items-start gap-2 cursor-pointer group hover:opacity-90 transition-opacity"
-                  title={language === 'he' ? 'לחץ לפתיחת ניווט' : 'Click to navigate'}
-                >
-                  <MapPin className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-                  <span className="text-sm text-emerald-100/90 leading-tight group-hover:underline">
-                    {pkg.pickupLocation}
-                  </span>
+                <div className="mt-3 pt-3 border-t border-emerald-500/20 relative z-10 flex flex-col gap-2">
+                  <div
+                    onClick={handleNavigate}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleNavigate();
+                      }
+                    }}
+                    className="flex items-start gap-2 cursor-pointer group hover:opacity-90 transition-opacity"
+                    title={language === 'he' ? 'לחץ לפתיחת ניווט' : 'Click to navigate'}
+                  >
+                    <MapPin className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
+                    <span className="text-sm text-emerald-100/90 leading-tight group-hover:underline">
+                      {pkg.pickupLocation}
+                    </span>
+                  </div>
+
+                  {/* Hours detail strip & Report wrong hours trigger */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-300 bg-slate-950/40 p-2.5 rounded-xl border border-emerald-500/20">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <span className="text-slate-300 font-medium">
+                        {language === 'he' ? resolvedHours.hoursHe : resolvedHours.hoursEn}
+                      </span>
+                      {resolvedHours.isEstimated && (
+                        <span className="text-[10px] text-amber-400/90 italic">
+                          ({language === 'he' ? 'משוער' : 'Estimated'})
+                        </span>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsReportingHours(!isReportingHours)}
+                      className="text-[11px] text-indigo-300 hover:text-indigo-200 underline font-medium flex items-center gap-1 cursor-pointer"
+                    >
+                      <Flag className="w-3 h-3" />
+                      <span>{t('openingHours.reportWrongHours')}</span>
+                    </button>
+                  </div>
+
+                  {/* Inline Report Incorrect Hours Box */}
+                  {isReportingHours && (
+                    <form onSubmit={handleReportWrongHours} className="p-3 rounded-xl bg-slate-900 border border-indigo-500/30 space-y-2 animate-fade-in text-xs">
+                      <label className="block text-[11px] font-bold text-indigo-200">
+                        {t('openingHours.reportPromptTitle')}
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={reportedHours}
+                        onChange={(e) => setReportedHours(e.target.value)}
+                        placeholder={t('openingHours.reportPlaceholder')}
+                        className="w-full bg-slate-950 border border-slate-700 text-xs text-slate-100 rounded-lg p-2 focus:border-indigo-500 focus:outline-none"
+                      />
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsReportingHours(false)}
+                          className="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 text-xs"
+                        >
+                          {t('modal.cancel')}
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={isSubmittingReport}
+                          className="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-sm"
+                        >
+                          {isSubmittingReport ? '...' : (language === 'he' ? 'שלח דיווח' : 'Submit')}
+                        </button>
+                      </div>
+                    </form>
+                  )}
                 </div>
               )}
             </div>

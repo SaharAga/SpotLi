@@ -219,6 +219,21 @@ export const translations = {
       navigateBtn: 'Navigate',
       osDefault: 'Android System Default (App Chooser)',
       osDefaultDesc: 'Open with your Android default map selector'
+    },
+    openingHours: {
+      openNow: 'Open Now',
+      closedNow: 'Closed',
+      closingSoon: 'Closes Soon',
+      opensSoon: 'Opens Soon',
+      open24_7: 'Open 24/7',
+      alwaysOpen: 'Always Open (24/7 Locker)',
+      shabbatClosed: 'Closed for Shabbat',
+      holidayClosed: 'Closed for Holiday',
+      reportWrongHours: 'Report incorrect hours',
+      reportPromptTitle: 'Report Incorrect Opening Hours',
+      reportPlaceholder: 'Please enter the correct opening hours for this location...',
+      weeklySchedule: 'Weekly Operating Schedule',
+      estimatedNotice: 'Estimated Israeli business hours'
     }
   },
   he: {
@@ -441,6 +456,21 @@ export const translations = {
       navigateBtn: 'נווט ליעד',
       osDefault: 'ברירת מחדל של מערכת ההפעלה (Android)',
       osDefaultDesc: 'פתיחה באמצעות בורר האפליקציות של אנדרואיד'
+    },
+    openingHours: {
+      openNow: 'פתוח עכשיו',
+      closedNow: 'סגור כעת',
+      closingSoon: 'נסגר בקרוב',
+      opensSoon: 'נפתח בקרוב',
+      open24_7: 'פתוח 24/7',
+      alwaysOpen: 'פתוח תמיד (לוקר 24/7)',
+      shabbatClosed: 'סגור לרגל שבת',
+      holidayClosed: 'סגור לרגל חג',
+      reportWrongHours: 'שעות לא נכונות? דווח כאן',
+      reportPromptTitle: 'דיווח ותיקון שעות פתיחה',
+      reportPlaceholder: 'נא להזין את שעות הפעילות הנכונות של המקום...',
+      weeklySchedule: 'שעות פעילות שבועיות',
+      estimatedNotice: 'שעות משוערות לפי שבוע מסחר ישראלי'
     }
   }
 };
