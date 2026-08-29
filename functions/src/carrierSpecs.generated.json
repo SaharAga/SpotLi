@@ -41,7 +41,10 @@
       "website": "https://chita-il.com",
       "country": "Israel",
       "domains": [
-        "chita-il.com"
+        "chita-delivery.co.il",
+        "chita-il.com",
+        "chita.co.il",
+        "chtr.co.il"
       ],
       "patterns": [
         {
@@ -74,6 +77,8 @@
       "website": "https://hfd.co.il",
       "country": "Israel",
       "domains": [
+        "e-post.co.il",
+        "epost.co.il",
         "hfd.co.il"
       ],
       "patterns": [
@@ -133,6 +138,7 @@
       "website": "https://tapuzdelivery.co.il",
       "country": "Israel",
       "domains": [
+        "tapuz.co.il",
         "tapuzdelivery.co.il"
       ],
       "patterns": [
@@ -276,33 +282,6 @@
         }
       ]
     },
-    "bar": {
-      "id": "bar",
-      "name": "Bar Distribution",
-      "hebrewName": "בר הפצה",
-      "website": "https://bardistribution.co.il",
-      "country": "Israel",
-      "domains": [
-        "bardistribution.co.il",
-        "barexpress.co.il"
-      ],
-      "patterns": [
-        {
-          "source": "^(BAR|BD)\\d{6,12}$",
-          "flags": "i",
-          "confidence": "high",
-          "checksum": "not-applicable",
-          "priority": 110
-        },
-        {
-          "source": "^9\\d{8}$",
-          "flags": "",
-          "confidence": "medium",
-          "checksum": "not-applicable",
-          "priority": 1000
-        }
-      ]
-    },
     "lionwheel": {
       "id": "lionwheel",
       "name": "LionWheel",
@@ -337,7 +316,8 @@
       "website": "https://buzzr.co.il",
       "country": "Israel",
       "domains": [
-        "buzzr.co.il"
+        "buzzr.co.il",
+        "link.buzzr.co.il"
       ],
       "patterns": [
         {
@@ -363,6 +343,7 @@
       "website": "https://zigzag24.co.il",
       "country": "Israel",
       "domains": [
+        "zigzag.co.il",
         "zigzag24.co.il"
       ],
       "patterns": [
@@ -874,14 +855,6 @@
       "priority": 110
     },
     {
-      "carrierId": "bar",
-      "source": "^(BAR|BD)\\d{6,12}$",
-      "flags": "i",
-      "confidence": "high",
-      "checksum": "not-applicable",
-      "priority": 110
-    },
-    {
       "carrierId": "lionwheel",
       "source": "^(LW|LION)\\d{6,14}$",
       "flags": "i",
@@ -1179,14 +1152,6 @@
     },
     {
       "carrierId": "bar-distribution",
-      "source": "^9\\d{8}$",
-      "flags": "",
-      "confidence": "medium",
-      "checksum": "not-applicable",
-      "priority": 1000
-    },
-    {
-      "carrierId": "bar",
       "source": "^9\\d{8}$",
       "flags": "",
       "confidence": "medium",

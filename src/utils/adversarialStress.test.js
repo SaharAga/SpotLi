@@ -424,11 +424,13 @@ describe('Tier 5 Adversarial Stress & Anti-Fragility Testbench', () => {
       expect(canTransition('ordered', 'ordered')).toBe(true);
 
       // Illegal transitions
-      expect(canTransition('delivered', 'ordered')).toBe(false);
-      expect(canTransition('delivered', 'in_transit')).toBe(false);
-      expect(canTransition('delivered', 'shipped')).toBe(false);
-      expect(canTransition('delivered', 'customs')).toBe(false);
-      expect(canTransition('delivered', 'out_for_delivery')).toBe(false);
+      // Delivered rollback is supported for the explicit "undo delivery" flow;
+      // the detail modal keeps these transitions out of the generic selector.
+      expect(canTransition('delivered', 'ordered')).toBe(true);
+      expect(canTransition('delivered', 'in_transit')).toBe(true);
+      expect(canTransition('delivered', 'shipped')).toBe(true);
+      expect(canTransition('delivered', 'customs')).toBe(true);
+      expect(canTransition('delivered', 'out_for_delivery')).toBe(true);
       expect(canTransition('archived', null)).toBe(false);
       expect(canTransition('__proto__', 'delivered')).toBe(false);
       expect(canTransition('in_transit', '__proto__')).toBe(false);
@@ -438,12 +440,10 @@ describe('Tier 5 Adversarial Stress & Anti-Fragility Testbench', () => {
         { id: 'pkg-del-1', title: 'Delivered Pkg', trackingNumber: 'RS123IL', carrier: 'israel-post', status: 'delivered' }
       ];
 
-      const illegalUpdate = deliveryService.updatePackageStatus(packages, 'pkg-del-1', 'ordered');
+      const illegalUpdate = deliveryService.updatePackageStatus(packages, 'pkg-del-1', 'invalid_nonexistent_status');
       expect(illegalUpdate.success).toBe(false);
-      expect(illegalUpdate.error).toContain('Cannot transition from delivered to ordered');
+      expect(illegalUpdate.error).toContain('Cannot transition from delivered to invalid_nonexistent_status');
     });
   });
 });
-
-
 

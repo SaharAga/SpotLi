@@ -41,10 +41,21 @@ function normalizeChecksum(checksum) {
 
 const carriersExport = {};
 
+const KNOWN_CARRIER_DOMAINS = {
+  'chita': ['chtr.co.il', 'chita.co.il', 'chita-il.com', 'chita-delivery.co.il'],
+  'hfd': ['epost.co.il', 'e-post.co.il', 'hfd.co.il'],
+  'boxit': ['boxit.co.il'],
+  'buzzr': ['buzzr.co.il', 'link.buzzr.co.il'],
+  'tapuz': ['tapuzdelivery.co.il', 'tapuz.co.il'],
+  'bar-distribution': ['bardistribution.co.il', 'barexpress.co.il'],
+  'lionwheel': ['tracking.lionwheel.com'],
+  'zigzag': ['zigzag.co.il']
+};
+
 for (const [id, carrier] of Object.entries(CARRIERS)) {
   if (id === 'other') continue;
 
-  const domains = new Set();
+  const domains = new Set(KNOWN_CARRIER_DOMAINS[id] || []);
   const websiteDomain = extractDomain(carrier.website);
   if (websiteDomain) domains.add(websiteDomain);
 

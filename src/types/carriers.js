@@ -253,24 +253,6 @@ export const CARRIERS = {
     sample: 'BAR1094821',
     country: 'Israel'
   },
-  'bar': {
-    id: 'bar',
-    name: 'Bar Distribution',
-    hebrewName: 'בר הפצה',
-    color: 'from-blue-600 to-slate-800',
-    badgeBg: 'bg-blue-600/10 border-blue-600/30 text-blue-300',
-    accentColor: '#2563eb',
-    logoText: 'בר',
-    website: 'https://bardistribution.co.il',
-    getTrackingUrl: (trackNum) => `https://bardistribution.co.il/track?track=${encodeURIComponent(trackNum)}`,
-    fallbackTrackingUrl: (trackNum) => `https://barexpress.co.il/track?track=${encodeURIComponent(trackNum)}`,
-    patterns: [
-      rule(/^(BAR|BD)\d{6,12}$/i, { confidence: 'high', priority: 110 }),
-      rule(/^9\d{8}$/)
-    ],
-    sample: 'BAR1094821',
-    country: 'Israel'
-  },
   'lionwheel': {
     id: 'lionwheel',
     name: 'LionWheel',

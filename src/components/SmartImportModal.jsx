@@ -164,7 +164,7 @@ export function SmartImportModal({
         // instruction to manufacture a tracking number from raw prose.
         candidates: regexResult?.candidates || []
       });
-      if (aiResponse.success && aiResponse.data?.trackingNumber && aiResponse.data.confidence !== 'none') {
+      if (aiResponse?.success && aiResponse.data?.trackingNumber && aiResponse.data.confidence !== 'none') {
         const isGroundedCandidate = (regexResult?.candidates || [])
           .some((candidate) => (
             candidate.value === aiResponse.data.trackingNumber && candidate.status === 'verified'
@@ -369,7 +369,7 @@ export function SmartImportModal({
   const showLowConfidenceHint = parseSource === 'ai' && (aiConfidence === 'low' || aiConfidence === 'medium');
   const canApplyParsed = parsed?.trackingNumber && (
     (parseSource === 'regex' && parsed.candidateStatus === 'verified') ||
-    (parseSource === 'ai' && parsed.isGroundedCandidate === true && aiConfidence && aiConfidence !== 'none')
+    (parseSource === 'ai' && parsed.isGroundedCandidate === true && aiConfidence && aiConfidence !== 'none' && aiConfidence !== 'uncertain')
   );
 
   return (

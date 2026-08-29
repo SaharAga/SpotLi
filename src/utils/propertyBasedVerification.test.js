@@ -147,7 +147,7 @@ describe('High-Assurance Property-Based Verification (fast-check)', () => {
       fc.stringMatching(/^1Z[0-9A-Z]{16}$/),
       fc.stringMatching(/^LP\d{14}$/),
       fc.stringMatching(/^YT\d{16}$/),
-      fc.stringMatching(/^\d{10}$/)
+      fc.stringMatching(/^[1-9]\d{9}$/)
     ];
 
     it('Completeness: tracking number t is reliably extracted from noise + t + noise', () => {

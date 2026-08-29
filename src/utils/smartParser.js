@@ -386,22 +386,23 @@ const GENERIC_TRACKING_PARAMS = [
   'itemcode', 'mailNoList', 'mailNo', 'trknbr', 'tLabels', 'pNumbers', 'ShipmentNumber', 'tracknum', 'order'
 ];
 
+
 /**
  * Known Hebrew courier phrasing signatures mapped to carrier IDs
  */
 const HEBREW_CARRIER_PHRASES = [
-  { carrierId: 'chita', patterns: [/מחברת\s*צ['׳`״]יטה/i, /מצ['׳`״]יטה\s*שליחויות/i, /חברת\s*צ['׳`״]יטה/i, /צ['׳`״]יטה\s*שליחויות/i, /שליחויות\s*צ['׳`״]יטה/i] },
-  { carrierId: 'israel-post', patterns: [/מדואר\s*ישראל/i, /דואר\s*ישראל/i, /מחברת\s*דואר\s*ישראל/i, /דבר\s*דואר/i, /חבילת\s*דואר/i, /סניף\s*הדואר/i, /מרכז\s*המסירה\s*בדואר/i, /יחידת\s*(?:ה)?דואר/i] },
-  { carrierId: 'hfd', patterns: [/מחברת\s*HFD/i, /מ-?HFD/i, /אי-?פוסט/i, /HFD\s*שליחויות/i, /e-?post/i] },
-  { carrierId: 'boxit', patterns: [/מחברת\s*בוקסיט/i, /מ-?BoxIt/i, /בוקסיט/i, /boxit/i] },
-  { carrierId: 'buzzr', patterns: [/באזר\s*שליחויות/i, /מחברת\s*באזר/i, /מבאזר/i, /buzzr/i] },
-  { carrierId: 'tapuz', patterns: [/תפוז\s*שליחויות/i, /מחברת\s*תפוז/i, /מתפוז/i, /tapuz\s*delivery/i] },
-  { carrierId: 'bar-distribution', patterns: [/בר\s*הפצה/i, /מחברת\s*בר\s*הפצה/i, /מבר\s*הפצה/i, /חברת\s*בר\s*הפצה/i, /bar\s*distribution/i] },
+  { carrierId: 'chita', patterns: [/מחברת\s*צ['׳`״]יטה/i, /מצ['׳`״]יטה/i, /חברת\s*צ['׳`״]יטה/i, /צ['׳`״]יטה\s*שליחויות/i, /שליחויות\s*צ['׳`״]יטה/i, /שליח\s*צ['׳`״]יטה/i, /צ['׳`״]יטה\s*שופס/i, /צ['׳`״]יטה/i, /chita/i] },
+  { carrierId: 'israel-post', patterns: [/מדואר\s*ישראל/i, /דואר\s*ישראל/i, /מחברת\s*דואר\s*ישראל/i, /דבר\s*דואר/i, /חבילת\s*דואר/i, /סניף\s*הדואר/i, /סוכנות\s*(?:ה)?דואר/i, /מרכז\s*המסירה\s*בדואר/i, /יחידת\s*(?:ה)?דואר/i] },
+  { carrierId: 'hfd', patterns: [/מחברת\s*HFD/i, /מ-?HFD/i, /אי-?פוסט/i, /HFD\s*שליחויות/i, /e-?post/i, /משלוח\s*HFD/i, /HFD/i] },
+  { carrierId: 'boxit', patterns: [/מחברת\s*בוקסיט/i, /מ-?BoxIt/i, /בוקסיט/i, /boxit/i, /חבילת\s*בוקסיט/i] },
+  { carrierId: 'buzzr', patterns: [/באזר\s*שליחויות/i, /מחברת\s*באזר/i, /מבאזר/i, /משלוח\s*Buzzr/i, /משלוח\s*באזר/i, /buzzr/i] },
+  { carrierId: 'tapuz', patterns: [/תפוז\s*שליחויות/i, /מחברת\s*תפוז/i, /מתפוז/i, /משלוח\s*תפוז/i, /tapuz\s*delivery/i, /tapuz/i] },
+  { carrierId: 'bar-distribution', patterns: [/בר\s*הפצה/i, /מחברת\s*בר\s*הפצה/i, /מבר\s*הפצה/i, /חברת\s*בר\s*הפצה/i, /bar\s*distribution/i, /barexpress/i] },
   { carrierId: 'lionwheel', patterns: [/ליאון\s*וויל/i, /מליאון\s*וויל/i, /lionwheel/i] },
   { carrierId: 'flying-cargo', patterns: [/פליינג\s*קרגו/i, /flying\s*cargo/i, /פדאקס\s*ישראל/i] },
   { carrierId: 'cargo', patterns: [/קרגו\s*שליחויות/i, /cargo\s*express/i] },
   { carrierId: 'getpackage', patterns: [/גט\s*פקג['׳`״]/i, /getpackage/i] },
-  { carrierId: 'zigzag', patterns: [/זיגזג\s*שליחויות/i, /zigzag/i] },
+  { carrierId: 'zigzag', patterns: [/זיגזג\s*שליחויות/i, /שליח\s*זיגזג/i, /זיגזג/i, /zigzag/i] },
   { carrierId: 'orian', patterns: [/אוריאן/i, /orian/i] }
 ];
 
@@ -522,7 +523,7 @@ export function extractLockerPin(text) {
   if (!text || typeof text !== 'string') return '';
 
   const patterns = [
-    /(?:קוד\s*(?:לפתיחת\s*(?:ה)?לוקר|לאיסוף|איסוף|לוקר|סודי|פתיחה|משיכה|אימות|פתיחת\s*תא|אימות\s*לאיסוף|איסוף\s*חבילה))[\s:-]+([A-Za-z0-9]{3,8})\b/i,
+    /(?:קוד\s*(?:לפתיחת\s*(?:ה)?לוקר|סודי\s*לפתיחה|לפתיחה|לאיסוף|איסוף|לוקר|סודי|פתיחה|משיכה|אימות|פתיחת\s*תא|אימות\s*לאיסוף|מסירה|איסוף\s*חבילה))[\s:-]+([A-Za-z0-9]{3,8})\b/i,
     /(?:קוד)[\s:-]+([A-Za-z0-9]{4,8})\b/i,
     /(?:pickup\s*(?:pin|code)|collection\s*(?:pin|code)|locker\s*(?:pin|code|password)|pin\s*code|\bpin|entry\s*code)[\s:-]+([A-Za-z0-9]{3,8})\b/i
   ];
@@ -549,7 +550,7 @@ export function extractPickupLocation(text) {
   if (!text || typeof text !== 'string') return '';
 
   const patterns = [
-    /(?:נקודת\s*איסוף|בנקודת\s*איסוף|מרכז\s*מסירה|במרכז\s*מסירה|בלוקר|לוקר|ביחידת\s*(?:ה)?דואר|יחידת\s*(?:ה)?דואר|בסוכנות\s*(?:ה)?דואר|סוכנות\s*(?:ה)?דואר|בסניף\s*מסירה|סניף\s*מסירה|בסניף|סניף|בכתובת|כתובת\s*לאיסוף|בחנות|בבית\s*עסק|נקודת\s*חלוקה|איסוף\s*מ|מחכה\s*לך\s*ב|ממתינה\s*לך\s*ב|נמצאת\s*ב)[\s:-]+([^,.\r\n]{2,60})/i,
+    /(?:נקודת\s*איסוף|בנקודת\s*איסוף|נקודת\s*מסירה|בנקודת\s*מסירה|מרכז\s*מסירה|במרכז\s*מסירה|בלוקר|לוקר|ביחידת\s*(?:ה)?דואר|יחידת\s*(?:ה)?דואר|בסוכנות\s*(?:ה)?דואר|סוכנות\s*(?:ה)?דואר|בסניף\s*מסירה|סניף\s*מסירה|בסניף|סניף|בכתובת|כתובת\s*לאיסוף|בחנות|בבית\s*עסק|נקודת\s*חלוקה|בנקודת\s*חלוקה|איסוף\s*מ|מחכה\s*לך\s*ב|ממתינה\s*לך\s*ב|נמצאת\s*ב)[\s:-]+([^,.\r\n]{2,60})/i,
     /(?:at\s+(?:the\s+)?pickup\s+point|at\s+(?:the\s+)?locker|at\s+(?:the\s+)?branch|pickup\s+location|pickup\s+point|locker\s+location|waiting\s+(?:for\s+you\s+)?at)[\s:-]+([^,.\r\n]{2,60})/i
   ];
 
@@ -610,8 +611,23 @@ export function extractPickupPhone(text) {
 export function extractRedirectInfo(text) {
   if (!text || typeof text !== 'string') return { isRedirected: false };
 
+  // Prefix reason with original location, e.g.:
+  // "בשל עומס בלוקר דיזנגוף סנטר, חבילתך 509482019 הועברה לנקודת איסוף מכולת העיר בוגרשוב 12. קוד: 8192."
+  const prefixRedirectMatch = /(?:בשל|עקב)\s*(?:עומס|ביקוש|תפוסה|סגירה|תקלה|אילוץ\s*תפעולי)\s*(?:בלוקר|בסניף|בנקודת\s*איסוף|ב)?\s*([^,.\r\n]+?)\s*,\s*(?:(?:החבילה|חבילתך|המשלוח|משלוח)\s*[A-Za-z0-9_-]*\s*)?(?:הועברה|הופנתה|נותבה|נשלחה)\s*(?:ל|אל)?\s*(?:נקודת\s*איסוף|סניף|לוקר|חנות)?[\s:-]+([^,.\r\n]{2,60})/i.exec(text);
+  if (prefixRedirectMatch && prefixRedirectMatch[1] && prefixRedirectMatch[2]) {
+    let origLoc = prefixRedirectMatch[1].trim().replace(/^['":\-–—\s()]+|['":\-–—\s()]+$/g, '');
+    origLoc = origLoc.replace(/^(?:לוקר|סניף|נקודת\s*איסוף)\s*/i, '');
+    let newLoc = prefixRedirectMatch[2].trim().replace(/(?:\s*[-–—|/]?\s*(?:שעות\s*פתיחה|קוד\s*איסוף|קוד|שעות\s*פעילות|טלפון|phone|hours).*)$/i, '').replace(/^['":\-–—\s()]+|['":\-–—\s()]+$/g, '');
+    return {
+      isRedirected: true,
+      newPickupLocation: newLoc,
+      originalPickupLocation: origLoc || undefined,
+      redirectReason: /(?:עומס|capacity|overflow)/i.test(text) ? 'locker_capacity' : 'operational'
+    };
+  }
+
   const redirectPatterns = [
-    /(?:עקב\s*(?:עומס|ביקוש|תפוסה|סגירה|תקלה|אילוץ\s*תפעולי)[^.\r\n]*?(?:הועברה|הופנתה|נותבה|נשלחה)\s*(?:ל|אל)?\s*(?:נקודת\s*איסוף|סניף|לוקר|חנות)?[\s:-]+)([^,.\r\n]{2,60})/i,
+    /(?:עקב|בשל)\s*(?:עומס|ביקוש|תפוסה|סגירה|תקלה|אילוץ\s*תפעולי)[^.\r\n]*?(?:הועברה|הופנתה|נותבה|נשלחה)\s*(?:ל|אל)?\s*(?:נקודת\s*איסוף|סניף|לוקר|חנות)?[\s:-]+([^,.\r\n]{2,60})/i,
     /(?:נקודת\s*(?:ה)?איסוף\s*(?:שונתה|הוחלפה|עודכנה)\s*(?:ל|אל)?[\s:-]+)([^,.\r\n]{2,60})/i,
     /(?:הועברה\s*לנקודת\s*איסוף\s*חלופית[\s:-]+)([^,.\r\n]{2,60})/i,
     /(?:חבילתך\s*הועברה\s*(?:ל|אל)?\s*(?:נקודת\s*איסוף|סניף|לוקר)?[\s:-]+)([^,.\r\n]{2,60})/i,
@@ -787,48 +803,36 @@ export function parseSmartText(rawText) {
   let bestCarrier = phraseCarrier || 'other';
   let bestConfidence = phraseCarrier ? 'medium' : 'none';
 
-  // 1. URL extracted tracking codes and carrier hints
-  for (const item of urlExtracted) {
-    if (item.trackingNumber) {
-      const detection = detectCarrier(item.trackingNumber);
-      const effectiveCarrier = item.carrierHint || phraseCarrier || detection.carrierId;
-      if (effectiveCarrier && effectiveCarrier !== 'other') {
-        bestTracking = item.trackingNumber;
-        bestCarrier = effectiveCarrier;
-        bestConfidence = 'high';
-        break;
-      } else if (!bestTracking) {
-        bestTracking = item.trackingNumber;
-      }
-    }
-  }
+  const urlCarrier = urlExtracted.find((u) => u.carrierHint && u.carrierHint !== 'other')?.carrierHint;
 
-  // 2. Scan all candidate tracking codes (prefer candidate matching phraseCarrier if available)
-  if (!bestTracking || bestConfidence !== 'high') {
-    const candidateList = Array.from(candidates);
-    if (phraseCarrier) {
-      candidateList.sort((a, b) => {
-        const aMatch = detectCarrier(a).carrierId === phraseCarrier ? 1 : 0;
-        const bMatch = detectCarrier(b).carrierId === phraseCarrier ? 1 : 0;
-        return bMatch - aMatch;
-      });
-    }
-
-    for (const cand of candidateList) {
-      const detection = detectCarrier(cand);
-      if (detection.confidence === 'high') {
-        bestTracking = cand;
-        bestCarrier = (phraseCarrier && detection.carrierId === phraseCarrier)
-          ? phraseCarrier
-          : (detection.carrierId !== 'other' ? detection.carrierId : phraseCarrier || 'other');
-        bestConfidence = 'high';
-        break;
-      } else if (detection.confidence === 'medium' && bestConfidence !== 'high') {
-        bestTracking = cand;
-        bestCarrier = phraseCarrier || detection.carrierId;
-        bestConfidence = 'medium';
-      } else if (!bestTracking) {
-        bestTracking = cand;
+  // 1. Preferred: High-confidence candidate from calibrated candidate scorer
+  if (scoredCandidates.length > 0 && scoredCandidates[0].score > 0) {
+    const top = scoredCandidates[0];
+    bestTracking = top.value;
+    const detected = detectCarrier(top.value);
+    const topCarrier = (phraseCarrier && phraseCarrier !== 'other')
+      ? phraseCarrier
+      : (top.carrierCandidates && top.carrierCandidates[0] && top.carrierCandidates[0] !== 'other')
+        ? top.carrierCandidates[0]
+        : (urlCarrier && urlCarrier !== 'other')
+          ? urlCarrier
+          : (detected.carrierId !== 'other' ? detected.carrierId : 'other');
+    bestCarrier = topCarrier;
+    bestConfidence = top.highestConfidence || 'high';
+  } else {
+    // 2. URL extracted tracking codes and carrier hints fallback
+    for (const item of urlExtracted) {
+      if (item.trackingNumber) {
+        const detection = detectCarrier(item.trackingNumber);
+        const effectiveCarrier = item.carrierHint || phraseCarrier || detection.carrierId;
+        if (effectiveCarrier && effectiveCarrier !== 'other') {
+          bestTracking = item.trackingNumber;
+          bestCarrier = effectiveCarrier;
+          bestConfidence = 'high';
+          break;
+        } else if (!bestTracking) {
+          bestTracking = item.trackingNumber;
+        }
       }
     }
   }
@@ -879,9 +883,14 @@ export function parseSmartText(rawText) {
   const lowerText = cleanText.toLowerCase();
   if (/\b(delivered|successfully delivered)\b/i.test(lowerText) || /(?:נמסרה בהצלחה|נמסר ליעד|החבילה נמסרה)/i.test(lowerText)) {
     status = 'delivered';
-  } else if (/\b(ready for pickup|ready for collection|available for pickup|waiting for pickup|delivered to locker)\b/i.test(lowerText) || /(?:מוכנה לאיסוף|ממתינה לאיסוף|הגיעה לנקודת|הגיעה ללוקר|הגיע ללוקר|מחכה לך בנקודת)/i.test(lowerText)) {
+  } else if (
+    lockerPin ||
+    redirectInfo.isRedirected ||
+    /\b(ready for pickup|ready for collection|available for pickup|waiting for pickup|delivered to locker)\b/i.test(lowerText) ||
+    /(?:מוכנה לאיסוף|מוכן לאיסוף|ממתינה לאיסוף|ממתין לאיסוף|ממתינה בלוקר|ממתין בלוקר|הגיעה לנקודת|הגיע לנקודת|הגיע לסניף|הגיעה לסניף|הגיע לסוכנות|הגיעה לסוכנות|הגיעה ללוקר|הגיע ללוקר|הועברה ללוקר|הועברה לנקודת|מחכה לך בנקודת|מחכה לך בלוקר|מחכה בלוקר|מחכה לך בסניף|מדף\s*\d+)/i.test(lowerText)
+  ) {
     status = 'ready_for_pickup';
-  } else if (/\b(out for delivery|with courier)\b/i.test(lowerText) || /(?:יוצאת למסירה|יצאה עם שליח|נמסרה לשליח|השליח בדרך אליך)/i.test(lowerText)) {
+  } else if (/\b(out for delivery|with courier)\b/i.test(lowerText) || /(?:יוצאת למסירה|יוצא למסירה|יצאה עם שליח|נמסרה לשליח|השליח בדרך אליך|שליח\s+[^\n]+בדרך אליך)/i.test(lowerText)) {
     status = 'out_for_delivery';
   } else if (/\b(delivery issue|delivery failed|customs clearance)\b/i.test(lowerText) || /(?:עיכוב במכס|בעיה במסירה|מסירה נכשלה)/i.test(lowerText)) {
     status = 'exception';
@@ -892,7 +901,10 @@ export function parseSmartText(rawText) {
   const selectedCandidate = scoredCandidates.find((candidate) => candidate.value === bestTracking)
     || scoredCandidates[0]
     || null;
-  const candidateStatus = selectedCandidate?.status || (bestTracking ? 'uncertain' : 'none');
+  let candidateStatus = selectedCandidate?.status || (lockerPin && phraseCarrier ? 'verified' : (bestTracking ? 'uncertain' : 'none'));
+  if (bestTracking && (phraseCarrier || urlCarrier) && bestCarrier !== 'other' && candidateStatus !== 'none') {
+    candidateStatus = 'verified';
+  }
 
   return {
     title,

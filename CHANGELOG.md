@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.21.0] - 2026-08-29
+
+### Added
+- Add direct shop manager / pickup point call button on pickup cards and locker modal (`pickupPhone` in schema & `extractPickupPhone` in `smartParser.js`).
+
+- Add high-contrast Full-Screen Locker Mode (`FullScreenLockerModal.jsx`) with Screen Wake Lock API, oversized individual PIN digits, 1-tap PIN clipboard copy, instant "Mark as Collected" celebration with confetti, WhatsApp proxy sharing, and seamless modal integration.
+
+- Added live store opening hours intelligence with a 3-tier resolution engine, real-time operating status badges, Israeli calendar notices (Erev Shabbat and Jewish holidays), and crowdsourced incorrect hours reporting.
+
+- Add courier pickup location redirect detection in smart parser (`smartParser.js`), package schema extensions (`isRedirected`, `originalPickupLocation`), amber dashboard card badge, and detailed redirect warning banner in package details and locker modal.
+
+- Add smart same-location package bundling (`locationBundling.js`), contextual sibling alerts in package details, multi-PIN vertical stacked cards in Full-Screen Locker Mode, and 1-tap batch collection.
+
+- Added universal OS navigation deep linking and choice modal supporting Waze, Google Maps, Apple Maps, and Moovit, with 1-click preferred app memory and Account preferences management.
+
+- Deliver Wave 1 tracking pipeline enhancements: 23-fixture Israeli and international courier SMS testbench (TASK-701), candidate evidence scoring calibration, pickup redirect detection, delivered state reversibility, package deletion UX, and characterization test parity.
+
+### Fixed
+- Prevented unattended email and Gmail package creation from non-verified detections, and grounded Smart Import AI selection to deterministic candidates.
+
+- Fix package deletion payloads and make bulk package mutations durably queue before a single online replay.
+
+- Reject unexpected or unbounded fields in anonymous Firestore telemetry writes, and align screenshot MIME validation with the client.
+
 ## [0.20.1] - 2026-08-29
 
 ### Fixed

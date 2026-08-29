@@ -179,6 +179,39 @@ export function PackageDetailModal({
     if (onShowToast) onShowToast(language === 'he' ? `הסטטוס שונה ל-${targetStage?.hebrewLabel || stageId}` : `Status changed to ${targetStage?.label || stageId}`, 'info');
   };
 
+  const handleUndoDelivery = () => {
+    const confirmed = typeof window === 'undefined' || window.confirm(
+      language === 'he'
+        ? 'לבטל את סימון המסירה? החבילה תחזור למעקב פעיל.'
+        : 'Undo the delivered status? This package will return to active tracking.'
+    );
+    if (!confirmed) return;
+
+    const newCheckpoint = {
+      id: `cp-${Date.now()}`,
+      title: 'Delivery status undone',
+      titleHe: 'בוטל סימון המסירה',
+      description: 'The delivered status was undone by the user.',
+      descriptionHe: 'המשתמש ביטל את סימון המסירה.',
+      location: pkg.destination || 'Israel Logistics Hub',
+      timestamp: new Date().toISOString(),
+      isCompleted: true
+    };
+
+    onUpdatePackage({
+      ...pkg,
+      status: 'in_transit',
+      checkpoints: [newCheckpoint, ...(pkg.checkpoints || [])],
+      updatedAt: new Date().toISOString()
+    });
+    if (onShowToast) {
+      onShowToast(
+        language === 'he' ? 'סימון המסירה בוטל והחבילה חזרה למעקב' : 'Delivery status undone; package returned to active tracking',
+        'info'
+      );
+    }
+  };
+
   const handleAddCustomCheckpoint = (e) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
@@ -767,7 +800,9 @@ export function PackageDetailModal({
                   className="bg-slate-900 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl px-3 py-1.5 focus:outline-none focus:border-blue-500 min-h-[36px] cursor-pointer"
                   aria-label={t('tracking.overrideStatus')}
                 >
-                  {(TRANSITION_MATRIX[pkg.status] || [pkg.status]).map((statusKey) => {
+                  {(TRANSITION_MATRIX[pkg.status] || [pkg.status])
+                    .filter((statusKey) => pkg.status !== 'delivered' || statusKey === 'delivered' || statusKey === 'archived')
+                    .map((statusKey) => {
                     const stageObj = STAGES.find(s => s.id === statusKey);
                     const label = stageObj
                       ? (language === 'he' ? stageObj.hebrewLabel : stageObj.label)
@@ -777,8 +812,19 @@ export function PackageDetailModal({
                         {label}
                       </option>
                     );
-                  })}
+                    })}
                 </select>
+
+                {pkg.status === 'delivered' && (
+                  <button
+                    type="button"
+                    onClick={handleUndoDelivery}
+                    className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-bold transition-all border border-amber-500/30 min-h-[48px]"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>{language === 'he' ? 'ביטול מסירה' : 'Undo delivery'}</span>
+                  </button>
+                )}
 
                 {effectiveIndex < STAGES.length - 1 && canTransition(pkg.status, STAGES[effectiveIndex + 1]?.id) && (
                   <button
@@ -796,7 +842,9 @@ export function PackageDetailModal({
               {STAGES.map((s, idx) => {
                 const isPassed = idx < effectiveIndex;
                 const isCurrent = idx === effectiveIndex;
-                const isAllowed = canTransition(pkg.status, s.id);
+                const isAllowed = pkg.status === 'delivered'
+                  ? s.id === 'delivered' || s.id === 'archived'
+                  : canTransition(pkg.status, s.id);
 
                 return (
                   <button
