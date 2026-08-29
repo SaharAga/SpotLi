@@ -219,43 +219,6 @@ export function Modal({
     [closeOnBackdrop, requestClose]
   );
 
-  // Touch edge-swipe to dismiss gesture on mobile devices
-  const touchStartRef = useRef(null);
-
-  const handleTouchStart = useCallback((e) => {
-    if (e.touches && e.touches.length === 1) {
-      touchStartRef.current = {
-        x: e.touches[0].clientX,
-        y: e.touches[0].clientY,
-        time: Date.now()
-      };
-    }
-  }, []);
-
-  const handleTouchEnd = useCallback(
-    (e) => {
-      if (!touchStartRef.current || !e.changedTouches || e.changedTouches.length === 0) return;
-      const start = touchStartRef.current;
-      const endX = e.changedTouches[0].clientX;
-      const endY = e.changedTouches[0].clientY;
-      const deltaX = endX - start.x;
-      const deltaY = endY - start.y;
-      const duration = Date.now() - start.time;
-      touchStartRef.current = null;
-
-      // Fast horizontal swipe from screen edge (> 70px with low vertical angle under 400ms)
-      const isHorizontalSwipe =
-        Math.abs(deltaX) > 70 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5 && duration < 400;
-      // Downward swipe on sheets (> 90px down)
-      const isDownSwipe = deltaY > 90 && Math.abs(deltaY) > Math.abs(deltaX) * 1.5 && duration < 400;
-
-      if (isHorizontalSwipe || isDownSwipe) {
-        requestClose();
-      }
-    },
-    [requestClose]
-  );
-
   if (!isOpen) return null;
   if (typeof document === 'undefined') return null;
 
@@ -282,8 +245,6 @@ export function Modal({
       onMouseDown={handleMouseDown}
       onClick={handleClick}
       onKeyDownCapture={handleKeyDownCapture}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
     >
       <div ref={panelRef} tabIndex={-1} className={panelClasses} style={style} dir={dir}>
         <ErrorBoundary compact componentName={componentName} onReset={requestClose}>

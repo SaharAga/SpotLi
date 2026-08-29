@@ -219,11 +219,9 @@ export function PackageDetailModal({
           <div className="flex items-center gap-2">
             {onEdit && (
               <button
-                onClick={() => {
-                  onClose();
-                  onEdit(pkg);
-                }}
-                className="p-2.5 px-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white transition-all flex items-center gap-1.5 border border-slate-700/80 shadow-sm min-h-[40px]"
+                type="button"
+                onClick={() => onEdit(pkg)}
+                className="p-2.5 px-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white transition-all flex items-center gap-1.5 border border-slate-700/80 shadow-sm min-h-[44px] cursor-pointer"
                 title={language === 'he' ? 'עריכת פרטי חבילה' : 'Edit package details'}
                 aria-label={language === 'he' ? 'עריכת פרטי חבילה' : 'Edit package details'}
               >

@@ -37,7 +37,7 @@ describe('CourierActionHub', () => {
     expect(screen.getByText('השאר ליד הדלת')).toBeInTheDocument();
     expect(screen.getByText('קוד כניסה / שער')).toBeInTheDocument();
     expect(screen.getByText('מקום בטוח / שכן')).toBeInTheDocument();
-    expect(screen.getByText('ייפוי כוח לאיסוף')).toBeInTheDocument();
+    expect(screen.getAllByText('ייפוי כוח לאיסוף').length).toBeGreaterThan(0);
     expect(screen.getByText('שלח בוואטסאפ')).toBeInTheDocument();
     expect(screen.getByText('שלח ב-SMS')).toBeInTheDocument();
     expect(screen.getByText('העתק טקסט')).toBeInTheDocument();
@@ -50,7 +50,7 @@ describe('CourierActionHub', () => {
     expect(screen.getByText('Leave at Doorstep')).toBeInTheDocument();
     expect(screen.getByText('Gate / Door Code')).toBeInTheDocument();
     expect(screen.getByText('Safe Place / Neighbor')).toBeInTheDocument();
-    expect(screen.getByText('Proxy Authorization')).toBeInTheDocument();
+    expect(screen.getAllByText('Proxy Authorization').length).toBeGreaterThan(0);
     expect(screen.getByText('WhatsApp')).toBeInTheDocument();
     expect(screen.getByText('SMS')).toBeInTheDocument();
     expect(screen.getByText('Copy Text')).toBeInTheDocument();
@@ -90,7 +90,31 @@ describe('CourierActionHub', () => {
 
     fireEvent.click(screen.getByText('שמור תגובה'));
 
-    expect(screen.getByText('אצל השומר')).toBeInTheDocument();
+    expect(screen.getAllByText('אצל השומר').length).toBeGreaterThan(0);
     expect(screen.getByText(/אפשר להשאיר אצל השומר בכניסה/)).toBeInTheDocument();
+  });
+
+  it('allows editing an existing active template', () => {
+    renderWithLanguage(<CourierActionHub pkg={mockPkg} />, { language: 'he' });
+
+    // Click "ערוך תגובה זו"
+    fireEvent.click(screen.getByText('ערוך תגובה זו'));
+    const input = screen.getByPlaceholderText(/שם התגובה/);
+    expect(input).toBeInTheDocument();
+
+    fireEvent.change(input, { target: { value: 'השאר אצל דני' } });
+    fireEvent.click(screen.getByText('שמור תגובה'));
+
+    expect(screen.getAllByText('השאר אצל דני').length).toBeGreaterThan(0);
+  });
+
+  it('allows removing an active template', () => {
+    renderWithLanguage(<CourierActionHub pkg={mockPkg} />, { language: 'he' });
+
+    expect(screen.getByText('השאר ליד הדלת')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('השאר ליד הדלת'));
+    fireEvent.click(screen.getByText('הסר'));
+
+    expect(screen.queryByText('השאר ליד הדלת')).not.toBeInTheDocument();
   });
 });

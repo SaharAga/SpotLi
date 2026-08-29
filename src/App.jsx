@@ -868,7 +868,7 @@ export function DashboardContent() {
           pkg={payload}
           isOpen={isOpen && !!payload}
           onClose={() => closeModal(MODAL.DETAIL)}
-          onEdit={(p) => openModal(MODAL.ADD_PACKAGE, { editPackage: p })}
+          onEdit={(p) => openModal(MODAL.ADD_EDIT, { editPackage: p })}
           onUpdatePackage={handleAddOrUpdatePackage}
           onRefreshTracking={handleRefreshSinglePackage}
           onOpenLockerMap={() => openModal(MODAL.LOCKER_MAP)}

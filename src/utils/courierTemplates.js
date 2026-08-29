@@ -80,6 +80,7 @@ export const BUILTIN_PRESETS = [
 ];
 
 export const STORAGE_KEY_CUSTOM_TEMPLATES = 'deliveree_custom_courier_templates';
+export const STORAGE_KEY_HIDDEN_PRESETS = 'deliveree_hidden_courier_presets';
 
 /**
  * Loads user custom templates from localStorage.
@@ -93,6 +94,56 @@ export function getCustomTemplates() {
     return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
+  }
+}
+
+/**
+ * Loads list of hidden built-in preset IDs.
+ * @returns {Array<string>}
+ */
+export function getHiddenPresetIds() {
+  try {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY_HIDDEN_PRESETS) : null;
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Hides a built-in preset so the user does not see it.
+ * @param {string} id
+ * @returns {Array<string>}
+ */
+export function hidePreset(id) {
+  try {
+    const existing = getHiddenPresetIds();
+    if (!existing.includes(id)) {
+      const updated = [...existing, id];
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(STORAGE_KEY_HIDDEN_PRESETS, JSON.stringify(updated));
+      }
+      return updated;
+    }
+    return existing;
+  } catch (err) {
+    console.error('Failed to hide preset:', err);
+    return getHiddenPresetIds();
+  }
+}
+
+/**
+ * Resets hidden presets so all default presets return.
+ */
+export function resetAllPresets() {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEY_HIDDEN_PRESETS);
+    }
+  } catch (err) {
+    console.error('Failed to reset presets:', err);
   }
 }
 
@@ -126,6 +177,20 @@ export function saveCustomTemplate(template) {
   } catch (err) {
     console.error('Failed to save custom template:', err);
     return getCustomTemplates();
+  }
+}
+
+/**
+ * Deletes a custom template or hides a built-in preset.
+ * @param {string} id
+ * @returns {void}
+ */
+export function deleteTemplate(id) {
+  const isBuiltIn = BUILTIN_PRESETS.some((p) => p.id === id);
+  if (isBuiltIn) {
+    hidePreset(id);
+  } else {
+    deleteCustomTemplate(id);
   }
 }
 

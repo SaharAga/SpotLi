@@ -50,7 +50,7 @@ describe('Modal — dismissal', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('closes on mobile horizontal swipe gesture', () => {
+  it('does not close on accidental touch swipe gestures inside modal', () => {
     const onClose = vi.fn();
     render(
       <Modal isOpen onClose={onClose} labelledBy="t">
@@ -61,13 +61,13 @@ describe('Modal — dismissal', () => {
     const dialog = getDialog();
     // Simulate touch swipe left-to-right (dx > 70px)
     fireEvent.touchStart(dialog, {
-      touches: [{ clientX: 10, clientY: 100 }]
+      touches: [{ clientX: 100, clientY: 100 }]
     });
     fireEvent.touchEnd(dialog, {
-      changedTouches: [{ clientX: 120, clientY: 105 }]
+      changedTouches: [{ clientX: 220, clientY: 105 }]
     });
 
-    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it('does not close on Escape when closeOnEscape is false', async () => {
