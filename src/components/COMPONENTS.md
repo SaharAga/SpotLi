@@ -53,7 +53,8 @@ discards in-progress form state.
 - **`AddEditPackageModal`** — the add/edit form; also where Smart-Import autofill correction
   detection lives (editing a field Smart Import just filled, before saving, logs to
   `parseCorrectionService`).
-- **`PackageDetailModal`** — full shipment detail + interactive timeline.
+- **`PackageDetailModal`** — full shipment detail + interactive timeline, integrates `CourierActionHub` for driver communication.
+- **`CourierActionHub`** — quick courier driver response hub: template switcher, dynamic variable interpolation (`{gateCode}`, `{pickupCode}`, `{tracking}`), custom message CRUD (create/edit/delete/hide presets), and WhatsApp/SMS launch triggers.
 - **`DeleteConfirmDialog`** — generic delete confirmation, reused wherever a package delete needs
   confirming.
 - **`SmartImportModal`** — paste/screenshot ingestion flow: tries the deterministic
@@ -61,7 +62,7 @@ discards in-progress form state.
   matches or the input is a screenshot. Maps the AI response into the same shape the regex parser
   returns so the rest of the component (and `AddEditPackageModal`) don't need to know which path
   produced a result.
-- **`IngestionGuideModal`** — shipment ingestion & sync center: manages 1-Click Gmail OAuth sync (`connectGmail`), Outlook auto-forwarding (`requestOutlookForwardingSetup`), dedicated ingestion email addresses (`getIngestionEmailAddress`), and provider-specific forwarding setup guides.
+- **`IngestionGuideModal`** — shipment ingestion & sync center: manages Gmail OAuth sync (`connectGmail`), Outlook auto-forwarding (`requestOutlookForwardingSetup`), dedicated ingestion email addresses (`getIngestionEmailAddress`), and provider-specific forwarding setup guides.
 
 ## Analytics / export
 
