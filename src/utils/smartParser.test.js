@@ -284,4 +284,15 @@ describe('smartParser - parseSmartText', () => {
     expect(parsed.pickupLocation).toBe('סופר יודה בן יהודה 45');
     expect(parsed.pickupPhone).toBe('03-5123456');
   });
+
+  it('parses ASOS HFD SMS with parentheses and gershayim correctly', () => {
+    const text = 'שלום! החבילה שלך מ-ASOS (מס׳ HFD90481029) הגיעה ומחכה לך בסניף סופר יודה בן יהודה 45 תל אביב.\nקוד לאיסוף: 4892. שעות פתיחה: 08:00 - 22:00. לבירורים טלפון: 03-5123456.';
+    const parsed = parseSmartText(text);
+
+    expect(parsed.trackingNumber).toBe('HFD90481029');
+    expect(parsed.carrier).toBe('hfd');
+    expect(parsed.pickupLocation).toBe('סופר יודה בן יהודה 45 תל אביב');
+    expect(parsed.lockerPin).toBe('4892');
+    expect(parsed.pickupPhone).toBe('03-5123456');
+  });
 });
