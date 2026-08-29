@@ -221,4 +221,23 @@ describe('PackageDetailModal — Pickup Navigation Integration', () => {
     // New destination is rendered in the location bar
     expect(screen.getByText('Super Yuda Ben Yehuda 45')).toBeInTheDocument();
   });
+
+  it('renders 1-tap Call Store button with tel link when pickupPhone is available', () => {
+    const pkgWithPhone = {
+      ...mockPackageWithPickup,
+      pickupPhone: '03-5123456'
+    };
+
+    renderWithLanguage(
+      <PackageDetailModal
+        isOpen={true}
+        pkg={pkgWithPhone}
+        onClose={vi.fn()}
+      />
+    );
+
+    const callLink = screen.getByRole('link', { name: /Call Store/i });
+    expect(callLink).toBeInTheDocument();
+    expect(callLink).toHaveAttribute('href', 'tel:03-5123456');
+  });
 });

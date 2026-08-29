@@ -568,6 +568,39 @@ export function extractPickupLocation(text) {
 }
 
 /**
+ * Extracts a store, courier, or pickup contact phone number from text.
+ * Handles Israeli landline formats (02/03/04/08/09-XXXXXXX), mobile (05X-XXXXXXX),
+ * VoIP/special (07X-XXXXXXX, 1-700/1-800), and international (+972...).
+ * @param {string} text
+ * @returns {string}
+ */
+export function extractPickupPhone(text) {
+  if (!text || typeof text !== 'string') return '';
+
+  const patterns = [
+    /(?:טלפון(?:\s*לבירורים|\s*ליצירת\s*קשר|\s*סניף|\s*חנות)?|טל['׳]|נייד|שליח\s*בטלפון|phone|tel|call)[\s:-]+(\+?972[- ]?[0-9]{1,2}[- ]?[0-9]{3}[- ]?[0-9]{4}|0[2-9][- ]?[0-9]{7}|05[0-9][- ]?[0-9]{7}|1-[78]00[- ]?[0-9]{3}[- ]?[0-9]{3})\b/i,
+    /(?:\+972[- ]?[2-9][- ]?[0-9]{7}|0[23489][- ]?[0-9]{7}|05[0-9][- ]?[0-9]{7})\b/
+  ];
+
+  for (const pattern of patterns) {
+    const match = pattern.exec(text);
+    if (match && match[1]) {
+      const phone = match[1].trim().replace(/[^\d+]/g, '');
+      if (phone.length >= 9 && phone.length <= 15) {
+        return match[1].trim();
+      }
+    } else if (match && match[0]) {
+      const phone = match[0].trim().replace(/[^\d+]/g, '');
+      if (phone.length >= 9 && phone.length <= 15) {
+        return match[0].trim();
+      }
+    }
+  }
+
+  return '';
+}
+
+/**
  * Detects whether a delivery was rerouted / redirected to an alternate pickup point.
  * Extracts the redirect flag, reason, and original location if mentioned.
  * @param {string} text
@@ -745,6 +778,7 @@ export function parseSmartText(rawText) {
   const redirectInfo = extractRedirectInfo(cleanText);
   const effectivePickupLocation = redirectInfo.newPickupLocation || pickupLocation;
   const pickupHours = extractOpeningHours(cleanText);
+  const pickupPhone = extractPickupPhone(cleanText);
   const lockerPin = extractLockerPin(cleanText);
   const phraseCarrier = detectCarrierFromPhrasing(cleanText);
 
@@ -873,6 +907,7 @@ export function parseSmartText(rawText) {
     notesHe: notesText,
     pickupLocation: effectivePickupLocation,
     pickupHours,
+    pickupPhone,
     lockerPin,
     isRedirected: redirectInfo.isRedirected || false,
     originalPickupLocation: redirectInfo.originalPickupLocation || undefined,

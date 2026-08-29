@@ -266,6 +266,12 @@ export const translations = {
       bannerDesc: 'The courier redirected this package to an alternate pickup point (due to locker capacity or store hours).',
       originalLocation: 'Original requested location:',
       redirectedNotice: 'Rerouted by courier'
+    },
+    phoneActions: {
+      callStore: 'Call Store',
+      callCourier: 'Call Courier',
+      callPickupPoint: 'Call Pickup Point',
+      phoneCopied: 'Phone number copied!'
     }
   },
   he: {
@@ -535,6 +541,12 @@ export const translations = {
       bannerDesc: 'חברת השילוח העבירה את החבילה לנקודה חלופית (עקב עומס בלוקר או שינוי תפעולי).',
       originalLocation: 'מיקום מקורי שבוקש:',
       redirectedNotice: 'הועבר ע״י חברת השילוח'
+    },
+    phoneActions: {
+      callStore: 'התקשר לחנות',
+      callCourier: 'התקשר לשליח',
+      callPickupPoint: 'התקשר לנקודת האיסוף',
+      phoneCopied: 'מספר הטלפון הועתק!'
     }
   }
 };

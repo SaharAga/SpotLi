@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, ExternalLink, Copy, Check, Calendar, MapPin, Plus, 
-  Truck, Clock, RefreshCw, Info, RotateCcw, Edit3, AlertCircle, ChevronDown, ChevronUp, Flag, Maximize2, Layers
+  Truck, Clock, RefreshCw, Info, RotateCcw, Edit3, AlertCircle, ChevronDown, ChevronUp, Flag, Maximize2, Layers, Phone
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { getCarrier } from '../types/carriers';
@@ -412,6 +412,17 @@ export function PackageDetailModal({
                     <ExternalLink className="w-4 h-4" />
                     {language === 'he' ? 'שתף בוואטסאפ' : 'Share Proxy'}
                   </a>
+
+                  {pkg.pickupPhone && (
+                    <a
+                      href={`tel:${pkg.pickupPhone}`}
+                      className="flex justify-center items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-800/40 hover:bg-emerald-700/50 text-emerald-200 hover:text-white text-xs font-bold transition-all min-h-[40px] border border-emerald-500/30"
+                      title={language === 'he' ? `התקשר: ${pkg.pickupPhone}` : `Call: ${pkg.pickupPhone}`}
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      <span>{t('phoneActions.callStore')}</span>
+                    </a>
+                  )}
                 </div>
               </div>
 

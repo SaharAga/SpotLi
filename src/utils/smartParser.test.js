@@ -276,4 +276,12 @@ describe('smartParser - parseSmartText', () => {
     expect(parsed.originalPickupLocation).toBe('Dizengoff Locker');
     expect(parsed.lockerPin).toBe('9912');
   });
+
+  it('extracts Israeli store phone number from pickup notice text', () => {
+    const text = 'החבילה מחכה בסניף סופר יודה בן יהודה 45. לבירורים טלפון: 03-5123456. שעות פעילות: 08:00-22:00';
+    const parsed = parseSmartText(text);
+
+    expect(parsed.pickupLocation).toBe('סופר יודה בן יהודה 45');
+    expect(parsed.pickupPhone).toBe('03-5123456');
+  });
 });

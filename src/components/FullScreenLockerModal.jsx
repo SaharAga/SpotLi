@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  X, Check, Copy, ExternalLink, MapPin, Sparkles, Navigation, Clock, CheckCircle2, ShieldCheck, Sun, Layers
+  X, Check, Copy, ExternalLink, MapPin, Sparkles, Navigation, Clock, CheckCircle2, ShieldCheck, Sun, Layers, Phone
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Modal } from './Modal';
@@ -363,6 +363,17 @@ export function FullScreenLockerModal({
             <span>{t('lockerMode.navigate')}</span>
           </button>
         </div>
+
+        {/* Optional Call Store Shortcut */}
+        {pkg.pickupPhone && (
+          <a
+            href={`tel:${pkg.pickupPhone}`}
+            className="w-full py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-300 font-bold text-xs border border-slate-800 transition-all flex items-center justify-center gap-2 min-h-[40px]"
+          >
+            <Phone className="w-3.5 h-3.5" />
+            <span>{t('phoneActions.callStore')} ({pkg.pickupPhone})</span>
+          </a>
+        )}
       </div>
     </Modal>
   );

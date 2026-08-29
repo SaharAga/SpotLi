@@ -42,6 +42,7 @@ export const packageSchema = z.object({
   pickupCode: z.string().max(50).optional().transform(s => (s ? sanitizeString(s, 50) : undefined)),
   pickupLocation: z.string().max(250).optional().transform(s => (s ? sanitizeString(s, 250) : undefined)),
   pickupHours: z.string().max(200).optional().transform(s => (s ? sanitizeString(s, 200) : undefined)),
+  pickupPhone: z.string().max(30).optional().transform(s => (s ? sanitizeString(s, 30) : undefined)),
   pickupDeadline: z.string().max(50).optional().transform(s => (s ? sanitizeString(s, 50) : undefined)),
   returnDeadline: z.string().max(50).optional().transform(s => (s ? sanitizeString(s, 50) : undefined)),
   returnNotes: z.string().max(500).optional().transform(s => (s ? sanitizeString(s, 500) : undefined)),

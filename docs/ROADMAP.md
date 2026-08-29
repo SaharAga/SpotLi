@@ -40,7 +40,7 @@ The authoritative end-state product vision and detailed Q&A specification is doc
 - [x] **TASK-603: Interactive Full-Screen Locker Mode** (Oversized high-contrast PIN keypad digits + screen wake lock + 1-tap collected + WhatsApp proxy).
 - [x] **TASK-604: Smart Same-Location Bundling & Proximity Alerts** (Banner: *"2 other packages waiting here!"* + 1-tap *"Mark All as Collected"*).
 - [x] **TASK-605: Pickup Location Redirect Detection** (Alert & auto-updating map/hours when courier redirects to alternate locker + original location note).
-- [ ] **TASK-606: Direct Shop Manager Call Button** (1-tap phone dialer on pickup card).
+- [x] **TASK-606: Direct Shop Manager Call Button** (1-tap phone dialer on pickup card).
 
 ---
 
