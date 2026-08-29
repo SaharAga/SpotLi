@@ -23,10 +23,19 @@ const TRACKING_KEYWORDS = [
   'דבר דואר',
   'חבילה מספר',
   'חבילתך במספר',
+  'חבילתך מ-',
+  'חבילתך מ',
+  'החבילה שלך',
   'חבילת',
   'חבילה',
   'משלוח',
+  'משלוח מספר',
   'מספר משלוח',
+  'מס׳',
+  'מס\'',
+  'מס',
+  'מספר',
+  'הזמנה',
   'ברקוד משלוח'
 ];
 
@@ -189,10 +198,10 @@ export function computeCandidateScore(candidate) {
 
   // 1. Format match & rule confidence
   if (candidate.formatMatch) {
-    score += candidate.highestConfidence === 'high' ? 0.45 : 0.25;
+    score += candidate.highestConfidence === 'high' ? 0.60 : 0.35;
   } else if (candidate.labelProximity >= 0.8) {
     // Explicitly labeled tracking candidate (e.g. "Tracking ID: XYZ")
-    score += 0.45;
+    score += 0.50;
   }
 
   // 2. Checksum validation
@@ -239,8 +248,19 @@ export function classifyConfidenceTier(score, candidate) {
     return score >= 0.65 ? 'probable' : (score >= 0.40 ? 'uncertain' : 'none');
   }
 
-  // Verified requires score >= 0.85 and no checksum failure
-  if (score >= 0.85 && candidate?.checksum !== 'fail' && candidate?.formatMatch) {
+  // Verified requires score >= 0.80 and no checksum failure
+  if (score >= 0.80 && candidate?.checksum !== 'fail' && candidate?.formatMatch) {
+    return 'verified';
+  }
+
+  // High-confidence carrier format with supporting context (label proximity, url match, or checksum pass)
+  if (
+    score >= 0.60 &&
+    candidate?.checksum !== 'fail' &&
+    candidate?.formatMatch &&
+    candidate?.highestConfidence === 'high' &&
+    (candidate.labelProximity > 0 || candidate.urlDomainMatch || candidate.checksum === 'pass')
+  ) {
     return 'verified';
   }
 

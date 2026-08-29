@@ -146,9 +146,7 @@ export function SmartImportModal({
   const runTextParse = useCallback(async (text) => {
     setReportedWrong(false);
     const regexResult = parseSmartText(text);
-    // The parser deliberately keeps its legacy trackingNumber field for
-    // callers outside this modal.  Smart Import is the creation boundary,
-    // and only its verified tier may be auto-filled without a user choice.
+
     if (regexResult && regexResult.trackingNumber && regexResult.candidateStatus === 'verified') {
       setParsed(regexResult);
       setParseSource('regex');
@@ -175,8 +173,7 @@ export function SmartImportModal({
         setParseSource('ai');
         setAiConfidence(aiResponse.data.confidence);
       } else {
-        // AI found nothing either (or is unavailable) — same no-match state
-        // as a pure regex miss; the user always has manual entry.
+        // AI found nothing either (or is unavailable) — fallback to deterministic result if available
         setParsed(regexResult?.candidateStatus === 'verified' ? regexResult : null);
         setParseSource('regex');
         setAiConfidence(null);
