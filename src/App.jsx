@@ -863,6 +863,7 @@ export function DashboardContent() {
             isOpen={isOpen && !!livePkg}
             onClose={() => closeModal(MODAL.DETAIL)}
             onEdit={(p) => openModal(MODAL.ADD_EDIT, { editPackage: p })}
+            onDelete={handleRequestDelete}
             onUpdatePackage={handleAddOrUpdatePackage}
             onStatusChange={handleStatusChange}
             onRefreshTracking={handleRefreshSinglePackage}

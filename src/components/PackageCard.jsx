@@ -75,10 +75,10 @@ function PackageCardImpl({
       const boundedOffset = Math.max(-120, Math.min(120, deltaX));
       setSwipeOffset(boundedOffset);
 
-      if (Math.abs(boundedOffset) >= 80 && !hapticTriggeredRef.current) {
+      if (Math.abs(boundedOffset) >= 50 && !hapticTriggeredRef.current) {
         triggerHapticFeedback(18);
         hapticTriggeredRef.current = true;
-      } else if (Math.abs(boundedOffset) < 80) {
+      } else if (Math.abs(boundedOffset) < 50) {
         hapticTriggeredRef.current = false;
       }
     }
@@ -87,11 +87,11 @@ function PackageCardImpl({
   const handleTouchEnd = () => {
     if (!isSwiping) return;
 
-    if (swipeOffset >= 80) {
+    if (swipeOffset >= 50) {
       // Swiped Right -> Toggle Archive
       onToggleArchive(pkg.id);
       triggerHapticFeedback([10, 50, 20]);
-    } else if (swipeOffset <= -80) {
+    } else if (swipeOffset <= -50) {
       // Swiped Left -> Delete
       onDelete(pkg.id);
       triggerHapticFeedback([20, 40, 30]);

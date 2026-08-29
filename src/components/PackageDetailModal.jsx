@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, ExternalLink, Copy, Check, Calendar, MapPin, Plus, 
-  Truck, Clock, RefreshCw, Info, RotateCcw, Edit3, AlertCircle, ChevronDown, ChevronUp, Flag, Maximize2, Layers, Phone
+  Truck, Clock, RefreshCw, Info, RotateCcw, Edit3, AlertCircle, ChevronDown, ChevronUp, Flag, Maximize2, Layers, Phone, Trash2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { getCarrier } from '../types/carriers';
@@ -27,6 +27,7 @@ export function PackageDetailModal({
   isOpen,
   onClose,
   onEdit,
+  onDelete,
   onUpdatePackage,
   onStatusChange,
   onRefreshTracking,
@@ -294,6 +295,21 @@ export function PackageDetailModal({
               >
                 <Edit3 className="w-4 h-4 text-blue-400" />
                 <span className="text-xs font-semibold">{language === 'he' ? 'עריכה' : 'Edit'}</span>
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={() => {
+                  onDelete(pkg.id);
+                  onClose();
+                }}
+                className="p-2.5 px-3.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 hover:text-rose-200 transition-all flex items-center gap-1.5 border border-rose-500/30 shadow-sm min-h-[44px] cursor-pointer"
+                title={language === 'he' ? 'מחיקת חבילה' : 'Delete package'}
+                aria-label={language === 'he' ? 'מחיקת חבילה' : 'Delete package'}
+              >
+                <Trash2 className="w-4 h-4 text-rose-400" />
+                <span className="text-xs font-semibold">{language === 'he' ? 'מחיקה' : 'Delete'}</span>
               </button>
             )}
             <button

@@ -488,16 +488,15 @@ describe('Delivery Service and Storage Persistence', () => {
       }
     });
 
-    it('blocks illegal backwards transitions from terminal delivered state', () => {
-      expect(canTransition('delivered', 'ordered')).toBe(false);
-      expect(canTransition('delivered', 'shipped')).toBe(false);
-      expect(canTransition('delivered', 'in_transit')).toBe(false);
-      expect(canTransition('delivered', 'customs')).toBe(false);
-      expect(canTransition('delivered', 'out_for_delivery')).toBe(false);
-      expect(canTransition('delivered', 'exception')).toBe(false);
+    it('allows transitions from delivered state back to active states and archive', () => {
+      expect(canTransition('delivered', 'ordered')).toBe(true);
+      expect(canTransition('delivered', 'shipped')).toBe(true);
+      expect(canTransition('delivered', 'in_transit')).toBe(true);
+      expect(canTransition('delivered', 'customs')).toBe(true);
+      expect(canTransition('delivered', 'out_for_delivery')).toBe(true);
+      expect(canTransition('delivered', 'exception')).toBe(true);
       expect(canTransition('delivered', 'archived')).toBe(true);
     });
-
 
     it('allows all active stages (ordered, shipped, in_transit, customs, exception) to transition directly to delivered and archived', () => {
       const activeStages = ['ordered', 'shipped', 'in_transit', 'customs', 'exception'];
@@ -562,7 +561,7 @@ describe('Delivery Service and Storage Persistence', () => {
       expect(result.package.checkpoints[0].id).toBe('cp-new-1');
     });
 
-    it('rejects invalid status transitions in updatePackageStatus', () => {
+    it('rejects invalid status transitions in updatePackageStatus for unknown states', () => {
       const initialPackages = [{
         id: 'pkg-delivered-1',
         title: 'Delivered Item',
@@ -575,7 +574,7 @@ describe('Delivery Service and Storage Persistence', () => {
       const result = deliveryService.updatePackageStatus(
         initialPackages,
         'pkg-delivered-1',
-        'in_transit'
+        'invalid_nonexistent_status'
       );
 
       expect(result.success).toBe(false);

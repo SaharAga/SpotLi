@@ -36,8 +36,8 @@ export const TRANSITION_MATRIX = Object.freeze({
   shipped: ['shipped', 'in_transit', 'customs', 'out_for_delivery', 'delivered', 'exception', 'archived'],
   in_transit: ['in_transit', 'customs', 'out_for_delivery', 'delivered', 'exception', 'archived'],
   customs: ['customs', 'in_transit', 'out_for_delivery', 'delivered', 'exception', 'archived'],
-  out_for_delivery: ['out_for_delivery', 'delivered', 'exception', 'archived'],
-  delivered: ['delivered', 'archived'],
+  out_for_delivery: ['out_for_delivery', 'delivered', 'in_transit', 'exception', 'archived'],
+  delivered: ['delivered', 'out_for_delivery', 'in_transit', 'ordered', 'shipped', 'customs', 'exception', 'archived'],
   exception: ['exception', 'in_transit', 'out_for_delivery', 'delivered', 'archived'],
   archived: ['archived', 'ordered', 'shipped', 'in_transit', 'customs', 'out_for_delivery', 'delivered', 'exception']
 });

@@ -267,4 +267,25 @@ describe('PackageDetailModal — Pickup Navigation Integration', () => {
 
     expect(onSelectPackage).toHaveBeenCalledWith(siblingPkg);
   });
+
+  it('triggers onDelete and closes when the header Delete button is clicked', async () => {
+    const user = userEvent.setup();
+    const onDelete = vi.fn();
+    const onClose = vi.fn();
+
+    renderWithLanguage(
+      <PackageDetailModal
+        isOpen={true}
+        pkg={mockPackageWithPickup}
+        onClose={onClose}
+        onDelete={onDelete}
+      />
+    );
+
+    const deleteBtn = screen.getByRole('button', { name: /Delete package|מחיקה/i });
+    await user.click(deleteBtn);
+
+    expect(onDelete).toHaveBeenCalledWith('pkg-nav-1');
+    expect(onClose).toHaveBeenCalled();
+  });
 });
