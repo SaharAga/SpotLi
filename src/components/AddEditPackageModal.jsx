@@ -258,6 +258,8 @@ export function AddEditPackageModal({
       pickupCode: pickupCode.trim(),
       pickupLocation: pickupLocation.trim(),
       pickupDeadline: pickupDeadline.trim(),
+      returnDeadline: returnDeadline.trim(),
+      returnNotes: returnNotes.trim(),
       isPinned: editPackage ? editPackage.isPinned : false,
       isArchived: editPackage ? editPackage.isArchived : false,
       checkpoints: editPackage?.checkpoints || [

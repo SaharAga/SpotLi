@@ -500,7 +500,6 @@ export function DashboardContent() {
 
   // Handlers
   const handleAddOrUpdatePackage = (pkgData) => {
-    let updated;
     // Check if updating by ID or matching duplicate tracking number
     let existingPkg = packages.find(p => p.id === pkgData.id);
     if (!existingPkg && pkgData.trackingNumber) {
@@ -510,18 +509,10 @@ export function DashboardContent() {
     const targetId = existingPkg ? existingPkg.id : (pkgData.id || `pkg-${Date.now()}`);
     const isNewlyDelivered = pkgData.status === "delivered" && existingPkg?.status !== "delivered";
 
+    let changedPkg;
     if (existingPkg) {
-      if (pkgData.status && pkgData.status !== existingPkg.status && !deliveryService.canTransition(existingPkg.status, pkgData.status)) {
-        showToast(
-          language === "he"
-            ? `מעבר לא חוקי מ-${existingPkg.status} אל ${pkgData.status}`
-            : `Invalid state transition from ${existingPkg.status} to ${pkgData.status}`,
-          "error"
-        );
-        return;
-      }
       // Merge/enrich existing package data while preserving existing ID and history
-      const mergedPkg = {
+      changedPkg = {
         ...existingPkg,
         ...pkgData,
         id: targetId,
@@ -529,21 +520,19 @@ export function DashboardContent() {
         userId: user?.id || existingPkg.userId,
         updatedAt: new Date().toISOString()
       };
-      updated = packages.map(p => (p.id === targetId ? mergedPkg : p));
+      commit({ type: MUTATION_TYPES.UPDATE, payload: changedPkg });
       showToast(language === "he" ? "החבילה עודכנה בהצלחה!" : "Package updated successfully!", "success");
     } else {
-      const newPkgWithUser = {
+      changedPkg = {
         ...pkgData,
         id: targetId,
         userId: user?.id || undefined,
         createdAt: pkgData.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
-      updated = [newPkgWithUser, ...packages];
+      commit({ type: MUTATION_TYPES.ADD, payload: changedPkg });
       showToast(language === "he" ? "החבילה נוספה למעקב!" : "New package added to tracking!", "success");
     }
-
-    commit({ type: MUTATION_TYPES.UPDATE, payload: changedPkg });
 
     setModalPayload(MODAL.DETAIL, (pkg) => (pkg?.id === targetId ? changedPkg : pkg));
 
@@ -553,8 +542,7 @@ export function DashboardContent() {
   };
 
   const handleDeletePackage = (id) => {
-    const updated = packages.filter(p => p.id !== id);
-    commit(updated, id);
+    commit({ type: MUTATION_TYPES.DELETE, payload: id });
     if (selectedDetailPackage?.id === id) {
       closeModal(MODAL.DETAIL);
     }
@@ -635,8 +623,7 @@ export function DashboardContent() {
     }
 
     if (res.success && res.updatedPackage) {
-      const updatedList = packagesRef.current.map(p => (p.id === pkg.id ? res.updatedPackage : p));
-      commit(updatedList, res.updatedPackage);
+      commit({ type: MUTATION_TYPES.UPDATE, payload: res.updatedPackage });
       setModalPayload(MODAL.DETAIL, (open) => (open?.id === pkg.id ? res.updatedPackage : open));
       showToast(t('tracking.refreshSuccessSingle'), 'success');
     } else if (res.rateLimited) {
