@@ -132,6 +132,42 @@ describe('AddEditPackageModal (rendered)', () => {
     expect(handleClose).toHaveBeenCalled();
   });
 
+  it('pre-fills pickup fields and status from smart import initialValues', async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn();
+    const initialValues = {
+      title: 'ASOS Order',
+      trackingNumber: 'HFD90481029',
+      carrierId: 'hfd',
+      status: 'ready_for_pickup',
+      pickupCode: '4892',
+      pickupLocation: 'Super Yuda Ben Yehuda 45',
+      pickupPhone: '03-5123456',
+      pickupHours: '08:00 - 22:00',
+      category: 'clothing'
+    };
+
+    renderWithLanguage(
+      <AddEditPackageModal isOpen onClose={vi.fn()} onSave={onSave} initialValues={initialValues} />
+    );
+
+    expect(screen.getByDisplayValue('ASOS Order')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('HFD90481029')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('4892')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Super Yuda Ben Yehuda 45')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /add to tracking/i }));
+
+    expect(onSave).toHaveBeenCalledTimes(1);
+    const saved = onSave.mock.calls[0][0];
+    expect(saved.trackingNumber).toBe('HFD90481029');
+    expect(saved.status).toBe('ready_for_pickup');
+    expect(saved.pickupCode).toBe('4892');
+    expect(saved.pickupLocation).toBe('Super Yuda Ben Yehuda 45');
+    expect(saved.pickupPhone).toBe('03-5123456');
+    expect(saved.pickupHours).toBe('08:00 - 22:00');
+  });
+
   it('renders nothing when isOpen is false', () => {
     const { container } = renderWithLanguage(
       <AddEditPackageModal isOpen={false} onClose={vi.fn()} onSave={vi.fn()} />

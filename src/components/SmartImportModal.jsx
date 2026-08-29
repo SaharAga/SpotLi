@@ -282,10 +282,18 @@ export function SmartImportModal({
         titleHe: parsed.titleHe,
         trackingNumber: parsed.trackingNumber,
         carrierId: parsed.carrier || 'other',
+        category: parsed.category || 'electronics',
+        status: parsed.status || 'ready_for_pickup',
         notes: parsed.notes,
         origin: parsed.origin || '',
         destination: parsed.destination || 'Israel',
         pickupLocation: parsed.pickupLocation || '',
+        pickupCode: parsed.lockerPin || parsed.pickupCode || '',
+        pickupHours: parsed.pickupHours || '',
+        pickupPhone: parsed.pickupPhone || '',
+        isRedirected: parsed.isRedirected || false,
+        originalPickupLocation: parsed.originalPickupLocation || '',
+        redirectReason: parsed.redirectReason || '',
         // Not part of the package schema — consumed by AddEditPackageModal
         // to know which fields were auto-filled and how confidently, so an
         // edit before saving can be logged as a correction signal.

@@ -43,6 +43,11 @@ export function AddEditPackageModal({
   const [status, setStatus] = useState('in_transit');
   const [pickupCode, setPickupCode] = useState('');
   const [pickupLocation, setPickupLocation] = useState('');
+  const [pickupHours, setPickupHours] = useState('');
+  const [pickupPhone, setPickupPhone] = useState('');
+  const [isRedirected, setIsRedirected] = useState(false);
+  const [originalPickupLocation, setOriginalPickupLocation] = useState('');
+  const [redirectReason, setRedirectReason] = useState('');
   const [pickupDeadline, setPickupDeadline] = useState('');
   const [returnDeadline, setReturnDeadline] = useState('');
   const [returnNotes, setReturnNotes] = useState('');
@@ -101,6 +106,11 @@ export function AddEditPackageModal({
       setStatus(editPackage.status || 'in_transit');
       setPickupCode(editPackage.pickupCode || '');
       setPickupLocation(editPackage.pickupLocation || '');
+      setPickupHours(editPackage.pickupHours || '');
+      setPickupPhone(editPackage.pickupPhone || '');
+      setIsRedirected(Boolean(editPackage.isRedirected));
+      setOriginalPickupLocation(editPackage.originalPickupLocation || '');
+      setRedirectReason(editPackage.redirectReason || '');
       setPickupDeadline(editPackage.pickupDeadline || '');
       setReturnDeadline(editPackage.returnDeadline || '');
       setReturnNotes(editPackage.returnNotes || '');
@@ -112,12 +122,21 @@ export function AddEditPackageModal({
       const origin = initialValues.origin || '';
       const destination = initialValues.destination || 'Tel Aviv, Israel';
       const notes = initialValues.notes || '';
+      const status = initialValues.status || 'in_transit';
+      const category = initialValues.category || 'electronics';
+      const pickupLocation = initialValues.pickupLocation || '';
+      const pickupCode = initialValues.pickupCode || initialValues.lockerPin || '';
+      const pickupHours = initialValues.pickupHours || '';
+      const pickupPhone = initialValues.pickupPhone || '';
+      const isRedirected = initialValues.isRedirected || false;
+      const originalPickupLocation = initialValues.originalPickupLocation || '';
+      const redirectReason = initialValues.redirectReason || '';
 
       setTitle(title);
       setTrackingNumber(trackingNumber);
       setCarrier(carrier);
       setIsManualCarrier(false);
-      setCategory('electronics');
+      setCategory(category);
       setOrderDate(new Date().toISOString().slice(0, 10));
       // Default expected date 14 days ahead
       const nextDate = new Date();
@@ -126,7 +145,14 @@ export function AddEditPackageModal({
       setOrigin(origin);
       setDestination(destination);
       setNotes(notes);
-      setStatus('in_transit');
+      setStatus(status);
+      setPickupCode(pickupCode);
+      setPickupLocation(pickupLocation);
+      setPickupHours(pickupHours);
+      setPickupPhone(pickupPhone);
+      setIsRedirected(isRedirected);
+      setOriginalPickupLocation(originalPickupLocation);
+      setRedirectReason(redirectReason);
 
       // Only Smart Import (regex or AI) prefills carry _autoFillSource —
       // manual "new package" has no initialValues.carrierId either, so this
@@ -156,7 +182,14 @@ export function AddEditPackageModal({
       setStatus('in_transit');
       setPickupCode('');
       setPickupLocation('');
+      setPickupHours('');
+      setPickupPhone('');
+      setIsRedirected(false);
+      setOriginalPickupLocation('');
+      setRedirectReason('');
       setPickupDeadline('');
+      setReturnDeadline('');
+      setReturnNotes('');
       autoFillSnapshotRef.current = null;
     }
   }, [editPackage, initialValues, isOpen]);
@@ -257,6 +290,11 @@ export function AddEditPackageModal({
       status: status,
       pickupCode: pickupCode.trim(),
       pickupLocation: pickupLocation.trim(),
+      pickupHours: pickupHours.trim(),
+      pickupPhone: pickupPhone.trim(),
+      isRedirected: Boolean(isRedirected),
+      originalPickupLocation: originalPickupLocation.trim(),
+      redirectReason: redirectReason.trim(),
       pickupDeadline: pickupDeadline.trim(),
       returnDeadline: returnDeadline.trim(),
       returnNotes: returnNotes.trim(),
