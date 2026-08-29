@@ -178,5 +178,20 @@ describe('inboundEmailHandler Unit Tests', () => {
       expect(savedDoc.source).toBe('email_forwarding');
     });
 
+    it('acknowledges but does not persist a probable candidate', async () => {
+      const set = vi.fn();
+      const db = { collection: vi.fn(() => ({ doc: vi.fn(() => ({ collection: vi.fn(), set })) })) };
+      const handler = createInboundEmailHandler({ db });
+      const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+
+      await handler({ method: 'POST', body: {
+        to: 'usr_user123@in.deliveree.app', subject: 'Update', text: '1Z999AA10123456784'
+      } }, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ ok: false }));
+      expect(set).not.toHaveBeenCalled();
+    });
+
   });
 });

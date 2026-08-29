@@ -222,6 +222,13 @@ describe('smartParser - parseSmartText', () => {
     expect(parsed.carrier).toBe('israel-post');
   });
 
+  it('exposes a scored candidate tier without changing the legacy tracking field', () => {
+    const parsed = parseSmartText('Tracking: RR000000005IL');
+    expect(parsed.trackingNumber).toBe('RR000000005IL');
+    expect(parsed.candidateStatus).toBe('verified');
+    expect(parsed.candidates[0]).toMatchObject({ id: 'cand_1', value: 'RR000000005IL', status: 'verified' });
+  });
+
   it('parses Israel Post URL SMS with pickup location', () => {
     const text = 'שלום, דבר דואר שמספרו RS948219481IL נמסר לחלוקה בסניף דיזנגוף סנטר. למעקב: https://mypost.israelpost.co.il/itemtrace?itemcode=RS948219481IL';
     const parsed = parseSmartText(text);
@@ -249,4 +256,3 @@ describe('smartParser - parseSmartText', () => {
     expect(parsed.pickupLocation).toBe('');
   });
 });
-

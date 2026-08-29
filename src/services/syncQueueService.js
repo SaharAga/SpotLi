@@ -16,6 +16,30 @@ export const MUTATION_TYPES = Object.freeze({
   DELETE: 'DELETE',
   STATUS_CHANGE: 'STATUS_CHANGE'
 });
+const VALID_MUTATION_TYPES = new Set(Object.values(MUTATION_TYPES));
+
+function targetIdForIntent(type, payload) {
+  return type === MUTATION_TYPES.STATUS_CHANGE ? payload?.packageId : payload?.id;
+}
+
+function validateIntent(intent) {
+  if (!intent || typeof intent !== 'object' || Array.isArray(intent)) {
+    throw new Error('Invalid mutation intent');
+  }
+  if (!VALID_MUTATION_TYPES.has(intent.type)) {
+    throw new Error(`Invalid mutation type: ${String(intent.type)}`);
+  }
+  if (!intent.payload || typeof intent.payload !== 'object' || Array.isArray(intent.payload)) {
+    throw new Error('Mutation payload must be an object');
+  }
+  if (typeof intent.userId !== 'string' || intent.userId.trim() === '') {
+    throw new Error('Mutation userId must be a non-empty string');
+  }
+  const targetId = targetIdForIntent(intent.type, intent.payload);
+  if (typeof targetId !== 'string' || targetId.trim() === '') {
+    throw new Error('Mutation target id must be a non-empty string');
+  }
+}
 
 /**
  * Creates a unique cryptographically random idempotency token.
@@ -111,34 +135,53 @@ export class SyncQueueService {
    * @returns {object} The queued mutation record
    */
   enqueue(type, payload, userId = null) {
-    if (!MUTATION_TYPES[type]) {
-      throw new Error(`Invalid mutation type: ${type}`);
+    return this.enqueueBatch([{ type, payload, userId }])[0];
+  }
+
+  /**
+   * Atomically persists several mutations before starting one replay. This is
+   * required for bulk imports: starting replay after each item can snapshot a
+   * partial queue and leave later items waiting for another online event.
+   *
+   * @param {Array<{type: string, payload: object, userId?: string|null}>} intents
+   * @returns {Array<object>} queued mutation records
+   */
+  enqueueBatch(intents) {
+    if (!Array.isArray(intents)) throw new Error('enqueueBatch requires an array');
+    for (const intent of intents) {
+      validateIntent(intent);
     }
+    if (intents.length === 0) return [];
 
-    const mutation = {
-      id: generateIdempotencyKey(),
-      type,
-      payload,
-      userId,
-      timestamp: new Date().toISOString(),
-      retryCount: 0
-    };
-
-    const currentQueue = this.getQueue();
-    // Avoid exact duplicate payloads if already enqueued
-    const deduplicated = currentQueue.filter(
-      (m) => !(m.type === type && m.payload?.id === payload?.id && m.type !== MUTATION_TYPES.STATUS_CHANGE)
-    );
-
-    deduplicated.push(mutation);
-    this.saveQueue(deduplicated);
-
-    // If online, immediately attempt replay
-    if (this.isOnline && !this.isReplaying) {
-      this.replayQueue();
+    const dedupeKey = (type, payload, userId) => `${String(userId ?? '').trim()}:${type}:${targetIdForIntent(type, payload)}`;
+    const latestIntentIndex = new Map();
+    intents.forEach((intent, index) => {
+      if (intent.type !== MUTATION_TYPES.STATUS_CHANGE) {
+        latestIntentIndex.set(dedupeKey(intent.type, intent.payload, intent.userId), index);
+      }
+    });
+    const dedupeKeys = new Set(latestIntentIndex.keys());
+    let queue = this.getQueue().filter((existing) => (
+      existing.type === MUTATION_TYPES.STATUS_CHANGE ||
+      !dedupeKeys.has(dedupeKey(existing.type, existing.payload, existing.userId))
+    ));
+    const mutations = [];
+    for (const [index, { type, payload, userId = null }] of intents.entries()) {
+      if (type !== MUTATION_TYPES.STATUS_CHANGE && latestIntentIndex.get(dedupeKey(type, payload, userId)) !== index) continue;
+      const mutation = {
+        id: generateIdempotencyKey(),
+        type,
+        payload,
+        userId,
+        timestamp: new Date().toISOString(),
+        retryCount: 0
+      };
+      queue.push(mutation);
+      mutations.push(mutation);
     }
-
-    return mutation;
+    this.saveQueue(queue);
+    if (this.isOnline && !this.isReplaying) this.replayQueue();
+    return mutations;
   }
 
   /**
@@ -299,9 +342,11 @@ export class SyncQueueService {
    *
    * @returns {Promise<{ processed: number, failed: number, remaining: number }>}
    */
-  async replayQueue() {
+  async replayQueue(replayIds = null) {
     if (this.isReplaying) return { processed: 0, failed: 0, remaining: this.getQueue().length };
-    const queue = this.getQueue();
+    const queueAtStart = this.getQueue();
+    const initialIds = new Set(queueAtStart.map((mutation) => mutation.id));
+    const queue = queueAtStart.filter((mutation) => !replayIds || replayIds.has(mutation.id));
     if (queue.length === 0) return { processed: 0, failed: 0, remaining: 0 };
 
     this.isReplaying = true;
@@ -359,23 +404,42 @@ export class SyncQueueService {
         } catch (err) {
           console.warn(`[SyncQueueService] Failed to replay mutation ${mutation.id}:`, err);
           mutation.retryCount = (mutation.retryCount || 0) + 1;
+          failed++;
           if (mutation.retryCount < MAX_RETRY_COUNT) {
             retriedMutations.set(mutation.id, mutation);
+            // A retryable predecessor remains authoritative for this target.
+            // Do not let a later ADD/UPDATE/DELETE in the same chain overtake
+            // it during this pass; unrelated chains still run concurrently.
+            break;
           } else {
             this.moveToDeadLetter(mutation, err);
             settledIds.add(mutation.id);
           }
-          failed++;
         }
       }
     }));
 
-    const remainingQueue = this.getQueue()
+    const liveQueue = this.getQueue();
+    const remainingQueue = liveQueue
       .filter((m) => !settledIds.has(m.id))
       .map((m) => retriedMutations.get(m.id) || m);
 
     this.saveQueue(remainingQueue);
     this.isReplaying = false;
+
+    const retainedPredecessorChains = new Set(remainingQueue
+      .filter((mutation) => initialIds.has(mutation.id))
+      .map((mutation) => SyncQueueService.orderingKey(mutation)));
+    const newIds = new Set(liveQueue
+      .filter((mutation) => !initialIds.has(mutation.id))
+      .filter((mutation) => !retainedPredecessorChains.has(SyncQueueService.orderingKey(mutation)))
+      .map((mutation) => mutation.id));
+    if (this.isOnline && newIds.size > 0) {
+      // Defer to a microtask so this is a new pass, never recursive stack
+      // growth. Restricting it to new ids preserves retry cadence for failed
+      // mutations from the pass that just completed.
+      void Promise.resolve().then(() => this.replayQueue(newIds));
+    }
 
     return {
       processed,

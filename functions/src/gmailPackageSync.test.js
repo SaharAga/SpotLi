@@ -57,14 +57,14 @@ describe('extractSubjectAndBodyFromGmailMessage', () => {
 
 describe('buildPackageFromGmailMessage', () => {
   it('builds a package when a tracking number is found and not a duplicate', () => {
-    const msg = makeGmailMessage({ subject: 'Your order shipped', text: 'Tracking: RR123456789IL' });
+    const msg = makeGmailMessage({ subject: 'Your order shipped', text: 'Tracking: RR000000005IL' });
     const pkg = buildPackageFromGmailMessage({
       gmailMessage: msg,
       userId: 'uid1',
       existingTrackingNumbers: new Set()
     });
     expect(pkg).not.toBeNull();
-    expect(pkg.trackingNumber).toBe('RR123456789IL');
+    expect(pkg.trackingNumber).toBe('RR000000005IL');
     expect(pkg.userId).toBe('uid1');
     expect(pkg.source).toBe('gmail_sync');
   });
@@ -74,6 +74,13 @@ describe('buildPackageFromGmailMessage', () => {
     expect(
       buildPackageFromGmailMessage({ gmailMessage: msg, userId: 'uid1', existingTrackingNumbers: new Set() })
     ).toBeNull();
+  });
+
+  it('returns null for a probable candidate because Gmail sync has no confirmation step', () => {
+    const msg = makeGmailMessage({ subject: 'Update', text: '1Z999AA10123456784' });
+    expect(buildPackageFromGmailMessage({
+      gmailMessage: msg, userId: 'uid1', existingTrackingNumbers: new Set()
+    })).toBeNull();
   });
 
   it('returns null when tracking number is a duplicate', () => {

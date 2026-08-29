@@ -68,6 +68,28 @@ describe('SyncQueueService Unit Tests', () => {
     upsertSpy.mockRestore();
   });
 
+  it('atomically queues and drains every online bulk intent in one replay', async () => {
+    const upsertSpy = vi.spyOn(cloudAdapter, 'upsertPackageRemote').mockResolvedValue(undefined);
+    const deleteSpy = vi.spyOn(cloudAdapter, 'deletePackageRemote').mockResolvedValue(undefined);
+    const replaySpy = vi.spyOn(syncQueue, 'replayQueue');
+    syncQueue.isOnline = true;
+
+    syncQueue.enqueueBatch([
+      { type: MUTATION_TYPES.ADD, payload: { id: 'bulk-add', title: 'Add' }, userId: 'bulk-user' },
+      { type: MUTATION_TYPES.UPDATE, payload: { id: 'bulk-update', title: 'Update' }, userId: 'bulk-user' },
+      { type: MUTATION_TYPES.DELETE, payload: { id: 'bulk-delete' }, userId: 'bulk-user' }
+    ]);
+
+    await vi.waitFor(() => expect(syncQueue.getQueue()).toEqual([]));
+    expect(replaySpy).toHaveBeenCalledTimes(1);
+    expect(upsertSpy).toHaveBeenCalledTimes(2);
+    expect(deleteSpy).toHaveBeenCalledWith('bulk-delete', 'bulk-user');
+
+    replaySpy.mockRestore();
+    upsertSpy.mockRestore();
+    deleteSpy.mockRestore();
+  });
+
   it('preserves a mutation enqueued while another replay is still in flight, instead of wiping it (regression: concurrent-enqueue race)', async () => {
     // Control exactly when the first mutation's remote write resolves, so we can enqueue a
     // second mutation while replayQueue() is still awaiting the first one — reproducing the
@@ -97,12 +119,79 @@ describe('SyncQueueService Unit Tests', () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    // Mutation B must still be present — either already replayed too, or still queued —
-    // never silently dropped by A's replay pass overwriting storage with a stale snapshot.
-    const stillPresent = syncQueue.getQueue().some((m) => m.payload.id === 'pkg-race-b');
-    const wasReplayed = upsertSpy.mock.calls.some((call) => call[0]?.id === 'pkg-race-b');
-    expect(stillPresent || wasReplayed).toBe(true);
+    await vi.waitFor(() => expect(syncQueue.getQueue()).toEqual([]));
+    expect(upsertSpy.mock.calls.some((call) => call[0]?.id === 'pkg-race-b')).toBe(true);
 
+    upsertSpy.mockRestore();
+  });
+
+  it('does not overtake a failed mutation with a same-package arrival during replay', async () => {
+    let rejectDelete;
+    const pendingDelete = new Promise((_, reject) => { rejectDelete = reject; });
+    const deleteSpy = vi.spyOn(cloudAdapter, 'deletePackageRemote').mockImplementation(() => pendingDelete);
+    const upsertSpy = vi.spyOn(cloudAdapter, 'upsertPackageRemote').mockResolvedValue(undefined);
+    syncQueue.isOnline = true;
+
+    syncQueue.enqueue(MUTATION_TYPES.DELETE, { id: 'fifo-package' }, 'fifo-user');
+    syncQueue.enqueue(MUTATION_TYPES.ADD, { id: 'fifo-package', title: 'Replacement' }, 'fifo-user');
+    rejectDelete(new Error('temporary delete failure'));
+
+    await vi.waitFor(() => expect(syncQueue.getQueue()).toHaveLength(2));
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(deleteSpy).toHaveBeenCalledTimes(1);
+    expect(upsertSpy).not.toHaveBeenCalled();
+    expect(syncQueue.getQueue().map((mutation) => mutation.type)).toEqual([
+      MUTATION_TYPES.DELETE,
+      MUTATION_TYPES.ADD
+    ]);
+
+    deleteSpy.mockRestore();
+    upsertSpy.mockRestore();
+  });
+
+  it('retains pre-existing same-package successors behind a retryable failed predecessor', async () => {
+    const deleteSpy = vi.spyOn(cloudAdapter, 'deletePackageRemote').mockRejectedValue(new Error('temporary delete failure'));
+    const upsertSpy = vi.spyOn(cloudAdapter, 'upsertPackageRemote').mockResolvedValue(undefined);
+    syncQueue.isOnline = false;
+    syncQueue.enqueue(MUTATION_TYPES.DELETE, { id: 'backlog-package' }, 'backlog-user');
+    syncQueue.enqueue(MUTATION_TYPES.ADD, { id: 'backlog-package', title: 'Successor' }, 'backlog-user');
+
+    syncQueue.isOnline = true;
+    const result = await syncQueue.replayQueue();
+    expect(result.failed).toBe(1);
+    expect(upsertSpy).not.toHaveBeenCalled();
+    expect(syncQueue.getQueue().map((mutation) => mutation.type)).toEqual([
+      MUTATION_TYPES.DELETE,
+      MUTATION_TYPES.ADD
+    ]);
+
+    deleteSpy.mockRestore();
+    upsertSpy.mockRestore();
+  });
+
+  it('allows a same-package successor after its predecessor reaches the dead letter queue', async () => {
+    const deleteSpy = vi.spyOn(cloudAdapter, 'deletePackageRemote').mockRejectedValue(new Error('permanent delete failure'));
+    const upsertSpy = vi.spyOn(cloudAdapter, 'upsertPackageRemote').mockResolvedValue(undefined);
+    syncQueue.saveQueue([
+      {
+        id: 'terminal-delete', type: MUTATION_TYPES.DELETE, payload: { id: 'terminal-package' },
+        userId: 'terminal-user', retryCount: MAX_RETRY_COUNT - 1
+      },
+      {
+        id: 'terminal-add', type: MUTATION_TYPES.ADD, payload: { id: 'terminal-package', title: 'Successor' },
+        userId: 'terminal-user', retryCount: 0
+      }
+    ]);
+    syncQueue.isOnline = true;
+
+    const result = await syncQueue.replayQueue();
+    expect(result.failed).toBe(1);
+    expect(upsertSpy).toHaveBeenCalledWith({ id: 'terminal-package', title: 'Successor' }, 'terminal-user');
+    expect(syncQueue.getQueue()).toEqual([]);
+    expect(syncQueue.getDeadLetterQueue()).toEqual([expect.objectContaining({ id: 'terminal-delete' })]);
+
+    deleteSpy.mockRestore();
     upsertSpy.mockRestore();
   });
 
@@ -129,10 +218,38 @@ describe('SyncQueueService Unit Tests', () => {
   it('deduplicates identical unplayed mutations for same package', () => {
     const pkg = { id: 'pkg-dup', title: 'Dup' };
     syncQueue.isOnline = false;
-    syncQueue.enqueue(MUTATION_TYPES.ADD, pkg);
-    syncQueue.enqueue(MUTATION_TYPES.ADD, pkg);
+    syncQueue.enqueue(MUTATION_TYPES.ADD, pkg, 'user-dup');
+    syncQueue.enqueue(MUTATION_TYPES.ADD, pkg, 'user-dup');
 
     expect(syncQueue.getQueue().length).toBe(1);
+  });
+
+  it('retains identical package ids for different users and replays both', async () => {
+    const upsertSpy = vi.spyOn(cloudAdapter, 'upsertPackageRemote').mockResolvedValue(undefined);
+    const pkg = { id: 'shared-id', title: 'Shared' };
+    syncQueue.isOnline = false;
+    syncQueue.enqueue(MUTATION_TYPES.ADD, pkg, 'user-a');
+    syncQueue.enqueue(MUTATION_TYPES.ADD, pkg, 'user-b');
+    expect(syncQueue.getQueue()).toHaveLength(2);
+
+    syncQueue.isOnline = true;
+    await syncQueue.replayQueue();
+    expect(upsertSpy).toHaveBeenCalledWith(pkg, 'user-a');
+    expect(upsertSpy).toHaveBeenCalledWith(pkg, 'user-b');
+    expect(syncQueue.getQueue()).toEqual([]);
+    upsertSpy.mockRestore();
+  });
+
+  it('rejects inherited, malformed, and unscoped mutation intents before persisting', () => {
+    const valid = { type: MUTATION_TYPES.ADD, payload: { id: 'valid' }, userId: 'user-valid' };
+    expect(() => syncQueue.enqueueBatch([{ ...valid, type: 'constructor' }])).toThrow(/invalid mutation type/i);
+    expect(() => syncQueue.enqueueBatch([{ ...valid, type: '__proto__' }])).toThrow(/invalid mutation type/i);
+    expect(() => syncQueue.enqueueBatch([null])).toThrow(/invalid mutation intent/i);
+    expect(() => syncQueue.enqueueBatch([{ ...valid, payload: 'bad' }])).toThrow(/payload/i);
+    expect(() => syncQueue.enqueueBatch([{ ...valid, userId: '  ' }])).toThrow(/userId/i);
+    expect(() => syncQueue.enqueueBatch([{ ...valid, payload: {} }])).toThrow(/target id/i);
+    expect(() => syncQueue.enqueueBatch([{ type: MUTATION_TYPES.STATUS_CHANGE, payload: { packageId: '' }, userId: 'user-valid' }])).toThrow(/target id/i);
+    expect(syncQueue.getQueue()).toEqual([]);
   });
 
   describe('Dead-Letter Queue (SYNC-06)', () => {

@@ -2,6 +2,7 @@ import { detectCarrier, sanitizeTrackingNumber } from './carrierDetector.js';
 import { detectStore } from './storeDetector.js';
 import { getCarrier } from '../types/carriers.js';
 import { sanitizeString } from './packageValidator.js';
+import { extractAndScoreCandidates, classifyConfidenceTier } from './candidateScorer.js';
 
 /** Known shortened domains used by Israeli & Global logistics providers and SMS gateways */
 export const SHORT_DOMAINS = [
@@ -682,6 +683,10 @@ export function parseSmartText(rawText) {
 
   const cleanText = sanitizeString(rawText, 5000);
   const candidates = extractTrackingCandidates(cleanText);
+  const scoredCandidates = extractAndScoreCandidates(cleanText).map((candidate) => ({
+    ...candidate,
+    status: classifyConfidenceTier(candidate.score, candidate)
+  }));
   const urlExtracted = extractUrlsAndTrackings(cleanText);
   const pickupLocation = extractPickupLocation(cleanText);
   const lockerPin = extractLockerPin(cleanText);
@@ -793,6 +798,11 @@ export function parseSmartText(rawText) {
     status = 'in_transit';
   }
 
+  const selectedCandidate = scoredCandidates.find((candidate) => candidate.value === bestTracking)
+    || scoredCandidates[0]
+    || null;
+  const candidateStatus = selectedCandidate?.status || (bestTracking ? 'uncertain' : 'none');
+
   return {
     title,
     titleHe,
@@ -809,6 +819,11 @@ export function parseSmartText(rawText) {
     lockerPin,
     store: detectedStore,
     storeHe: detectedStoreHe,
-    storeInfo
+    storeInfo,
+    // Additive metadata for callers that need an accuracy-aware decision.
+    // `trackingNumber` remains for backwards compatibility; Smart Import
+    // gates unattended auto-fill on `candidateStatus` below.
+    candidateStatus,
+    candidates: scoredCandidates
   };
 }

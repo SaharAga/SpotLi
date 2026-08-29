@@ -84,9 +84,11 @@ export function buildPackageFromGmailMessage({
   skipDelivered = false
 }) {
   const { subject, body, from } = extractSubjectAndBodyFromGmailMessage(gmailMessage);
-  const { trackingNumber, carrier, title, store } = extractTrackingDetails(subject, body, from);
+  const { trackingNumber, carrier, title, store, status: detectionStatus } = extractTrackingDetails(subject, body, from);
 
-  if (!trackingNumber) return null;
+  // Gmail sync runs without a confirmation screen, so never create a package
+  // from a merely probable/uncertain candidate.
+  if (!trackingNumber || detectionStatus !== 'verified') return null;
   if (isDuplicateTrackingNumber(existingTrackingNumbers, trackingNumber)) return null;
   if (skipDelivered && looksAlreadyDelivered(subject, body)) return null;
 

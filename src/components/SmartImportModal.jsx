@@ -17,7 +17,7 @@ import { Modal } from './Modal';
  * returns, so the rest of this component (and AddEditPackageModal
  * downstream) never needs to know which path produced a result.
  */
-function mapAiResultToParsed(aiResult) {
+function mapAiResultToParsed(aiResult, isGroundedCandidate = false) {
   const carrierObj = getCarrier(aiResult.carrier);
   const title = aiResult.title || (aiResult.trackingNumber ? `Package ${aiResult.trackingNumber.slice(0, 8)}...` : '');
   return {
@@ -31,8 +31,13 @@ function mapAiResultToParsed(aiResult) {
     destination: 'Israel',
     notes: aiResult.notes || '',
     notesHe: aiResult.notes || '',
-    pickupLocation: aiResult.pickupLocation || ''
+    pickupLocation: aiResult.pickupLocation || '',
+    isGroundedCandidate
   };
+}
+
+function verifiedParserResult(result) {
+  return result?.trackingNumber && result.candidateStatus === 'verified' ? result : null;
 }
 
 export function SmartImportModal({
@@ -48,7 +53,7 @@ export function SmartImportModal({
   const [rawText, setRawText] = useState(initialText || '');
   const [parsed, setParsed] = useState(() => {
     if (initialText && initialText.trim()) {
-      return parseSmartText(initialText.trim());
+      return verifiedParserResult(parseSmartText(initialText.trim()));
     }
     return null;
   });
@@ -82,7 +87,7 @@ export function SmartImportModal({
       setRawText(trimmed);
       const result = parseSmartText(trimmed);
       if (result) {
-        setParsed(result);
+        setParsed(verifiedParserResult(result));
         setParseSource('regex');
         setHasSearched(true);
       }
@@ -115,7 +120,7 @@ export function SmartImportModal({
           setRawText(trimmed);
           const result = parseSmartText(trimmed);
           if (result && result.trackingNumber) {
-            setParsed(result);
+            setParsed(verifiedParserResult(result));
             setParseSource('regex');
             setHasSearched(true);
           }
@@ -141,7 +146,10 @@ export function SmartImportModal({
   const runTextParse = useCallback(async (text) => {
     setReportedWrong(false);
     const regexResult = parseSmartText(text);
-    if (regexResult && regexResult.trackingNumber) {
+    // The parser deliberately keeps its legacy trackingNumber field for
+    // callers outside this modal.  Smart Import is the creation boundary,
+    // and only its verified tier may be auto-filled without a user choice.
+    if (regexResult && regexResult.trackingNumber && regexResult.candidateStatus === 'verified') {
       setParsed(regexResult);
       setParseSource('regex');
       setAiConfidence(null);
@@ -151,15 +159,23 @@ export function SmartImportModal({
 
     setIsAiParsing(true);
     try {
-      const aiResponse = await parseWithAi({ mode: 'text-fallback', text });
+      const aiResponse = await parseWithAi({
+        mode: 'text-fallback',
+        text,
+        // Gemini receives identifiers for deterministic candidates, never an
+        // instruction to manufacture a tracking number from raw prose.
+        candidates: regexResult?.candidates || []
+      });
       if (aiResponse.success && aiResponse.data?.trackingNumber && aiResponse.data.confidence !== 'none') {
-        setParsed(mapAiResultToParsed(aiResponse.data));
+        const isGroundedCandidate = (regexResult?.candidates || [])
+          .some((candidate) => candidate.value === aiResponse.data.trackingNumber);
+        setParsed(mapAiResultToParsed(aiResponse.data, isGroundedCandidate));
         setParseSource('ai');
         setAiConfidence(aiResponse.data.confidence);
       } else {
         // AI found nothing either (or is unavailable) — same no-match state
         // as a pure regex miss; the user always has manual entry.
-        setParsed(regexResult);
+        setParsed(regexResult?.candidateStatus === 'verified' ? regexResult : null);
         setParseSource('regex');
         setAiConfidence(null);
       }
@@ -180,9 +196,12 @@ export function SmartImportModal({
 
       setIsAiParsing(true);
       try {
-        const aiResponse = await parseWithAi({ mode: 'image', imageBase64: result.dataUrl });
+        // There is no deterministic OCR candidate list for screenshots yet;
+        // the server deliberately abstains rather than letting a model invent
+        // a tracking number from image pixels.
+        const aiResponse = await parseWithAi({ mode: 'image', imageBase64: result.dataUrl, candidates: [] });
         if (aiResponse.success && aiResponse.data?.trackingNumber && aiResponse.data.confidence !== 'none') {
-          setParsed(mapAiResultToParsed(aiResponse.data));
+          setParsed(mapAiResultToParsed(aiResponse.data, false));
           setParseSource('ai');
           setAiConfidence(aiResponse.data.confidence);
         } else {
@@ -254,7 +273,11 @@ export function SmartImportModal({
   };
 
   const handleApply = () => {
-    if (parsed && parsed.trackingNumber) {
+    const canApply = parsed?.trackingNumber && (
+      (parseSource === 'regex' && parsed.candidateStatus === 'verified') ||
+      (parseSource === 'ai' && parsed.isGroundedCandidate === true && aiConfidence && aiConfidence !== 'none')
+    );
+    if (canApply) {
       onParsedResult({
         title: parsed.title,
         titleHe: parsed.titleHe,
@@ -320,7 +343,7 @@ export function SmartImportModal({
   const sampleSMS = [
     {
       label: language === 'he' ? 'דוגמת SMS מדואר ישראל' : 'Israel Post SMS Example',
-      text: 'שלום, דבר דואר שמספרו RS948219481IL נמסר לחלוקה ביחידת הדואר דיזנגוף סנטר. שעות פתיחה: 08:00-19:00.'
+      text: 'שלום, דבר דואר שמספרו RS948219483IL נמסר לחלוקה ביחידת הדואר דיזנגוף סנטר. שעות פתיחה: 08:00-19:00.'
     },
     {
       label: language === 'he' ? 'דוגמת הודעת AliExpress / קאיניאו' : 'AliExpress / Cainiao Example',
@@ -337,6 +360,10 @@ export function SmartImportModal({
 
   const detectedCarrierObj = parsed ? getCarrier(parsed.carrier) : null;
   const showLowConfidenceHint = parseSource === 'ai' && (aiConfidence === 'low' || aiConfidence === 'medium');
+  const canApplyParsed = parsed?.trackingNumber && (
+    (parseSource === 'regex' && parsed.candidateStatus === 'verified') ||
+    (parseSource === 'ai' && parsed.isGroundedCandidate === true && aiConfidence && aiConfidence !== 'none')
+  );
 
   return (
     <Modal
@@ -589,6 +616,7 @@ export function SmartImportModal({
                     <button
                       type="button"
                       onClick={handleApply}
+                      disabled={!canApplyParsed}
                       className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/20 transition-all cursor-pointer min-h-[48px]"
                     >
                       <span>{language === 'he' ? 'המשך להוספת חבילה זו למעקב' : 'Add this Package to Tracker'}</span>

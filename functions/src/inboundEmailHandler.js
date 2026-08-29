@@ -83,13 +83,16 @@ export function createInboundEmailHandler({ db }) {
         return;
       }
 
-      const { trackingNumber, carrier, title } = extractTrackingDetails(subject, cleanText);
+      const { trackingNumber, carrier, title, status: detectionStatus } = extractTrackingDetails(subject, cleanText);
 
-      if (!trackingNumber) {
+      // Forwarded email is an unattended ingestion path.  A plausible token
+      // is not enough to create persistent package data: only the extractor's
+      // strongest, deterministic tier may cross this boundary.
+      if (!trackingNumber || detectionStatus !== 'verified') {
         // Return 200 to acknowledge webhook receipt so provider doesn't re-deliver in a retry loop
         res.status(200).json({
           ok: false,
-          message: 'No tracking number recognized in email content'
+          message: 'No verified tracking number recognized in email content'
         });
         return;
       }

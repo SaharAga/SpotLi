@@ -50,15 +50,17 @@ function packagesEqual(left, right) {
 function enqueueBulkDelta(previous, next, userId) {
   const previousById = new Map(previous.map((pkg) => [pkg.id, pkg]));
   const nextById = new Map(next.map((pkg) => [pkg.id, pkg]));
+  const intents = [];
 
   for (const pkg of next) {
     const previousPkg = previousById.get(pkg.id);
-    if (!previousPkg) syncQueueService.enqueue(MUTATION_TYPES.ADD, pkg, userId);
-    else if (!packagesEqual(previousPkg, pkg)) syncQueueService.enqueue(MUTATION_TYPES.UPDATE, pkg, userId);
+    if (!previousPkg) intents.push({ type: MUTATION_TYPES.ADD, payload: pkg, userId });
+    else if (!packagesEqual(previousPkg, pkg)) intents.push({ type: MUTATION_TYPES.UPDATE, payload: pkg, userId });
   }
   for (const id of previousById.keys()) {
-    if (!nextById.has(id)) syncQueueService.enqueue(MUTATION_TYPES.DELETE, { id }, userId);
+    if (!nextById.has(id)) intents.push({ type: MUTATION_TYPES.DELETE, payload: { id }, userId });
   }
+  if (intents.length > 0) syncQueueService.enqueueBatch(intents);
 }
 
 function reconcileSnapshot(state, incoming, origin, userId) {

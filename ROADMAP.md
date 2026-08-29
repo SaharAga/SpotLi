@@ -1,45 +1,88 @@
-# 🚀 Deliveree: Master Production Roadmap
+# Deliveree Engineering Roadmap & Architecture
 
-**Target**: Transition Deliveree from simulated prototype to production-grade consumer package tracking app.
+## 1. Product Vision & Architecture Overview
+Deliveree is a modern, privacy-conscious, multi-carrier package tracking app designed for Israeli and global e-commerce consumers. It unifies order updates across Israeli couriers (Israel Post, Cheetah Delivery, HFD, BoxIt, Tapuz, Buzzr) and global shipping networks (AliExpress Cainiao, YunExpress, 4PX, DHL, FedEx, UPS, USPS, Royal Mail, Aramex, Yanwen) into an intuitive, bilingual (Hebrew RTL / English LTR), cloud-synchronized experience.
 
----
-
-## 🗺️ Step-by-Step Execution Plan
-
-### ✅ Step 1: Real Authentication & Registration (COMPLETED — v0.2.1)
-* Configured real Firebase Web App credentials (`deliveree-app-2a938`).
-* Eliminated mock user generation; added Google SSO + Email/Password auth with password entropy meter.
-* Persistent auth state across reloads and guest-to-permanent non-destructive migration.
+The authoritative end-state product vision and detailed Q&A specification is documented in [docs/PRODUCT_VISION.md](file:///home/sahar/Deliveree/docs/PRODUCT_VISION.md).
 
 ---
 
-### ✅ Step 2: Real Carrier Tracking Engine & Proxy (COMPLETED — v0.2.2)
-* Carrier tracking proxy and normalized checkpoint resolvers for Israeli & Global couriers.
-* 60s cooldown rate-limiting with eviction bounded cache, and batch refresh.
-* Formal state machine transition matrix validation (`canTransition`).
+## 2. Milestone Execution Roadmap (4 Sequential Waves to v1.0)
+
+```
+[ Wave 1: Core Pickup & Last-Mile UX ] ──► [ Wave 2: Omni-Channel Ingestion ] ──► [ Wave 3: Family, Customs & Vault ] ──► [ Wave 4: Native App Store & Widgets ]
+  (Immediate High-Impact Daily UX)           (Zero-Typing Automation)               (Multi-Person & Financial Shield)       (v1.0 Production Launch)
+```
 
 ---
 
-### ✅ Step 3: Zero-Friction Automated Email Ingestion (COMPLETED — v0.18.3)
-* 1-Click "Connect Gmail" (`gmail.readonly`) with Google Cloud Pub/Sub push listener and weekly watch renewal.
-* Serverless 30-day historical order backfill with atomic batch writes.
-* Inbound email webhook gateway (`inboundEmailWebhook`) via CloudMailin.
-* Gemini AI serverless parsing engine (`parseWithAi`) with image/text drop fallback in `SmartImportModal`.
-* Context-aware multi-carrier detection and anti-false-positive filtering for Israeli couriers & global merchants.
+## 3. Sprint Breakdown & Milestones
+
+### ✅ Sprints 1–5: Foundation, Tracking Engine & Core UI (Completed — v0.20.1)
+- [x] **Real Firebase Authentication & Non-Destructive Guest Migration** (`v0.2.1`)
+- [x] **Multi-Carrier Normalized Tracking Engine & Proxy** (`v0.2.2`)
+- [x] **Telegram Feedback Relay Bridge** (`v0.2.0`)
+- [x] **Dedicated Bilingual Export Center (CSV, JSON, PDF)** (`v0.4.0`)
+- [x] **Graduated Throttling & Offline Mutation Queue** (`v0.6.0`)
+- [x] **Interactive Locker & Pickup Map (`LockerMapModal.jsx`)** (`v0.6.0`)
+- [x] **Gmail OAuth 2.0 Real-Time Push Sync & 30-Day Historical Backfill** (`v0.18.3`)
+- [x] **Inbound Forwarding Email Webhook (`track@deliveree.app`)** (`v0.18.0`)
+- [x] **Courier Action Hub (7 Presets + Custom Editor + WhatsApp/SMS Dispatch)** (`v0.20.0`)
+- [x] **1-Click Package Quick Edit & Non-Destructive Live Binding** (`v0.20.1`)
 
 ---
 
-### 🎨 Step 4: UI/UX & Native Ergonomics (COMPLETED — v0.19.0)
-* [x] Mobile Slide-Over Navigation Drawer with touch optimization ($\ge 48\text{px}$).
-* [x] Rich Cards vs Compact Feed toggle with stage filters.
-* [x] Interactive Locker & Service Point Map (`LockerMapModal.jsx`).
-* [x] Dedicated bilingual Export Center (Excel, CSV, PDF).
-* [x] Image & Screenshot Paste/Drop OCR via Gemini AI (TASK-23).
-* [x] Direct FCM Web Push Notifications for status transitions (TASK-13).
+### 🌊 Wave 1: Core Pickup, Navigation & Last-Mile UX (Sprint 6 — Active)
+*Objective: Eliminate everyday friction when retrieving packages from pickup points and lockers.*
+
+- [ ] **TASK-601: Universal OS Navigation Launcher** (Waze / Google Maps / Apple Maps / Moovit choice sheet + preferred app memory).
+- [ ] **TASK-602: Live Store Opening Hours** (Real-time "Open Now / Closes at XX:XX" badge + Shabbat eve / Israeli holiday alerts).
+- [ ] **TASK-603: Interactive Full-Screen Locker Mode** (Max brightness, high-contrast QR/Barcode + oversized PIN font).
+- [ ] **TASK-604: Smart Same-Location Bundling & Proximity Alerts** (Banner: *"2 other packages waiting here!"* + 1-tap *"Mark All as Collected"*).
+- [ ] **TASK-605: Pickup Location Redirect Detection** (Alert & auto-updating map/hours when courier redirects to alternate locker).
+- [ ] **TASK-606: Direct Shop Manager Call Button** (1-tap phone dialer on pickup card).
 
 ---
 
-### 📱 Step 5: Native App Packaging & Post-Delivery Helpers
-* [x] Dual Deadline Tracking Engine (Pickup Holding Window RTS risk + Store Return Policies) (`TASK-22`).
-* [x] Courier WhatsApp & SMS Quick Actions (Safe Place, Gate Code, Proxy Pickup) (`TASK-25`).
-* [ ] Wrap application with Capacitor for native iOS and Android store deployment.
+### 🌊 Wave 2: Omni-Channel Ingestion & Candidate Intelligence (Sprint 7)
+*Objective: Zero manual tracking entry with 100% accurate, hallucination-free package capture.*
+
+- [ ] **TASK-701: Grounded Candidate Scorer & Production Verification (SYNC-7)** (Verified-only auto-creation + grounded Gemini selection).
+- [ ] **TASK-702: Direct Push Notifications Engine** (Status changes, morning Out-for-Delivery digest, urgent RTS holding countdowns).
+- [ ] **TASK-703: Automatic Courier SMS Ingestion** (Background/native detection of tracking numbers and locker PINs).
+- [ ] **TASK-704: Multi-Email Ingestion Expansion** (Microsoft Outlook / Office 365, Apple iCloud Mail, generic IMAP/App-Password).
+- [ ] **TASK-705: Multi-Item Bundling View** (Consolidated shipments / AliExpress Combined Delivery display).
+- [ ] **TASK-706: Camera Barcode & Label Scanner** (Physical label OCR & locker barcode scanner).
+
+---
+
+### 🌊 Wave 3: Family Collaboration, Customs & Financial Vault (Sprint 8)
+*Objective: Seamless household coordination and financial/customs protection.*
+
+- [ ] **TASK-801: Explicit "Share to Family" Household Feed** (Private by default, 1-tap household sharing).
+- [ ] **TASK-802: Delegate Pickup Assistant** (Pass-through locker PIN, QR code, and location via WhatsApp/SMS).
+- [ ] **TASK-803: 1-Click Secure Web Tracking Links** (For family/friends without the app).
+- [ ] **TASK-804: $75 Israeli Customs VAT Aggregation Monitor** (Tax risk alerts for close-arrival overseas orders).
+- [ ] **TASK-805: Customs Action & Payment Portal Link** (Direct link to official clearance payment gateways).
+- [ ] **TASK-806: Return Deadline Vault** (Merchant return policy countdowns + return label storage).
+- [ ] **TASK-807: Full-Text Product Search** (Search order history by item keywords like "earphones", "jacket").
+
+---
+
+### 🌊 Wave 4: Native App Store Launch, Widgets & v1.0 Release (Sprint 9)
+*Objective: Full packaging, OS integration, and public distribution on Apple App Store & Google Play.*
+
+- [ ] **TASK-901: Capacitor Native Packaging** (iOS & Android native project configurations, icons, splash screens, permissions).
+- [ ] **TASK-902: Lock Screen Widgets & Live Activities** (Glanceable widgets for today's deliveries & active locker PINs).
+- [ ] **TASK-903: Carrier Delivery Time Benchmarks** (Community-aggregated shipping speed statistics).
+- [ ] **TASK-904: Production App Store & Google Play Release** (Store listings, compliance, public release).
+
+---
+
+## 4. Quality Gates & Definition of Done (DoD)
+All features must strictly pass the 7-Stage SDLC Pipeline before merging:
+1. Static analysis (`npm run lint` exits 0).
+2. Typecheck & contract verification.
+3. Automated testbench passing (100%).
+4. Property-based invariants & security baseline compliance.
+5. Production build verification (`npm run build`).
