@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { DashboardContent } from './App';
 import { renderWithLanguage } from './test-utils/renderWithProviders';
 import { deliveryService } from './services/deliveryService';
+import { LEGAL_VERSION } from './constants/legalVersion';
 
 // The Web Share Target / app-shortcut handler is a startup-only effect: it
 // reads the query string once and then scrubs it from the URL. Its dependency
@@ -21,7 +22,12 @@ const authMocks = vi.hoisted(() => ({
 
 vi.mock('./context/AuthContext', () => ({
   useAuth: () => ({
-    user: { id: 'user-share', email: 'u@example.com', preferences: {} },
+    user: {
+      id: 'user-share',
+      email: 'u@example.com',
+      preferences: {},
+      legalAcceptedVersion: LEGAL_VERSION
+    },
     loading: false,
     triggerCloudSync: authMocks.triggerCloudSync,
     logout: authMocks.logout,

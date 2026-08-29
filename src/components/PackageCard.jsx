@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import {
   Copy, Check, MoreVertical, Pin, Archive, Trash2, Edit3,
   Calendar, CheckCircle, ArrowUpRight, RefreshCw, Loader2, Package,
-  Clock, RotateCcw
+  Clock, RotateCcw, Sun
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { getCarrier } from '../types/carriers';
@@ -24,6 +24,7 @@ function PackageCardImpl({
   onToggleArchive,
   onStatusChange,
   onRefreshTracking,
+  onOpenLockerMode,
   onShowToast
 }) {
   const { t, language, isRTL } = useLanguage();
@@ -210,6 +211,19 @@ function PackageCardImpl({
                 {store ? (language === 'he' ? store.hebrewName : store.name) + ' — ' : ''}
                 {language === 'he' ? carrier.hebrewName : carrier.name}
               </span>
+              {pkg.pickupCode && onOpenLockerMode && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenLockerMode(pkg);
+                  }}
+                  title={language === 'he' ? 'פתח מצב לוקר מוגדל' : 'Open Full-Screen Locker Mode'}
+                  className="ms-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 font-mono text-[10px] font-bold cursor-pointer transition-colors shrink-0"
+                >
+                  <span>PIN {pkg.pickupCode}</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -321,6 +335,20 @@ function PackageCardImpl({
                       {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                       <span>{t('card.copyTracking')}</span>
                     </button>
+
+                    {pkg.pickupCode && onOpenLockerMode && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMenuOpen(false);
+                          onOpenLockerMode(pkg);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2.5 text-emerald-400 hover:bg-slate-800 hover:text-emerald-300 min-h-[40px] font-semibold"
+                      >
+                        <Sun className="w-3.5 h-3.5" />
+                        <span>{language === 'he' ? 'מצב לוקר מוגדל' : 'Locker Mode'}</span>
+                      </button>
+                    )}
 
                     <a
                       href={trackingUrl}

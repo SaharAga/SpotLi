@@ -178,5 +178,38 @@ describe('extractTrackingDetails', () => {
     expect(result.trackingNumber).toBe('HFD998877');
     expect(result.carrier).toBe('hfd');
   });
-});
 
+  it('accepts a USPS IMpb number only when its generated mod10-31 checksum passes', () => {
+    const result = extractTrackingDetails(
+      'USPS shipment update',
+      'Tracking number: 9400100000000000000006'
+    );
+
+    expect(result.trackingNumber).toBe('9400100000000000000006');
+    expect(result.carrier).toBe('usps');
+    expect(result.selectedCandidate?.checksum).toBe('pass');
+    expect(result.status).toBe('verified');
+  });
+
+  it('marks a USPS IMpb candidate with a bad mod10-31 check digit as unverified', () => {
+    const result = extractTrackingDetails(
+      'USPS shipment update',
+      'Tracking number: 9400100000000000000007'
+    );
+
+    expect(result.trackingNumber).toBe('9400100000000000000007');
+    expect(result.selectedCandidate?.checksum).toBe('fail');
+    expect(result.status).not.toBe('verified');
+    expect(result.confidence).not.toBe('high');
+  });
+
+  it('keeps UPU S10 validation behavior alongside the IMpb checksum', () => {
+    const valid = extractTrackingDetails('', 'Tracking number: RS948219483IL');
+    const invalid = extractTrackingDetails('', 'Tracking number: RS948219481IL');
+
+    expect(valid.selectedCandidate?.checksum).toBe('pass');
+    expect(valid.status).toBe('verified');
+    expect(invalid.selectedCandidate?.checksum).toBe('fail');
+    expect(invalid.status).not.toBe('verified');
+  });
+});

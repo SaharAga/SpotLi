@@ -36,8 +36,8 @@ The authoritative end-state product vision and detailed Q&A specification is doc
 *Objective: Eliminate everyday friction when retrieving packages from pickup points and lockers.*
 
 - [x] **TASK-601: Universal OS Navigation Launcher** (Waze / Google Maps / Apple Maps / Moovit choice sheet + preferred app memory).
-- [ ] **TASK-602: Live Store Opening Hours** (Real-time "Open Now / Closes at XX:XX" badge + Shabbat eve / Israeli holiday alerts).
-- [ ] **TASK-603: Interactive Full-Screen Locker Mode** (Max brightness, high-contrast QR/Barcode + oversized PIN font).
+- [x] **TASK-602: Live Store Opening Hours** (Real-time "Open Now / Closes at XX:XX" badge + Shabbat eve / Israeli holiday alerts).
+- [x] **TASK-603: Interactive Full-Screen Locker Mode** (Oversized high-contrast PIN keypad digits + screen wake lock + 1-tap collected + WhatsApp proxy).
 - [ ] **TASK-604: Smart Same-Location Bundling & Proximity Alerts** (Banner: *"2 other packages waiting here!"* + 1-tap *"Mark All as Collected"*).
 - [ ] **TASK-605: Pickup Location Redirect Detection** (Alert & auto-updating map/hours when courier redirects to alternate locker).
 - [ ] **TASK-606: Direct Shop Manager Call Button** (1-tap phone dialer on pickup card).

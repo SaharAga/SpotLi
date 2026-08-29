@@ -234,6 +234,19 @@ export const translations = {
       reportPlaceholder: 'Please enter the correct opening hours for this location...',
       weeklySchedule: 'Weekly Operating Schedule',
       estimatedNotice: 'Estimated Israeli business hours'
+    },
+    lockerMode: {
+      title: 'Full-Screen Locker Mode',
+      subtitle: 'High-contrast sunlight-proof PIN display',
+      pickupPin: 'Pickup PIN Code',
+      tapToCopy: 'Tap to copy PIN',
+      copied: 'PIN code copied!',
+      markDelivered: 'Mark as Collected',
+      markingDelivered: 'Updating...',
+      shareWhatsApp: 'Share Proxy (WhatsApp)',
+      navigate: 'Navigate to Location',
+      wakeLockActive: 'Screen kept awake for easy locker keypad entry',
+      wakeLockFallback: 'Screen wake lock active'
     }
   },
   he: {
@@ -471,6 +484,19 @@ export const translations = {
       reportPlaceholder: 'נא להזין את שעות הפעילות הנכונות של המקום...',
       weeklySchedule: 'שעות פעילות שבועיות',
       estimatedNotice: 'שעות משוערות לפי שבוע מסחר ישראלי'
+    },
+    lockerMode: {
+      title: 'מצב לוקר מוגדל',
+      subtitle: 'תצוגת קוד איסוף בניגודיות גבוהה מול השמש',
+      pickupPin: 'קוד איסוף לוקר',
+      tapToCopy: 'לחץ להעתקת הקוד',
+      copied: 'קוד האיסוף הועתק בהצלחה!',
+      markDelivered: 'סמן שנאסף',
+      markingDelivered: 'מעדכן...',
+      shareWhatsApp: 'שתף לאיסוף בוואטסאפ',
+      navigate: 'נווט למיקום',
+      wakeLockActive: 'מסך דולק ברציפות לנוחות ההקלדה בלוקר',
+      wakeLockFallback: 'שמירת מסך דולק פעילה'
     }
   }
 };

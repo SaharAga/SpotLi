@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, ExternalLink, Copy, Check, Calendar, MapPin, Plus, 
-  Truck, Clock, RefreshCw, Info, RotateCcw, Edit3, AlertCircle, ChevronDown, ChevronUp, Flag
+  Truck, Clock, RefreshCw, Info, RotateCcw, Edit3, AlertCircle, ChevronDown, ChevronUp, Flag, Maximize2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { getCarrier } from '../types/carriers';
@@ -28,6 +28,7 @@ export function PackageDetailModal({
   onUpdatePackage,
   onRefreshTracking,
   onOpenLockerMap,
+  onOpenLockerMode,
   onOpenNavigation,
   onShowToast
 }) {
@@ -329,6 +330,18 @@ export function PackageDetailModal({
                           >
                             <Copy className="w-5 h-5" />
                           </button>
+
+                          {onOpenLockerMode && (
+                            <button
+                              type="button"
+                              onClick={() => onOpenLockerMode(pkg)}
+                              className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500/25 hover:bg-emerald-500/40 text-emerald-200 hover:text-white border border-emerald-500/40 text-xs font-bold transition-all shadow-sm cursor-pointer min-h-[36px]"
+                              title={language === 'he' ? 'פתח מצב לוקר מוגדל' : 'Open Full-Screen Locker Mode'}
+                            >
+                              <Maximize2 className="w-3.5 h-3.5" />
+                              <span>{language === 'he' ? 'מצב לוקר' : 'Locker Mode'}</span>
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>

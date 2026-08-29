@@ -154,11 +154,11 @@ describe('SmartImportModal — AI fallback (rendered)', () => {
     expect(await screen.findByRole('button', { name: 'Enter Details Manually' })).toBeInTheDocument();
   });
 
-  it('includes the AI source and confidence when applying an AI-derived result', async () => {
+  it('does not apply an AI result without a locally verified candidate', async () => {
     parseWithAi.mockResolvedValue({
       success: true,
       data: {
-        trackingNumber: '1Z999AA10123456784', carrier: 'ups', title: 'Package',
+        trackingNumber: 'ZZ999888777IL', carrier: 'israel-post', title: 'Package',
         pickupLocation: '', origin: '', notes: '', confidence: 'medium'
       }
     });
@@ -167,17 +167,32 @@ describe('SmartImportModal — AI fallback (rendered)', () => {
     const onParsedResult = vi.fn();
     renderWithLanguage(<SmartImportModal isOpen onClose={vi.fn()} onParsedResult={onParsedResult} />);
 
+    await user.type(screen.getByPlaceholderText(/paste|text|sms/i), 'ambiguous text');
+    await user.click(screen.getByRole('button', { name: /extract shipping details/i }));
+    const addButton = await screen.findByRole('button', { name: /add this package to tracker/i });
+    expect(addButton).toBeDisabled();
+    await user.click(addButton);
+    expect(onParsedResult).not.toHaveBeenCalled();
+  });
+
+  it('keeps Add disabled and does not apply an AI-selected uncertain candidate', async () => {
+    parseWithAi.mockResolvedValue({
+      success: true,
+      data: {
+        trackingNumber: '1Z999AA10123456784', carrier: 'ups', title: 'Package',
+        pickupLocation: '', origin: '', notes: '', confidence: 'medium'
+      }
+    });
+    const user = userEvent.setup();
+    const onParsedResult = vi.fn();
+    renderWithLanguage(<SmartImportModal isOpen onClose={vi.fn()} onParsedResult={onParsedResult} />);
+
     await user.type(screen.getByPlaceholderText(/paste|text|sms/i), '1Z999AA10123456784');
     await user.click(screen.getByRole('button', { name: /extract shipping details/i }));
-    await user.click(await screen.findByRole('button', { name: /add this package to tracker/i }));
-
-    expect(onParsedResult).toHaveBeenCalledWith(
-      expect.objectContaining({
-        trackingNumber: '1Z999AA10123456784',
-        _autoFillSource: 'ai',
-        _autoFillConfidence: 'medium'
-      })
-    );
+    const addButton = await screen.findByRole('button', { name: /add this package to tracker/i });
+    expect(addButton).toBeDisabled();
+    await user.click(addButton);
+    expect(onParsedResult).not.toHaveBeenCalled();
   });
 
   it('attaching a screenshot calls the AI parser in image mode and shows the result', async () => {

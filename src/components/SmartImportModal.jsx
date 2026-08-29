@@ -168,7 +168,9 @@ export function SmartImportModal({
       });
       if (aiResponse.success && aiResponse.data?.trackingNumber && aiResponse.data.confidence !== 'none') {
         const isGroundedCandidate = (regexResult?.candidates || [])
-          .some((candidate) => candidate.value === aiResponse.data.trackingNumber);
+          .some((candidate) => (
+            candidate.value === aiResponse.data.trackingNumber && candidate.status === 'verified'
+          ));
         setParsed(mapAiResultToParsed(aiResponse.data, isGroundedCandidate));
         setParseSource('ai');
         setAiConfidence(aiResponse.data.confidence);
