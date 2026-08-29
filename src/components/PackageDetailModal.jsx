@@ -16,6 +16,7 @@ import { checkRateLimit } from '../utils/rateLimiter';
 import { isLiveTrackingSupported } from '../services/carrierApiProxy';
 import { CourierActionHub } from './CourierActionHub';
 import { Modal } from './Modal';
+import { getPreferredNavigationApp, openNavigationApp } from '../utils/navigationService';
 
 export function PackageDetailModal({
   pkg,
@@ -25,6 +26,7 @@ export function PackageDetailModal({
   onUpdatePackage,
   onRefreshTracking,
   onOpenLockerMap,
+  onOpenNavigation,
   onShowToast
 }) {
   const { t, language } = useLanguage();
@@ -188,6 +190,18 @@ export function PackageDetailModal({
   const itemTitle = (language === 'he' && pkg.titleHe) ? pkg.titleHe : pkg.title;
   const itemNotes = (language === 'he' && pkg.notesHe) ? pkg.notesHe : pkg.notes;
 
+  const handleNavigate = () => {
+    if (!pkg.pickupLocation) return;
+    const preferred = getPreferredNavigationApp();
+    if (preferred) {
+      openNavigationApp(preferred, { location: pkg.pickupLocation, title: itemTitle });
+    } else if (onOpenNavigation) {
+      onOpenNavigation({ location: pkg.pickupLocation, title: itemTitle });
+    } else {
+      openNavigationApp('google_maps', { location: pkg.pickupLocation, title: itemTitle });
+    }
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -292,13 +306,15 @@ export function PackageDetailModal({
 
                 <div className="flex flex-col gap-2 min-w-[140px] items-stretch">
                   {pkg.pickupLocation && (
-                    <a
-                      href={`geo:0,0?q=${encodeURIComponent(pkg.pickupLocation)}`}
-                      className="flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold transition-all shadow-md min-h-[48px]"
+                    <button
+                      type="button"
+                      onClick={handleNavigate}
+                      className="flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold transition-all shadow-md min-h-[48px] cursor-pointer"
+                      title={language === 'he' ? 'פתח ניווט לנקודת האיסוף' : 'Open navigation to pickup location'}
                     >
                       <MapPin className="w-4 h-4" />
-                      {language === 'he' ? 'נווט לאיסוף' : 'Navigate'}
-                    </a>
+                      <span>{language === 'he' ? 'נווט לאיסוף' : 'Navigate'}</span>
+                    </button>
                   )}
                   
                   <a
@@ -318,9 +334,21 @@ export function PackageDetailModal({
               </div>
 
               {pkg.pickupLocation && (
-                <div className="mt-3 pt-3 border-t border-emerald-500/20 relative z-10 flex items-start gap-2">
-                  <MapPin className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span className="text-sm text-emerald-100/90 leading-tight">
+                <div
+                  onClick={handleNavigate}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleNavigate();
+                    }
+                  }}
+                  className="mt-3 pt-3 border-t border-emerald-500/20 relative z-10 flex items-start gap-2 cursor-pointer group hover:opacity-90 transition-opacity"
+                  title={language === 'he' ? 'לחץ לפתיחת ניווט' : 'Click to navigate'}
+                >
+                  <MapPin className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
+                  <span className="text-sm text-emerald-100/90 leading-tight group-hover:underline">
                     {pkg.pickupLocation}
                   </span>
                 </div>

@@ -40,6 +40,7 @@ const ExportModal = lazyModal(() => import('./components/ExportModal'), 'ExportM
 const LockerMapModal = lazyModal(() => import('./components/LockerMapModal'), 'LockerMapModal');
 const DeleteConfirmDialog = lazyModal(() => import('./components/DeleteConfirmDialog'), 'DeleteConfirmDialog');
 const AutoArchivePromptModal = lazyModal(() => import('./components/AutoArchivePromptModal'), 'AutoArchivePromptModal');
+const NavigationChoiceModal = lazyModal(() => import('./components/NavigationChoiceModal'), 'NavigationChoiceModal');
 
 import { Toast } from './components/Toast';
 import { InstallPwaBanner } from './components/InstallPwaBanner';
@@ -78,7 +79,8 @@ export const MODAL = {
   FEEDBACK: 'feedback',
   ADMIN_FEEDBACK: 'adminFeedback',
   AUTO_ARCHIVE: 'autoArchive',
-  DELETE_CONFIRM: 'deleteConfirm'
+  DELETE_CONFIRM: 'deleteConfirm',
+  NAVIGATION_CHOICE: 'navigationChoice'
 };
 
 /**
@@ -235,7 +237,6 @@ export function DashboardContent() {
   // The payloads a few handlers still read directly, named as they were.
   const selectedDetailPackage = getModalPayload(MODAL.DETAIL);
   const pendingDeliveredPkgId = getModalPayload(MODAL.AUTO_ARCHIVE)?.packageId ?? null;
-  const deletePackageId = getModalPayload(MODAL.DELETE_CONFIRM)?.packageId ?? null;
 
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
 
@@ -542,7 +543,7 @@ export function DashboardContent() {
   };
 
   const handleDeletePackage = (id) => {
-    commit({ type: MUTATION_TYPES.DELETE, payload: id });
+    commit({ type: MUTATION_TYPES.DELETE, payload: { id } });
     if (selectedDetailPackage?.id === id) {
       closeModal(MODAL.DETAIL);
     }
@@ -861,6 +862,7 @@ export function DashboardContent() {
             onUpdatePackage={handleAddOrUpdatePackage}
             onRefreshTracking={handleRefreshSinglePackage}
             onOpenLockerMap={() => openModal(MODAL.LOCKER_MAP)}
+            onOpenNavigation={(target) => openModal(MODAL.NAVIGATION_CHOICE, target)}
             onShowToast={showToast}
           />
         );
@@ -933,7 +935,26 @@ export function DashboardContent() {
       id: MODAL.LOCKER_MAP,
       componentName: 'LockerMapModal',
       render: (isOpen) => (
-        <LockerMapModal isOpen={isOpen} onClose={() => closeModal(MODAL.LOCKER_MAP)} />
+        <LockerMapModal
+          isOpen={isOpen}
+          onClose={() => closeModal(MODAL.LOCKER_MAP)}
+          onOpenNavigation={(target) => openModal(MODAL.NAVIGATION_CHOICE, target)}
+        />
+      )
+    },
+    {
+      id: MODAL.NAVIGATION_CHOICE,
+      componentName: 'NavigationChoiceModal',
+      render: (isOpen, payload) => (
+        <NavigationChoiceModal
+          isOpen={isOpen}
+          onClose={() => closeModal(MODAL.NAVIGATION_CHOICE)}
+          location={payload?.location || ''}
+          lat={payload?.lat ?? null}
+          lng={payload?.lng ?? null}
+          title={payload?.title || ''}
+          onShowToast={showToast}
+        />
       )
     },
     {

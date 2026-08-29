@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { Modal } from './Modal';
+import { getPreferredNavigationApp, openNavigationApp } from '../utils/navigationService';
 
 export const POPULAR_PICKUP_POINTS = [
   {
@@ -72,7 +73,8 @@ export function LockerMapModal({
   isOpen,
   onClose,
   initialSearch = '',
-  selectedLocation = null
+  selectedLocation = null,
+  onOpenNavigation
 }) {
   const { isRTL, language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState(initialSearch);
@@ -95,6 +97,36 @@ export function LockerMapModal({
   const getWazeUrl = (lat, lng) => `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
   const getGoogleMapsUrl = (lat, lng, query) =>
     `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query || `${lat},${lng}`)}`;
+
+  const handleLaunchNavigation = () => {
+    if (!activePoint) return;
+    const preferred = getPreferredNavigationApp();
+    const pointLocation = language === 'he' ? activePoint.addressHe : activePoint.address;
+    const pointTitle = language === 'he' ? activePoint.nameHe : activePoint.name;
+
+    if (preferred) {
+      openNavigationApp(preferred, {
+        location: pointLocation,
+        lat: activePoint.lat,
+        lng: activePoint.lng,
+        title: pointTitle
+      });
+    } else if (onOpenNavigation) {
+      onOpenNavigation({
+        location: pointLocation,
+        lat: activePoint.lat,
+        lng: activePoint.lng,
+        title: pointTitle
+      });
+    } else {
+      openNavigationApp('google_maps', {
+        location: pointLocation,
+        lat: activePoint.lat,
+        lng: activePoint.lng,
+        title: pointTitle
+      });
+    }
+  };
 
   return (
     <Modal
@@ -237,19 +269,49 @@ export function LockerMapModal({
                 </div>
 
                 {/* 1-Click Navigation Buttons */}
-                <div className="space-y-2 pt-4 border-t border-slate-800">
-                  <span className="text-[11px] text-slate-400 font-semibold uppercase block">
-                    {isRTL ? 'ניווט מהיר ליעד' : 'Direct Navigation'}
-                  </span>
+                <div className="space-y-2.5 pt-4 border-t border-slate-800">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-slate-400 font-semibold uppercase block">
+                      {isRTL ? 'ניווט מהיר ליעד' : 'Direct Navigation'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const pointLocation = language === 'he' ? activePoint.addressHe : activePoint.address;
+                        const pointTitle = language === 'he' ? activePoint.nameHe : activePoint.name;
+                        if (onOpenNavigation) {
+                          onOpenNavigation({
+                            location: pointLocation,
+                            lat: activePoint.lat,
+                            lng: activePoint.lng,
+                            title: pointTitle
+                          });
+                        }
+                      }}
+                      className="text-[11px] text-blue-400 hover:text-blue-300 underline font-medium cursor-pointer"
+                    >
+                      {isRTL ? 'בחר אפליקציה אחרת' : 'Choose app'}
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleLaunchNavigation}
+                    className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[48px]"
+                  >
+                    <Navigation className="w-4 h-4" />
+                    <span>{isRTL ? 'פתח ניווט ללוקר זה' : 'Navigate to Locker'}</span>
+                  </button>
+
                   <div className="grid grid-cols-2 gap-2.5">
                     <a
                       href={getWazeUrl(activePoint.lat, activePoint.lng)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold shadow-md shadow-cyan-600/20 transition-all cursor-pointer min-h-[44px]"
+                      className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 hover:text-white text-xs font-bold border border-cyan-500/30 transition-all cursor-pointer min-h-[44px]"
                     >
-                      <Navigation className="w-4 h-4" />
-                      <span>{isRTL ? 'נווט עם Waze' : 'Drive with Waze'}</span>
+                      <Navigation className="w-3.5 h-3.5" />
+                      <span>Waze</span>
                     </a>
                     <a
                       href={getGoogleMapsUrl(
@@ -259,9 +321,9 @@ export function LockerMapModal({
                       )}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition-all cursor-pointer min-h-[44px]"
+                      className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition-all cursor-pointer min-h-[44px]"
                     >
-                      <ExternalLink className="w-4 h-4 text-blue-400" />
+                      <ExternalLink className="w-3.5 h-3.5 text-blue-400" />
                       <span>Google Maps</span>
                     </a>
                   </div>

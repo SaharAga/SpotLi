@@ -208,6 +208,17 @@ export const translations = {
       noLocationsFound: 'No pickup locations match your search',
       openHours: 'Hours',
       phone: 'Phone'
+    },
+    navigation: {
+      title: 'Choose Navigation App',
+      subtitle: 'Select how you would like to navigate to the pickup location',
+      destination: 'Destination',
+      alwaysUse: 'Always open with this app',
+      clearPreference: 'Reset saved default app',
+      preferredBadge: 'Default App',
+      navigateBtn: 'Navigate',
+      osDefault: 'Android System Default (App Chooser)',
+      osDefaultDesc: 'Open with your Android default map selector'
     }
   },
   he: {
@@ -419,6 +430,17 @@ export const translations = {
       noLocationsFound: 'לא נמצאו נקודות איסוף תואמות',
       openHours: 'שעות פעילות',
       phone: 'טלפון'
+    },
+    navigation: {
+      title: 'בחירת אפליקציית ניווט',
+      subtitle: 'בחר כיצד ברצונך לנווט לנקודת האיסוף / הלוקר',
+      destination: 'יעד הניווט',
+      alwaysUse: 'זכור את בחירתי לפעמים הבאות',
+      clearPreference: 'איפוס אפליקציית ברירת המחדל',
+      preferredBadge: 'ברירת מחדל',
+      navigateBtn: 'נווט ליעד',
+      osDefault: 'ברירת מחדל של מערכת ההפעלה (Android)',
+      osDefaultDesc: 'פתיחה באמצעות בורר האפליקציות של אנדרואיד'
     }
   }
 };

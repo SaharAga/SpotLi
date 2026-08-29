@@ -65,6 +65,7 @@ To balance deep specialization with clean communication boundaries, agents are o
 | **Customizable Courier Response Hub** | `LIVE` | v0.20.0 | Full template manager (`CourierActionHub.jsx`, `courierTemplates.js`) with preset library (7 presets), custom message creation, editing, deleting, hiding, variable interpolation (`{gateCode}`, `{tracking}`, `{pickupCode}`, `{pickupLocation}`), and one-tap WhatsApp / SMS dispatch. |
 | **1-Click Package Editing & Live Binding** | `LIVE` | v0.20.1 | Direct edit button (✏️) in package detail header toolbar opening `AddEditPackageModal`, with reactive live state binding and strict non-destructive cancel behavior. |
 | **Accidental Touch-Swipe Removal** | `LIVE` | v0.20.1 | Removed aggressive touch-swipe gesture on `Modal.jsx` overlay to eliminate accidental modal closures during lateral scrolling or finger movement. |
+| **Universal OS Navigation Launcher (TASK-601)** | `LIVE` | v0.20.1 | Universal HTTPS deep links and curated choice modal supporting Waze, Google Maps, Apple Maps, and Moovit, with 1-click preferred app memory in localStorage/Account preferences, native migration blueprint comments, and integrations across `PackageDetailModal`, `LockerMapModal`, and `AccountModal`. |
 
 ---
 
@@ -75,18 +76,19 @@ To balance deep specialization with clean communication boundaries, agents are o
 ├─ 1. Static Linting & Syntax: 0 errors (`npm run lint` exits 0). react-perf
 │     runs at `warn` as a standing worklist, so warnings are expected output.
 ├─ 2. Type & Contract Verification: 100% compliant schemas (Zod + TypeScript)
-├─ 3. Automated Testbench Suite: 853 / 853 Tests Passing (90/90 Suites: 84 root + 6 functions)
+├─ 3. Automated Testbench Suite: 978 / 978 Tests Passing (103/103 Suites: 94 root + 9 functions)
 ├─ 4. Property-Based Invariants: 20 Formal Theorems Proven (fast-check across 6,000+ iterations)
 ├─ 5. Enterprise Security Audit: OWASP ASVS L3 Hardened (CVSS 0.0)
-└─ 6. Production Build: 0 errors (Vite 8 production bundle generated in ~420ms)
+├─ 6. Production Build: 0 errors (Vite 8 production bundle generated in ~440ms)
 ```
 
 ### Metrics Summary:
-* **Active Test Suites**: 90 suites (84 frontend/integration + 6 Cloud Functions).
-* **Total Executed Tests**: 853 tests.
-* **Test Pass Rate**: **100.0% (853 passed, 0 failed, 0 skipped)**.
+* **Active Test Suites**: 103 suites (94 frontend/integration + 9 Cloud Functions).
+* **Total Executed Tests**: 978 tests (887 root + 91 functions).
+* **Test Pass Rate**: **100.0% (978 passed, 0 failed, 0 skipped)**.
 * **Lint Violations**: **0 errors**; `npm run lint` exits 0. Warnings are not zero and are not meant to be — the four `react-perf/jsx-no-new-*` rules are enabled at `warn` as a worklist. See `AGENTS.md` §9.1.
 * **Red Team & Chaos Assessment**: 0.0 CVSS Vulnerability Score; XSS, ReDoS, prototype pollution, quota exhaustion, and credential stuffing immunities verified.
-* **Build Verification**: Vite 8 clean client production build passed with code-splitting in ~420ms.
+* **Build Verification**: Vite 8 clean client production build passed with code-splitting in ~440ms.
+
 
 
