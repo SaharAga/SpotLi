@@ -27,7 +27,7 @@ jobs:
     if: vars.FIREBASE_HOSTING_ENABLED == 'true'
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Compare live site version to package.json on main
         run: |
@@ -56,7 +56,7 @@ jobs:
     if: vars.FIREBASE_HOSTING_ENABLED == 'true'
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Authenticate
         uses: google-github-actions/auth@v2
