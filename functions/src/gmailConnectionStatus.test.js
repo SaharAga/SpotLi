@@ -48,8 +48,24 @@ describe('createGmailConnectionStatusHandler', () => {
     expect(result).toEqual({
       connected: true,
       emailAddress: 'a@gmail.com',
-      connectedAt: '2026-01-01T00:00:00.000Z'
+      connectedAt: '2026-01-01T00:00:00.000Z',
+      lastRenewalError: null
     });
     expect(result.refreshToken).toBeUndefined();
+  });
+
+  it('surfaces a persistent watch renewal failure to the client', async () => {
+    const handler = createGmailConnectionStatusHandler({
+      db: fakeDb({
+        u1: {
+          refreshToken: 'secret-token',
+          emailAddress: 'a@gmail.com',
+          connectedAt: '2026-01-01T00:00:00.000Z',
+          lastRenewalError: 'invalid_grant'
+        }
+      })
+    });
+    const result = await handler({ auth: { uid: 'u1' } });
+    expect(result.lastRenewalError).toBe('invalid_grant');
   });
 });

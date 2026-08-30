@@ -170,7 +170,7 @@ export function FullScreenLockerModal({
 
         <button
           onClick={onClose}
-          className="p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+          className="p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
           aria-label={t('common.close') || 'Close'}
         >
           <X className="w-5 h-5" />
@@ -308,7 +308,7 @@ export function FullScreenLockerModal({
             <button
               type="button"
               onClick={handleNavigate}
-              className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-blue-400 hover:text-white transition-colors shrink-0 cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-blue-400 hover:text-white transition-colors shrink-0 cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
               title={t('lockerMode.navigate')}
             >
               <Navigation className="w-4 h-4" />
@@ -368,7 +368,7 @@ export function FullScreenLockerModal({
         {pkg.pickupPhone && (
           <a
             href={`tel:${pkg.pickupPhone}`}
-            className="w-full py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-300 font-bold text-xs border border-slate-800 transition-all flex items-center justify-center gap-2 min-h-[40px]"
+            className="w-full py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-300 font-bold text-xs border border-slate-800 transition-all flex items-center justify-center gap-2 min-h-[48px]"
           >
             <Phone className="w-3.5 h-3.5" />
             <span>{t('phoneActions.callStore')} ({pkg.pickupPhone})</span>
