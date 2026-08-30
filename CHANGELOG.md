@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.22.0] - 2026-08-30
+
+### Added
+- Gmail sync no longer silently discards order-confirmation emails that name a
+known store but carry no carrier tracking number (e.g. a marketplace order
+number like AliExpress's). These now create a lower-confidence "order
+status" package — built from the store and an explicit lifecycle phrase in
+the email, never a fabricated tracking timeline — visually marked as "from
+order confirmation" and kept structurally distinct from carrier-verified
+packages.
+
+### Fixed
+- Fixed the Israeli holiday/Shabbat status check using UTC instead of local
+Israel time (causing off-by-one closures near midnight), surfaced Gmail
+watch-renewal failures in the Ingestion Guide instead of only logging them
+server-side, added a `store` field and reconciled `pickupPhone`'s max length
+between the package schema and Firestore rules, added a staleness warning
+for the hardcoded Israeli holiday table, and bumped a couple of remaining
+44px touch targets in the locker and navigation modals to the 48px minimum.
+
+- Added a static domain-ownership verification file for the Strix pentest tool.
+
 ## [0.21.1] - 2026-08-30
 
 ### Fixed
