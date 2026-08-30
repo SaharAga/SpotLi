@@ -109,3 +109,25 @@ export function buildPackageFromGmailMessage({
     isArchived: false
   };
 }
+
+/**
+ * Extracts a status update from a Gmail message whose tracking number is
+ * already saved — a shipping follow-up (e.g. "out for delivery") for a
+ * package the user already has, as opposed to a brand-new package. Used by
+ * the live push handler so a duplicate tracking number updates the existing
+ * package instead of being silently dropped.
+ *
+ * @param {{ gmailMessage: object }} params
+ * @returns {{ trackingNumber: string, status: string } | null}
+ */
+export function buildStatusUpdateFromGmailMessage({ gmailMessage }) {
+  const { subject, body, from } = extractSubjectAndBodyFromGmailMessage(gmailMessage);
+  const { trackingNumber, status: detectionStatus } = extractTrackingDetails(subject, body, from);
+
+  if (!trackingNumber || detectionStatus !== 'verified') return null;
+
+  return {
+    trackingNumber: trackingNumber.toUpperCase(),
+    status: inferDeliveryStatus(subject, body)
+  };
+}
