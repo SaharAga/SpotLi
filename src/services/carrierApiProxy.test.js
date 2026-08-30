@@ -168,5 +168,40 @@ describe('carrierApiProxy Service', () => {
       expect(record.location).toBe('תל אביב');
       expect(record.checkpoints).toHaveLength(1);
     });
+
+    it('builds a full checkpoint timeline when itemhistory is an array of events', () => {
+      const { parse } = CARRIERS['israel-post'].liveTracking;
+      const record = parse(
+        {
+          itemcode: 'RS948219481IL',
+          laststatus: 'נמסר ליעדו',
+          unitname: 'תל אביב',
+          itemhistory: [
+            { status: 'התקבל למשלוח', unitname: 'ירושלים', date: '2026-08-01T08:00:00Z' },
+            { status: 'בדרך', unitname: 'מרכז מיון', date: '2026-08-02T08:00:00Z' },
+            { status: 'נמסר ליעדו', unitname: 'תל אביב', date: '2026-08-03T08:00:00Z' }
+          ]
+        },
+        'RS948219481IL',
+        { inferStageFromText }
+      );
+      expect(record.checkpoints).toHaveLength(3);
+      expect(record.checkpoints[0].title).toBe('התקבל למשלוח');
+      expect(record.checkpoints[0].location).toBe('ירושלים');
+      expect(record.checkpoints[2].title).toBe('נמסר ליעדו');
+      expect(record.status).toBe('delivered');
+    });
+
+    it('falls back to a single laststatus checkpoint when itemhistory is a plain string', () => {
+      const { parse } = CARRIERS['israel-post'].liveTracking;
+      const record = parse(
+        { itemcode: 'RS948219481IL', laststatus: 'בדרך', itemhistory: 'some free text log' },
+        'RS948219481IL',
+        { inferStageFromText }
+      );
+      expect(record.checkpoints).toHaveLength(1);
+      expect(record.checkpoints[0].title).toBe('בדרך');
+      expect(record.checkpoints[0].description).toBe('some free text log');
+    });
   });
 });
