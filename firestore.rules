@@ -25,9 +25,10 @@ service cloud.firestore {
         'id', 'title', 'titleHe', 'trackingNumber', 'carrier', 'carrierName',
         'status', 'category', 'orderDate', 'expectedDeliveryDate', 'origin',
         'destination', 'notes', 'notesHe', 'isPinned', 'isArchived',
-        'checkpoints', 'pickupCode', 'pickupLocation', 'pickupDeadline',
-        'returnDeadline', 'returnNotes',
-        'createdAt', 'updatedAt', 'userId'
+        'checkpoints', 'pickupCode', 'pickupLocation', 'pickupHours', 'pickupPhone',
+        'pickupDeadline', 'returnDeadline', 'returnNotes',
+        'isRedirected', 'originalPickupLocation', 'redirectedAt', 'redirectReason',
+        'store', 'createdAt', 'updatedAt', 'userId'
       ];
       
       let validStatuses = [
@@ -52,9 +53,16 @@ service cloud.firestore {
         (!('notesHe' in data) || (data.notesHe is string && data.notesHe.size() <= 1000)) &&
         (!('pickupCode' in data) || (data.pickupCode is string && data.pickupCode.size() <= 50)) &&
         (!('pickupLocation' in data) || (data.pickupLocation is string && data.pickupLocation.size() <= 250)) &&
+        (!('pickupHours' in data) || (data.pickupHours is string && data.pickupHours.size() <= 200)) &&
+        (!('pickupPhone' in data) || (data.pickupPhone is string && data.pickupPhone.size() <= 50)) &&
         (!('pickupDeadline' in data) || (data.pickupDeadline is string && data.pickupDeadline.size() <= 50)) &&
         (!('returnDeadline' in data) || (data.returnDeadline is string && data.returnDeadline.size() <= 50)) &&
         (!('returnNotes' in data) || (data.returnNotes is string && data.returnNotes.size() <= 500)) &&
+        (!('isRedirected' in data) || data.isRedirected is bool) &&
+        (!('originalPickupLocation' in data) || (data.originalPickupLocation is string && data.originalPickupLocation.size() <= 250)) &&
+        (!('redirectedAt' in data) || (data.redirectedAt is string && data.redirectedAt.size() <= 50)) &&
+        (!('redirectReason' in data) || (data.redirectReason is string && data.redirectReason.size() <= 100)) &&
+        (!('store' in data) || (data.store is string && data.store.size() <= 100)) &&
         (!('isPinned' in data) || data.isPinned is bool) &&
         (!('isArchived' in data) || data.isArchived is bool) &&
         (!('checkpoints' in data) || (data.checkpoints is list && data.checkpoints.size() <= 50)) &&

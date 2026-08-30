@@ -52,6 +52,14 @@ self.addEventListener('push', (event) => {
     ]
   };
 
+  if ('setAppBadge' in navigator && typeof data.badgeCount === 'number') {
+    if (data.badgeCount > 0) {
+      navigator.setAppBadge(data.badgeCount).catch(() => {});
+    } else {
+      navigator.clearAppBadge().catch(() => {});
+    }
+  }
+
   event.waitUntil(
     self.registration.showNotification(title, options)
   );

@@ -84,8 +84,8 @@ To balance deep specialization with clean communication boundaries, agents are o
 
 ### Metrics Summary:
 * **Active Test Suites**: 109 suites (100 frontend/integration + 9 Cloud Functions).
-* **Total Executed Tests**: 1,048 tests (954 root + 94 functions).
-* **Test Pass Rate**: **100.0% (1,048 passed, 0 failed, 0 skipped)**.
+* **Total Executed Tests**: 1,052 tests (958 root + 94 functions).
+* **Test Pass Rate**: **100.0% (1,052 passed, 0 failed, 0 skipped)**.
 * **Lint Violations**: **0 errors**; `npm run lint` exits 0. Warnings are not zero and are not meant to be — the four `react-perf/jsx-no-new-*` rules are enabled at `warn` as a worklist. See `AGENTS.md` §9.1.
 * **Red Team & Chaos Assessment**: 0.0 CVSS Vulnerability Score; XSS, ReDoS, prototype pollution, quota exhaustion, and credential stuffing immunities verified.
 * **Build Verification**: Vite 8 clean client production build passed with code-splitting in ~440ms.

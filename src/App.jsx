@@ -58,6 +58,7 @@ import { APP_NAME, APP_COPYRIGHT } from './constants/app';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { usePackages, MUTATION_TYPES } from './hooks/usePackages';
 import { triggerGmailBackfill } from './services/emailSyncService';
+import { notificationService } from './services/notificationService';
 
 /**
  * Every dialog in the app, by id. These replaced twelve `isXOpen` booleans
@@ -382,6 +383,14 @@ export function DashboardContent() {
       window.location.reload();
     }
   };
+
+  // Synchronize PWA App Badge with count of active (non-delivered, non-archived) packages
+  useEffect(() => {
+    const activeCount = (packages || []).filter(
+      (p) => !p.isArchived && p.status !== 'delivered' && p.status !== 'archived'
+    ).length;
+    notificationService.updateAppBadge(activeCount);
+  }, [packages]);
 
   // Toast notifications
   const [toast, setToast] = useState(null);

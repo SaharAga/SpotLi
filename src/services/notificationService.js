@@ -342,5 +342,66 @@ export const notificationService = {
     }
 
     return { pushSent };
+  },
+
+  /**
+   * Sets the PWA application icon badge count
+   * @param {number} count
+   * @returns {Promise<boolean>}
+   */
+  updateAppBadge: async (count) => {
+    const root = typeof window !== 'undefined' ? window : globalThis;
+    if (root.navigator && typeof root.navigator.setAppBadge === 'function') {
+      try {
+        if (typeof count === 'number' && count > 0) {
+          await root.navigator.setAppBadge(count);
+        } else {
+          await root.navigator.clearAppBadge();
+        }
+        return true;
+      } catch (e) {
+        console.warn('[NotificationService] Failed to update app badge:', e);
+        return false;
+      }
+    }
+    return false;
+  },
+
+  /**
+   * Clears the PWA application icon badge
+   * @returns {Promise<boolean>}
+   */
+  clearAppBadge: async () => {
+    const root = typeof window !== 'undefined' ? window : globalThis;
+    if (root.navigator && typeof root.navigator.clearAppBadge === 'function') {
+      try {
+        await root.navigator.clearAppBadge();
+        return true;
+      } catch (e) {
+        console.warn('[NotificationService] Failed to clear app badge:', e);
+        return false;
+      }
+    }
+    return false;
+  },
+
+  /**
+   * Sends a test notification to verify push / notification capabilities
+   * @param {string} [language='he']
+   * @returns {Promise<Notification|boolean|null>}
+   */
+  sendTestNotification: async (language = 'he') => {
+    const title = language === 'he'
+      ? '📦 Deliveree | התראת בדיקה'
+      : '📦 Deliveree | Test Notification';
+    const body = language === 'he'
+      ? 'התראות Web Push פועלות בהצלחה במכשיר שלך!'
+      : 'Web Push Notifications are working successfully on your device!';
+
+    return notificationService.sendWebNotification(title, {
+      body,
+      tag: 'deliveree-test-notification',
+      data: { url: '/', test: true }
+    });
   }
 };

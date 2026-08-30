@@ -123,6 +123,19 @@ export function AccountModal({
     }
   };
 
+  const handleSendTestNotification = async () => {
+    try {
+      const res = await notificationService.sendTestNotification(language);
+      if (res) {
+        if (onShowToast) onShowToast(language === 'he' ? 'התראת בדיקה נשלחה!' : 'Test notification sent!', 'success');
+      } else {
+        if (onShowToast) onShowToast(language === 'he' ? 'לא ניתן לשלוח התראה, בדוק הרשאות' : 'Could not send notification, check permissions', 'error');
+      }
+    } catch {
+      if (onShowToast) onShowToast(language === 'he' ? 'שגיאה בשליחת התראת בדיקה' : 'Error sending test notification', 'error');
+    }
+  };
+
   if (!isOpen) return null;
 
   const currentPrefs = user?.preferences || {
@@ -526,9 +539,19 @@ export function AccountModal({
                 </div>
 
                 {permissionStatus === 'granted' && (
-                  <div className="flex items-center gap-2 text-[11px] text-[var(--stg-success)] font-semibold pt-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>{t('notifications.permissionGranted')}</span>
+                  <div className="flex items-center justify-between pt-2 border-t border-[var(--stg-border)]">
+                    <div className="flex items-center gap-2 text-[11px] text-[var(--stg-success)] font-semibold">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>{t('notifications.permissionGranted')}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSendTestNotification}
+                      className="px-3 py-1.5 rounded-lg bg-[var(--stg-surface)] hover:bg-[var(--stg-surface-elevated)] border border-[var(--stg-border)] text-[var(--stg-text)] text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1.5 min-h-[36px]"
+                    >
+                      <Sparkles className="w-3 h-3 text-[var(--stg-accent)]" />
+                      <span>{language === 'he' ? 'שלח התראת בדיקה' : 'Send Test Notification'}</span>
+                    </button>
                   </div>
                 )}
               </div>

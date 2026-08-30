@@ -247,6 +247,82 @@ describe('notificationService', () => {
       expect(res.pushSent).toBe(false);
       expect(notificationConstructor).not.toHaveBeenCalled();
     });
+
+    it('respects notifyOnDelivered and notifyOnCustoms preference toggles', async () => {
+      notificationService.savePreferences({
+        pushEnabled: true,
+        notifyOnStatusChange: true,
+        notifyOnDelivered: false,
+        notifyOnCustoms: false
+      });
+
+      const notificationConstructor = vi.fn();
+      globalThis.Notification = Object.assign(notificationConstructor, {
+        permission: 'granted'
+      });
+
+      const mockPkg = { id: '2', title: 'Delivered item' };
+      const resDelivered = await notificationService.notifyStatusChange(mockPkg, 'out_for_delivery', 'delivered');
+      expect(resDelivered.pushSent).toBe(false);
+
+      const resCustoms = await notificationService.notifyStatusChange(mockPkg, 'in_transit', 'customs');
+      expect(resCustoms.pushSent).toBe(false);
+      expect(notificationConstructor).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('PWA App Badging API & Test Notifications', () => {
+    it('sets and clears app badge count when navigator.setAppBadge is supported', async () => {
+      const setAppBadgeMock = vi.fn().mockResolvedValue(undefined);
+      const clearAppBadgeMock = vi.fn().mockResolvedValue(undefined);
+
+      globalThis.navigator = {
+        setAppBadge: setAppBadgeMock,
+        clearAppBadge: clearAppBadgeMock
+      };
+
+      const didSet = await notificationService.updateAppBadge(5);
+      expect(didSet).toBe(true);
+      expect(setAppBadgeMock).toHaveBeenCalledWith(5);
+
+      const didClearOnZero = await notificationService.updateAppBadge(0);
+      expect(didClearOnZero).toBe(true);
+      expect(clearAppBadgeMock).toHaveBeenCalled();
+
+      const didClear = await notificationService.clearAppBadge();
+      expect(didClear).toBe(true);
+      expect(clearAppBadgeMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('gracefully returns false when app badging is not supported', async () => {
+      globalThis.navigator = {};
+      const didSet = await notificationService.updateAppBadge(3);
+      expect(didSet).toBe(false);
+
+      const didClear = await notificationService.clearAppBadge();
+      expect(didClear).toBe(false);
+    });
+
+    it('sends bilingual test notifications successfully when permission is granted', async () => {
+      const notificationConstructor = vi.fn();
+      globalThis.Notification = Object.assign(notificationConstructor, {
+        permission: 'granted'
+      });
+
+      const heTest = await notificationService.sendTestNotification('he');
+      expect(heTest).toBeTruthy();
+      expect(notificationConstructor).toHaveBeenCalledWith(
+        expect.stringContaining('התראת בדיקה'),
+        expect.objectContaining({ tag: 'deliveree-test-notification' })
+      );
+
+      const enTest = await notificationService.sendTestNotification('en');
+      expect(enTest).toBeTruthy();
+      expect(notificationConstructor).toHaveBeenCalledWith(
+        expect.stringContaining('Test Notification'),
+        expect.objectContaining({ tag: 'deliveree-test-notification' })
+      );
+    });
   });
 });
 
