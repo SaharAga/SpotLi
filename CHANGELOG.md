@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.22.3] - 2026-08-30
+
+### Fixed
+- Fixed production/staging deploy silently skipping on every release commit since the previous release. GitHub's implicit `success()` on a job's `if:` walks the whole transitive dependency chain, not just direct `needs:` — with lint/test legitimately skipped (not failed) on a release-only commit, that implicit check broke and deploy never ran despite `is_release` correctly evaluating true.
+
 ## [0.22.2] - 2026-08-30
 
 ### Fixed
