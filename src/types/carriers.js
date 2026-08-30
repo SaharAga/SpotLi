@@ -33,6 +33,60 @@ function rule(re, options = {}) {
   };
 }
 
+/**
+ * Builds Israel Post checkpoints from the itemtrace gateway's `itemhistory`
+ * field. This is an unofficial, undocumented API — `itemhistory` has been
+ * observed as a single free-text status string, but may also come back as an
+ * array of per-event objects (field names unconfirmed), so both shapes are
+ * handled rather than assumed. Falls back to a single `laststatus`
+ * checkpoint (the prior behavior) when `itemhistory` isn't present or isn't
+ * usable, so a shape this doesn't recognize degrades instead of losing data.
+ * @param {object} data - raw itemtrace gateway response
+ * @param {string} trackNum
+ * @returns {Array<object>}
+ */
+function buildIsraelPostCheckpoints(data, trackNum) {
+  const { itemhistory, laststatus, unitname } = data;
+
+  if (Array.isArray(itemhistory) && itemhistory.length > 0) {
+    return itemhistory.map((entry, index) => {
+      const title =
+        (typeof entry === 'string' ? entry : entry?.status || entry?.eventname || entry?.description) ||
+        laststatus ||
+        '';
+      const location = (typeof entry !== 'string' && (entry?.location || entry?.unitname || entry?.city)) || unitname || 'דואר ישראל';
+      const rawTimestamp = typeof entry !== 'string' ? entry?.date || entry?.eventdate || entry?.timestamp : null;
+      const timestamp = rawTimestamp && !Number.isNaN(Date.parse(rawTimestamp))
+        ? new Date(rawTimestamp).toISOString()
+        : new Date().toISOString();
+
+      return {
+        id: `cp-ilp-${trackNum}-${index}`.slice(0, 100),
+        title,
+        description: title,
+        descriptionHe: title,
+        location,
+        timestamp,
+        isCompleted: true
+      };
+    });
+  }
+
+  if (!laststatus) return [];
+
+  return [
+    {
+      id: `cp-ilp-${trackNum}-0`.slice(0, 100),
+      title: laststatus,
+      description: typeof itemhistory === 'string' ? itemhistory : '',
+      descriptionHe: laststatus,
+      location: unitname || 'דואר ישראל',
+      timestamp: new Date().toISOString(),
+      isCompleted: true
+    }
+  ];
+}
+
 export const CARRIERS = {
   'israel-post': {
     id: 'israel-post',
@@ -54,20 +108,9 @@ export const CARRIERS = {
       parse: (data, trackNum, { inferStageFromText }) => {
         if (!data || !data.itemcode) return null;
 
-        const stage = inferStageFromText(data.itemhistory || data.laststatus || '');
-        const checkpoints = [];
-
-        if (data.laststatus) {
-          checkpoints.push({
-            id: `cp-ilp-${trackNum}-0`.slice(0, 100),
-            title: data.laststatus,
-            description: data.itemhistory || '',
-            descriptionHe: data.laststatus,
-            location: data.unitname || 'דואר ישראל',
-            timestamp: new Date().toISOString(),
-            isCompleted: true
-          });
-        }
+        const checkpoints = buildIsraelPostCheckpoints(data, trackNum);
+        const historyText = checkpoints.map((cp) => cp.title).join(' ') || data.laststatus || '';
+        const stage = inferStageFromText(historyText);
 
         return {
           carrier: 'israel-post',
