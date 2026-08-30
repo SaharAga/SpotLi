@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.21.1] - 2026-08-30
+
+### Fixed
+- Israel Post live tracking now builds a full checkpoint timeline from the
+itemtrace gateway's `itemhistory` field when it's returned as a list of
+events, instead of collapsing every package to a single "last status"
+checkpoint. Falls back to the previous single-checkpoint behavior when
+`itemhistory` is a plain string or absent.
+
+- Fixed Gmail sync silently going stale after the initial connect: the watch
+renewal job now runs daily instead of weekly (a weekly schedule could miss
+renewing a subscription entirely depending on which day it was created,
+letting push notifications lapse with no error), and a status-update email
+for a tracking number you already have now updates that package instead of
+being dropped as a duplicate.
+
+- Add PWA App Badging API, enhanced Web Push payload handling, bilingual package status change alerts, and test notification triggers in Account Settings (TASK-702).
+
 ## [0.21.0] - 2026-08-29
 
 ### Added
