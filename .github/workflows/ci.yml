@@ -347,20 +347,20 @@ jobs:
   deploy-staging:
     name: Deploy to Firebase Hosting (staging)
     runs-on: ubuntu-latest
-    needs: [build, detect-release]
-    # Previously deployed on every push to main, so an ordinary merge (never
-    # meant to deploy anything) fired a staging deploy, and the following
-    # release commit fired a second one straight after — gate this on the
-    # same is_release check production uses so staging and production
-    # deploy together, exactly once per release.
-    # always() + an explicit build-result check: see deploy-firebase above —
-    # GitHub's implicit success() walks the whole transitive dependency
-    # chain, and lint/test being legitimately skipped on a release-only
-    # commit broke it silently without this.
+    needs: [build, detect-release-only-commit]
+    # Deploys on every ordinary merge to main, for pre-release visibility —
+    # EXCEPT on a release-only commit, which carries no code the preceding
+    # merge didn't already carry and deploy to staging; redeploying the same
+    # code there is pure duplication right before the production deploy below
+    # (which stays gated on is_release in deploy-firebase).
+    # always() + an explicit build-result check: GitHub's implicit success()
+    # walks the whole transitive dependency chain, and lint/test being
+    # legitimately skipped on a release-only commit broke it silently
+    # without this — see deploy-firebase above.
     if: |
       always() && needs.build.result == 'success' &&
       github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-      needs.detect-release.outputs.is_release == 'true' &&
+      needs.detect-release-only-commit.outputs.release_only != 'true' &&
       vars.FIREBASE_HOSTING_ENABLED == 'true'
     steps:
       - name: Checkout Code
