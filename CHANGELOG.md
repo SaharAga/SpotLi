@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.22.2] - 2026-08-30
+
+### Fixed
+- `actions/upload-artifact@v4` silently drops dotfiles/dot-directories unless `include-hidden-files: true` is set, so `public/.well-known/` never actually reached production despite firebase.json's ignore config being correct — that was the real cause of the Strix domain-verification file being unreachable.
+
+- CI no longer re-runs lint/test/functions tests on the release commit produced by `npm run release` — that commit only touches `package.json`/`CHANGELOG.md`/`.changes/`, and the PR that preceded it already ran the full suite against this exact code. Also fixed staging deploy firing on every push to `main` instead of only on the release commit alongside production.
+
 ## [0.22.1] - 2026-08-30
 
 ### Fixed
