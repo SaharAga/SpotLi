@@ -157,13 +157,16 @@ export const gmailBackfill = onCall(
 );
 
 /**
- * Weekly renewal of Gmail watch subscriptions (they expire after 7 days).
- * Requires a Cloud Scheduler job to actually invoke it — see deployment
- * checklist.
+ * Daily renewal of Gmail watch subscriptions (they expire after 7 days from
+ * whenever the user connected — not aligned to any fixed weekday). A weekly
+ * schedule can miss a watch entirely depending on connect day, since a watch
+ * expiring shortly after one run's 2-day lookahead window may have already
+ * lapsed before the next run 7 days later. Daily closes that gap. Requires a
+ * Cloud Scheduler job to actually invoke it — see deployment checklist.
  */
 export const gmailWatchRenewal = onSchedule(
   {
-    schedule: 'every monday 03:00',
+    schedule: 'every day 03:00',
     timeZone: 'Etc/UTC',
     secrets: [gmailOAuthClientSecret],
     timeoutSeconds: 300,

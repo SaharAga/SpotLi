@@ -1,5 +1,5 @@
 /**
- * Weekly scheduled renewal of Gmail `users.watch()` subscriptions — Gmail
+ * Daily scheduled renewal of Gmail `users.watch()` subscriptions — Gmail
  * watches expire after 7 days regardless of activity, so anything nearing
  * expiration needs to be re-registered or push notifications silently stop.
  */
@@ -44,13 +44,23 @@ export function createGmailWatchRenewalHandler({ db, clientSecret }) {
           uid: doc.id,
           data: {
             historyId: watchRes.data.historyId ? String(watchRes.data.historyId) : conn.historyId,
-            watchExpiration: watchRes.data.expiration || null
+            watchExpiration: watchRes.data.expiration || null,
+            lastRenewalError: null
           }
         });
         renewed += 1;
       } catch (err) {
         console.error(`[gmailWatchRenewal] Failed to renew watch for uid ${doc.id}:`, err);
         failed += 1;
+        // Surface on the connection doc so a persistently failing renewal is
+        // visible to the app (e.g. IngestionGuideModal) instead of only
+        // living in Cloud Function logs — a lapsed watch otherwise fails
+        // silently from the user's point of view.
+        await setGmailConnection({
+          db,
+          uid: doc.id,
+          data: { lastRenewalError: String(err?.message || err) }
+        }).catch(() => {});
       }
     }
 

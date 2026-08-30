@@ -18,7 +18,7 @@
  */
 
 import { findGmailConnectionByEmail, getGmailClientForUser, setGmailConnection } from './gmailAuth.js';
-import { buildPackageFromGmailMessage } from './gmailPackageSync.js';
+import { buildPackageFromGmailMessage, buildStatusUpdateFromGmailMessage } from './gmailPackageSync.js';
 
 /**
  * @param {{ db: FirebaseFirestore.Firestore, clientSecret: string, pushToken: string }} deps
@@ -111,16 +111,31 @@ export async function syncHistoryForConnection({ db, connection, clientSecret, n
   }
 
   const existingSnap = await db.collection('users').doc(uid).collection('packages').get();
-  const existingTrackingNumbers = new Set(
-    existingSnap.docs
-      .map((d) => d.data()?.trackingNumber)
-      .filter(Boolean)
-      .map((t) => String(t).toUpperCase())
-  );
+  const trackingNumberToDocId = new Map();
+  for (const d of existingSnap.docs) {
+    const t = d.data()?.trackingNumber;
+    if (t) trackingNumberToDocId.set(String(t).toUpperCase(), d.id);
+  }
+  const existingTrackingNumbers = new Set(trackingNumberToDocId.keys());
 
   let saved = 0;
+  let updated = 0;
   for (const messageId of messageIds) {
     const msgRes = await gmail.users.messages.get({ userId: 'me', id: messageId, format: 'full' });
+
+    // A message about a tracking number we already have is a status
+    // follow-up (e.g. "out for delivery"), not a new package — update the
+    // existing one instead of dropping the message as a duplicate.
+    const statusUpdate = buildStatusUpdateFromGmailMessage({ gmailMessage: msgRes.data });
+    if (statusUpdate && trackingNumberToDocId.has(statusUpdate.trackingNumber)) {
+      const docId = trackingNumberToDocId.get(statusUpdate.trackingNumber);
+      const patch = { status: statusUpdate.status, updatedAt: new Date().toISOString() };
+      await db.collection('users').doc(uid).collection('packages').doc(docId).set(patch, { merge: true });
+      await db.collection('packages').doc(docId).set(patch, { merge: true });
+      updated += 1;
+      continue;
+    }
+
     const pkg = buildPackageFromGmailMessage({
       gmailMessage: msgRes.data,
       userId: uid,
@@ -131,9 +146,10 @@ export async function syncHistoryForConnection({ db, connection, clientSecret, n
     await db.collection('users').doc(uid).collection('packages').doc(pkg.id).set(pkg);
     await db.collection('packages').doc(pkg.id).set(pkg);
     existingTrackingNumbers.add(pkg.trackingNumber.toUpperCase());
+    trackingNumberToDocId.set(pkg.trackingNumber.toUpperCase(), pkg.id);
     saved += 1;
   }
 
   await setGmailConnection({ db, uid, data: { historyId: String(newHistoryId) } });
-  return { saved };
+  return { saved, updated };
 }
