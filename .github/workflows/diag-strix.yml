@@ -1,0 +1,13 @@
+name: Diag Strix Verify
+on:
+  workflow_dispatch:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Curl the verification file
+        run: |
+          echo "--- headers ---"
+          curl -sSI "https://deliveree-app-2a938.web.app/.well-known/strix-verify.txt"
+          echo "--- body ---"
+          curl -sS "https://deliveree-app-2a938.web.app/.well-known/strix-verify.txt"
