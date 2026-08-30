@@ -106,7 +106,7 @@ export function NavigationChoiceModal({
         </div>
         <button
           onClick={onClose}
-          className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+          className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
           aria-label="Close"
         >
           <X className="w-5 h-5" />
@@ -185,7 +185,7 @@ export function NavigationChoiceModal({
 
       {/* Footer: Remember choice toggle & Reset button */}
       <div className="p-4 sm:p-5 border-t border-slate-800 bg-slate-950/80 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-300 min-h-[44px]">
+        <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-300 min-h-[48px]">
           <input
             type="checkbox"
             checked={rememberChoice}
@@ -199,7 +199,7 @@ export function NavigationChoiceModal({
           <button
             type="button"
             onClick={handleResetPreference}
-            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-rose-400 transition-colors cursor-pointer min-h-[44px] px-2"
+            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-rose-400 transition-colors cursor-pointer min-h-[48px] px-2"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>{t('navigation.clearPreference') || 'Reset saved default'}</span>

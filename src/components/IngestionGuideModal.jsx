@@ -34,6 +34,7 @@ export function IngestionGuideModal({
   const [isConnectingGmail, setIsConnectingGmail] = useState(false);
   const [isConnectingOutlook, setIsConnectingOutlook] = useState(false);
   const [connectedServices, setConnectedServicesState] = useState(() => getConnectedServices(user));
+  const [gmailRenewalError, setGmailRenewalError] = useState(null);
   const userUid = user?.uid || user?.id;
 
   // The client can't read gmailConnections/{uid} directly (Firestore rules
@@ -47,6 +48,7 @@ export function IngestionGuideModal({
 
     if (!userUid) {
       setConnectedServicesState({ ...local, gmail: false, accounts: nonGmailAccounts });
+      setGmailRenewalError(null);
       return;
     }
 
@@ -63,6 +65,7 @@ export function IngestionGuideModal({
         ]
       : nonGmailAccounts;
     setConnectedServicesState({ ...local, gmail: Boolean(gmailStatus.connected), accounts });
+    setGmailRenewalError(gmailStatus.connected ? gmailStatus.lastRenewalError || null : null);
   };
 
   // Sync state whenever user ID changes or modal opens
@@ -398,6 +401,17 @@ export function IngestionGuideModal({
                   </div>
                 )}
               </div>
+
+              {gmailRenewalError && (
+                <div className="flex items-start gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px]">
+                  <RefreshCw className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <span>
+                    {language === 'he'
+                      ? 'החידוש האוטומטי של Gmail נכשל לאחרונה — ייתכן שקבלת אימיילים חדשים הופסקה. נתקו וחברו מחדש את Gmail.'
+                      : 'Gmail auto-sync renewal recently failed — new emails may have stopped syncing. Disconnect and reconnect Gmail to fix it.'}
+                  </span>
+                </div>
+              )}
             </div>
           )}
 

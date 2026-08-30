@@ -28,7 +28,8 @@ export function createGmailConnectionStatusHandler({ db }) {
     return {
       connected: true,
       emailAddress: connection.emailAddress || null,
-      connectedAt: connection.connectedAt || null
+      connectedAt: connection.connectedAt || null,
+      lastRenewalError: connection.lastRenewalError || null
     };
   };
 }

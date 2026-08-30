@@ -40,6 +40,18 @@ const ISRAELI_HOLIDAYS = {
   '2027-10-11': { nameHe: 'יום כיפור', nameEn: 'Yom Kippur', isChag: true }
 };
 
+/** Last date the ISRAELI_HOLIDAYS table has an entry for — review/extend this table past this date. */
+const ISRAELI_HOLIDAYS_LAST_KNOWN_DATE = '2027-10-11';
+let hasWarnedStaleHolidayTable = false;
+
+/**
+ * Returns the calendar date key (YYYY-MM-DD) for a given instant, in Israel local time —
+ * not UTC, so holiday/Shabbat checks near local midnight resolve to the correct day.
+ */
+function getIsraeliDateKey(date) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jerusalem' }).format(date);
+}
+
 /**
  * Known Israeli Post & Pickup Directories for Tier 2 matching.
  */
@@ -299,7 +311,18 @@ export function parseOpeningHours(hoursStr) {
  * @returns {{ isHoliday: boolean, isErev: boolean, holidayNameHe: string, holidayNameEn: string, earlyClosureTime?: string }|null}
  */
 export function getIsraeliHolidayNotice(date = new Date()) {
-  const dateKey = date.toISOString().slice(0, 10);
+  const dateKey = getIsraeliDateKey(date);
+  if (dateKey > ISRAELI_HOLIDAYS_LAST_KNOWN_DATE) {
+    if (!hasWarnedStaleHolidayTable) {
+      hasWarnedStaleHolidayTable = true;
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[openingHoursService] ISRAELI_HOLIDAYS table has no entries past ${ISRAELI_HOLIDAYS_LAST_KNOWN_DATE}; ` +
+        'holiday/Shabbat closures cannot be detected for this date. Extend the table.'
+      );
+    }
+    return null;
+  }
   const holiday = ISRAELI_HOLIDAYS[dateKey];
   if (!holiday) return null;
 
