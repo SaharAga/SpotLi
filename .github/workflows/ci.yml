@@ -245,6 +245,11 @@ jobs:
           # never initializes.
           VITE_RECAPTCHA_V3_SITE_KEY: ${{ vars.VITE_RECAPTCHA_V3_SITE_KEY }}
 
+      # include-hidden-files is required — actions/upload-artifact@v4 silently
+      # drops dotfiles/dot-directories otherwise, which dropped
+      # public/.well-known/ (and anything else dot-prefixed) from every
+      # artifact this job ever produced, independent of firebase.json's ignore
+      # config being correct.
       - name: Upload build output
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
@@ -252,6 +257,7 @@ jobs:
           name: dist
           path: dist
           retention-days: 1
+          include-hidden-files: true
 
   # A merge to main is not a release. Deploying every merge meant several
   # deploys could share one version, so "I'm on 0.15.12" stopped identifying a
