@@ -57,6 +57,24 @@ describe('PackageCard Component', () => {
     expect(screen.getByText('Redirected')).toBeInTheDocument();
   });
 
+  it('renders the sender-reported badge for a Gmail order-status package', () => {
+    const orderStatusPkg = {
+      ...basePkg,
+      trackingNumber: '',
+      confidence: 'sender_reported',
+      status: 'in_transit'
+    };
+
+    renderWithLanguage(
+      <PackageCard
+        pkg={orderStatusPkg}
+        onOpenDetails={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('from order confirmation')).toBeInTheDocument();
+  });
+
   it('renders pickup location and same-location sibling counter badge', () => {
     const siblingPkg = {
       id: 'pkg-2',

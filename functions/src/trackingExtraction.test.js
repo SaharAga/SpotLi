@@ -5,7 +5,8 @@ import {
   detectStore,
   extractTrackingDetails,
   inferDeliveryStatus,
-  generateCleanTitle
+  generateCleanTitle,
+  extractOrderStatusDetails
 } from './trackingExtraction.js';
 
 describe('inferDeliveryStatus', () => {
@@ -211,5 +212,34 @@ describe('extractTrackingDetails', () => {
     expect(valid.status).toBe('verified');
     expect(invalid.selectedCandidate?.checksum).toBe('fail');
     expect(invalid.status).not.toBe('verified');
+  });
+});
+
+describe('extractOrderStatusDetails', () => {
+  it('extracts a store + status for an order-only email with no carrier tracking number', () => {
+    const result = extractOrderStatusDetails(
+      'Your order has shipped',
+      'Order 1122283942717219 has shipped and is on its way.',
+      'AliExpress <no-reply@aliexpress.com>'
+    );
+    expect(result).toEqual({
+      store: 'AliExpress',
+      status: 'in_transit',
+      title: expect.any(String)
+    });
+  });
+
+  it('returns null when no known store is detected', () => {
+    const result = extractOrderStatusDetails('Your order has shipped', 'Order 12345 has shipped.', 'someone@example.com');
+    expect(result).toBeNull();
+  });
+
+  it('returns null when a store is known but no explicit lifecycle phrase is present (e.g. a newsletter)', () => {
+    const result = extractOrderStatusDetails(
+      '20% off everything this weekend',
+      'Check out our new arrivals!',
+      'AliExpress <no-reply@aliexpress.com>'
+    );
+    expect(result).toBeNull();
   });
 });
