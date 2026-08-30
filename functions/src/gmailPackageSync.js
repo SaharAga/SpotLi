@@ -5,7 +5,12 @@
  * user already has.
  */
 
-import { extractTrackingDetails, sanitizeEmailHtml, inferDeliveryStatus } from './trackingExtraction.js';
+import {
+  extractTrackingDetails,
+  sanitizeEmailHtml,
+  inferDeliveryStatus,
+  extractOrderStatusDetails
+} from './trackingExtraction.js';
 
 /**
  * Rough "looks already delivered" heuristic for backfill — mirrors the
@@ -86,24 +91,49 @@ export function buildPackageFromGmailMessage({
   const { subject, body, from } = extractSubjectAndBodyFromGmailMessage(gmailMessage);
   const { trackingNumber, carrier, title, store, status: detectionStatus } = extractTrackingDetails(subject, body, from);
 
-  // Gmail sync runs without a confirmation screen, so never create a package
-  // from a merely probable/uncertain candidate.
-  if (!trackingNumber || detectionStatus !== 'verified') return null;
-  if (isDuplicateTrackingNumber(existingTrackingNumbers, trackingNumber)) return null;
-  if (skipDelivered && looksAlreadyDelivered(subject, body)) return null;
-
-  const packageId = `pkg-gmail-${gmailMessage.id || Date.now()}`;
   const nowIso = new Date().toISOString();
 
+  // Gmail sync runs without a confirmation screen, so never create a package
+  // from a merely probable/uncertain candidate.
+  if (trackingNumber && detectionStatus === 'verified') {
+    if (isDuplicateTrackingNumber(existingTrackingNumbers, trackingNumber)) return null;
+    if (skipDelivered && looksAlreadyDelivered(subject, body)) return null;
+
+    return {
+      id: `pkg-gmail-${gmailMessage.id || Date.now()}`,
+      userId,
+      title,
+      trackingNumber,
+      carrier,
+      status: inferDeliveryStatus(subject, body),
+      source: 'gmail_sync',
+      notes: store ? `${store} order` : (subject ? `From Gmail: ${subject.slice(0, 80)}` : ''),
+      createdAt: nowIso,
+      updatedAt: nowIso,
+      isArchived: false
+    };
+  }
+
+  // No verifiable carrier tracking number (e.g. a marketplace order number
+  // like AliExpress's, which means nothing to any carrier) — fall back to a
+  // lower-confidence "order status" record built from the store + an
+  // explicit lifecycle phrase in the email, rather than creating nothing.
+  // Kept structurally distinct (no trackingNumber, its own `source` and
+  // `confidence`) so it never gets confused with a carrier-verified package.
+  const orderStatus = extractOrderStatusDetails(subject, body, from);
+  if (!orderStatus) return null;
+  if (skipDelivered && looksAlreadyDelivered(subject, body)) return null;
+
   return {
-    id: packageId,
+    id: `pkg-gmail-order-${gmailMessage.id || Date.now()}`,
     userId,
-    title,
-    trackingNumber,
-    carrier,
-    status: inferDeliveryStatus(subject, body),
-    source: 'gmail_sync',
-    notes: store ? `${store} order` : (subject ? `From Gmail: ${subject.slice(0, 80)}` : ''),
+    title: orderStatus.title,
+    trackingNumber: '',
+    carrier: 'other',
+    status: orderStatus.status,
+    source: 'gmail_sync_order_status',
+    confidence: 'sender_reported',
+    notes: `${orderStatus.store} order — from your order confirmation email, no carrier tracking number`,
     createdAt: nowIso,
     updatedAt: nowIso,
     isArchived: false

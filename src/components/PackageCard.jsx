@@ -239,6 +239,16 @@ function PackageCardImpl({
                   <span>{t('redirectDetection.badge')}</span>
                 </span>
               )}
+              {pkg.confidence === 'sender_reported' && (
+                <span
+                  title={language === 'he'
+                    ? 'הסטטוס מבוסס על אימייל אישור הזמנה, ולא על מעקב מאומת מול חברת השילוח'
+                    : 'Status is based on your order confirmation email, not carrier-verified tracking'}
+                  className="ms-1 inline-flex items-center px-1.5 py-0.5 rounded-md bg-slate-700/50 text-slate-300 border border-slate-600/50 text-[10px] font-bold shrink-0"
+                >
+                  {language === 'he' ? 'מאישור הזמנה' : 'from order confirmation'}
+                </span>
+              )}
             </div>
           </div>
 

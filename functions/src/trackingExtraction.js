@@ -214,12 +214,15 @@ export function detectStore(from = '', text = '') {
 }
 
 /**
- * Infers the package lifecycle status from email subject and body text.
+ * Matches an explicit package lifecycle signal in email subject/body text, or
+ * null when nothing matched. Shared by `inferDeliveryStatus` (which defaults
+ * to 'ordered' for a normal package) and `extractOrderStatusDetails` (which
+ * needs to tell "no signal at all" apart from "ordered").
  * @param {string} subject
  * @param {string} body
- * @returns {'ordered' | 'in_transit' | 'out_for_delivery' | 'ready_for_pickup' | 'delivered' | 'exception'}
+ * @returns {'in_transit' | 'out_for_delivery' | 'ready_for_pickup' | 'delivered' | 'exception' | null}
  */
-export function inferDeliveryStatus(subject = '', body = '') {
+function matchDeliveryStatus(subject = '', body = '') {
   const combined = `${subject} ${body}`.toLowerCase();
 
   // 1. Delivered
@@ -262,7 +265,52 @@ export function inferDeliveryStatus(subject = '', body = '') {
     return 'in_transit';
   }
 
-  return 'ordered';
+  return null;
+}
+
+/**
+ * Infers the package lifecycle status from email subject and body text.
+ * @param {string} subject
+ * @param {string} body
+ * @returns {'ordered' | 'in_transit' | 'out_for_delivery' | 'ready_for_pickup' | 'delivered' | 'exception'}
+ */
+export function inferDeliveryStatus(subject = '', body = '') {
+  return matchDeliveryStatus(subject, body) || 'ordered';
+}
+
+/**
+ * Extracts an order-status signal from an email that names a known store but
+ * carries no verifiable carrier tracking number — e.g. a marketplace order
+ * number like AliExpress's, which means nothing to any carrier. This is
+ * deliberately a lower bar than a tracking-number candidate: a known store
+ * plus an explicit lifecycle phrase ("shipped", "out for delivery", ...) is
+ * good enough to say *something* happened, but nowhere near good enough to
+ * claim carrier-verified tracking, so callers must keep this result visually
+ * and structurally distinct from a real trackingNumber-based package.
+ *
+ * Deliberately requires an explicit status match (not just a known store) —
+ * a store's marketing/newsletter mail matching only on sender domain would
+ * otherwise spam a package into existence for every promotional email.
+ *
+ * @param {string} subject
+ * @param {string} body
+ * @param {string} [from]
+ * @returns {{ store: string, status: string, title: string } | null}
+ */
+export function extractOrderStatusDetails(subject = '', body = '', from = '') {
+  const cleanBody = sanitizeEmailHtml(body);
+  const combinedText = `${subject} ${cleanBody} ${from}`.slice(0, 25000);
+  const store = detectStore(from, combinedText);
+  if (!store) return null;
+
+  const status = matchDeliveryStatus(subject, cleanBody);
+  if (!status) return null;
+
+  return {
+    store,
+    status,
+    title: generateCleanTitle(subject, store, 'other')
+  };
 }
 
 /**

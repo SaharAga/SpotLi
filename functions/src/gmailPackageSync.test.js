@@ -103,4 +103,33 @@ describe('buildPackageFromGmailMessage', () => {
     });
     expect(pkg).toBeNull();
   });
+
+  it('falls back to an order-status package when there is a known store and lifecycle phrase but no carrier tracking number', () => {
+    const msg = makeGmailMessage({
+      id: 'ali-msg-1',
+      subject: 'Your order has shipped',
+      text: 'Your order 1122283942717219 has shipped and is on its way.'
+    });
+    msg.payload.headers.push({ name: 'From', value: 'AliExpress <no-reply@aliexpress.com>' });
+
+    const pkg = buildPackageFromGmailMessage({
+      gmailMessage: msg,
+      userId: 'uid1',
+      existingTrackingNumbers: new Set()
+    });
+
+    expect(pkg).not.toBeNull();
+    expect(pkg.id).toBe('pkg-gmail-order-ali-msg-1');
+    expect(pkg.trackingNumber).toBe('');
+    expect(pkg.source).toBe('gmail_sync_order_status');
+    expect(pkg.confidence).toBe('sender_reported');
+    expect(pkg.status).toBe('in_transit');
+  });
+
+  it('still returns null for an order-confirmation email with no known store and no tracking number', () => {
+    const msg = makeGmailMessage({ subject: 'Hello', text: 'no tracking here' });
+    expect(
+      buildPackageFromGmailMessage({ gmailMessage: msg, userId: 'uid1', existingTrackingNumbers: new Set() })
+    ).toBeNull();
+  });
 });
