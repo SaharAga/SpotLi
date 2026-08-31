@@ -181,6 +181,28 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Smart Import attempt telemetry (src/services/smartImportAttemptService.js)
+    // — the denominator parseCorrections above has no way to express on its
+    // own: one row per Smart-Import-filled save, corrected or not, so
+    // "% of attempts that needed a fix" (overall and per-carrier) can
+    // actually be computed instead of only ever counting corrections.
+    // Same low-stakes, anonymous, guest-open shape as parseCorrections —
+    // never a tracking number, title, or other free text/value.
+    match /smartImportAttempts/{docId} {
+      allow create: if request.resource.data.keys().hasOnly([
+          'source', 'confidence', 'carrier', 'corrected', 'timestamp'
+        ]) &&
+        request.resource.data.source in ['regex', 'ai'] &&
+        (!('confidence' in request.resource.data) || request.resource.data.confidence == null ||
+          request.resource.data.confidence in ['high', 'medium', 'low', 'none']) &&
+        request.resource.data.carrier is string &&
+        request.resource.data.carrier.size() <= 40 &&
+        request.resource.data.corrected is bool &&
+        (!('timestamp' in request.resource.data) || (request.resource.data.timestamp is string && request.resource.data.timestamp.size() <= 60));
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+
     // Opt-in AI training data (src/services/trainingDataService.js). Unlike
     // parseCorrections above, this stores the actual pasted text and
     // before/after field values — only ever written when the owning

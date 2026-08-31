@@ -18,6 +18,7 @@ import {
 } from '../services/feedbackService';
 import { fetchAllCrashReports, groupCrashReports } from '../services/crashReportService';
 import { fetchAllParseCorrections, computeParseCorrectionStats } from '../services/parseCorrectionService';
+import { fetchAllSmartImportAttempts, computeSmartImportMissRateStats } from '../services/smartImportAttemptService';
 import { AdminScreenshotLightbox } from './AdminScreenshotLightbox.jsx';
 import { downloadBlob } from '../utils/exportUtils';
 
@@ -37,6 +38,7 @@ export function AdminDashboardModal({
   const [cloudFeedbacks, setCloudFeedbacks] = useState([]);
   const [crashReports, setCrashReports] = useState([]);
   const [parseCorrections, setParseCorrections] = useState([]);
+  const [smartImportAttempts, setSmartImportAttempts] = useState([]);
   
   // Loading & error states
   const [isLoading, setIsLoading] = useState(false);
@@ -70,6 +72,12 @@ export function AdminDashboardModal({
     return computeParseCorrectionStats(parseCorrections);
   }, [parseCorrections]);
 
+  // Smart Import miss-rate stats (the denominator parserStats can't provide
+  // on its own — see smartImportAttemptService.js)
+  const missRateStats = useMemo(() => {
+    return computeSmartImportMissRateStats(smartImportAttempts);
+  }, [smartImportAttempts]);
+
   // Fetch all cloud telemetry
   const loadAllTelemetry = useCallback(async () => {
     if (!isAdmin) return;
@@ -77,15 +85,17 @@ export function AdminDashboardModal({
     setCloudError(null);
 
     try {
-      const [feedbackRes, crashRes, parserRes] = await Promise.all([
+      const [feedbackRes, crashRes, parserRes, missRateRes] = await Promise.all([
         fetchAllFeedback(),
         fetchAllCrashReports(),
-        fetchAllParseCorrections()
+        fetchAllParseCorrections(),
+        fetchAllSmartImportAttempts()
       ]);
 
       if (feedbackRes.ok) setCloudFeedbacks(feedbackRes.items);
       if (crashRes.ok) setCrashReports(crashRes.items);
       if (parserRes.ok) setParseCorrections(parserRes.items);
+      if (missRateRes.ok) setSmartImportAttempts(missRateRes.items);
 
       if (!feedbackRes.ok && !crashRes.ok) {
         setCloudError(feedbackRes.error || crashRes.error || 'Failed to load cloud telemetry');
@@ -681,6 +691,57 @@ export function AdminDashboardModal({
           {/* TAB 4: SMART PARSER */}
           {activeTab === 'parser' && (
             <div className="space-y-6">
+              {/* Miss rate: the actual quality metric — what fraction of Smart
+                  Import saves needed a manual fix, out of every save attempt,
+                  not just the ones that got corrected. */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                  <span className="text-xs text-slate-400">{language === 'he' ? 'סה״כ ניסיונות ייבוא חכם' : 'Total Smart Import Attempts'}</span>
+                  <div className="text-2xl font-bold text-blue-400">{missRateStats.total}</div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                  <span className="text-xs text-slate-400">{language === 'he' ? 'אחוז שדרשו תיקון' : 'Needed a Correction'}</span>
+                  <div className="text-2xl font-bold text-amber-400">
+                    {missRateStats.total > 0 ? `${Math.round(missRateStats.missRate * 100)}%` : '—'}
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                  <span className="text-xs text-slate-400">{language === 'he' ? 'ללא תיקון' : 'Clean Saves'}</span>
+                  <div className="text-2xl font-bold text-emerald-400">
+                    {missRateStats.total > 0 ? `${Math.round((1 - missRateStats.missRate) * 100)}%` : '—'}
+                  </div>
+                </div>
+              </div>
+
+              {Object.keys(missRateStats.perCarrier).length > 0 && (
+                <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-4">
+                  <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                    <Cpu className="w-4 h-4 text-amber-400" />
+                    <span>{language === 'he' ? 'אחוז תיקונים לפי מוביל' : 'Miss Rate by Carrier'}</span>
+                  </h3>
+                  <div className="space-y-2.5">
+                    {Object.entries(missRateStats.perCarrier)
+                      .sort(([, a], [, b]) => b.missRate - a.missRate)
+                      .map(([carrier, counts]) => (
+                        <div key={carrier} className="space-y-1">
+                          <div className="flex justify-between text-xs text-slate-300">
+                            <span className="font-mono font-semibold">{carrier}</span>
+                            <span>{Math.round(counts.missRate * 100)}% ({counts.corrected}/{counts.total})</span>
+                          </div>
+                          <div className="h-3 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+                            <div
+                              style={{ width: `${Math.round(counts.missRate * 100)}%` }}
+                              className="bg-amber-500 h-full rounded-full"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                   <span className="text-xs text-slate-400">{language === 'he' ? 'סה״כ תיקוני משתמשים' : 'Total User Corrections'}</span>
