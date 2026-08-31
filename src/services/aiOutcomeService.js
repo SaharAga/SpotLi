@@ -21,16 +21,22 @@ const TRACKED_FIELDS = ['trackingNumber', 'carrier'];
  * Import (a user editing/discarding what was auto-filled), rather than an
  * explicit "was this wrong?" prompt nothing else in this flow has either.
  *
- * Deliberately anonymized the same way: carrier + confidence band + which
- * fields changed, never the tracking number or any free text.
+ * Deliberately anonymized the same way as parseCorrections: carrier +
+ * confidence band + which fields changed, never the tracking number or any
+ * free text. Unlike parseCorrections, this write requires the caller to be
+ * signed in — a `gmail_sync_ai` package can only exist for an authenticated
+ * user with a connected Gmail account, so (unlike Smart Import, which works
+ * signed-out) there's no legitimate guest case here, and firestore.rules
+ * enforces `userId == request.auth.uid` to stop unauthenticated spoofing.
  *
  * Best-effort and silent — a failed telemetry write must never block the
  * user's actual delete/edit.
  *
- * @param {{ outcome: 'deleted' | 'edited', carrier: string, confidence: string | null, editedFields?: string[] }} entry
+ * @param {{ outcome: 'deleted' | 'edited', carrier: string, confidence: string | null, editedFields?: string[], userId: string | null | undefined }} entry
  */
-export async function recordAiOutcome({ outcome, carrier, confidence, editedFields = [] }) {
+export async function recordAiOutcome({ outcome, carrier, confidence, editedFields = [], userId }) {
   if (outcome === 'edited' && editedFields.length === 0) return;
+  if (!userId) return;
   if (!isFirebaseConfigured || !db) return;
 
   try {
@@ -40,6 +46,7 @@ export async function recordAiOutcome({ outcome, carrier, confidence, editedFiel
       carrier: carrier || 'other',
       confidence: confidence || null,
       editedFields: outcome === 'edited' ? editedFields : [],
+      userId,
       timestamp: new Date().toISOString()
     });
   } catch (err) {

@@ -201,7 +201,7 @@ export function usePackages(user, triggerCloudSync, onSaveError) {
     // mutation changes.
     const previousPkg = previousState.find((p) => p.id === mutationPackageId(mutation));
     const aiOutcome = detectAiOutcome(mutation, previousPkg);
-    if (aiOutcome) recordAiOutcome(aiOutcome);
+    if (aiOutcome) recordAiOutcome({ ...aiOutcome, userId: user?.id || null });
 
     const nextState = applyMutation(previousState, mutation);
     // React may batch multiple commits. Advance the authoritative value before

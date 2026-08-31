@@ -23,26 +23,31 @@ describe('recordAiOutcome', () => {
 
   it('writes a delete outcome with no editedFields', async () => {
     addDocMock.mockResolvedValue({ id: 'doc1' });
-    await recordAiOutcome({ outcome: 'deleted', carrier: 'ups', confidence: 'high' });
+    await recordAiOutcome({ outcome: 'deleted', carrier: 'ups', confidence: 'high', userId: 'user-1' });
 
     expect(collectionMock).toHaveBeenCalledWith({ fake: 'db' }, 'gmailAiOutcomes');
     expect(addDocMock).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ outcome: 'deleted', carrier: 'ups', confidence: 'high', editedFields: [] })
+      expect.objectContaining({ outcome: 'deleted', carrier: 'ups', confidence: 'high', editedFields: [], userId: 'user-1' })
     );
   });
 
   it('does nothing for an edited outcome with no editedFields', async () => {
-    await recordAiOutcome({ outcome: 'edited', carrier: 'ups', confidence: 'high', editedFields: [] });
+    await recordAiOutcome({ outcome: 'edited', carrier: 'ups', confidence: 'high', editedFields: [], userId: 'user-1' });
     expect(addDocMock).not.toHaveBeenCalled();
   });
 
-  it('writes only field names, carrier, and confidence — never a tracking number or free text', async () => {
+  it('does nothing without a userId — this write requires an authenticated caller', async () => {
+    await recordAiOutcome({ outcome: 'deleted', carrier: 'ups', confidence: 'high', userId: null });
+    expect(addDocMock).not.toHaveBeenCalled();
+  });
+
+  it('writes only field names, carrier, confidence, and userId — never a tracking number or free text', async () => {
     addDocMock.mockResolvedValue({ id: 'doc1' });
-    await recordAiOutcome({ outcome: 'edited', carrier: 'israel-post', confidence: 'medium', editedFields: ['trackingNumber'] });
+    await recordAiOutcome({ outcome: 'edited', carrier: 'israel-post', confidence: 'medium', editedFields: ['trackingNumber'], userId: 'user-1' });
 
     const payload = addDocMock.mock.calls[0][1];
-    expect(Object.keys(payload).sort()).toEqual(['carrier', 'confidence', 'editedFields', 'outcome', 'timestamp']);
+    expect(Object.keys(payload).sort()).toEqual(['carrier', 'confidence', 'editedFields', 'outcome', 'timestamp', 'userId']);
     expect(payload.editedFields).toEqual(['trackingNumber']);
   });
 });

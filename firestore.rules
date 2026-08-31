@@ -230,14 +230,20 @@ service cloud.firestore {
     // gmailParseInsights' telemetry: that collection logs what Gemini
     // *said*, this logs whether it was *right*, inferred from the user
     // deleting or correcting a `gmail_sync_ai`-sourced package shortly
-    // after it was created. Same anonymous, low-stakes shape as
-    // parseCorrections above (carrier + confidence band + which fields
-    // changed, never a tracking number or free text) and open to guests
-    // too for the same reason.
+    // after it was created. Unlike parseCorrections above (deliberately
+    // guest-writable because Smart Import works signed-out), a
+    // `gmail_sync_ai` package can only exist for a signed-in user with a
+    // connected Gmail account — `source`/`confidence` aren't even in
+    // isValidPackageData's allowlist, so the client can't create one
+    // itself either — so every legitimate write here is authenticated,
+    // and requiring auth (plus binding userId to the caller) closes off
+    // unauthenticated spoofing/abuse with no cost to real usage.
     match /gmailAiOutcomes/{docId} {
-      allow create: if request.resource.data.keys().hasOnly([
-          'outcome', 'carrier', 'confidence', 'editedFields', 'timestamp'
+      allow create: if isAuthenticated() &&
+        request.resource.data.keys().hasOnly([
+          'outcome', 'carrier', 'confidence', 'editedFields', 'userId', 'timestamp'
         ]) &&
+        request.resource.data.userId == request.auth.uid &&
         request.resource.data.outcome in ['deleted', 'edited'] &&
         request.resource.data.carrier is string &&
         request.resource.data.carrier.size() <= 40 &&
