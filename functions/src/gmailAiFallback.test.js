@@ -135,6 +135,25 @@ describe('resolveUnverifiedCandidateWithAi', () => {
     expect(insight.data.outcome).toBe('ai-resolved');
   });
 
+  it('never logs a raw tracking number: neither the subject nor the top regex candidate value', async () => {
+    await resolveUnverifiedCandidateWithAi({
+      db,
+      apiKey: 'key',
+      uid: 'u1',
+      subject: 'Tracking RR123456789IL has shipped',
+      body: 'tracking info inside',
+      from: 'noreply@amazon.com',
+      extraction: makeExtraction(),
+      parseFn: async () => ({ confidence: 'high', trackingNumber: 'RR123456789IL', carrier: 'israel-post' })
+    });
+
+    const insight = db._inserted.find((i) => i.collection === 'gmailParseInsights');
+    expect(insight.data.subjectShape).not.toContain('RR123456789IL');
+    expect(insight.data.subjectShape).toContain('[ID]');
+    expect(insight.data.regexTopCandidate).toBeUndefined();
+    expect(JSON.stringify(insight.data)).not.toContain('RR123456789IL');
+  });
+
   it('returns null and logs when Gemini declines (low/none confidence)', async () => {
     const result = await resolveUnverifiedCandidateWithAi({
       db,

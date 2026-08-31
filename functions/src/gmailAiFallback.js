@@ -27,14 +27,26 @@ import { parseWithGemini } from './gemini.js';
 const GMAIL_AI_USAGE_COLLECTION = 'gmailAiUsage';
 const INSIGHTS_COLLECTION = 'gmailParseInsights';
 
+// Matches the kind of token a tracking/order number actually looks like —
+// deliberately the same rough shape trackingExtraction.js's own token scan
+// uses (6+ alnum chars) — so it also strips order numbers, locker PINs,
+// etc., not just carrier-recognized tracking numbers.
+const IDENTIFYING_TOKEN_RE = /[A-Za-z0-9][A-Za-z0-9_-]{5,}/g;
+
 /**
- * Truncates and strips a subject to a safe, non-identifying label for the
- * insights log — enough to spot a pattern (a whole subject line shape,
- * not free text) without storing arbitrary email content.
+ * Redacts anything token-shaped (a tracking/order number, PIN, etc.) out of
+ * a subject line before truncating it, so the insights log keeps only the
+ * subject's *shape* (its keywords and structure — genuinely useful for
+ * spotting which formats the regex misses) without storing anything that
+ * could identify a specific shipment or person. A raw subject frequently
+ * contains the tracking number itself (e.g. "Tracking: RR123456789IL"), so
+ * truncation alone — the previous implementation — was not sufficient
+ * redaction despite this module's own docs claiming it was; see
+ * https://github.com/SaharAga/Deliveree/pull/114#discussion_r3898180431.
  * @param {string} subject
  */
 function subjectShape(subject = '') {
-  return subject.slice(0, 120);
+  return subject.replace(IDENTIFYING_TOKEN_RE, '[ID]').slice(0, 120);
 }
 
 /**
@@ -43,7 +55,8 @@ function subjectShape(subject = '') {
  * whether AI could or couldn't resolve them, so a human can turn the
  * recurring ones into new regex rules (see trackingExtraction.js) instead
  * of leaving Gemini to carry them forever. Anonymized: sender domain and a
- * truncated subject only, never the email body.
+ * redacted/truncated subject (see subjectShape) only — never the email
+ * body, and never a candidate's actual tracking-number value.
  *
  * @param {FirebaseFirestore.Firestore} db
  * @param {object} entry
@@ -136,7 +149,11 @@ export async function resolveUnverifiedCandidateWithAi({
   await logInsight(db, {
     outcome: resolved ? 'ai-resolved' : 'ai-declined',
     regexStatus: extraction.status,
-    regexTopCandidate: extraction.selectedCandidate?.value || null,
+    // Never the candidate's actual value (a tracking number) — only its
+    // carrier guess and score, same anonymization bar as everything else
+    // logged here. See subjectShape's doc comment for the finding this
+    // fixes alongside.
+    regexTopCarrier: extraction.selectedCandidate?.carrierCandidates?.[0] || null,
     regexTopScore: extraction.selectedCandidate?.score ?? null,
     aiConfidence: result?.confidence || 'none',
     aiCarrier: resolved ? result.carrier : null,
