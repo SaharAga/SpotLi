@@ -127,6 +127,24 @@ describe('groupCrashReports', () => {
     expect(groupCrashReports([])).toEqual([]);
     expect(groupCrashReports(undefined)).toEqual([]);
   });
+
+  it('counts distinct sessions separately from raw occurrences', () => {
+    const items = [
+      { signature: 'a', message: 'm1', timestamp: '2026-01-01T00:00:00.000Z', sessionId: 's1' },
+      { signature: 'a', message: 'm1', timestamp: '2026-01-01T00:01:00.000Z', sessionId: 's1' }, // same session, repeat crash
+      { signature: 'a', message: 'm1', timestamp: '2026-01-02T00:00:00.000Z', sessionId: 's2' }
+    ];
+    const groups = groupCrashReports(items);
+    const a = groups.find((g) => g.signature === 'a');
+    expect(a.count).toBe(3);
+    expect(a.sessionCount).toBe(2);
+  });
+
+  it('reports sessionCount 0 for reports written before sessionId existed', () => {
+    const items = [{ signature: 'a', message: 'm1', timestamp: '2026-01-01T00:00:00.000Z' }];
+    const groups = groupCrashReports(items);
+    expect(groups[0].sessionCount).toBe(0);
+  });
 });
 
 describe('initGlobalCrashReporting', () => {

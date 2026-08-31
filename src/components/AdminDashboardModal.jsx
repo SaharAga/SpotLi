@@ -20,6 +20,7 @@ import { fetchAllCrashReports, groupCrashReports } from '../services/crashReport
 import { fetchAllParseCorrections, computeParseCorrectionStats } from '../services/parseCorrectionService';
 import { fetchAllSmartImportAttempts, computeSmartImportMissRateStats } from '../services/smartImportAttemptService';
 import { fetchFeatureAdoptionStats, computeAdoptionSummary } from '../services/featureAdoptionStatsService';
+import { syncQueueService, computeSyncQueueHealth } from '../services/syncQueueService';
 import { AdminScreenshotLightbox } from './AdminScreenshotLightbox.jsx';
 import { downloadBlob } from '../utils/exportUtils';
 
@@ -41,6 +42,22 @@ export function AdminDashboardModal({
   const [parseCorrections, setParseCorrections] = useState([]);
   const [smartImportAttempts, setSmartImportAttempts] = useState([]);
   const [adoptionStats, setAdoptionStats] = useState([]);
+
+  // This device's own offline sync queue health (see syncQueueService.js —
+  // there is no cross-device aggregation for this today, just a live local
+  // read, refreshed whenever the queue changes via the service's own
+  // subscribe() — same live-status mechanism the online/offline banner
+  // elsewhere in the app already uses).
+  const [syncQueueHealth, setSyncQueueHealth] = useState(() =>
+    computeSyncQueueHealth(syncQueueService.getQueue(), syncQueueService.getDeadLetterQueue())
+  );
+  useEffect(() => {
+    const refresh = () =>
+      setSyncQueueHealth(computeSyncQueueHealth(syncQueueService.getQueue(), syncQueueService.getDeadLetterQueue()));
+    const unsubscribe = syncQueueService.subscribe(refresh);
+    refresh();
+    return unsubscribe;
+  }, []);
   
   // Loading & error states
   const [isLoading, setIsLoading] = useState(false);
@@ -688,6 +705,14 @@ export function AdminDashboardModal({
                           <span className="text-orange-400 font-bold text-xs px-2.5 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20">
                             {group.count}× {language === 'he' ? 'מופעים' : 'occurrences'}
                           </span>
+                          {group.sessionCount > 0 && (
+                            <span
+                              className="text-rose-300 font-bold text-xs px-2.5 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/20"
+                              title={language === 'he' ? 'הבחנה בין סשן אחד שקרס שוב ושוב לבין הרבה משתמשים שנפגעו' : 'Distinct sessions hit, not raw occurrences — see crashReportService.js'}
+                            >
+                              {group.sessionCount} {language === 'he' ? 'סשנים ייחודיים' : 'unique sessions'}
+                            </span>
+                          )}
                         </div>
                         <span className="text-[10px] text-slate-500 font-mono">
                           {language === 'he' ? 'נצפה לאחרונה:' : 'Last seen:'} {group.lastSeen ? new Date(group.lastSeen).toLocaleString() : ''}
@@ -860,6 +885,32 @@ export function AdminDashboardModal({
           {/* TAB 5: SYSTEM & EXPORT */}
           {activeTab === 'system' && (
             <div className="space-y-6">
+              {/* Offline sync queue health (this device only — see note above) */}
+              <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
+                <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                  <CloudOff className="w-4 h-4 text-amber-400" />
+                  <span>{language === 'he' ? 'בריאות תור הסנכרון (מכשיר זה)' : 'Sync Queue Health (This Device)'}</span>
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+                    <span className="text-[10px] text-slate-400">{language === 'he' ? 'ממתינים לסנכרון' : 'Pending Mutations'}</span>
+                    <div className="text-lg font-bold text-blue-400">{syncQueueHealth.pendingCount}</div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+                    <span className="text-[10px] text-slate-400">{language === 'he' ? 'הישן ביותר ממתין' : 'Oldest Pending'}</span>
+                    <div className="text-lg font-bold text-amber-400">
+                      {syncQueueHealth.oldestPendingAgeMs === null
+                        ? '—'
+                        : `${Math.round(syncQueueHealth.oldestPendingAgeMs / 60000)}m`}
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+                    <span className="text-[10px] text-slate-400">{language === 'he' ? 'נכשלו לצמיתות' : 'Dead-Lettered'}</span>
+                    <div className="text-lg font-bold text-rose-400">{syncQueueHealth.deadLetterCount}</div>
+                  </div>
+                </div>
+              </div>
+
               {/* Export Tools */}
               <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
                 <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">

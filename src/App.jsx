@@ -59,6 +59,8 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { usePackages, MUTATION_TYPES } from './hooks/usePackages';
 import { triggerGmailBackfill } from './services/emailSyncService';
 import { notificationService } from './services/notificationService';
+import { recordFeatureUse } from './services/featureUsageService';
+import { FEATURE_IDS } from './constants/featureIds';
 
 /**
  * Every dialog in the app, by id. These replaced twelve `isXOpen` booleans
@@ -255,6 +257,17 @@ export function DashboardContent() {
     packagesRef.current = packages;
   });
 
+  // Feature-adoption baseline (see featureUsageService.js /
+  // constants/featureIds.js): recorded once per session, once auth state
+  // has settled, regardless of screen — every other feature's adoption
+  // rate is computed against this "was the app used at all today" count.
+  const appActiveRecordedRef = useRef(false);
+  useEffect(() => {
+    if (loading || appActiveRecordedRef.current) return;
+    appActiveRecordedRef.current = true;
+    recordFeatureUse(FEATURE_IDS.APP_ACTIVE, { uid: user?.id || null });
+  }, [loading, user?.id]);
+
   // Handle PWA App Shortcuts, Web Share Target & Query Parameters on mount
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -288,6 +301,7 @@ export function DashboardContent() {
 
         if (combinedSharedText) {
           openModal(MODAL.SMART_IMPORT, { initialText: combinedSharedText });
+          recordFeatureUse(FEATURE_IDS.SHARE_TARGET_IMPORT, { uid: user?.id || null });
         }
       }
 
@@ -309,6 +323,7 @@ export function DashboardContent() {
       // state (gmailConnections/{uid} itself is unreadable from the client).
       const gmailResult = params.get('gmail');
       if (gmailResult === 'connected') {
+        recordFeatureUse(FEATURE_IDS.GMAIL_SYNC, { uid: user?.id || null });
         showToast(
           language === 'he'
             ? 'Gmail חובר בהצלחה! אישורי הזמנות יסונכרנו אוטומטית 🎉'
@@ -851,6 +866,7 @@ export function DashboardContent() {
           onClose={() => closeModal(MODAL.SMART_IMPORT)}
           onParsedResult={handleSmartImportResult}
           onShowToast={showToast}
+          uid={user?.id}
           onSwitchToManual={(rawText) => {
             closeModal(MODAL.SMART_IMPORT);
             openModal(MODAL.ADD_EDIT, {
@@ -893,6 +909,7 @@ export function DashboardContent() {
           isOpen={isOpen}
           onClose={() => closeModal(MODAL.ANALYTICS)}
           packages={packages}
+          uid={user?.id}
         />
       )
     },
@@ -945,6 +962,7 @@ export function DashboardContent() {
           onClose={() => closeModal(MODAL.EXPORT)}
           packages={packages}
           onShowToast={showToast}
+          uid={user?.id}
         />
       )
     },

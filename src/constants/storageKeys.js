@@ -18,6 +18,7 @@ export const STORAGE_KEYS = Object.freeze({
   OFFLINE_FEEDBACK_QUEUE: 'deliveree_offline_feedback_queue',
   OFFLINE_CRASH_QUEUE: 'deliveree_offline_crash_queue',
   CRASH_SEEN: 'deliveree_crash_seen_v1',
+  CRASH_SESSION_ID: 'deliveree_crash_session_id',
   LOCAL_FEEDBACK_HISTORY: 'deliveree_tester_feedback',
   NOTIFICATION_PREFS: 'deliveree_notification_prefs',
   PUSH_SUBSCRIPTION: 'deliveree_push_subscription',

@@ -11,6 +11,8 @@ import { parseWithAi } from '../services/aiParseService';
 import { compressImageFile, extractImageFromPaste, ACCEPTED_IMAGE_TYPES } from '../utils/imageCompressor';
 import { submitFeedback } from '../services/feedbackService';
 import { Modal } from './Modal';
+import { useFeatureUsage } from '../hooks/useFeatureUsage';
+import { FEATURE_IDS } from '../constants/featureIds';
 
 /**
  * Maps the AI fallback's response shape to the same shape parseSmartText()
@@ -47,9 +49,11 @@ export function SmartImportModal({
   onSwitchToManual,
   onShowToast,
   initialText = '',
-  packages = []
+  packages = [],
+  uid = null
 }) {
   const { t, language, isRTL } = useLanguage();
+  useFeatureUsage(FEATURE_IDS.SMART_IMPORT, isOpen, uid);
   const [rawText, setRawText] = useState(initialText || '');
   const [parsed, setParsed] = useState(() => {
     if (initialText && initialText.trim()) {

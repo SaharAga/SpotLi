@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Download, X, Share, PlusSquare, Smartphone } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { STORAGE_KEYS } from '../constants/storageKeys';
+import { recordFeatureUse } from '../services/featureUsageService';
+import { FEATURE_IDS } from '../constants/featureIds';
 
 const STORAGE_DISMISS_KEY = STORAGE_KEYS.PWA_BANNER_DISMISSED;
 
 export function InstallPwaBanner() {
   const { isRTL } = useLanguage();
+  const { user } = useAuth();
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -58,6 +62,7 @@ export function InstallPwaBanner() {
         if (outcome === 'accepted') {
           setDeferredPrompt(null);
           setDismissed(true);
+          recordFeatureUse(FEATURE_IDS.PWA_INSTALL, { uid: user?.id || null });
         }
       } catch (err) {
         console.warn('Install prompt error:', err);
