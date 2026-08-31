@@ -11,6 +11,7 @@ import {
   inferDeliveryStatus,
   extractOrderStatusDetails
 } from './trackingExtraction.js';
+import { resolveUnverifiedCandidateWithAi } from './gmailAiFallback.js';
 
 /**
  * Rough "looks already delivered" heuristic for backfill — mirrors the
@@ -134,6 +135,78 @@ export function buildPackageFromGmailMessage({
     source: 'gmail_sync_order_status',
     confidence: 'sender_reported',
     notes: `${orderStatus.store} order — from your order confirmation email, no carrier tracking number`,
+    createdAt: nowIso,
+    updatedAt: nowIso,
+    isArchived: false
+  };
+}
+
+/**
+ * Same as buildPackageFromGmailMessage, but when the deterministic parser
+ * only found a `probable`/`uncertain` candidate (not enough to create a
+ * package unattended on its own), tries the Gemini fallback
+ * (gmailAiFallback.js) to disambiguate before giving up on it — see that
+ * module for why this can't hallucinate a package out of nothing. Falls
+ * back to the exact same order-status / null behavior as the sync version
+ * whenever AI is unavailable, capped, or declines.
+ *
+ * `ai` is optional — when omitted (e.g. GEMINI_API_KEY not configured),
+ * this behaves identically to the synchronous version.
+ *
+ * @param {{
+ *   gmailMessage: object,
+ *   userId: string,
+ *   existingTrackingNumbers: Set<string>,
+ *   skipDelivered?: boolean,
+ *   ai?: { db: FirebaseFirestore.Firestore, apiKey: string, runBudget?: { used: number, max: number }, parseFn?: Function }
+ * }} params
+ * @returns {Promise<object|null>}
+ */
+export async function buildPackageFromGmailMessageWithAiFallback({
+  gmailMessage,
+  userId,
+  existingTrackingNumbers,
+  skipDelivered = false,
+  ai
+}) {
+  const { subject, body, from } = extractSubjectAndBodyFromGmailMessage(gmailMessage);
+  const extraction = extractTrackingDetails(subject, body, from);
+
+  if (extraction.status === 'verified' || !ai) {
+    return buildPackageFromGmailMessage({ gmailMessage, userId, existingTrackingNumbers, skipDelivered });
+  }
+
+  const aiResolved = await resolveUnverifiedCandidateWithAi({
+    db: ai.db,
+    apiKey: ai.apiKey,
+    uid: userId,
+    subject,
+    body,
+    from,
+    extraction,
+    runBudget: ai.runBudget,
+    ...(ai.parseFn ? { parseFn: ai.parseFn } : {})
+  });
+
+  if (!aiResolved) {
+    return buildPackageFromGmailMessage({ gmailMessage, userId, existingTrackingNumbers, skipDelivered });
+  }
+
+  const trackingNumber = aiResolved.trackingNumber.toUpperCase();
+  if (isDuplicateTrackingNumber(existingTrackingNumbers, trackingNumber)) return null;
+  if (skipDelivered && looksAlreadyDelivered(subject, body)) return null;
+
+  const nowIso = new Date().toISOString();
+  return {
+    id: `pkg-gmail-ai-${gmailMessage.id || Date.now()}`,
+    userId,
+    title: aiResolved.title || extraction.title,
+    trackingNumber,
+    carrier: aiResolved.carrier,
+    status: inferDeliveryStatus(subject, body),
+    source: 'gmail_sync_ai',
+    confidence: aiResolved.confidence,
+    notes: subject ? `From Gmail: ${subject.slice(0, 80)}` : '',
     createdAt: nowIso,
     updatedAt: nowIso,
     isArchived: false

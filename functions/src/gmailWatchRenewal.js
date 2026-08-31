@@ -5,6 +5,7 @@
  */
 
 import { getGmailClientForUser, setGmailConnection, GMAIL_CONNECTIONS_COLLECTION } from './gmailAuth.js';
+import { logUsageEvent } from './analyticsEvents.js';
 
 const RENEW_WITHIN_MS = 2 * 24 * 60 * 60 * 1000; // renew anything expiring within 2 days
 
@@ -65,5 +66,12 @@ export function createGmailWatchRenewalHandler({ db, clientSecret }) {
     }
 
     console.log(`[gmailWatchRenewal] renewed=${renewed} failed=${failed} total=${snap.size}`);
+    await logUsageEvent(db, {
+      feature: 'gmail_sync',
+      type: 'watch_renewal',
+      renewed,
+      failed,
+      total: snap.size
+    });
   };
 }

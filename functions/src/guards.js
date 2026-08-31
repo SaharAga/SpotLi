@@ -25,24 +25,36 @@ function todayUtc() {
  * Both limits are checked before either is incremented, inside one
  * transaction, so concurrent calls can't race past the ceiling.
  *
+ * `collection`/`userLimit`/`globalLimit` let a caller other than
+ * parseWithAi (e.g. the Gmail sync AI fallback in gmailAiFallback.js) track
+ * its own budget in its own Firestore collection, so a chatty inbox can't
+ * eat into interactive Smart Import's daily allowance or vice versa — same
+ * transactional shape, separate counters.
+ *
  * @param {FirebaseFirestore.Firestore} db
  * @param {string} userId
+ * @param {{ collection?: string, userLimit?: number, globalLimit?: number }} [options]
  * @returns {Promise<{ allowed: true } | { allowed: false, reason: 'user-limit' | 'global-limit' }>}
  */
-export async function checkAndIncrementUsage(db, userId) {
+export async function checkAndIncrementUsage(db, userId, options = {}) {
+  const {
+    collection = 'usage',
+    userLimit = LIMITS.PER_USER_DAILY_CALLS,
+    globalLimit = LIMITS.GLOBAL_DAILY_CALLS
+  } = options;
   const date = todayUtc();
-  const userRef = db.collection('usage').doc(`user_${userId}_${date}`);
-  const globalRef = db.collection('usage').doc(`global_${date}`);
+  const userRef = db.collection(collection).doc(`user_${userId}_${date}`);
+  const globalRef = db.collection(collection).doc(`global_${date}`);
 
   return db.runTransaction(async (tx) => {
     const [userSnap, globalSnap] = await Promise.all([tx.get(userRef), tx.get(globalRef)]);
     const userCount = userSnap.exists ? userSnap.data().count : 0;
     const globalCount = globalSnap.exists ? globalSnap.data().count : 0;
 
-    if (userCount >= LIMITS.PER_USER_DAILY_CALLS) {
+    if (userCount >= userLimit) {
       return { allowed: false, reason: 'user-limit' };
     }
-    if (globalCount >= LIMITS.GLOBAL_DAILY_CALLS) {
+    if (globalCount >= globalLimit) {
       return { allowed: false, reason: 'global-limit' };
     }
 

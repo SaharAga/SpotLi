@@ -14,15 +14,17 @@
 import { HttpsError } from 'firebase-functions/v2/https';
 import { DEFAULT_FORWARDING_FILTER_QUERY } from './emailFilterQuery.js';
 import { getGmailConnection, getGmailClientForUser } from './gmailAuth.js';
-import { buildPackageFromGmailMessage } from './gmailPackageSync.js';
+import { buildPackageFromGmailMessageWithAiFallback } from './gmailPackageSync.js';
+import { logUsageEvent } from './analyticsEvents.js';
+import { GMAIL_AI_LIMITS } from './config.js';
 
 const BACKFILL_WINDOW_DAYS = 30;
 const MAX_MESSAGES = 100;
 
 /**
- * @param {{ db: FirebaseFirestore.Firestore, clientSecret: string }} deps
+ * @param {{ db: FirebaseFirestore.Firestore, clientSecret: string, geminiApiKey?: string }} deps
  */
-export function createGmailBackfillHandler({ db, clientSecret }) {
+export function createGmailBackfillHandler({ db, clientSecret, geminiApiKey }) {
   return async function handler(request) {
     const uid = request.auth?.uid;
     if (!uid) {
@@ -34,15 +36,15 @@ export function createGmailBackfillHandler({ db, clientSecret }) {
       throw new HttpsError('failed-precondition', 'No connected Gmail account for this user.');
     }
 
-    const result = await runBackfillForUser({ db, uid, refreshToken: connection.refreshToken, clientSecret });
+    const result = await runBackfillForUser({ db, uid, refreshToken: connection.refreshToken, clientSecret, geminiApiKey });
     return result;
   };
 }
 
 /**
- * @param {{ db: FirebaseFirestore.Firestore, uid: string, refreshToken: string, clientSecret: string }} params
+ * @param {{ db: FirebaseFirestore.Firestore, uid: string, refreshToken: string, clientSecret: string, geminiApiKey?: string }} params
  */
-export async function runBackfillForUser({ db, uid, refreshToken, clientSecret }) {
+export async function runBackfillForUser({ db, uid, refreshToken, clientSecret, geminiApiKey }) {
   const { gmail } = getGmailClientForUser({ clientSecret, refreshToken });
 
   const existingSnap = await db.collection('users').doc(uid).collection('packages').get();
@@ -81,13 +83,22 @@ export async function runBackfillForUser({ db, uid, refreshToken, clientSecret }
 
   const packagesToSave = [];
   let skipped = 0;
+  let aiResolved = 0;
+  // Own budget for this single backfill run — on top of, not instead of,
+  // the daily caps checked per-call inside resolveUnverifiedCandidateWithAi
+  // — a 30-day historical scan is the single biggest burst this pipeline
+  // sees (up to MAX_MESSAGES messages at once), so it needs a run-scoped
+  // ceiling even on a day nothing else has touched the daily cap yet.
+  const runBudget = geminiApiKey ? { used: 0, max: GMAIL_AI_LIMITS.MAX_AI_CALLS_PER_BACKFILL_RUN } : undefined;
 
   for (const msgData of rawMessages) {
-    const pkg = buildPackageFromGmailMessage({
+    // eslint-disable-next-line no-await-in-loop
+    const pkg = await buildPackageFromGmailMessageWithAiFallback({
       gmailMessage: msgData,
       userId: uid,
       existingTrackingNumbers,
-      skipDelivered: true
+      skipDelivered: true,
+      ai: geminiApiKey ? { db, apiKey: geminiApiKey, runBudget } : undefined
     });
 
     if (!pkg) {
@@ -95,6 +106,7 @@ export async function runBackfillForUser({ db, uid, refreshToken, clientSecret }
       continue;
     }
 
+    if (pkg.source === 'gmail_sync_ai') aiResolved += 1;
     packagesToSave.push(pkg);
     existingTrackingNumbers.add(pkg.trackingNumber.toUpperCase());
   }
@@ -110,6 +122,16 @@ export async function runBackfillForUser({ db, uid, refreshToken, clientSecret }
     }
     await batch.commit();
   }
+
+  await logUsageEvent(db, {
+    feature: 'gmail_sync',
+    type: 'backfill',
+    uid,
+    scanned: messageRefs.length,
+    saved: packagesToSave.length,
+    skipped,
+    aiResolved
+  });
 
   return { ok: true, scanned: messageRefs.length, saved: packagesToSave.length, skipped };
 }
