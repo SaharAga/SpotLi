@@ -8,6 +8,7 @@ import { parseSmartText } from '../utils/smartParser.js';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { recordParseCorrection } from '../services/parseCorrectionService';
+import { recordSmartImportAttempt } from '../services/smartImportAttemptService';
 import { recordTrainingExample } from '../services/trainingDataService';
 import { Modal } from './Modal';
 
@@ -208,6 +209,18 @@ export function AddEditPackageModal({
       const originalValue = snapshot.values[field];
       if (!originalValue) return false; // parser left it blank — not a correction
       return originalValue.trim() !== String(currentValues[field] || '').trim();
+    });
+
+    // Always recorded, corrected or not — parseCorrections only ever logs a
+    // correction, so on its own there's no denominator to compute a miss
+    // rate against. This is that denominator: one row per Smart-Import-filled
+    // save, carrying the parser's own carrier guess (not the user's possibly-
+    // corrected one) so miss rate can be broken down per carrier.
+    recordSmartImportAttempt({
+      source: snapshot.source,
+      confidence: snapshot.confidence,
+      carrier: snapshot.values.carrier,
+      corrected: editedFields.length > 0
     });
 
     if (editedFields.length > 0) {
