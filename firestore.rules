@@ -225,6 +225,35 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Gmail-sync AI fallback rate-limit counters (functions/src/
+    // gmailAiFallback.js) — same shape and same "documentation only, Admin
+    // SDK bypasses this" rationale as /usage above, kept in its own
+    // collection so the Gmail-sync budget is visibly separate from
+    // Smart Import's.
+    match /gmailAiUsage/{docId} {
+      allow read, write: if false;
+    }
+
+    // Anonymized hit/miss telemetry for the Gmail-sync detection pipeline
+    // (functions/src/gmailAiFallback.js) — sender domain, a truncated
+    // subject, and score/confidence bands only, never an email body.
+    // Written only by Cloud Functions via the Admin SDK; readable by admins
+    // for the same "turn recurring misses into new regex rules" purpose as
+    // parseCorrections above.
+    match /gmailParseInsights/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Feature-usage analytics events (functions/src/analyticsEvents.js) —
+    // append-only counts/outcomes for automated features (Gmail sync
+    // today), no PII. Written only by Cloud Functions via the Admin SDK;
+    // readable by admins for product-usage review.
+    match /usageEvents/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // Explicitly deny everything else
     match /{document=**} {
       allow read, write: if false;

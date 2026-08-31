@@ -18,12 +18,13 @@
  */
 
 import { findGmailConnectionByEmail, getGmailClientForUser, setGmailConnection } from './gmailAuth.js';
-import { buildPackageFromGmailMessage, buildStatusUpdateFromGmailMessage } from './gmailPackageSync.js';
+import { buildPackageFromGmailMessageWithAiFallback, buildStatusUpdateFromGmailMessage } from './gmailPackageSync.js';
+import { logUsageEvent } from './analyticsEvents.js';
 
 /**
- * @param {{ db: FirebaseFirestore.Firestore, clientSecret: string, pushToken: string }} deps
+ * @param {{ db: FirebaseFirestore.Firestore, clientSecret: string, pushToken: string, geminiApiKey?: string }} deps
  */
-export function createGmailPushHandler({ db, clientSecret, pushToken }) {
+export function createGmailPushHandler({ db, clientSecret, pushToken, geminiApiKey }) {
   return async function handler(req, res) {
     if (req.method !== 'POST') {
       res.status(405).send('Method Not Allowed');
@@ -53,7 +54,7 @@ export function createGmailPushHandler({ db, clientSecret, pushToken }) {
         return;
       }
 
-      await syncHistoryForConnection({ db, connection, clientSecret, newHistoryId });
+      await syncHistoryForConnection({ db, connection, clientSecret, newHistoryId, geminiApiKey });
 
       res.status(200).send('ok');
     } catch (err) {
@@ -68,9 +69,9 @@ export function createGmailPushHandler({ db, clientSecret, pushToken }) {
 /**
  * Pulls history since the stored historyId, saves any new matching
  * packages, and advances the stored historyId.
- * @param {{ db: FirebaseFirestore.Firestore, connection: object, clientSecret: string, newHistoryId: string|number }} params
+ * @param {{ db: FirebaseFirestore.Firestore, connection: object, clientSecret: string, newHistoryId: string|number, geminiApiKey?: string }} params
  */
-export async function syncHistoryForConnection({ db, connection, clientSecret, newHistoryId }) {
+export async function syncHistoryForConnection({ db, connection, clientSecret, newHistoryId, geminiApiKey }) {
   const { uid, refreshToken, historyId: storedHistoryId } = connection;
   const { gmail } = getGmailClientForUser({ clientSecret, refreshToken });
 
@@ -118,8 +119,15 @@ export async function syncHistoryForConnection({ db, connection, clientSecret, n
   }
   const existingTrackingNumbers = new Set(trackingNumberToDocId.keys());
 
+  // One shared budget across this whole push batch (not per-message) so a
+  // single burst of history can't run through the entire daily AI cap by
+  // itself — see GMAIL_AI_LIMITS.MAX_AI_CALLS_PER_BACKFILL_RUN's rationale
+  // in config.js, applied here to a push batch instead of a backfill run.
+  const runBudget = geminiApiKey ? { used: 0, max: 5 } : undefined;
+
   let saved = 0;
   let updated = 0;
+  let aiResolved = 0;
   for (const messageId of messageIds) {
     const msgRes = await gmail.users.messages.get({ userId: 'me', id: messageId, format: 'full' });
 
@@ -136,10 +144,11 @@ export async function syncHistoryForConnection({ db, connection, clientSecret, n
       continue;
     }
 
-    const pkg = buildPackageFromGmailMessage({
+    const pkg = await buildPackageFromGmailMessageWithAiFallback({
       gmailMessage: msgRes.data,
       userId: uid,
-      existingTrackingNumbers
+      existingTrackingNumbers,
+      ai: geminiApiKey ? { db, apiKey: geminiApiKey, runBudget } : undefined
     });
     if (!pkg) continue;
 
@@ -148,8 +157,18 @@ export async function syncHistoryForConnection({ db, connection, clientSecret, n
     existingTrackingNumbers.add(pkg.trackingNumber.toUpperCase());
     trackingNumberToDocId.set(pkg.trackingNumber.toUpperCase(), pkg.id);
     saved += 1;
+    if (pkg.source === 'gmail_sync_ai') aiResolved += 1;
   }
 
   await setGmailConnection({ db, uid, data: { historyId: String(newHistoryId) } });
+  await logUsageEvent(db, {
+    feature: 'gmail_sync',
+    type: 'push_sync',
+    uid,
+    messagesScanned: messageIds.length,
+    saved,
+    updated,
+    aiResolved
+  });
   return { saved, updated };
 }

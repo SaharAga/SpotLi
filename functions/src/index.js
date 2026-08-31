@@ -93,7 +93,7 @@ export const gmailOAuthStart = onCall(
 export const gmailOAuthCallback = onRequest(
   {
     cors: false,
-    secrets: [gmailOAuthClientSecret],
+    secrets: [gmailOAuthClientSecret, geminiApiKey],
     timeoutSeconds: 30,
     memory: '256MiB'
   },
@@ -111,7 +111,8 @@ export const gmailOAuthCallback = onRequest(
               db: getFirestore(),
               uid,
               refreshToken: snap.data()?.refreshToken,
-              clientSecret: gmailOAuthClientSecret.value()
+              clientSecret: gmailOAuthClientSecret.value(),
+              geminiApiKey: geminiApiKey.value()
             })
           )
     })(req, res)
@@ -125,7 +126,7 @@ export const gmailOAuthCallback = onRequest(
 export const gmailPushNotification = onRequest(
   {
     cors: false,
-    secrets: [gmailOAuthClientSecret, gmailPushToken],
+    secrets: [gmailOAuthClientSecret, gmailPushToken, geminiApiKey],
     timeoutSeconds: 60,
     memory: '256MiB'
   },
@@ -133,7 +134,10 @@ export const gmailPushNotification = onRequest(
     createGmailPushHandler({
       db: getFirestore(),
       clientSecret: gmailOAuthClientSecret.value(),
-      pushToken: gmailPushToken.value()
+      pushToken: gmailPushToken.value(),
+      // Optional: the Gemini fallback (gmailAiFallback.js) simply doesn't
+      // run without it, same as parseWithAi's own secret dependency.
+      geminiApiKey: geminiApiKey.value()
     })(req, res)
 );
 
@@ -144,7 +148,7 @@ export const gmailPushNotification = onRequest(
  */
 export const gmailBackfill = onCall(
   {
-    secrets: [gmailOAuthClientSecret],
+    secrets: [gmailOAuthClientSecret, geminiApiKey],
     // Scanning up to 100 messages one-by-one can take a while.
     timeoutSeconds: 180,
     memory: '256MiB'
@@ -152,7 +156,8 @@ export const gmailBackfill = onCall(
   (request) =>
     createGmailBackfillHandler({
       db: getFirestore(),
-      clientSecret: gmailOAuthClientSecret.value()
+      clientSecret: gmailOAuthClientSecret.value(),
+      geminiApiKey: geminiApiKey.value()
     })(request)
 );
 

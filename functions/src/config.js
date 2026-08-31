@@ -26,3 +26,22 @@ export const LIMITS = Object.freeze({
   // size. Mirrors the 750KB screenshot cap already used for feedback.
   MAX_IMAGE_BASE64_BYTES: 1_000_000
 });
+
+/**
+ * Separate, tighter budget for the Gmail-sync AI fallback
+ * (gmailAiFallback.js) — deliberately its own counters (see
+ * checkAndIncrementUsage's `collection` option), not a share of LIMITS
+ * above, because Gmail sync is unattended and can see much higher message
+ * volume than a human pasting one email at a time into Smart Import: a
+ * single busy inbox must never be able to exhaust the interactive-use
+ * budget for every user of the app.
+ */
+export const GMAIL_AI_LIMITS = Object.freeze({
+  PER_USER_DAILY_CALLS: 15,
+  GLOBAL_DAILY_CALLS: 200,
+  // Extra ceiling scoped to one backfill run (on connect, or a manual
+  // re-scan) — the 30-day historical scan is the single biggest burst this
+  // pipeline ever sees, so it gets its own cap on top of the daily ones
+  // instead of relying on the daily cap alone to absorb it.
+  MAX_AI_CALLS_PER_BACKFILL_RUN: 15
+});

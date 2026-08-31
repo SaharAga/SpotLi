@@ -133,4 +133,22 @@ describe('checkAndIncrementUsage', () => {
     expect(db._store.get(`usage/user_user-b_${today}`).count).toBe(1);
     expect(db._store.get(`usage/global_${today}`).count).toBe(2);
   });
+
+  it('tracks a separate budget in a custom collection with its own limits', async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const options = { collection: 'gmailAiUsage', userLimit: 1, globalLimit: 5 };
+
+    const first = await checkAndIncrementUsage(db, 'user-1', options);
+    expect(first).toEqual({ allowed: true });
+    expect(db._store.get(`gmailAiUsage/user_user-1_${today}`).count).toBe(1);
+    // The default "usage" collection is untouched by the custom-collection call.
+    expect(db._store.has(`usage/user_user-1_${today}`)).toBe(false);
+
+    const second = await checkAndIncrementUsage(db, 'user-1', options);
+    expect(second).toEqual({ allowed: false, reason: 'user-limit' });
+
+    // A call against the default collection/limits is independent.
+    const defaultCall = await checkAndIncrementUsage(db, 'user-1');
+    expect(defaultCall).toEqual({ allowed: true });
+  });
 });

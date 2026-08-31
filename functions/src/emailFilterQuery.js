@@ -9,7 +9,7 @@
  * by hand when either list changes.
  */
 
-const SUPPORTED_STORE_DOMAINS = [
+export const SUPPORTED_STORE_DOMAINS = [
   'aliexpress.com',
   'amazon.com',
   'shein.com',
@@ -37,7 +37,7 @@ const SUPPORTED_STORE_DOMAINS = [
   'wolt.com'
 ];
 
-const SHIPPING_KEYWORD_TERMS = [
+export const SHIPPING_KEYWORD_TERMS = [
   'shipped',
   'tracking',
   'order confirmation',
@@ -54,4 +54,26 @@ const SHIPPING_KEYWORD_TERMS = [
 
 export const DEFAULT_FORWARDING_FILTER_QUERY =
   `subject:(${SHIPPING_KEYWORD_TERMS.join(' OR ')}) OR from:(${SUPPORTED_STORE_DOMAINS.join(' OR ')})`;
+
+const NORMALIZED_KEYWORD_TERMS = SHIPPING_KEYWORD_TERMS.map((t) => t.replace(/"/g, '').toLowerCase());
+
+/**
+ * Cheap, local re-check of the same signal the Gmail search query above
+ * already filters on server-side — used by the live push path
+ * (gmailPushHandler.js), which pulls messages by historyId rather than by
+ * this search query, so it has no equivalent gate until now. Not a
+ * duplicate parser: this never extracts anything, it only decides whether
+ * a message is plausible enough to be worth the (comparatively expensive)
+ * AI fallback call in gmailAiFallback.js.
+ *
+ * @param {string} subject
+ * @param {string} from
+ * @returns {boolean}
+ */
+export function looksLikeShippingCandidate(subject = '', from = '') {
+  const lowerSubject = subject.toLowerCase();
+  const lowerFrom = from.toLowerCase();
+  if (SUPPORTED_STORE_DOMAINS.some((domain) => lowerFrom.includes(domain))) return true;
+  return NORMALIZED_KEYWORD_TERMS.some((term) => lowerSubject.includes(term));
+}
 

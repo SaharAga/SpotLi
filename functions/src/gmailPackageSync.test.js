@@ -3,18 +3,50 @@ import {
   looksAlreadyDelivered,
   isDuplicateTrackingNumber,
   extractSubjectAndBodyFromGmailMessage,
-  buildPackageFromGmailMessage
+  buildPackageFromGmailMessage,
+  buildPackageFromGmailMessageWithAiFallback
 } from './gmailPackageSync.js';
 
-function makeGmailMessage({ id = 'msg1', subject = '', text = '' } = {}) {
+function makeGmailMessage({ id = 'msg1', subject = '', text = '', from = '' } = {}) {
+  const headers = [{ name: 'Subject', value: subject }];
+  if (from) headers.push({ name: 'From', value: from });
   return {
     id,
     payload: {
-      headers: [{ name: 'Subject', value: subject }],
+      headers,
       mimeType: 'text/plain',
       body: { data: Buffer.from(text, 'utf8').toString('base64url') }
     },
     snippet: text.slice(0, 50)
+  };
+}
+
+function createFakeDb() {
+  const store = new Map();
+  return {
+    collection(name) {
+      return {
+        doc(id) {
+          return { key: `${name}/${id}` };
+        },
+        add() {
+          return Promise.resolve();
+        }
+      };
+    },
+    async runTransaction(fn) {
+      const tx = {
+        async get(ref) {
+          const data = store.get(ref.key);
+          return { exists: data !== undefined, data: () => data };
+        },
+        set(ref, data, opts) {
+          const existing = opts?.merge ? store.get(ref.key) || {} : {};
+          store.set(ref.key, { ...existing, ...data });
+        }
+      };
+      return fn(tx);
+    }
   };
 }
 
@@ -131,5 +163,63 @@ describe('buildPackageFromGmailMessage', () => {
     expect(
       buildPackageFromGmailMessage({ gmailMessage: msg, userId: 'uid1', existingTrackingNumbers: new Set() })
     ).toBeNull();
+  });
+});
+
+describe('buildPackageFromGmailMessageWithAiFallback', () => {
+  it('behaves exactly like the sync version when no ai deps are supplied', async () => {
+    const msg = makeGmailMessage({ subject: 'Your order shipped', text: 'Tracking: RR000000005IL' });
+    const pkg = await buildPackageFromGmailMessageWithAiFallback({
+      gmailMessage: msg,
+      userId: 'uid1',
+      existingTrackingNumbers: new Set()
+    });
+    expect(pkg.trackingNumber).toBe('RR000000005IL');
+    expect(pkg.source).toBe('gmail_sync');
+  });
+
+  it('resolves a probable-but-unverified candidate via the AI fallback when it confirms it', async () => {
+    // Same fixture the sync-only test above proves returns null on its own —
+    // a real UPS-shaped token with no surrounding "tracking number" label,
+    // so the deterministic scorer lands it below the verified bar.
+    const msg = makeGmailMessage({
+      subject: 'Your package has shipped',
+      text: '1Z999AA10123456784',
+      from: 'noreply@ups.com'
+    });
+    const db = createFakeDb();
+    const pkg = await buildPackageFromGmailMessageWithAiFallback({
+      gmailMessage: msg,
+      userId: 'uid1',
+      existingTrackingNumbers: new Set(),
+      ai: {
+        db,
+        apiKey: 'test-key',
+        parseFn: async () => ({
+          confidence: 'high',
+          trackingNumber: '1Z999AA10123456784',
+          carrier: 'ups',
+          title: 'UPS Package'
+        })
+      }
+    });
+
+    expect(pkg).not.toBeNull();
+    expect(pkg.trackingNumber).toBe('1Z999AA10123456784');
+    expect(pkg.carrier).toBe('ups');
+    expect(pkg.source).toBe('gmail_sync_ai');
+    expect(pkg.confidence).toBe('high');
+  });
+
+  it('falls back to the sync behavior (order-status or null) when the AI candidate is not resolvable', async () => {
+    const msg = makeGmailMessage({ subject: 'Hello', text: 'no tracking here', from: 'a@b.com' });
+    const db = createFakeDb();
+    const pkg = await buildPackageFromGmailMessageWithAiFallback({
+      gmailMessage: msg,
+      userId: 'uid1',
+      existingTrackingNumbers: new Set(),
+      ai: { db, apiKey: 'test-key', parseFn: async () => ({ confidence: 'none' }) }
+    });
+    expect(pkg).toBeNull();
   });
 });
