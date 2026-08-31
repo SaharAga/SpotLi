@@ -4,6 +4,7 @@ import { deliveryService } from '../services/deliveryService';
 import { cloudAdapter } from '../services/cloudStorageAdapter';
 import { syncQueueService, MUTATION_TYPES } from '../services/syncQueueService';
 import { parsePackageList } from '../schemas/packageSchema';
+import { detectAiOutcome, recordAiOutcome } from '../services/aiOutcomeService';
 
 function mutationPackageId(mutation) {
   if (mutation?.type === MUTATION_TYPES.STATUS_CHANGE) return mutation.payload?.packageId;
@@ -193,6 +194,15 @@ export function usePackages(user, triggerCloudSync, onSaveError) {
   const commit = useCallback((mutation) => {
     // 1. Compute next state synchronously to persist it locally
     const previousState = packagesRef.current;
+
+    // Implicit false-positive signal for the Gmail AI fallback (see
+    // aiOutcomeService.js) — checked against the pre-mutation state so it
+    // sees the package's original source/createdAt regardless of what this
+    // mutation changes.
+    const previousPkg = previousState.find((p) => p.id === mutationPackageId(mutation));
+    const aiOutcome = detectAiOutcome(mutation, previousPkg);
+    if (aiOutcome) recordAiOutcome({ ...aiOutcome, userId: user?.id || null });
+
     const nextState = applyMutation(previousState, mutation);
     // React may batch multiple commits. Advance the authoritative value before
     // dispatching so a second commit cannot persist from an older render.
