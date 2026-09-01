@@ -16,7 +16,8 @@ import { DEFAULT_FORWARDING_FILTER_QUERY } from './emailFilterQuery.js';
 import { getGmailConnection, getGmailClientForUser } from './gmailAuth.js';
 import { buildPackageFromGmailMessageWithAiFallback } from './gmailPackageSync.js';
 import { logUsageEvent } from './analyticsEvents.js';
-import { GMAIL_AI_LIMITS } from './config.js';
+import { GMAIL_AI_LIMITS, GMAIL_BACKFILL_LIMITS } from './config.js';
+import { checkAndIncrementUsage } from './guards.js';
 
 const BACKFILL_WINDOW_DAYS = 30;
 const MAX_MESSAGES = 100;
@@ -29,6 +30,25 @@ export function createGmailBackfillHandler({ db, clientSecret, geminiApiKey }) {
     const uid = request.auth?.uid;
     if (!uid) {
       throw new HttpsError('unauthenticated', 'Sign in required.');
+    }
+
+    // This callable is reachable by any signed-in client directly, not only
+    // through the UI's connect button — bound how often one user (or all
+    // users combined) can re-trigger a full 30-day scan, independent of the
+    // in-run AI-fallback budget below, since the Gmail API cost of the scan
+    // itself is incurred regardless of whether AI fallback ever runs.
+    const usage = await checkAndIncrementUsage(db, uid, {
+      collection: 'gmailBackfillUsage',
+      userLimit: GMAIL_BACKFILL_LIMITS.PER_USER_DAILY_CALLS,
+      globalLimit: GMAIL_BACKFILL_LIMITS.GLOBAL_DAILY_CALLS
+    });
+    if (!usage.allowed) {
+      throw new HttpsError(
+        'resource-exhausted',
+        usage.reason === 'user-limit'
+          ? 'Daily Gmail sync limit reached for this account. Please try again tomorrow.'
+          : 'Gmail sync is temporarily at capacity. Please try again later.'
+      );
     }
 
     const connection = await getGmailConnection({ db, uid });

@@ -1,7 +1,10 @@
 /**
- * Short-lived signed state tokens carrying {uid, nonce, exp} through the
- * Google OAuth `state` param, so the callback can verify who initiated the
- * flow without trusting a bare uid query param (CSRF protection).
+ * Short-lived signed state tokens carrying {uid, returnOrigin, nonce, exp}
+ * through the Google OAuth `state` param, so the callback can verify who
+ * initiated the flow (CSRF protection) and which origin to redirect back to
+ * — the app can be reached from more than one origin (production, the
+ * staging Hosting channel), and the OAuth round trip has no other way to
+ * remember which one the user started from.
  *
  * Signed with the same GMAIL_OAUTH_CLIENT_SECRET already required for the
  * OAuth exchange — no extra secret to provision.
@@ -16,12 +19,13 @@ function sign(payloadB64, secret) {
 }
 
 /**
- * @param {{ uid: string, secret: string }} params
+ * @param {{ uid: string, secret: string, returnOrigin?: string }} params
  * @returns {string} opaque state token
  */
-export function createStateToken({ uid, secret }) {
+export function createStateToken({ uid, secret, returnOrigin }) {
   const payload = {
     uid,
+    returnOrigin: returnOrigin || null,
     nonce: Math.random().toString(36).slice(2),
     exp: Date.now() + TOKEN_TTL_MS
   };
@@ -32,7 +36,8 @@ export function createStateToken({ uid, secret }) {
 
 /**
  * @param {{ token: string, secret: string }} params
- * @returns {string|null} the uid if valid and unexpired, else null
+ * @returns {{ uid: string, returnOrigin: string|null }|null} the payload if
+ *   valid and unexpired, else null
  */
 export function verifyStateToken({ token, secret }) {
   if (typeof token !== 'string' || !token.includes('.')) return null;
@@ -49,7 +54,7 @@ export function verifyStateToken({ token, secret }) {
   try {
     const payload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
     if (!payload.uid || typeof payload.exp !== 'number' || Date.now() > payload.exp) return null;
-    return payload.uid;
+    return { uid: payload.uid, returnOrigin: typeof payload.returnOrigin === 'string' ? payload.returnOrigin : null };
   } catch {
     return null;
   }
