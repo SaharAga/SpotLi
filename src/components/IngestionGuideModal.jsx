@@ -35,6 +35,12 @@ export function IngestionGuideModal({
   const [isConnectingOutlook, setIsConnectingOutlook] = useState(false);
   const [connectedServices, setConnectedServicesState] = useState(() => getConnectedServices(user));
   const [gmailRenewalError, setGmailRenewalError] = useState(null);
+  // True while we're waiting on the server-verified gmailConnectionStatus
+  // call (or waiting for Firebase Auth to rehydrate `user` after the full-page
+  // OAuth redirect back into the app) — so the button can show a neutral
+  // "Checking..." state instead of flashing "Connect Gmail" before we
+  // actually know the answer.
+  const [isCheckingGmailStatus, setIsCheckingGmailStatus] = useState(false);
   const userUid = user?.uid || user?.id;
 
   // The client can't read gmailConnections/{uid} directly (Firestore rules
@@ -52,20 +58,25 @@ export function IngestionGuideModal({
       return;
     }
 
-    const gmailStatus = await getGmailConnectionStatus();
-    const accounts = gmailStatus.connected
-      ? [
-          ...nonGmailAccounts,
-          {
-            email: gmailStatus.emailAddress || user?.email || 'Gmail Account',
-            service: 'gmail',
-            status: 'active',
-            connectedAt: gmailStatus.connectedAt
-          }
-        ]
-      : nonGmailAccounts;
-    setConnectedServicesState({ ...local, gmail: Boolean(gmailStatus.connected), accounts });
-    setGmailRenewalError(gmailStatus.connected ? gmailStatus.lastRenewalError || null : null);
+    setIsCheckingGmailStatus(true);
+    try {
+      const gmailStatus = await getGmailConnectionStatus();
+      const accounts = gmailStatus.connected
+        ? [
+            ...nonGmailAccounts,
+            {
+              email: gmailStatus.emailAddress || user?.email || 'Gmail Account',
+              service: 'gmail',
+              status: 'active',
+              connectedAt: gmailStatus.connectedAt
+            }
+          ]
+        : nonGmailAccounts;
+      setConnectedServicesState({ ...local, gmail: Boolean(gmailStatus.connected), accounts });
+      setGmailRenewalError(gmailStatus.connected ? gmailStatus.lastRenewalError || null : null);
+    } finally {
+      setIsCheckingGmailStatus(false);
+    }
   };
 
   // Sync state whenever user ID changes or modal opens
@@ -76,11 +87,21 @@ export function IngestionGuideModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userUid, isOpen]);
 
-  // The ?gmail=connected|error redirect-back from the Gmail OAuth flow is
-  // handled once, at the app root (App.jsx) — it shows the toast, triggers
-  // the backfill, and opens this modal. Opening it flips `isOpen`, which the
-  // effect above already reacts to by calling refreshConnectedServices(), so
-  // there's no need for a second listener here.
+  // The ?gmail=connected|error redirect-back from the Gmail OAuth flow lands
+  // on a freshly-loaded app, and Firebase Auth's rehydration of `user` can
+  // lag behind this modal's first render (App.jsx opens it immediately after
+  // handling the redirect param). If the modal opens before `userUid` is
+  // available, the effect above runs once with no uid and never re-checks
+  // once auth catches up. This retries shortly after open so we don't get
+  // stuck showing "Connect Gmail" for an account that's actually connected.
+  useEffect(() => {
+    if (!isOpen || userUid) return undefined;
+    const timer = setTimeout(() => {
+      if (isOpen) refreshConnectedServices();
+    }, 1500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, userUid]);
 
   if (!isOpen) return null;
 
@@ -281,13 +302,18 @@ export function IngestionGuideModal({
               <button
                 type="button"
                 onClick={handleConnectGmail}
-                disabled={isConnectingGmail}
+                disabled={isConnectingGmail || isCheckingGmailStatus}
                 className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-all shadow-md shadow-indigo-600/20 disabled:opacity-50 cursor-pointer min-h-[48px]"
               >
                 {isConnectingGmail ? (
                   <>
                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                     <span>{language === 'he' ? 'מתחבר...' : 'Connecting...'}</span>
+                  </>
+                ) : isCheckingGmailStatus ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>{language === 'he' ? 'בודק סטטוס...' : 'Checking status...'}</span>
                   </>
                 ) : connectedServices.gmail ? (
                   <>

@@ -59,11 +59,16 @@ describe('IngestionGuideModal Component Tests', () => {
     );
   };
 
-  it('renders correctly when open with 1-Click Gmail/Outlook and personal address', () => {
+  it('renders correctly when open with 1-Click Gmail/Outlook and personal address', async () => {
     renderModal();
 
     expect(screen.getByText(/Automatic Shipment Ingestion|קליטת משלוחים אוטומטית/i)).toBeTruthy();
-    expect(screen.getByText(/Connect Gmail|חבר Gmail/i)).toBeTruthy();
+    // Signed-in users see a "Checking status..." state on the Gmail button
+    // until the server-verified connection status resolves, before settling
+    // on "Connect Gmail" (not connected in this test's mock).
+    await waitFor(() => {
+      expect(screen.getByText(/Connect Gmail|חבר Gmail/i)).toBeTruthy();
+    });
     expect(screen.getByText(/Connect Outlook|חבר Outlook/i)).toBeTruthy();
     expect(screen.getByText(/233b362d7b331adfde6e\+usr_testuser123@cloudmailin\.net/i)).toBeTruthy();
   });
@@ -92,7 +97,7 @@ describe('IngestionGuideModal Component Tests', () => {
     const handleToast = vi.fn();
     renderModal({ onShowToast: handleToast });
 
-    const enableSyncBtn = screen.getByText(/Connect Gmail|חבר Gmail/i);
+    const enableSyncBtn = await screen.findByText(/Connect Gmail|חבר Gmail/i);
     fireEvent.click(enableSyncBtn);
 
     await waitFor(() => {
@@ -109,7 +114,7 @@ describe('IngestionGuideModal Component Tests', () => {
     const handleToast = vi.fn();
     renderModal({ onShowToast: handleToast });
 
-    const enableSyncBtn = screen.getByText(/Connect Gmail|חבר Gmail/i);
+    const enableSyncBtn = await screen.findByText(/Connect Gmail|חבר Gmail/i);
     fireEvent.click(enableSyncBtn);
 
     await waitFor(() => {
