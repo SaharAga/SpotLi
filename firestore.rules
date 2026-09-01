@@ -135,7 +135,7 @@ service cloud.firestore {
       allow create: if request.resource.data.keys().hasOnly([
           'id', 'signature', 'componentName', 'message', 'appVersion',
           'buildChannel', 'userAgent', 'screenWidth', 'screenHeight',
-          'timestamp'
+          'timestamp', 'sessionId'
         ]) &&
         request.resource.data.message is string &&
         request.resource.data.message.size() > 0 &&
@@ -150,7 +150,12 @@ service cloud.firestore {
         request.resource.data.screenWidth is number && request.resource.data.screenWidth >= 0 && request.resource.data.screenWidth <= 10000 &&
         request.resource.data.screenHeight is number && request.resource.data.screenHeight >= 0 && request.resource.data.screenHeight <= 10000 &&
         (!('componentName' in request.resource.data) || (request.resource.data.componentName is string && request.resource.data.componentName.size() <= 100)) &&
-        (!('timestamp' in request.resource.data) || (request.resource.data.timestamp is string && request.resource.data.timestamp.size() <= 60));
+        (!('timestamp' in request.resource.data) || (request.resource.data.timestamp is string && request.resource.data.timestamp.size() <= 60)) &&
+        // Random per-browser-tab-session id (never an account/user
+        // identifier) — see crashReportService.js's getOrCreateCrashSessionId
+        // — used only to tell "one session crashing repeatedly" apart from
+        // "many distinct sessions hitting the same bug" in the admin view.
+        (!('sessionId' in request.resource.data) || (request.resource.data.sessionId is string && request.resource.data.sessionId.size() <= 64));
       // Readable only by allowlisted admins. Never writable or deletable
       // from any client once created — no update means no client can alter
       // or tamper with a report after submitting it.

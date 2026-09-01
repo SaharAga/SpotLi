@@ -6,14 +6,18 @@ import {
 import { useLanguage } from '../context/LanguageContext';
 import { exportToCSV, exportToJSON, generatePrintableSummary } from '../utils/exportUtils';
 import { Modal } from './Modal';
+import { useFeatureUsage } from '../hooks/useFeatureUsage';
+import { FEATURE_IDS } from '../constants/featureIds';
 
 export function ExportModal({
   isOpen,
   onClose,
   packages = [],
-  onShowToast
+  onShowToast,
+  uid = null
 }) {
   const { language } = useLanguage();
+  useFeatureUsage(FEATURE_IDS.EXPORT, isOpen, uid);
 
   const [selectedFormat, setSelectedFormat] = useState('csv'); // 'csv' | 'json' | 'print'
   const [selectedScope, setSelectedScope] = useState('all'); // 'all' | 'active' | 'delivered'

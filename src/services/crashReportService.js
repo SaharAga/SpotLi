@@ -12,6 +12,7 @@ import { STORAGE_KEYS } from '../constants/storageKeys';
 
 export const OFFLINE_CRASH_QUEUE_KEY = STORAGE_KEYS.OFFLINE_CRASH_QUEUE;
 const SESSION_SEEN_KEY = STORAGE_KEYS.CRASH_SEEN;
+const SESSION_ID_KEY = STORAGE_KEYS.CRASH_SESSION_ID;
 const MAX_REPORTS_PER_SESSION = 20;
 const MAX_QUEUE_ITEMS = 100;
 const MAX_MESSAGE_CHARS = 1500;
@@ -30,7 +31,35 @@ const MAX_STACK_LINES = 6;
  * @property {number} screenHeight
  * @property {string} timestamp
  * @property {boolean} [syncedToCloud]
+ * @property {string} [sessionId]
  */
+
+/**
+ * A random, per-browser-tab-session id (sessionStorage, not localStorage —
+ * gone on tab close, never tied to an account or any other identifier) so
+ * groupCrashReports can distinguish "1 user hit this 40 times" from "40
+ * users hit this once." Deliberately a *session* count, not a true unique-
+ * user count — the same person across two tabs or after closing and
+ * reopening the browser gets a new session id — but that underestimate is
+ * the safer direction for an impact metric than a scheme that could ever
+ * overcount by merging distinct people into one bucket.
+ * @returns {string}
+ */
+function getOrCreateCrashSessionId() {
+  if (typeof sessionStorage === 'undefined') return '';
+  try {
+    const existing = sessionStorage.getItem(SESSION_ID_KEY);
+    if (existing) return existing;
+    const fresh =
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `s-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    sessionStorage.setItem(SESSION_ID_KEY, fresh);
+    return fresh;
+  } catch {
+    return '';
+  }
+}
 
 /**
  * Cheap non-cryptographic string hash for deduplication/grouping signatures
@@ -86,6 +115,7 @@ function validateAndSanitizeCrashReport(input) {
   const componentName = typeof input.componentName === 'string' && input.componentName
     ? sanitizeString(input.componentName, 100)
     : undefined;
+  const sessionId = getOrCreateCrashSessionId();
 
   return {
     id,
@@ -97,7 +127,8 @@ function validateAndSanitizeCrashReport(input) {
     userAgent: typeof navigator !== 'undefined' ? sanitizeString(navigator.userAgent, 300) : '',
     screenWidth: typeof window !== 'undefined' ? window.innerWidth : 0,
     screenHeight: typeof window !== 'undefined' ? window.innerHeight : 0,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    ...(sessionId ? { sessionId } : {})
   };
 }
 
@@ -296,6 +327,7 @@ export async function fetchAllCrashReports(limitCount = 500) {
  * @property {string} message
  * @property {string} [componentName]
  * @property {number} count
+ * @property {number} sessionCount
  * @property {string} firstSeen
  * @property {string} lastSeen
  * @property {string} appVersion
@@ -307,11 +339,19 @@ export async function fetchAllCrashReports(limitCount = 500) {
  * Firestore update permission, so aggregation happens at read time here
  * instead of via a shared counter document).
  *
+ * `count` is raw occurrences; `sessionCount` is distinct browser sessions
+ * (see getOrCreateCrashSessionId) — the two can diverge a lot (one crash
+ * loop in one tab vs. the same bug hitting many separate visitors), and
+ * only the latter is a real impact measure. A report with no `sessionId`
+ * (written before this field existed) still counts toward `count` but not
+ * `sessionCount`.
+ *
  * @param {CrashReportPayload[]} items
  * @returns {CrashGroup[]} sorted by most recent occurrence first
  */
 export function groupCrashReports(items) {
   const bySignature = new Map();
+  const sessionsBySignature = new Map();
 
   for (const item of Array.isArray(items) ? items : []) {
     if (!item?.signature) continue;
@@ -322,21 +362,34 @@ export function groupCrashReports(items) {
         message: item.message,
         componentName: item.componentName,
         count: 1,
+        sessionCount: 0,
         firstSeen: item.timestamp,
         lastSeen: item.timestamp,
         appVersion: item.appVersion
       });
-      continue;
+    } else {
+      existing.count += 1;
+      if (String(item.timestamp) > String(existing.lastSeen)) {
+        existing.lastSeen = item.timestamp;
+        existing.appVersion = item.appVersion;
+      }
+      if (String(item.timestamp) < String(existing.firstSeen)) {
+        existing.firstSeen = item.timestamp;
+      }
     }
 
-    existing.count += 1;
-    if (String(item.timestamp) > String(existing.lastSeen)) {
-      existing.lastSeen = item.timestamp;
-      existing.appVersion = item.appVersion;
+    if (item.sessionId) {
+      let sessions = sessionsBySignature.get(item.signature);
+      if (!sessions) {
+        sessions = new Set();
+        sessionsBySignature.set(item.signature, sessions);
+      }
+      sessions.add(item.sessionId);
     }
-    if (String(item.timestamp) < String(existing.firstSeen)) {
-      existing.firstSeen = item.timestamp;
-    }
+  }
+
+  for (const [signature, group] of bySignature) {
+    group.sessionCount = sessionsBySignature.get(signature)?.size || 0;
   }
 
   return Array.from(bySignature.values()).sort((a, b) =>

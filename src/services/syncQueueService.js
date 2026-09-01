@@ -449,4 +449,37 @@ export class SyncQueueService {
   }
 }
 
+/**
+ * Read-only health snapshot of the offline sync queue — how long the
+ * oldest pending mutation has been waiting to replay (flaky connectivity
+ * vs. a real bug, per the analytics roadmap in #117), and how many
+ * mutations have permanently failed. Pure function over plain arrays
+ * (`getQueue()`/`getDeadLetterQueue()`'s own shape) rather than a method
+ * on SyncQueueService, so it never needs to touch the replay/mutation
+ * logic itself — this only ever reads.
+ *
+ * @param {Array<{ timestamp?: string }>} queue
+ * @param {Array<object>} deadLetterQueue
+ * @param {number} [now]
+ * @returns {{ pendingCount: number, oldestPendingAgeMs: number | null, deadLetterCount: number }}
+ */
+export function computeSyncQueueHealth(queue, deadLetterQueue, now = Date.now()) {
+  const pending = Array.isArray(queue) ? queue : [];
+  const deadLetter = Array.isArray(deadLetterQueue) ? deadLetterQueue : [];
+
+  let oldestPendingAgeMs = null;
+  for (const mutation of pending) {
+    const t = Date.parse(mutation?.timestamp || '');
+    if (!Number.isFinite(t)) continue;
+    const age = now - t;
+    if (oldestPendingAgeMs === null || age > oldestPendingAgeMs) oldestPendingAgeMs = age;
+  }
+
+  return {
+    pendingCount: pending.length,
+    oldestPendingAgeMs,
+    deadLetterCount: deadLetter.length
+  };
+}
+
 export const syncQueueService = new SyncQueueService();

@@ -14,13 +14,17 @@ import {
   calculateDeliveryMetrics
 } from '../utils/analyticsUtils';
 import { Modal } from './Modal';
+import { useFeatureUsage } from '../hooks/useFeatureUsage';
+import { FEATURE_IDS } from '../constants/featureIds';
 
 export function AnalyticsModal({
   isOpen,
   onClose,
-  packages = []
+  packages = [],
+  uid = null
 }) {
   const { t, language } = useLanguage();
+  useFeatureUsage(FEATURE_IDS.ANALYTICS_MODAL, isOpen, uid);
 
   // Gated on `isOpen`: the modal stays mounted for the life of the app, so
   // without this every add, edit and status change would recompute the whole
