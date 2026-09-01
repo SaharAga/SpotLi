@@ -378,6 +378,14 @@ jobs:
         with:
           credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DELIVEREE }}'
 
+      # Temporary diagnostic: confirms which service account this secret
+      # actually authenticates as, since the deploy has been failing on a
+      # secretmanager.secrets.get 403 despite that role being granted in
+      # the console to firebase-adminsdk-fbsvc — need to rule out the
+      # secret holding a different account's key before granting more.
+      - name: Print authenticated service account
+        run: node -e "console.log(require(process.env.GOOGLE_APPLICATION_CREDENTIALS).client_email)"
+
       # firebase.json's predeploy hooks re-run lint/test from functions/ as
       # a final gate immediately before deploy, on top of the `functions`
       # job above already having done so.
