@@ -133,6 +133,7 @@ The specialized skills governing this workspace are located in `.agents/skills/`
 * [`software-verification-and-qa`](.agents/skills/software-verification-and-qa/SKILL.md)
 * [`remote-notifications-and-chat`](.agents/skills/remote-notifications-and-chat/SKILL.md)
 * [`feedback-triage-and-action-items`](.agents/skills/feedback-triage-and-action-items/SKILL.md)
+* [`gmail-detection-auto-improvement`](.agents/skills/gmail-detection-auto-improvement/SKILL.md)
 * [`project-release-tracking`](.agents/skills/project-release-tracking/SKILL.md)
 
 ---

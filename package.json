@@ -19,6 +19,7 @@
     "prepare": "git config core.hooksPath .githooks || true",
     "release": "node scripts/release.mjs",
     "triage:fetch": "node scripts/triage_reports.mjs fetch all",
+    "detection:insights": "node scripts/detection_insights.mjs fetch all",
     "sync:start": "node scripts/agent-sync-start.mjs",
     "sync:stop": "node scripts/agent-sync-stop.mjs",
     "sync:status": "node scripts/agent-sync-channel.mjs status"
