@@ -344,6 +344,46 @@ jobs:
       - name: Deploy Firestore rules
         run: npx --yes firebase-tools@14 deploy --only firestore:rules --project deliveree-app-2a938 --non-interactive
 
+  deploy-functions:
+    name: Deploy Cloud Functions
+    runs-on: ubuntu-latest
+    needs: [functions, detect-release-only-commit]
+    # Cloud Functions have no staging/production split (one live function
+    # set per Firebase project, unlike Hosting's channels) — deploy on every
+    # ordinary merge to main, same trigger as deploy-staging below, so a
+    # functions/ fix goes live as soon as it merges rather than waiting on
+    # the next version-bump release.
+    if: |
+      always() && needs.functions.result == 'success' &&
+      github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+      needs.detect-release-only-commit.outputs.release_only != 'true' &&
+      vars.FIREBASE_HOSTING_ENABLED == 'true'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: functions
+        run: npm ci --legacy-peer-deps
+
+      - name: Authenticate for Functions deploy
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DELIVEREE }}'
+
+      # firebase.json's predeploy hooks re-run lint/test from functions/ as
+      # a final gate immediately before deploy, on top of the `functions`
+      # job above already having done so.
+      - name: Deploy Cloud Functions
+        run: npx --yes firebase-tools@14 deploy --only functions --project deliveree-app-2a938 --non-interactive
+
   deploy-staging:
     name: Deploy to Firebase Hosting (staging)
     runs-on: ubuntu-latest
