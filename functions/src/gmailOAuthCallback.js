@@ -23,6 +23,47 @@ import { createOAuth2Client, GMAIL_SCOPES, setGmailConnection } from './gmailAut
 import { createStateToken, verifyStateToken } from './gmailStateToken.js';
 
 /**
+ * The app is reachable from more than one origin (production Hosting, the
+ * `staging` Hosting channel), and the whole OAuth round trip is a full-page
+ * navigation away from whichever one the user started on. Google's
+ * `state` param is the only thing that survives that round trip, so the
+ * origin the user should be sent back to is carried there (see
+ * gmailStateToken.js) rather than assumed to always be APP_BASE_URL.
+ *
+ * Only accept an origin that's actually a Firebase Hosting origin for this
+ * project — production, the default `web.app`/`firebaseapp.com` domains, or
+ * a named preview/staging channel of them — never an arbitrary client-
+ * supplied URL, which would otherwise turn this into an open redirect.
+ * @param {string} appBaseUrl the trusted default (production) origin
+ * @param {string} candidate the client-supplied origin to validate
+ * @returns {string|null}
+ */
+export function validateReturnOrigin(appBaseUrl, candidate) {
+  if (typeof candidate !== 'string' || !candidate) return null;
+  let appHost;
+  try {
+    appHost = new URL(appBaseUrl).hostname;
+  } catch {
+    return null;
+  }
+  const projectId = appHost.split('.')[0].split('--')[0];
+  if (!projectId) return null;
+
+  let url;
+  try {
+    url = new URL(candidate);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== 'https:') return null;
+
+  const allowedHostPattern = new RegExp(`^${projectId}(--[a-z0-9-]+)?\\.(web\\.app|firebaseapp\\.com)$`, 'i');
+  if (!allowedHostPattern.test(url.hostname)) return null;
+
+  return url.origin;
+}
+
+/**
  * onCall: mints a short-lived state token for the signed-in caller and
  * returns the Google consent URL to redirect to. Requires a verified
  * Firebase Auth context (request.auth), never a client-supplied uid.
@@ -35,7 +76,10 @@ export function createGmailOAuthStartHandler({ clientSecret }) {
       throw new HttpsError('unauthenticated', 'Sign in required.');
     }
 
-    const state = createStateToken({ uid, secret: clientSecret });
+    const appBaseUrl = (process.env.APP_BASE_URL || '').replace(/\/$/, '');
+    const returnOrigin = validateReturnOrigin(appBaseUrl, request.data?.origin) || appBaseUrl;
+
+    const state = createStateToken({ uid, secret: clientSecret, returnOrigin });
     const oauth2Client = createOAuth2Client({ clientSecret });
     const url = oauth2Client.generateAuthUrl({
       access_type: 'offline',
@@ -71,11 +115,18 @@ export function createGmailOAuthCallbackHandler({ db, clientSecret, runBackfill 
         return redirectError();
       }
 
-      const uid = verifyStateToken({ token: String(state), secret: clientSecret });
-      if (!uid) {
+      const statePayload = verifyStateToken({ token: String(state), secret: clientSecret });
+      if (!statePayload) {
         console.warn('[gmailOAuthCallback] Invalid or expired state token');
         return redirectError();
       }
+      const { uid } = statePayload;
+      // Re-validate rather than trust the token's returnOrigin blindly —
+      // it's HMAC-signed so it can't have been tampered with, but this
+      // keeps the allowlist logic in one place and covers an APP_BASE_URL
+      // rotation between the start and callback requests.
+      const returnBaseUrl = validateReturnOrigin(appBaseUrl, statePayload.returnOrigin) || appBaseUrl;
+      const redirectConnected = () => res.redirect(`${returnBaseUrl}/?gmail=connected`);
 
       const oauth2Client = createOAuth2Client({ clientSecret });
       const { tokens } = await oauth2Client.getToken(String(code));
@@ -130,7 +181,7 @@ export function createGmailOAuthCallbackHandler({ db, clientSecret, runBackfill 
         );
       }
 
-      return res.redirect(`${appBaseUrl}/?gmail=connected`);
+      return redirectConnected();
     } catch (err) {
       console.error('[gmailOAuthCallback] Error handling callback:', err);
       return redirectError();

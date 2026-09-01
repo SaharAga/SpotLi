@@ -4,7 +4,15 @@ import { createStateToken, verifyStateToken } from './gmailStateToken.js';
 describe('gmailStateToken', () => {
   it('round-trips a valid token back to its uid', () => {
     const token = createStateToken({ uid: 'user123', secret: 'shh' });
-    expect(verifyStateToken({ token, secret: 'shh' })).toBe('user123');
+    expect(verifyStateToken({ token, secret: 'shh' })).toEqual({ uid: 'user123', returnOrigin: null });
+  });
+
+  it('round-trips a valid token back to its uid and returnOrigin', () => {
+    const token = createStateToken({ uid: 'user123', secret: 'shh', returnOrigin: 'https://staging.example.com' });
+    expect(verifyStateToken({ token, secret: 'shh' })).toEqual({
+      uid: 'user123',
+      returnOrigin: 'https://staging.example.com'
+    });
   });
 
   it('rejects a token signed with a different secret', () => {

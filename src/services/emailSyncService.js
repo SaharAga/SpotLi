@@ -267,7 +267,12 @@ export async function connectGmail() {
   try {
     const { httpsCallable } = await import('firebase/functions');
     const start = httpsCallable(functionsInstance, 'gmailOAuthStart');
-    const res = await start();
+    // Tells the server which origin (production vs. the staging Hosting
+    // channel) sent the user here, so the post-consent redirect lands back
+    // on the same one instead of always defaulting to production — see
+    // gmailOAuthCallback.js's validateReturnOrigin.
+    const origin = typeof window !== 'undefined' ? window.location.origin : undefined;
+    const res = await start({ origin });
     const url = res?.data?.url;
     if (!url) {
       return { ok: false, error: 'Failed to start Gmail connection' };
