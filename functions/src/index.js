@@ -211,7 +211,11 @@ export const gmailDisconnect = onCall(
 export const gmailConnectionStatus = onCall(
   {
     timeoutSeconds: 15,
-    memory: '128MiB'
+    // 128MiB was too tight for a Node 22 2nd-gen function pulling in the
+    // Firebase Admin SDK — its first-ever deploy failed the Cloud Run
+    // container healthcheck (never bound to the port within the startup
+    // timeout). 256MiB matches every sibling onCall handler in this file.
+    memory: '256MiB'
   },
   (request) =>
     createGmailConnectionStatusHandler({
