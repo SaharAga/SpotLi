@@ -45,3 +45,20 @@ export const GMAIL_AI_LIMITS = Object.freeze({
   // instead of relying on the daily cap alone to absorb it.
   MAX_AI_CALLS_PER_BACKFILL_RUN: 15
 });
+
+/**
+ * Separate budget for the `gmailBackfill` callable itself (gmailBackfill.js)
+ * — distinct from GMAIL_AI_LIMITS, which only bounds the AI-fallback calls
+ * *within* a run. A signed-in user can call this callable directly (it's
+ * not reachable only through the UI's connect button, which is a UX
+ * convenience, not an access control), and each call re-scans up to 100
+ * Gmail messages regardless of whether any of them use AI fallback — so
+ * the call itself needs its own low daily ceiling to bound Gmail API quota
+ * and prevent a user from repeatedly re-triggering their own 30-day scan.
+ * Real usage only ever calls this once per connect (plus an occasional
+ * legitimate reconnect), so this stays deliberately tight.
+ */
+export const GMAIL_BACKFILL_LIMITS = Object.freeze({
+  PER_USER_DAILY_CALLS: 5,
+  GLOBAL_DAILY_CALLS: 500
+});
