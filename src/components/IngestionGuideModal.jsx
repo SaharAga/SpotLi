@@ -121,6 +121,24 @@ export function IngestionGuideModal({
   };
 
   const handleConnectGmail = async () => {
+    // Only one Gmail account can be connected per user (gmailConnections is
+    // keyed by uid, not per-account), and re-running the OAuth flow re-runs
+    // the 30-day inbox backfill scan on the callback. Re-triggering that for
+    // an account that's already connected would just burn Gmail API/AI
+    // fallback budget for no new packages — disconnect first if the intent
+    // is to switch accounts.
+    if (connectedServices.gmail) {
+      if (onShowToast) {
+        onShowToast(
+          language === 'he'
+            ? 'Gmail כבר מחובר. כדי לחבר חשבון אחר, נתקו קודם את החשבון הנוכחי.'
+            : 'Gmail is already connected. Disconnect the current account first to connect a different one.',
+          'info'
+        );
+      }
+      return;
+    }
+
     setIsConnectingGmail(true);
     try {
       let currentUser = user;
