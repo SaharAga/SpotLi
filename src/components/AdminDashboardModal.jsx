@@ -19,6 +19,7 @@ import {
 import { fetchAllCrashReports, groupCrashReports } from '../services/crashReportService';
 import { fetchAllParseCorrections, computeParseCorrectionStats } from '../services/parseCorrectionService';
 import { fetchAllSmartImportAttempts, computeSmartImportMissRateStats } from '../services/smartImportAttemptService';
+import { fetchFeatureAdoptionStats, computeAdoptionSummary } from '../services/featureAdoptionStatsService';
 import { AdminScreenshotLightbox } from './AdminScreenshotLightbox.jsx';
 import { downloadBlob } from '../utils/exportUtils';
 
@@ -31,7 +32,7 @@ export function AdminDashboardModal({
   const { user } = useAuth();
   const isAdmin = isAdminUser(user);
 
-  const [activeTab, setActiveTab] = useState('trends'); // 'trends' | 'feedback' | 'crashes' | 'parser' | 'system'
+  const [activeTab, setActiveTab] = useState('trends'); // 'trends' | 'feedback' | 'crashes' | 'parser' | 'adoption' | 'system'
   
   // Data states
   const [localFeedbacks, setLocalFeedbacks] = useState(() => getLocalFeedbackHistory());
@@ -39,6 +40,7 @@ export function AdminDashboardModal({
   const [crashReports, setCrashReports] = useState([]);
   const [parseCorrections, setParseCorrections] = useState([]);
   const [smartImportAttempts, setSmartImportAttempts] = useState([]);
+  const [adoptionStats, setAdoptionStats] = useState([]);
   
   // Loading & error states
   const [isLoading, setIsLoading] = useState(false);
@@ -78,6 +80,11 @@ export function AdminDashboardModal({
     return computeSmartImportMissRateStats(smartImportAttempts);
   }, [smartImportAttempts]);
 
+  // Feature adoption summary (trailing 30 days, see featureAdoptionStatsService.js)
+  const adoptionSummary = useMemo(() => {
+    return computeAdoptionSummary(adoptionStats);
+  }, [adoptionStats]);
+
   // Fetch all cloud telemetry
   const loadAllTelemetry = useCallback(async () => {
     if (!isAdmin) return;
@@ -85,17 +92,19 @@ export function AdminDashboardModal({
     setCloudError(null);
 
     try {
-      const [feedbackRes, crashRes, parserRes, missRateRes] = await Promise.all([
+      const [feedbackRes, crashRes, parserRes, missRateRes, adoptionRes] = await Promise.all([
         fetchAllFeedback(),
         fetchAllCrashReports(),
         fetchAllParseCorrections(),
-        fetchAllSmartImportAttempts()
+        fetchAllSmartImportAttempts(),
+        fetchFeatureAdoptionStats()
       ]);
 
       if (feedbackRes.ok) setCloudFeedbacks(feedbackRes.items);
       if (crashRes.ok) setCrashReports(crashRes.items);
       if (parserRes.ok) setParseCorrections(parserRes.items);
       if (missRateRes.ok) setSmartImportAttempts(missRateRes.items);
+      if (adoptionRes.ok) setAdoptionStats(adoptionRes.items);
 
       if (!feedbackRes.ok && !crashRes.ok) {
         setCloudError(feedbackRes.error || crashRes.error || 'Failed to load cloud telemetry');
@@ -324,6 +333,18 @@ export function AdminDashboardModal({
             <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-500/20 text-blue-300">
               {parseCorrections.length}
             </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('adoption')}
+            className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-all cursor-pointer min-h-[44px] flex items-center gap-1.5 whitespace-nowrap ${
+              activeTab === 'adoption'
+                ? 'bg-slate-800/90 text-purple-300 border-b-2 border-purple-400'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+            }`}
+          >
+            <Activity className="w-3.5 h-3.5" />
+            <span>{language === 'he' ? 'אימוץ תכונות' : 'Feature Adoption'}</span>
           </button>
 
           <button
@@ -791,6 +812,48 @@ export function AdminDashboardModal({
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* TAB: FEATURE ADOPTION */}
+          {activeTab === 'adoption' && (
+            <div className="space-y-6">
+              <p className="text-[11px] text-slate-500">
+                {language === 'he'
+                  ? 'אחוז מבוסס על ימי-שימוש (לא משתמשים ייחודיים לאורך התקופה) — ראו הערת עיצוב ב-featureAdoptionStatsService.js'
+                  : 'Rate is app-visit-days based, not true period-unique users — see the design note in featureAdoptionStatsService.js'}
+              </p>
+
+              {Object.keys(adoptionSummary).length === 0 ? (
+                <p className="text-xs text-slate-500 py-8 text-center">
+                  {language === 'he' ? 'אין עדיין נתוני אימוץ תכונות' : 'No feature-adoption data yet'}
+                </p>
+              ) : (
+                <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-4">
+                  <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-purple-400" />
+                    <span>{language === 'he' ? 'אימוץ לפי תכונה (30 ימים אחרונים)' : 'Adoption by Feature (Trailing 30 Days)'}</span>
+                  </h3>
+                  <div className="space-y-2.5">
+                    {Object.entries(adoptionSummary)
+                      .sort(([, a], [, b]) => b.adoptionRate - a.adoptionRate)
+                      .map(([feature, counts]) => (
+                        <div key={feature} className="space-y-1">
+                          <div className="flex justify-between text-xs text-slate-300">
+                            <span className="font-mono font-semibold">{feature}</span>
+                            <span>{Math.round(counts.adoptionRate * 100)}%</span>
+                          </div>
+                          <div className="h-3 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+                            <div
+                              style={{ width: `${Math.min(100, Math.round(counts.adoptionRate * 100))}%` }}
+                              className="bg-purple-500 h-full rounded-full"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

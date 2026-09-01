@@ -308,6 +308,61 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Privacy-preserving feature-adoption pipeline
+    // (src/services/featureUsageService.js /
+    // functions/src/featureAdoptionRollup.js). One row per (feature,
+    // identity, day) — the identity (uid, or a random per-browser id for
+    // guests) lives only in the document ID, never in its content, so
+    // counting rows for a (feature, date) pair is equivalent to counting
+    // unique users without ever recording who any of them are. Mirrors
+    // FEATURE_IDS in src/constants/featureIds.js by hand (functions/ can't
+    // import from src/, same tradeoff as emailFilterQuery.js).
+    //
+    // Deliberately unreadable by *anyone*, including admin — this is raw,
+    // near-identity-shaped data, not the aggregate. The scheduled rollup
+    // Cloud Function (Admin SDK, bypasses these rules) is the only reader,
+    // and it deletes each row immediately after folding it into
+    // featureAdoptionStats below, so raw rows never accumulate.
+    //
+    // Deliberately guest-writable, same tradeoff as parseCorrections above
+    // (Smart Import and the rest of the app work signed out, and adoption
+    // tracking that silently excluded every guest would be a worse metric
+    // than none) — Strix flagged this collection's lack of an
+    // authentication requirement as a low-severity finding
+    // (github.com/SaharAga/Deliveree/pull/119#discussion_r3898971050); the
+    // reasoning is sound in isolation but the suggested fix (require auth)
+    // would defeat this collection's actual purpose the same way it would
+    // have on parseCorrections. What's fixed here: the date regex accepted
+    // non-calendar values like `9999-99-99`, which the finding correctly
+    // pointed out — tightened below to real calendar month/day ranges. A
+    // day still outside the rollup's real-day range doesn't get swept, but
+    // that's the same unbounded-write-volume exposure `/feedback` already
+    // has and mitigates the same way (Firebase App Check, see README
+    // "Abuse protection") rather than in these rules — Firestore rules
+    // have no way to compare a date *string* against `request.time`
+    // without a capture-group date parser the rules language doesn't have.
+    match /featureUsage/{docId} {
+      allow create, update: if request.resource.data.keys().hasOnly(['feature', 'date']) &&
+        request.resource.data.feature in [
+          '_app_active', 'analytics_modal', 'export', 'smart_import',
+          'gmail_sync', 'pwa_install', 'share_target_import'
+        ] &&
+        request.resource.data.date is string &&
+        request.resource.data.date.matches('^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$');
+      allow read, delete: if false;
+    }
+
+    // Daily unique-user counts per feature, the only thing the rollup
+    // above ever keeps — `{ feature, date, uniqueUsers }`, no identity of
+    // any kind. Written only by Cloud Functions via the Admin SDK;
+    // admin-readable for the adoption-rate dashboard (adoption % = this
+    // feature's uniqueUsers ÷ '_app_active''s uniqueUsers for the same
+    // date).
+    match /featureAdoptionStats/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // Explicitly deny everything else
     match /{document=**} {
       allow read, write: if false;

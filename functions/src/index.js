@@ -12,6 +12,7 @@ import { createGmailBackfillHandler, runBackfillForUser } from './gmailBackfill.
 import { createGmailWatchRenewalHandler } from './gmailWatchRenewal.js';
 import { createGmailDisconnectHandler } from './gmailDisconnect.js';
 import { createGmailConnectionStatusHandler } from './gmailConnectionStatus.js';
+import { createFeatureAdoptionRollupHandler } from './featureAdoptionRollup.js';
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
 // Shared-secret query param that authorizes calls to the Pub/Sub push
@@ -216,4 +217,22 @@ export const gmailConnectionStatus = onCall(
     createGmailConnectionStatusHandler({
       db: getFirestore()
     })(request)
+);
+
+/**
+ * Daily rollup of the previous UTC day's featureUsage rows into
+ * featureAdoptionStats (unique-user counts per feature), then deletes the
+ * rolled-up raw rows — see featureAdoptionRollup.js for why "the day
+ * after" and the actual privacy guarantee this provides. Scheduled after
+ * gmailWatchRenewal so the two don't contend, though neither touches the
+ * other's data.
+ */
+export const featureAdoptionRollup = onSchedule(
+  {
+    schedule: 'every day 04:00',
+    timeZone: 'Etc/UTC',
+    timeoutSeconds: 300,
+    memory: '256MiB'
+  },
+  () => createFeatureAdoptionRollupHandler({ db: getFirestore() })()
 );
