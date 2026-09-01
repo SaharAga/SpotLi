@@ -295,9 +295,18 @@ export async function connectGmail() {
  * @returns {Promise<{ connected: boolean, emailAddress?: string, connectedAt?: string }>}
  */
 export async function getGmailConnectionStatus() {
-  if (!isFirebaseConfigured || !auth?.currentUser || !functionsInstance) {
+  if (!isFirebaseConfigured || !functionsInstance) {
     return { connected: false };
   }
+  // Deliberately not gated on auth?.currentUser here: that's a bare
+  // synchronous field on the Auth SDK that can still be null for a moment
+  // after a fresh page load / PWA relaunch even once the app's own
+  // AuthContext already has a signed-in user (which is what actually
+  // gates this call's callers) — bailing out on it caused this call to
+  // silently no-op client-side (never even reaching the server) right
+  // after reconnecting Gmail. httpsCallable's own token-fetch internally
+  // waits on Auth SDK readiness, so it's the more reliable check; a truly
+  // signed-out caller still fails cleanly below via 'unauthenticated'.
   try {
     const { httpsCallable } = await import('firebase/functions');
     const status = httpsCallable(functionsInstance, 'gmailConnectionStatus');
