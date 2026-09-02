@@ -14,7 +14,7 @@
 import { HttpsError } from 'firebase-functions/v2/https';
 import { DEFAULT_FORWARDING_FILTER_QUERY } from './emailFilterQuery.js';
 import { getGmailConnection, getGmailClientForUser } from './gmailAuth.js';
-import { buildPackageFromGmailMessageWithAiFallback } from './gmailPackageSync.js';
+import { buildPackageFromGmailMessageWithAiFallback, buildOrderStatusUpdateFromGmailMessage } from './gmailPackageSync.js';
 import { logUsageEvent } from './analyticsEvents.js';
 import { GMAIL_AI_LIMITS, GMAIL_BACKFILL_LIMITS } from './config.js';
 import { checkAndIncrementUsage } from './guards.js';
@@ -74,6 +74,16 @@ export async function runBackfillForUser({ db, uid, refreshToken, clientSecret, 
       .filter(Boolean)
       .map((t) => String(t).toUpperCase())
   );
+  // docId of each existing order-status (no-tracking-number) package, keyed
+  // by store — lets a re-run update that package's status instead of
+  // creating a second untracked card for the same store.
+  const storeToOrderStatusDocId = new Map();
+  for (const d of existingSnap.docs) {
+    const data = d.data() || {};
+    if (data.source === 'gmail_sync_order_status' && data.store) {
+      storeToOrderStatusDocId.set(String(data.store).toUpperCase(), d.id);
+    }
+  }
 
   const listRes = await gmail.users.messages.list({
     userId: 'me',
@@ -102,6 +112,11 @@ export async function runBackfillForUser({ db, uid, refreshToken, clientSecret, 
   }
 
   const packagesToSave = [];
+  const orderStatusUpdates = [];
+  // store -> index into packagesToSave, for order-status packages created
+  // earlier in this same run (so a second email for the same store updates
+  // that entry instead of adding a duplicate).
+  const storeToNewPackageIndex = new Map();
   let skipped = 0;
   let aiResolved = 0;
   // Own budget for this single backfill run — on top of, not instead of,
@@ -112,6 +127,32 @@ export async function runBackfillForUser({ db, uid, refreshToken, clientSecret, 
   const runBudget = geminiApiKey ? { used: 0, max: GMAIL_AI_LIMITS.MAX_AI_CALLS_PER_BACKFILL_RUN } : undefined;
 
   for (const msgData of rawMessages) {
+    // A follow-up email (shipped / out for delivery / delivery issue) for a
+    // store already represented by an order-status package — either one
+    // already saved from a prior run, or one created earlier in this same
+    // run — updates that package instead of creating another untracked card.
+    const orderStatusUpdate = buildOrderStatusUpdateFromGmailMessage({ gmailMessage: msgData });
+    if (orderStatusUpdate) {
+      const storeKey = orderStatusUpdate.store.toUpperCase();
+      const newIndex = storeToNewPackageIndex.get(storeKey);
+      if (newIndex !== undefined) {
+        packagesToSave[newIndex].status = orderStatusUpdate.status;
+        packagesToSave[newIndex].title = orderStatusUpdate.title;
+        packagesToSave[newIndex].updatedAt = new Date().toISOString();
+        skipped += 1;
+        continue;
+      }
+      const existingDocId = storeToOrderStatusDocId.get(storeKey);
+      if (existingDocId) {
+        orderStatusUpdates.push({
+          docId: existingDocId,
+          patch: { status: orderStatusUpdate.status, title: orderStatusUpdate.title, updatedAt: new Date().toISOString() }
+        });
+        skipped += 1;
+        continue;
+      }
+    }
+
     // eslint-disable-next-line no-await-in-loop
     const pkg = await buildPackageFromGmailMessageWithAiFallback({
       gmailMessage: msgData,
@@ -127,18 +168,26 @@ export async function runBackfillForUser({ db, uid, refreshToken, clientSecret, 
     }
 
     if (pkg.source === 'gmail_sync_ai') aiResolved += 1;
+    if (pkg.source === 'gmail_sync_order_status' && pkg.store) {
+      storeToNewPackageIndex.set(pkg.store.toUpperCase(), packagesToSave.length);
+    }
     packagesToSave.push(pkg);
-    existingTrackingNumbers.add(pkg.trackingNumber.toUpperCase());
+    if (pkg.trackingNumber) existingTrackingNumbers.add(pkg.trackingNumber.toUpperCase());
   }
 
-  // Atomic batch commit for all discovered packages
-  if (packagesToSave.length > 0) {
+  // Atomic batch commit for all discovered packages plus any order-status
+  // updates to packages that already existed before this run.
+  if (packagesToSave.length > 0 || orderStatusUpdates.length > 0) {
     const batch = db.batch();
     for (const pkg of packagesToSave) {
       const userPkgRef = db.collection('users').doc(uid).collection('packages').doc(pkg.id);
       const globalPkgRef = db.collection('packages').doc(pkg.id);
       batch.set(userPkgRef, pkg);
       batch.set(globalPkgRef, pkg);
+    }
+    for (const { docId, patch } of orderStatusUpdates) {
+      batch.set(db.collection('users').doc(uid).collection('packages').doc(docId), patch, { merge: true });
+      batch.set(db.collection('packages').doc(docId), patch, { merge: true });
     }
     await batch.commit();
   }

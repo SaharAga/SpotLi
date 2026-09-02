@@ -134,6 +134,7 @@ export function buildPackageFromGmailMessage({
     status: orderStatus.status,
     source: 'gmail_sync_order_status',
     confidence: 'sender_reported',
+    store: orderStatus.store,
     notes: `${orderStatus.store} order — from your order confirmation email, no carrier tracking number`,
     createdAt: nowIso,
     updatedAt: nowIso,
@@ -233,4 +234,26 @@ export function buildStatusUpdateFromGmailMessage({ gmailMessage }) {
     trackingNumber: trackingNumber.toUpperCase(),
     status: inferDeliveryStatus(subject, body)
   };
+}
+
+/**
+ * Same idea as `buildStatusUpdateFromGmailMessage`, but for the no-tracking-
+ * number "order status" fallback (see `extractOrderStatusDetails`): a
+ * follow-up email for a store the user already has an order-status package
+ * from (e.g. "order confirmed" → "shipped" → "out for delivery" → "delivery
+ * issue") is a status update to that one package, not a brand-new untracked
+ * card per email. Returns null when the message has a verified carrier
+ * tracking number (that path is handled by `buildStatusUpdateFromGmailMessage`
+ * / `buildPackageFromGmailMessage` instead) or matches no known store +
+ * lifecycle phrase at all.
+ *
+ * @param {{ gmailMessage: object }} params
+ * @returns {{ store: string, status: string, title: string } | null}
+ */
+export function buildOrderStatusUpdateFromGmailMessage({ gmailMessage }) {
+  const { subject, body, from } = extractSubjectAndBodyFromGmailMessage(gmailMessage);
+  const { trackingNumber, status: detectionStatus } = extractTrackingDetails(subject, body, from);
+  if (trackingNumber && detectionStatus === 'verified') return null;
+
+  return extractOrderStatusDetails(subject, body, from);
 }
