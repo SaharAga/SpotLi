@@ -252,6 +252,21 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Web Push subscriptions (functions/src/pushNotifications.js), one doc
+    // per device the user has enabled notifications on. The owning user can
+    // register/unregister their own device but never read subscriptions
+    // back (an endpoint URL is effectively a bearer credential for sending
+    // that device push messages) — only the Admin SDK reads these, to send.
+    match /pushSubscriptions/{uid}/tokens/{tokenId} {
+      allow read: if false;
+      allow create, update: if isOwner(uid) &&
+        request.resource.data.keys().hasOnly(['endpoint', 'keys', 'createdAt']) &&
+        request.resource.data.endpoint is string &&
+        request.resource.data.endpoint.size() <= 2000 &&
+        request.resource.data.keys is map;
+      allow delete: if isOwner(uid);
+    }
+
     // Implicit false-positive signal for the Gmail-sync AI fallback
     // (src/services/aiOutcomeService.js) — the missing half of
     // gmailParseInsights' telemetry: that collection logs what Gemini

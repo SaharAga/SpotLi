@@ -1,8 +1,10 @@
 import { onCall, onRequest } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
+import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { defineSecret } from 'firebase-functions/params';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import webpush from 'web-push';
 import { createParseWithAiHandler } from './handler.js';
 import { createInboundEmailHandler } from './inboundEmailHandler.js';
 import { gmailOAuthClientSecret } from './gmailAuth.js';
@@ -13,12 +15,18 @@ import { createGmailWatchRenewalHandler } from './gmailWatchRenewal.js';
 import { createGmailDisconnectHandler } from './gmailDisconnect.js';
 import { createGmailConnectionStatusHandler } from './gmailConnectionStatus.js';
 import { createFeatureAdoptionRollupHandler } from './featureAdoptionRollup.js';
+import { createNewPackagePushHandler } from './newPackagePush.js';
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
 // Shared-secret query param that authorizes calls to the Pub/Sub push
 // endpoint — see gmailPushHandler.js for why. Set on the Pub/Sub push
 // subscription's endpoint URL as `?token=<value>`.
 const gmailPushToken = defineSecret('GMAIL_PUSH_TOKEN');
+// Web Push VAPID keypair — generate once with `npx web-push generate-vapid-keys`,
+// store the private half as a secret, the public half also goes in the
+// client's VITE_VAPID_PUBLIC_KEY (it's not sensitive, just an EC public key).
+const vapidPrivateKey = defineSecret('VAPID_PRIVATE_KEY');
+const vapidPublicKey = defineSecret('VAPID_PUBLIC_KEY');
 
 if (getApps().length === 0) {
   initializeApp();
@@ -239,4 +247,29 @@ export const featureAdoptionRollup = onSchedule(
     memory: '256MiB'
   },
   () => createFeatureAdoptionRollupHandler({ db: getFirestore() })()
+);
+
+/**
+ * Fires a Web Push notification whenever an automated ingestion source
+ * (Gmail sync/backfill, forwarded-email webhook — see newPackagePush.js
+ * for the exact source list) creates a new package doc, so the user finds
+ * out in real time without having to open the app. Scoped to this single
+ * Firestore path rather than hooked into each ingestion function
+ * individually, since every one of them already writes here.
+ */
+export const notifyOnNewPackage = onDocumentCreated(
+  {
+    document: 'users/{uid}/packages/{packageId}',
+    secrets: [vapidPrivateKey, vapidPublicKey],
+    timeoutSeconds: 30,
+    memory: '256MiB'
+  },
+  (event) =>
+    createNewPackagePushHandler({
+      db: getFirestore(),
+      webpush,
+      vapidPublicKey: vapidPublicKey.value(),
+      vapidPrivateKey: vapidPrivateKey.value(),
+      vapidSubject: 'mailto:support@deliveree.app'
+    })(event)
 );

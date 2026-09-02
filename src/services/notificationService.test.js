@@ -1,11 +1,22 @@
 import { describe, it, expect, beforeEach, beforeAll, vi, afterEach } from 'vitest';
+
+const firestoreMocks = vi.hoisted(() => ({
+  doc: vi.fn(() => ({ __ref: true })),
+  setDoc: vi.fn().mockResolvedValue(undefined),
+  deleteDoc: vi.fn().mockResolvedValue(undefined),
+  serverTimestamp: vi.fn(() => 'server-timestamp')
+}));
+vi.mock('firebase/firestore', () => firestoreMocks);
+vi.mock('./firebase', () => ({ db: { __fakeDb: true } }));
+
 import {
   notificationService,
   NOTIFICATION_PREFS_KEY,
   PUSH_SUBSCRIPTION_KEY,
   DEFAULT_NOTIFICATION_PREFS,
   urlBase64ToUint8Array,
-  formatPushPayload
+  formatPushPayload,
+  subscriptionEndpointToDocId
 } from './notificationService';
 
 describe('notificationService', () => {
@@ -360,5 +371,135 @@ describe('savePreferences — failed writes are reported', () => {
     const prefs = notificationService.savePreferences({ notifyOnException: false });
     expect(prefs.notifyOnException).toBe(false);
     expect(prefs.ok).toBeUndefined();
+  });
+});
+
+describe('subscriptionEndpointToDocId', () => {
+  it('is deterministic and matches the server-side derivation shape (40 hex chars)', async () => {
+    const id = await subscriptionEndpointToDocId('https://push.example.com/abc');
+    expect(id).toMatch(/^[0-9a-f]{40}$/);
+    expect(await subscriptionEndpointToDocId('https://push.example.com/abc')).toBe(id);
+  });
+
+  it('differs for different endpoints', async () => {
+    const idA = await subscriptionEndpointToDocId('https://push.example.com/a');
+    const idB = await subscriptionEndpointToDocId('https://push.example.com/b');
+    expect(idA).not.toBe(idB);
+  });
+});
+
+describe('server-side push subscription persistence', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    firestoreMocks.setDoc.mockResolvedValue(undefined);
+    firestoreMocks.deleteDoc.mockResolvedValue(undefined);
+  });
+
+  it('savePushSubscriptionToServer writes the subscription under the caller uid', async () => {
+    const ok = await notificationService.savePushSubscriptionToServer('user1', {
+      endpoint: 'https://push.example.com/abc',
+      toJSON: () => ({ endpoint: 'https://push.example.com/abc', keys: { p256dh: 'k', auth: 'a' } })
+    });
+    expect(ok).toBe(true);
+    expect(firestoreMocks.setDoc).toHaveBeenCalledTimes(1);
+    expect(firestoreMocks.doc).toHaveBeenCalledWith(
+      { __fakeDb: true },
+      'pushSubscriptions',
+      'user1',
+      'tokens',
+      expect.stringMatching(/^[0-9a-f]{40}$/)
+    );
+    const written = firestoreMocks.setDoc.mock.calls[0][1];
+    expect(written.endpoint).toBe('https://push.example.com/abc');
+    expect(written.keys).toEqual({ p256dh: 'k', auth: 'a' });
+  });
+
+  it('returns false without writing when there is no uid or endpoint', async () => {
+    expect(await notificationService.savePushSubscriptionToServer(null, { endpoint: 'e' })).toBe(false);
+    expect(await notificationService.savePushSubscriptionToServer('u1', {})).toBe(false);
+    expect(firestoreMocks.setDoc).not.toHaveBeenCalled();
+  });
+
+  it('returns false rather than throwing when the write fails', async () => {
+    firestoreMocks.setDoc.mockRejectedValueOnce(new Error('permission-denied'));
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const ok = await notificationService.savePushSubscriptionToServer('user1', {
+      endpoint: 'https://push.example.com/abc',
+      toJSON: () => ({ endpoint: 'https://push.example.com/abc', keys: {} })
+    });
+    expect(ok).toBe(false);
+    warnSpy.mockRestore();
+  });
+
+  it('subscribeToPush persists to the server when a uid is given', async () => {
+    const mockPushSubscription = {
+      endpoint: 'https://fcm.googleapis.com/fcm/send/456',
+      toJSON: () => ({ endpoint: 'https://fcm.googleapis.com/fcm/send/456', keys: {} })
+    };
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        ready: Promise.resolve({
+          pushManager: {
+            getSubscription: vi.fn().mockResolvedValue(null),
+            subscribe: vi.fn().mockResolvedValue(mockPushSubscription)
+          }
+        })
+      }
+    });
+
+    const sub = await notificationService.subscribeToPush('BMx_mock_vapid_key', 'user1');
+    expect(sub).toEqual(mockPushSubscription);
+    expect(firestoreMocks.setDoc).toHaveBeenCalledTimes(1);
+  });
+
+  it('subscribeToPush does not attempt server persistence without a uid', async () => {
+    const mockPushSubscription = { endpoint: 'https://fcm.googleapis.com/fcm/send/789' };
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        ready: Promise.resolve({
+          pushManager: {
+            getSubscription: vi.fn().mockResolvedValue(null),
+            subscribe: vi.fn().mockResolvedValue(mockPushSubscription)
+          }
+        })
+      }
+    });
+
+    await notificationService.subscribeToPush('BMx_mock_vapid_key');
+    expect(firestoreMocks.setDoc).not.toHaveBeenCalled();
+  });
+
+  it('unsubscribeFromPush deletes the server-side doc and unsubscribes locally', async () => {
+    const unsubscribeMock = vi.fn().mockResolvedValue(true);
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        ready: Promise.resolve({
+          pushManager: {
+            getSubscription: vi.fn().mockResolvedValue({
+              endpoint: 'https://fcm.googleapis.com/fcm/send/456',
+              unsubscribe: unsubscribeMock
+            })
+          }
+        })
+      }
+    });
+
+    await notificationService.unsubscribeFromPush('user1');
+    expect(firestoreMocks.deleteDoc).toHaveBeenCalledTimes(1);
+    expect(unsubscribeMock).toHaveBeenCalled();
+    expect(localStorage.getItem(PUSH_SUBSCRIPTION_KEY)).toBe('null');
+  });
+
+  it('unsubscribeFromPush is a no-op when there is no active subscription', async () => {
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        ready: Promise.resolve({
+          pushManager: { getSubscription: vi.fn().mockResolvedValue(null) }
+        })
+      }
+    });
+
+    await expect(notificationService.unsubscribeFromPush('user1')).resolves.toBeUndefined();
+    expect(firestoreMocks.deleteDoc).not.toHaveBeenCalled();
   });
 });
