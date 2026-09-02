@@ -7,6 +7,134 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.23.0] - 2026-09-02
+
+### Added
+- Cloud Functions now deploy automatically on every merge to main (reusing
+the same Firebase service account CI already uses for Hosting/Firestore
+rules), instead of requiring a manual `firebase deploy --only functions`.
+This was previously left out of CI pending the Gemini secret and Blaze
+plan being set up — both have been in place for a while (Gmail AI sync has
+been live in production), so the gap was just never revisited.
+
+- Gmail auto-sync now falls back to the Gemini AI parser (already used by Smart
+Import) when the deterministic parser finds a tracking-number candidate but
+isn't confident enough to create a package unattended, instead of silently
+discarding it. The AI fallback runs behind a cheap sender/keyword gate and its
+own daily and per-sync-run rate limits, separate from Smart Import's budget,
+so a busy inbox can't exhaust either feature's allowance. Every miss and every
+AI resolution/decline is now logged (sender domain + subject shape only, no
+email body) to a new `gmailParseInsights` collection so recurring misses can
+be turned into new deterministic regex rules, and `usageEvents` now records
+outcome counts for Gmail backfills, live syncs, and watch renewals as a
+starting point for feature-usage analytics.
+
+- Instrumented feature-adoption tracking (Phase 3 of #117, using Phase 2's
+pipeline): Analytics, Export, Smart Import modals and an `_app_active`
+session baseline via a shared `useFeatureUsage` hook; Gmail-sync connect
+and Web Share Target import at their existing App.jsx entry points; PWA
+install acceptance. Also added: crash reports now dedupe by a random
+per-browser-session id (distinct sessions hit vs. raw occurrences) shown
+in the admin Crash Monitor tab, and a live "Sync Queue Health" card
+(pending mutations, oldest pending age, dead-lettered count) in the admin
+System tab, reading the existing offline sync queue read-only. Engagement/
+retention and friction/abandonment signals from the original Phase 3 scope
+are deferred — see the tracking issue for why.
+
+- Added a privacy-preserving feature-adoption pipeline (Phase 2 of #117):
+`featureUsageService.js` records a per-day, per-identity row (deduped, no
+content beyond the feature id and date — identity lives only in the
+document ID, never as content) to a new `featureUsage` collection nobody,
+including admin, can read back. A daily scheduled Cloud Function
+(`featureAdoptionRollup`) counts unique rows per feature into
+`featureAdoptionStats` and deletes the raw rows immediately after, so
+identity-shaped data never accumulates. The admin dashboard's new
+"Feature Adoption" tab shows each feature's adoption rate against an
+`_app_active` baseline over the trailing 30 days. No features are
+instrumented yet — that's Phase 3.
+
+- The Gmail-sync AI fallback now gets an implicit false-positive signal: if a
+user deletes, or corrects the carrier/tracking number of, a package the AI
+fallback created within the last 72 hours, that outcome is logged
+(carrier + confidence band + which fields changed only, never a tracking
+number or free text) to a new `gmailAiOutcomes` collection — closing the
+gap where `gmailParseInsights` recorded what Gemini said but never whether
+it was right.
+
+- Added the Phase 4 piece of the analytics roadmap (#117): a new
+`gmail-detection-auto-improvement` agent skill and its data-access script
+(`scripts/detection_insights.mjs`) that read `gmailParseInsights`,
+`gmailAiOutcomes`, and `smartImportAttempts` for recurring
+regex-miss/false-positive patterns and propose a concrete
+regex/threshold change as a draft pull request — never merged, never
+marked ready for review, by design. Not activated as a running schedule
+yet; see the skill's own "Scheduling" section for why.
+
+- Added Smart Import miss-rate telemetry: every Smart-Import-filled save is
+now logged (source, confidence, carrier, whether it was corrected — never
+the tracking number or any other value) to a new `smartImportAttempts`
+collection, giving `parseCorrections` the denominator it never had. The
+admin dashboard's Parser tab now shows overall miss rate and a per-carrier
+breakdown, so which carrier's email/text format needs regex work next is
+visible instead of guessed. Part of the analytics roadmap in #117.
+
+### Fixed
+- Fixed the first-ever `gmailConnectionStatus` Cloud Function deploy failing its
+container healthcheck — its 128MiB memory allocation was too tight for a
+Node 22 2nd-gen function pulling in the Firebase Admin SDK, so it never
+finished booting within the startup timeout. Bumped to 256MiB, matching
+every sibling `onCall` handler. Also passes `--force` on the CI deploy so
+the one-time Artifact Registry cleanup-policy confirmation prompt doesn't
+fail the non-interactive deploy.
+
+- Fixed the Gmail connect button still showing "Connect Gmail" after a real,
+working connection (packages backfilled fine, but the status check never
+even reached the server). `getGmailConnectionStatus()` was bailing out
+locally on a bare `auth.currentUser` read, which can still be null for a
+moment after a fresh page load or PWA relaunch even once the app's own
+sign-in state is otherwise ready — it now lets the callable's own
+auth-token flow (which properly waits on Auth SDK readiness) handle it
+instead.
+
+- Added a real server-side rate limit (5 calls/user/day, 500/day globally) on
+the `gmailBackfill` Cloud Function, on top of the existing UI guard. The UI
+guard only stops accidental double-clicks from the connect button — the
+callable itself was reachable by any signed-in client directly with no limit
+at all, so a user could repeatedly re-trigger their own 30-day inbox scan
+and burn Gmail API quota regardless of the AI-fallback budget, which was
+already capped separately.
+
+- Fixed the Gmail connect button in the Automated Shipment Ingestion modal
+briefly showing "Connect Gmail" right after a successful OAuth connection,
+instead of reflecting the real connection state. The button now shows a
+"Checking status..." state while the server-verified connection status is
+being fetched, and the check now retries shortly after the modal opens to
+cover the case where Firebase Auth hasn't finished rehydrating the signed-in
+user yet after the full-page OAuth redirect back into the app.
+
+- Fixed `gmailParseInsights` (Gmail-sync AI fallback telemetry) logging a
+raw tracking number in two places despite claiming to be anonymized: the
+subject line was truncated but not redacted (subjects frequently contain
+the tracking number itself), and the regex's top candidate value was
+logged directly. Subjects are now redacted of any token-shaped text before
+truncation, and only the candidate's carrier guess/score are logged, never
+its value.
+
+- Fixed Gmail auto-sync connecting from the staging Hosting channel silently
+redirecting back to production after Google's consent screen, so the
+connection never appeared to succeed where the user actually started it. The
+OAuth `state` param now carries the verified originating origin (production,
+or a named Hosting channel like `staging`, validated against an allowlist for
+this Firebase project) through the redirect round trip, instead of always
+redirecting back to a fixed production URL.
+
+- The Gmail connect button no longer restarts the OAuth flow when Gmail is
+already connected. Since only one Gmail account can be linked per user and
+reconnecting re-runs the 30-day inbox backfill scan, clicking it while
+already connected now just shows an info toast telling the user to
+disconnect first, instead of silently burning Gmail API and AI-fallback
+quota re-scanning an inbox that was already scanned.
+
 ## [0.22.4] - 2026-08-30
 
 ### Fixed
