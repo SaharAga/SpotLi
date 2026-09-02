@@ -18,7 +18,11 @@
  */
 
 import { findGmailConnectionByEmail, getGmailClientForUser, setGmailConnection } from './gmailAuth.js';
-import { buildPackageFromGmailMessageWithAiFallback, buildStatusUpdateFromGmailMessage } from './gmailPackageSync.js';
+import {
+  buildPackageFromGmailMessageWithAiFallback,
+  buildStatusUpdateFromGmailMessage,
+  buildOrderStatusUpdateFromGmailMessage
+} from './gmailPackageSync.js';
 import { logUsageEvent } from './analyticsEvents.js';
 
 /**
@@ -113,9 +117,13 @@ export async function syncHistoryForConnection({ db, connection, clientSecret, n
 
   const existingSnap = await db.collection('users').doc(uid).collection('packages').get();
   const trackingNumberToDocId = new Map();
+  const storeToOrderStatusDocId = new Map();
   for (const d of existingSnap.docs) {
-    const t = d.data()?.trackingNumber;
-    if (t) trackingNumberToDocId.set(String(t).toUpperCase(), d.id);
+    const data = d.data() || {};
+    if (data.trackingNumber) trackingNumberToDocId.set(String(data.trackingNumber).toUpperCase(), d.id);
+    if (data.source === 'gmail_sync_order_status' && data.store) {
+      storeToOrderStatusDocId.set(String(data.store).toUpperCase(), d.id);
+    }
   }
   const existingTrackingNumbers = new Set(trackingNumberToDocId.keys());
 
@@ -144,6 +152,20 @@ export async function syncHistoryForConnection({ db, connection, clientSecret, n
       continue;
     }
 
+    // A follow-up email for a store we already have an order-status
+    // (no-tracking-number) package from — update that one package instead of
+    // spawning a new untracked card for every "shipped"/"out for delivery"/
+    // "delivery issue" email in the same order's lifecycle.
+    const orderStatusUpdate = buildOrderStatusUpdateFromGmailMessage({ gmailMessage: msgRes.data });
+    if (orderStatusUpdate && storeToOrderStatusDocId.has(orderStatusUpdate.store.toUpperCase())) {
+      const docId = storeToOrderStatusDocId.get(orderStatusUpdate.store.toUpperCase());
+      const patch = { status: orderStatusUpdate.status, title: orderStatusUpdate.title, updatedAt: new Date().toISOString() };
+      await db.collection('users').doc(uid).collection('packages').doc(docId).set(patch, { merge: true });
+      await db.collection('packages').doc(docId).set(patch, { merge: true });
+      updated += 1;
+      continue;
+    }
+
     const pkg = await buildPackageFromGmailMessageWithAiFallback({
       gmailMessage: msgRes.data,
       userId: uid,
@@ -154,8 +176,13 @@ export async function syncHistoryForConnection({ db, connection, clientSecret, n
 
     await db.collection('users').doc(uid).collection('packages').doc(pkg.id).set(pkg);
     await db.collection('packages').doc(pkg.id).set(pkg);
-    existingTrackingNumbers.add(pkg.trackingNumber.toUpperCase());
-    trackingNumberToDocId.set(pkg.trackingNumber.toUpperCase(), pkg.id);
+    if (pkg.trackingNumber) {
+      existingTrackingNumbers.add(pkg.trackingNumber.toUpperCase());
+      trackingNumberToDocId.set(pkg.trackingNumber.toUpperCase(), pkg.id);
+    }
+    if (pkg.source === 'gmail_sync_order_status' && pkg.store) {
+      storeToOrderStatusDocId.set(pkg.store.toUpperCase(), pkg.id);
+    }
     saved += 1;
     if (pkg.source === 'gmail_sync_ai') aiResolved += 1;
   }

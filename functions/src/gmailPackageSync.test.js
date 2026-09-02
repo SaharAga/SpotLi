@@ -4,7 +4,8 @@ import {
   isDuplicateTrackingNumber,
   extractSubjectAndBodyFromGmailMessage,
   buildPackageFromGmailMessage,
-  buildPackageFromGmailMessageWithAiFallback
+  buildPackageFromGmailMessageWithAiFallback,
+  buildOrderStatusUpdateFromGmailMessage
 } from './gmailPackageSync.js';
 
 function makeGmailMessage({ id = 'msg1', subject = '', text = '', from = '' } = {}) {
@@ -156,6 +157,7 @@ describe('buildPackageFromGmailMessage', () => {
     expect(pkg.source).toBe('gmail_sync_order_status');
     expect(pkg.confidence).toBe('sender_reported');
     expect(pkg.status).toBe('in_transit');
+    expect(pkg.store).toBe('AliExpress');
   });
 
   it('still returns null for an order-confirmation email with no known store and no tracking number', () => {
@@ -163,6 +165,32 @@ describe('buildPackageFromGmailMessage', () => {
     expect(
       buildPackageFromGmailMessage({ gmailMessage: msg, userId: 'uid1', existingTrackingNumbers: new Set() })
     ).toBeNull();
+  });
+});
+
+describe('buildOrderStatusUpdateFromGmailMessage', () => {
+  it('extracts a store + status update from a follow-up order-status email', () => {
+    const msg = makeGmailMessage({
+      subject: 'AliExpress - is out for delivery',
+      text: 'Your order is out for delivery today.',
+      from: 'AliExpress <no-reply@aliexpress.com>'
+    });
+    const update = buildOrderStatusUpdateFromGmailMessage({ gmailMessage: msg });
+    expect(update).toEqual({ store: 'AliExpress', status: 'out_for_delivery', title: expect.any(String) });
+  });
+
+  it('returns null when the message carries a verified carrier tracking number instead', () => {
+    const msg = makeGmailMessage({
+      subject: 'Your order has shipped',
+      text: 'Tracking: RR000000005IL',
+      from: 'AliExpress <no-reply@aliexpress.com>'
+    });
+    expect(buildOrderStatusUpdateFromGmailMessage({ gmailMessage: msg })).toBeNull();
+  });
+
+  it('returns null for an email with no known store', () => {
+    const msg = makeGmailMessage({ subject: 'Random newsletter', text: 'nothing relevant' });
+    expect(buildOrderStatusUpdateFromGmailMessage({ gmailMessage: msg })).toBeNull();
   });
 });
 
