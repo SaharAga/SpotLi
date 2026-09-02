@@ -81,6 +81,25 @@ export function urlBase64ToUint8Array(base64String) {
 }
 
 /**
+ * Deterministic Firestore doc id for a PushSubscription, derived from its
+ * endpoint via SHA-256 — must match functions/src/pushNotifications.js's
+ * `subscriptionDocId` exactly (same algorithm, same 40-char slice) since
+ * the client writes this doc directly rather than asking the server to
+ * mint an id, and re-subscribing the same device must overwrite the same
+ * doc rather than accumulate duplicates.
+ * @param {string} endpoint
+ * @returns {Promise<string>}
+ */
+export async function subscriptionEndpointToDocId(endpoint) {
+  const data = new TextEncoder().encode(endpoint);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hex = Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+  return hex.slice(0, 40);
+}
+
+/**
  * Utility: Format push payload for service worker / FCM
  */
 export function formatPushPayload({ title, body, packageId, trackingNumber, actions }) {
@@ -179,9 +198,10 @@ export const notificationService = {
 
   /**
    * Requests permission to send Web Notifications
+   * @param {string} [uid] signed-in user's uid, to persist the resulting subscription for
    * @returns {Promise<'default' | 'granted' | 'denied' | 'unsupported'>}
    */
-  requestNotificationPermission: async () => {
+  requestNotificationPermission: async (uid) => {
     const root = typeof window !== 'undefined' ? window : globalThis;
     if (!root || !('Notification' in root) || typeof root.Notification === 'undefined') {
       return 'unsupported';
@@ -191,7 +211,7 @@ export const notificationService = {
       if (permission === 'granted') {
         notificationService.savePreferences({ pushEnabled: true });
         // Attempt to subscribe to push manager if service worker is active
-        await notificationService.subscribeToPush();
+        await notificationService.subscribeToPush(import.meta.env.VITE_VAPID_PUBLIC_KEY, uid);
       } else if (permission === 'denied') {
         notificationService.savePreferences({ pushEnabled: false });
       }
@@ -203,11 +223,17 @@ export const notificationService = {
   },
 
   /**
-   * Subscribes the client to Web Push via Service Worker PushManager
+   * Subscribes the client to Web Push via Service Worker PushManager, and —
+   * when signed in — persists the subscription server-side so Cloud
+   * Functions can actually send to it (functions/src/pushNotifications.js).
+   * Without that second step this only ever wrote to localStorage, which no
+   * server-side code can read; a subscription nobody can reach is not a
+   * subscription.
    * @param {string} [vapidPublicKey]
+   * @param {string} [uid] signed-in user's uid, to persist the subscription for
    * @returns {Promise<PushSubscription|null>}
    */
-  subscribeToPush: async (vapidPublicKey) => {
+  subscribeToPush: async (vapidPublicKey, uid) => {
     const root = typeof window !== 'undefined' ? window : globalThis;
     if (!root || !('serviceWorker' in root.navigator)) {
       return null;
@@ -230,12 +256,86 @@ export const notificationService = {
 
       if (subscription) {
         writeJSON(PUSH_SUBSCRIPTION_KEY, subscription);
+        if (uid) {
+          await notificationService.savePushSubscriptionToServer(uid, subscription);
+        }
       }
       return subscription;
     } catch (e) {
       console.warn('[NotificationService] Push subscription failed or not supported:', e);
       return null;
     }
+  },
+
+  /**
+   * Persists a PushSubscription to `pushSubscriptions/{uid}/tokens/{tokenId}`
+   * (see firestore.rules — write-only from the client, read only by the
+   * Admin SDK) so a Cloud Function can send to this device later. Doc id is
+   * derived from the endpoint so re-subscribing the same device overwrites
+   * rather than accumulates duplicates.
+   * @param {string} uid
+   * @param {PushSubscription} subscription
+   * @returns {Promise<boolean>} whether the write succeeded
+   */
+  savePushSubscriptionToServer: async (uid, subscription) => {
+    if (!uid || !subscription?.endpoint) return false;
+    try {
+      const [{ doc, setDoc, serverTimestamp }, { db }] = await Promise.all([
+        import('firebase/firestore'),
+        import('./firebase')
+      ]);
+      if (!db) return false;
+      const json = subscription.toJSON ? subscription.toJSON() : subscription;
+      const tokenId = await subscriptionEndpointToDocId(subscription.endpoint);
+      const ref = doc(db, 'pushSubscriptions', uid, 'tokens', tokenId);
+      await setDoc(ref, {
+        endpoint: json.endpoint,
+        keys: json.keys || {},
+        createdAt: serverTimestamp()
+      });
+      return true;
+    } catch (e) {
+      console.warn('[NotificationService] Failed to persist push subscription server-side:', e);
+      return false;
+    }
+  },
+
+  /**
+   * Unsubscribes the current device from Web Push both locally and
+   * server-side — called when the user turns the push toggle off, so a
+   * disabled device stops receiving (and Cloud Functions stops paying to
+   * send to) notifications for it.
+   * @param {string} [uid]
+   * @returns {Promise<void>}
+   */
+  unsubscribeFromPush: async (uid) => {
+    const root = typeof window !== 'undefined' ? window : globalThis;
+    try {
+      if (root?.navigator && 'serviceWorker' in root.navigator) {
+        const registration = await root.navigator.serviceWorker.ready;
+        const subscription = await registration?.pushManager?.getSubscription();
+        if (subscription) {
+          if (uid) {
+            try {
+              const [{ doc, deleteDoc }, { db }] = await Promise.all([
+                import('firebase/firestore'),
+                import('./firebase')
+              ]);
+              if (db) {
+                const tokenId = await subscriptionEndpointToDocId(subscription.endpoint);
+                await deleteDoc(doc(db, 'pushSubscriptions', uid, 'tokens', tokenId));
+              }
+            } catch (e) {
+              console.warn('[NotificationService] Failed to remove server-side push subscription:', e);
+            }
+          }
+          await subscription.unsubscribe();
+        }
+      }
+    } catch (e) {
+      console.warn('[NotificationService] Failed to unsubscribe from push:', e);
+    }
+    writeJSON(PUSH_SUBSCRIPTION_KEY, null);
   },
 
   /**

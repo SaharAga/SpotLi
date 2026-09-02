@@ -179,6 +179,29 @@ Deliveree supports two channels for automatic shipment tracking from emails:
    - **Token Isolation**: Refresh tokens are stored server-side only in `gmailConnections/{uid}` with a strict **deny-all** in `firestore.rules` (only accessible via Firebase Admin SDK).
    - **Watch Renewal**: Weekly Cloud Scheduler job (`gmailWatchRenewal`) automatically renews 7-day Gmail mailbox watches.
 
+**Real-time push notification for new packages** (`functions/src/newPackagePush.js`,
+`pushNotifications.js`): when either ingestion channel above creates a package, a Firestore
+trigger on `users/{uid}/packages/{packageId}` sends a Web Push notification to every device the
+user has subscribed on — so a new shipment shows up without opening the app. Not sent for
+packages the user created themselves (manual add, Smart Import): those are scoped out by
+`source`, since the user is already looking at the app when they create one.
+
+**Setup** — required before push notifications work, none of it done by CI:
+1. Generate a VAPID keypair once (from `functions/`):
+   ```bash
+   npx web-push generate-vapid-keys
+   ```
+2. Store the private half as a Cloud Functions secret:
+   ```bash
+   firebase functions:secrets:set VAPID_PRIVATE_KEY
+   firebase functions:secrets:set VAPID_PUBLIC_KEY
+   ```
+3. Set the public half as the `VITE_VAPID_PUBLIC_KEY` repository variable (same one used for
+   `VITE_FIREBASE_*`) — it's not sensitive, just an EC public key, but the client build needs it
+   to actually call `PushManager.subscribe()`.
+4. Deploy `functions/` (see "Deployment" below) — without steps 1–3 the app and Gmail sync still
+   work fine, push notifications just never get subscribed to or sent.
+
 ## Automated feedback/crash triage
 
 A Claude Code agent, run on a schedule, reads new `/feedback` and `/crashReports` documents and

@@ -244,6 +244,11 @@ jobs:
           # "Abuse protection (App Check)". Unset is fine — App Check just
           # never initializes.
           VITE_RECAPTCHA_V3_SITE_KEY: ${{ vars.VITE_RECAPTCHA_V3_SITE_KEY }}
+          # Optional: enables Web Push subscription when set (public VAPID
+          # key, not sensitive). See README.md "Automated Email Ingestion &
+          # Gmail Sync". Unset is fine — push subscription just never
+          # attempts to register.
+          VITE_VAPID_PUBLIC_KEY: ${{ vars.VITE_VAPID_PUBLIC_KEY }}
 
       # include-hidden-files is required — actions/upload-artifact@v4 silently
       # drops dotfiles/dot-directories otherwise, which dropped

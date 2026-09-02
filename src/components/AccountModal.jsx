@@ -99,6 +99,11 @@ export function AccountModal({
     // success; the toggle moved and nothing was persisted.
     const { ok, preferences } = notificationService.savePreferencesWithStatus({ [key]: value });
     setNotificationPrefs(preferences);
+    if (key === 'pushEnabled' && value === false) {
+      // Stop this device from receiving (and Cloud Functions from paying to
+      // send to) push once the user turns it off, not just locally.
+      notificationService.unsubscribeFromPush(user?.uid);
+    }
     if (!onShowToast) return;
     if (ok) {
       onShowToast(t('notifications.preferencesSaved') || 'Preferences saved', 'success');
@@ -113,7 +118,7 @@ export function AccountModal({
   };
 
   const handleRequestPushPermission = async () => {
-    const perm = await notificationService.requestNotificationPermission();
+    const perm = await notificationService.requestNotificationPermission(user?.uid);
     setPermissionStatus(perm);
     setNotificationPrefs(notificationService.getPreferences());
     if (perm === 'granted') {
