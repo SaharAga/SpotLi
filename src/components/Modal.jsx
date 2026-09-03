@@ -59,7 +59,7 @@ const openModals = [];
 let scrollLockCount = 0;
 let previousBodyOverflow = null;
 
-function acquireScrollLock() {
+export function acquireScrollLock() {
   if (typeof document === 'undefined') return;
   if (scrollLockCount === 0) {
     previousBodyOverflow = document.body.style.overflow;
@@ -68,7 +68,7 @@ function acquireScrollLock() {
   scrollLockCount += 1;
 }
 
-function releaseScrollLock() {
+export function releaseScrollLock() {
   if (typeof document === 'undefined') return;
   scrollLockCount = Math.max(0, scrollLockCount - 1);
   if (scrollLockCount === 0) {

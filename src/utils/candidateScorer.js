@@ -322,6 +322,16 @@ export function classifyConfidenceTier(score, candidate) {
  * @returns {{ formatMatch: boolean, carrierCandidates: string[], highestConfidence: 'high'|'medium'|'none', checksum: 'pass'|'fail'|'not-applicable' }}
  */
 export function evaluateCandidateRules(candidateValue) {
+  if (FALSE_POSITIVE_PATTERNS.phone_number.test(candidateValue) || FALSE_POSITIVE_PATTERNS.phone_number.test(candidateValue.trim().replace(/[\s-_]/g, ''))) {
+    return {
+      formatMatch: false,
+      carrierCandidates: ['other'],
+      highestConfidence: 'none',
+      checksum: 'not-applicable',
+      bestPriority: 999
+    };
+  }
+
   const matchingCarriers = [];
   let highestConf = 'none';
   let checksumResult = 'not-applicable';
@@ -361,7 +371,7 @@ const METADATA_WORDS = new Set([
   'NUMBER', 'NUMBERS', 'CODE', 'CODES', 'LINK', 'LINKS', 'ONLINE', 'CENTER',
   'SERVICE', 'SERVICES', 'DELIVERY', 'DELIVERIES', 'SHIPMENT', 'SHIPMENTS',
   'PACKAGE', 'PACKAGES', 'PARCEL', 'PARCELS', 'TRACK', 'TRACKING', 'REPORT',
-  'SUMMARY', 'CUSTOMER', 'SUPPORT', 'CONFIRMATION', 'RECEIPT', 'PORTAL'
+  'SUMMARY', 'CUSTOMER', 'SUPPORT', 'CONFIRMATION', 'RECEIPT', 'PORTAL', 'LOGISTICS'
 ]);
 
 /**
@@ -408,7 +418,7 @@ export function extractAndScoreCandidates(text) {
       }
 
       // Query parameters
-      for (const param of ['num', 'track', 'tracking', 'id', 'itemcode', 'item', 'barcode', 'b', 't', 'code', 'order', 'c', 'tracknum']) {
+      for (const param of ['num', 'track', 'tracking', 'id', 'itemcode', 'item', 'barcode', 'b', 't', 'code', 'order', 'c', 'tracknum', 'tradeId', 'orderId', 'outPackageId', 'trade_no', 'mailNo', 'mailNoList']) {
         const val = parsed.searchParams.get(param);
         if (val) {
           const cleanVal = val.trim().replace(/[.,;:!?]+$/, '').toUpperCase();
@@ -438,7 +448,7 @@ export function extractAndScoreCandidates(text) {
       // Path segments (e.g. /t/3094829104, /p/8492018, /orders/LW94820194)
       const segments = parsed.pathname.split('/').filter(Boolean);
       for (const seg of segments) {
-        if (!/^(?:track|itemtrace|tracking|portal|runportal|view|online|app|status|order|orders|p|t|b|packages|package|shipment|shipments)$/i.test(seg)) {
+        if (!/^(?:track|itemtrace|tracking|portal|runportal|view|online|app|status|order|orders|p|t|b|packages|package|shipment|shipments|logistics|detail|search|index|home)$/i.test(seg) && !/\.(?:html?|php|jsp|aspx?|do)$/i.test(seg)) {
           const cleanVal = seg.trim().replace(/[.,;:!?]+$/, '').toUpperCase();
           const start = urlMatch.index + fullUrl.indexOf(seg);
           const end = start + seg.length;

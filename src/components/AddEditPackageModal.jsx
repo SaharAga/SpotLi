@@ -138,11 +138,18 @@ export function AddEditPackageModal({
       setCarrier(carrier);
       setIsManualCarrier(false);
       setCategory(category);
-      setOrderDate(new Date().toISOString().slice(0, 10));
-      // Default expected date 14 days ahead
-      const nextDate = new Date();
-      nextDate.setDate(nextDate.getDate() + 14);
-      setExpectedDeliveryDate(nextDate.toISOString().slice(0, 10));
+      const todayISO = new Date().toISOString().slice(0, 10);
+      setOrderDate(initialValues.orderDate || todayISO);
+
+      if (initialValues.expectedDeliveryDate) {
+        setExpectedDeliveryDate(initialValues.expectedDeliveryDate);
+      } else if (status === 'delivered') {
+        setExpectedDeliveryDate(todayISO);
+      } else {
+        const nextDate = new Date();
+        nextDate.setDate(nextDate.getDate() + 14);
+        setExpectedDeliveryDate(nextDate.toISOString().slice(0, 10));
+      }
       setOrigin(origin);
       setDestination(destination);
       setNotes(notes);
@@ -477,11 +484,27 @@ export function AddEditPackageModal({
               }}
               className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 cursor-pointer min-h-[48px]"
             >
-              {CARRIER_LIST.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {language === 'he' ? c.hebrewName : c.name} ({c.country})
-                </option>
-              ))}
+              <optgroup label={language === 'he' ? 'חברות משלוחים בישראל' : 'Domestic Israeli Couriers'}>
+                {CARRIER_LIST.filter((c) => c.country === 'Israel').map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {language === 'he' ? c.hebrewName : c.name}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label={language === 'he' ? 'משלוחים בינלאומיים' : 'International Couriers'}>
+                {CARRIER_LIST.filter((c) => c.country !== 'Israel' && c.id !== 'other').map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {language === 'he' ? c.hebrewName : `${c.name} (${c.country})`}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label={language === 'he' ? 'אחר' : 'Other'}>
+                {CARRIER_LIST.filter((c) => c.id === 'other').map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {language === 'he' ? c.hebrewName : c.name}
+                  </option>
+                ))}
+              </optgroup>
             </select>
           </div>
 

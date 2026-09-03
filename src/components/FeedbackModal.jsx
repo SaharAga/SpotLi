@@ -100,12 +100,19 @@ export function FeedbackModal({
               : 'Thank you! Your feedback has been synced to the team ❤️',
             'success'
           );
-        } else {
+        } else if (!result.isOnline) {
           onShowToast(
             language === 'he'
               ? 'המשוב נשמר במכשיר ויסונכרן אוטומטית כשתחזור הרשת 📡'
               : 'Feedback saved locally and will auto-sync once online 📡',
             'info'
+          );
+        } else {
+          onShowToast(
+            language === 'he'
+              ? 'המשוב נשמר במכשיר ויסונכרן בהמשך (השליחה נכשלה זמנית) ⚠️'
+              : 'Feedback saved locally and queued to retry (temporary server issue) ⚠️',
+            'warning'
           );
         }
       }

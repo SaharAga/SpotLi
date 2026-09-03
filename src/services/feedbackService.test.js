@@ -204,6 +204,22 @@ describe('FeedbackService Unit & Resilience Test Suite', () => {
 
       expect(submission.success).toBe(true);
       expect(submission.syncedToCloud).toBe(false);
+      expect(submission.isOnline).toBe(false);
+      expect(getOfflineFeedbackCount()).toBe(1);
+    });
+
+    it('accurately reports isOnline status when write fails while online (#132)', async () => {
+      vi.stubGlobal('navigator', { onLine: true });
+
+      const submission = await submitFeedback({
+        type: 'bug',
+        message: 'Online test failure',
+        rating: 4
+      });
+
+      expect(submission.success).toBe(true);
+      expect(submission.isOnline).toBe(true);
+      expect(submission.syncedToCloud).toBe(false);
       expect(getOfflineFeedbackCount()).toBe(1);
     });
 

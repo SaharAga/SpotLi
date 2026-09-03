@@ -39,7 +39,8 @@ export const CARRIER_SHORT_DOMAINS = {
 
 /** Common query parameter names used for tracking or delivery IDs */
 const SHORT_TRACKING_QUERY_PARAMS = [
-  'b', 'num', 't', 'track', 'tracking', 'id', 'code', 'item', 'barcode', 'itemcode', 'order'
+  'b', 'num', 't', 'track', 'tracking', 'id', 'code', 'item', 'barcode', 'itemcode', 'order',
+  'tradeId', 'orderId', 'outPackageId', 'trade_no', 'mailNo', 'mailNoList'
 ];
 
 /**
@@ -114,7 +115,9 @@ export function extractIdentifierFromShortUrl(urlString) {
     const segments = parsed.pathname.split('/').filter(Boolean);
     if (segments.length > 0) {
       const last = segments[segments.length - 1];
-      if (last && last.length >= 4 && last.length <= 40) {
+      const isWebFile = /\.(?:html?|php|jsp|aspx?|do)$/i.test(last);
+      const isEndpointName = /^(?:detail|index|home|track|tracking|trace|view|package|orders?|logistics)$/i.test(last);
+      if (!isWebFile && !isEndpointName && last && last.length >= 4 && last.length <= 40) {
         const sanitized = sanitizeTrackingNumber(last);
         if (sanitized && /^[A-Z0-9_-]+$/.test(sanitized)) {
           return sanitized;
@@ -279,7 +282,7 @@ export const CARRIER_URL_RULES = [
   {
     carrierId: 'cainiao',
     hostPattern: /(?:cainiao\.com|aliexpress\.com)/i,
-    paramNames: ['mailNoList', 'mailNo', 'tracking', 'track', 'num', 'id', 'code', 'awb', 't'],
+    paramNames: ['tradeId', 'orderId', 'outPackageId', 'trade_no', 'mailNoList', 'mailNo', 'tracking', 'track', 'num', 'id', 'code', 'awb', 't'],
     pathPatterns: [
       /\/detail\/([A-Z0-9_-]+)/i,
       /\/trace\/([A-Z0-9_-]+)/i,
@@ -715,6 +718,11 @@ export function extractTrackingCandidates(text) {
     const cleaned = word.trim().replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, '');
     if (!cleaned) continue;
 
+    // Suppress phone numbers
+    if (/^(?:\+?972|0)(?:5[0-9]|7[0-9]|[23489])\d{7}$/.test(cleaned)) {
+      continue;
+    }
+
     // Suppress OTP verification codes
     if (/^\d{4,8}$/.test(cleaned)) {
       const idx = workingText.indexOf(cleaned);
@@ -726,14 +734,14 @@ export function extractTrackingCandidates(text) {
       }
     }
 
-    if (/^[A-Z]{2}\d{9}[A-Z]{2}$/i.test(cleaned)) candidates.add(cleaned);
-    else if (/^1Z[0-9A-Z]{16}$/i.test(cleaned)) candidates.add(cleaned);
-    else if (/^(LP|CAINIAO|AE|GSH)\d+/i.test(cleaned)) candidates.add(cleaned);
-    else if (/^S0000\d{8,18}$/i.test(cleaned)) candidates.add(cleaned);
-    else if (/^4PX\d{10,}/i.test(cleaned)) candidates.add(cleaned);
-    else if (/^YT\d{16,18}$/i.test(cleaned)) candidates.add(cleaned);
-    else if (/^(CH|CT|CHT|CHTR|HFD|EP|BOX|BX|TPZ|YDM|TAPUZ|CRG|CARGO|GP|GET|FC|OR|ORN|BAR|BD|ZZ|ZIG|LW|LION|BZR|BUZZR|BZ)\d{6,14}$/i.test(cleaned)) candidates.add(cleaned);
-    else if (/^\d{10,22}$/.test(cleaned) && (cleaned.length === 10 || cleaned.length === 12 || cleaned.length === 15 || cleaned.length === 20 || cleaned.length === 22)) candidates.add(cleaned);
+    if (/^[A-Z]{2}\d{9}[A-Z]{2}$/i.test(cleaned)) candidates.add(cleaned.toUpperCase());
+    else if (/^1Z[0-9A-Z]{16}$/i.test(cleaned)) candidates.add(cleaned.toUpperCase());
+    else if (/^(LP|CAINIAO|GSH)\d+|AE[A-Z0-9]{8,20}/i.test(cleaned)) candidates.add(cleaned.toUpperCase());
+    else if (/^S\d{10,20}$/i.test(cleaned)) candidates.add(cleaned.toUpperCase());
+    else if (/^4PX\d{10,}/i.test(cleaned)) candidates.add(cleaned.toUpperCase());
+    else if (/^YT\d{16,18}$/i.test(cleaned)) candidates.add(cleaned.toUpperCase());
+    else if (/^(CH|CT|CHT|CHTR|HFD|EP|BOX|BX|TPZ|YDM|TAPUZ|CRG|CARGO|GP|GET|FC|OR|ORN|BAR|BD|ZZ|ZIG|LW|LION|BZR|BUZZR|BZ)\d{6,14}$/i.test(cleaned)) candidates.add(cleaned.toUpperCase());
+    else if (/^\d{8,22}$/.test(cleaned) && (cleaned.length === 8 || cleaned.length === 9 || cleaned.length === 10 || cleaned.length === 12 || cleaned.length === 14 || cleaned.length === 15 || cleaned.length === 16 || cleaned.length === 18 || cleaned.length === 20 || cleaned.length === 22)) candidates.add(cleaned);
   }
 
   return Array.from(candidates);
@@ -756,6 +764,70 @@ export function detectCarrierFromPhrasing(text) {
   }
 
   return null;
+}
+
+/**
+ * Extracts delivery/pickup dates and status cues from text.
+ * Handles relative dates ("היום", "מחר") and explicit dates (DD/MM/YYYY, DD/MM).
+ *
+ * @param {string} text
+ * @returns {{ expectedDeliveryDate?: string, orderDate?: string, statusHint?: string }}
+ */
+export function extractDatesAndStatus(text) {
+  if (!text || typeof text !== 'string') return {};
+
+  const now = new Date();
+  const todayISO = now.toISOString().slice(0, 10);
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowISO = tomorrow.toISOString().slice(0, 10);
+
+  // 1. Relative dates with delivery phrasing
+  if (/(?:תסופק היום|יסופק היום|היום עם שליח|השליח בדרך אליך היום|בדרך אליך היום|מגיע היום|צפוי להגיע היום|היום בין השעות|delivered today|out for delivery today)/i.test(text)) {
+    return { expectedDeliveryDate: todayISO, statusHint: 'out_for_delivery' };
+  }
+
+  if (/(?:תסופק מחר|יסופק מחר|מחר עם שליח|מגיע מחר|צפוי להגיע מחר|מחר בין השעות|delivered tomorrow)/i.test(text)) {
+    return { expectedDeliveryDate: tomorrowISO, statusHint: 'out_for_delivery' };
+  }
+
+  // 2. Explicit arrival/delivery dates: e.g. "הגיעה ב19/08", "הגיע ב-19/08", "הגיעה ב- 19.08", "נמסרה ב 19/08"
+  const arrivalMatch = /(?:הגיע[הה]?\s*(?:ב|בתאריך|-)?\s*|נמסר[הה]?\s*(?:ב|בתאריך|-)?\s*|סופק[הה]?\s*(?:ב|בתאריך|-)?\s*)(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{2,4}))?/i.exec(text);
+  if (arrivalMatch) {
+    const day = parseInt(arrivalMatch[1], 10);
+    const month = parseInt(arrivalMatch[2], 10);
+    let year = arrivalMatch[3] ? parseInt(arrivalMatch[3], 10) : now.getFullYear();
+    if (year < 100) year += 2000;
+
+    if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+      const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const isLockerOrPickup = /(?:לוקר|נקודת|סניף|מרכז\s*מסירה|איסוף|pickup|locker|למקום)/i.test(text);
+      return {
+        expectedDeliveryDate: dateStr,
+        orderDate: dateStr,
+        statusHint: isLockerOrPickup ? 'ready_for_pickup' : 'delivered'
+      };
+    }
+  }
+
+  // 3. Explicit expected delivery date: e.g. "צפוי להגיע ב-25/08", "מועד משוער: 25/08/2026"
+  const expectedMatch = /(?:צפוי[הה]?\s*להגיע\s*(?:ב|בתאריך|-)?\s*|מועד\s*(?:ה)?אספקה\s*(?:משוער)?[:\s-]*|משלוח\s*צפוי\s*עד[:\s-]*)(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{2,4}))?/i.exec(text);
+  if (expectedMatch) {
+    const day = parseInt(expectedMatch[1], 10);
+    const month = parseInt(expectedMatch[2], 10);
+    let year = expectedMatch[3] ? parseInt(expectedMatch[3], 10) : now.getFullYear();
+    if (year < 100) year += 2000;
+
+    if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+      const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      return {
+        expectedDeliveryDate: dateStr,
+        statusHint: 'in_transit'
+      };
+    }
+  }
+
+  return {};
 }
 
 /**
@@ -809,7 +881,7 @@ export function parseSmartText(rawText) {
   if (scoredCandidates.length > 0 && scoredCandidates[0].score > 0) {
     const top = scoredCandidates[0];
     bestTracking = top.value;
-    const detected = detectCarrier(top.value);
+    const detected = detectCarrier(bestTracking);
     const topCarrier = (phraseCarrier && phraseCarrier !== 'other')
       ? phraseCarrier
       : (top.carrierCandidates && top.carrierCandidates[0] && top.carrierCandidates[0] !== 'other')
@@ -878,8 +950,10 @@ export function parseSmartText(rawText) {
   if (notesText.length > 300) {
     notesText = notesText.slice(0, 300) + '...';
   }
+  const dateInfo = extractDatesAndStatus(cleanText);
+
   // Infer delivery status from text
-  let status = 'ordered';
+  let status = dateInfo.statusHint || 'ordered';
   const lowerText = cleanText.toLowerCase();
   if (/\b(delivered|successfully delivered)\b/i.test(lowerText) || /(?:נמסרה בהצלחה|נמסר ליעד|החבילה נמסרה)/i.test(lowerText)) {
     status = 'delivered';
@@ -890,12 +964,15 @@ export function parseSmartText(rawText) {
     /(?:מוכנה לאיסוף|מוכן לאיסוף|ממתינה לאיסוף|ממתין לאיסוף|ממתינה בלוקר|ממתין בלוקר|הגיעה לנקודת|הגיע לנקודת|הגיע לסניף|הגיעה לסניף|הגיע לסוכנות|הגיעה לסוכנות|הגיעה ללוקר|הגיע ללוקר|הועברה ללוקר|הועברה לנקודת|מחכה לך בנקודת|מחכה לך בלוקר|מחכה בלוקר|מחכה לך בסניף|מדף\s*\d+)/i.test(lowerText)
   ) {
     status = 'ready_for_pickup';
-  } else if (/\b(out for delivery|with courier)\b/i.test(lowerText) || /(?:יוצאת למסירה|יוצא למסירה|יצאה עם שליח|נמסרה לשליח|השליח בדרך אליך|שליח\s+[^\n]+בדרך אליך)/i.test(lowerText)) {
+  } else if (
+    /\b(out for delivery|with courier)\b/i.test(lowerText) ||
+    /(?:יוצאת למסירה|יוצא למסירה|יצאה עם שליח|נמסרה לשליח|השליח בדרך אליך|שליח\s+[^\n]+בדרך אליך|תסופק היום|יסופק היום|היום עם שליח|מגיע היום|צפוי להגיע היום)/i.test(lowerText)
+  ) {
     status = 'out_for_delivery';
   } else if (/\b(delivery issue|delivery failed|customs clearance)\b/i.test(lowerText) || /(?:עיכוב במכס|בעיה במסירה|מסירה נכשלה)/i.test(lowerText)) {
     status = 'exception';
   } else if (bestTracking || /\b(shipped|in transit|dispatched|on its way)\b/i.test(lowerText) || /(?:נשלחה|נשלח|בדרך)/i.test(lowerText)) {
-    status = 'in_transit';
+    status = status === 'ordered' ? 'in_transit' : status;
   }
 
   const selectedCandidate = scoredCandidates.find((candidate) => candidate.value === bestTracking)
@@ -916,6 +993,8 @@ export function parseSmartText(rawText) {
     status,
     origin: carrierObj.country || '',
     destination: 'Israel',
+    expectedDeliveryDate: dateInfo.expectedDeliveryDate || undefined,
+    orderDate: dateInfo.orderDate || undefined,
     notes: notesText,
     notesHe: notesText,
     pickupLocation: effectivePickupLocation,
