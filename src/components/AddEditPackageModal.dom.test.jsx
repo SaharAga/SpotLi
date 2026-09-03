@@ -168,6 +168,31 @@ describe('AddEditPackageModal (rendered)', () => {
     expect(saved.pickupHours).toBe('08:00 - 22:00');
   });
 
+  it('pre-fills extracted expectedDeliveryDate and orderDate from smart import initialValues (#135)', async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn();
+    const initialValues = {
+      title: 'Target Delivery',
+      trackingNumber: 'RR948219481IL',
+      carrierId: 'israel-post',
+      status: 'out_for_delivery',
+      expectedDeliveryDate: '2026-08-19',
+      orderDate: '2026-08-15',
+      category: 'electronics'
+    };
+
+    renderWithLanguage(
+      <AddEditPackageModal isOpen onClose={vi.fn()} onSave={onSave} initialValues={initialValues} />
+    );
+
+    await user.click(screen.getByRole('button', { name: /add to tracking/i }));
+
+    expect(onSave).toHaveBeenCalledTimes(1);
+    const saved = onSave.mock.calls[0][0];
+    expect(saved.expectedDeliveryDate).toBe('2026-08-19');
+    expect(saved.orderDate).toBe('2026-08-15');
+  });
+
   it('renders nothing when isOpen is false', () => {
     const { container } = renderWithLanguage(
       <AddEditPackageModal isOpen={false} onClose={vi.fn()} onSave={vi.fn()} />

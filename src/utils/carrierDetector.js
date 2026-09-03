@@ -118,6 +118,19 @@ export const CHECKSUM_VALIDATORS = Object.freeze({
 });
 
 /**
+ * Detects if a candidate string matches an Israeli phone number format.
+ * Guards against phone numbers in SMS being falsely identified as 12-digit FedEx / other pure-digit couriers.
+ *
+ * @param {string} str
+ * @returns {boolean}
+ */
+export function isPhoneNumber(str) {
+  if (!str || typeof str !== 'string') return false;
+  const clean = str.trim().replace(/[\s\-_.]+/g, '');
+  return /^(?:\+?972|0)(?:5[0-9]|7[0-9]|[23489])\d{7}$/.test(clean);
+}
+
+/**
  * Automatically inspects a tracking number string and detects the most likely carrier,
  * with checksum verification and confidence scoring.
  *
@@ -135,6 +148,11 @@ export function detectCarrier(trackingNumber) {
 
   const cleaned = sanitizeTrackingNumber(trackingNumber);
   if (!cleaned) return noMatch;
+
+  // Phone numbers should never be treated as valid carrier tracking identifiers
+  if (isPhoneNumber(cleaned) || isPhoneNumber(trackingNumber)) {
+    return noMatch;
+  }
 
   for (const detectionRule of DETECTION_RULES) {
     if (!detectionRule.test(cleaned)) continue;

@@ -278,7 +278,12 @@ export async function uploadToFirestore(payload) {
   try {
     const { collection, doc, setDoc } = await import('firebase/firestore');
     const feedbackRef = doc(collection(db, 'feedback'), payload.id);
-    const uploadPromise = setDoc(feedbackRef, payload).then(() => true).catch(() => false);
+    const uploadPromise = setDoc(feedbackRef, payload)
+      .then(() => true)
+      .catch((err) => {
+        console.warn('[FeedbackService] Firestore setDoc failed:', err);
+        return false;
+      });
     const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(false), 2500));
     return await Promise.race([uploadPromise, timeoutPromise]);
   } catch (err) {
@@ -512,6 +517,7 @@ export async function submitFeedback(rawFeedback) {
   return {
     success: true,
     syncedToCloud: firestoreSuccess,
+    isOnline,
     feedback: finalPayload
   };
 }

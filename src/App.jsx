@@ -197,7 +197,27 @@ export function DashboardContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [selectedCarrier, setSelectedCarrier] = useState('all');
-  const [sortBy, setSortBy] = useState('newest');
+  const [sortBy, setSortByState] = useState(() => {
+    if (typeof window === 'undefined') return 'newest';
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.SORT_BY);
+      return saved && ['newest', 'expected', 'title', 'status'].includes(saved) ? saved : 'newest';
+    } catch {
+      return 'newest';
+    }
+  });
+
+  const setSortBy = useCallback((newSort) => {
+    setSortByState(newSort);
+    if (typeof window !== 'undefined' && ['newest', 'expected', 'title', 'status'].includes(newSort)) {
+      try {
+        localStorage.setItem(STORAGE_KEYS.SORT_BY, newSort);
+      } catch (err) {
+        console.warn('Failed to persist sortBy preference:', err);
+      }
+    }
+  }, []);
+
   const [viewMode, setViewMode] = useState('grid');
 
   // Modals & Active Elements — one router, not twelve booleans.

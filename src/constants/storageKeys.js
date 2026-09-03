@@ -24,7 +24,8 @@ export const STORAGE_KEYS = Object.freeze({
   PUSH_SUBSCRIPTION: 'deliveree_push_subscription',
   EMAIL_INTEGRATIONS: 'deliveree_email_integrations_v1',
   LIVE_TRACK_PREFIX: 'deliveree_live_track_',
-  PREFERRED_NAV_APP: 'deliveree_preferred_nav_app'
+  PREFERRED_NAV_APP: 'deliveree_preferred_nav_app',
+  SORT_BY: 'deliveree_sort_by'
 });
 
 /**

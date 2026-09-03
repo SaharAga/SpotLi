@@ -24,6 +24,7 @@ describe('Storage Keys Constants', () => {
     expect(STORAGE_KEYS.EMAIL_INTEGRATIONS).toBe('deliveree_email_integrations_v1');
     expect(STORAGE_KEYS.LIVE_TRACK_PREFIX).toBe('deliveree_live_track_');
     expect(STORAGE_KEYS.PREFERRED_NAV_APP).toBe('deliveree_preferred_nav_app');
+    expect(STORAGE_KEYS.SORT_BY).toBe('deliveree_sort_by');
   });
 
   describe('isAppStorageKey', () => {

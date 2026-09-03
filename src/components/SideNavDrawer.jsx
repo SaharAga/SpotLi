@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Package, Sparkles, Link2, BarChart3, MessageSquare,
@@ -9,6 +9,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { APP_VERSION } from '../constants/version';
+import { acquireScrollLock, releaseScrollLock } from './Modal';
 
 export function SideNavDrawer({
   isOpen,
@@ -72,6 +73,42 @@ export function SideNavDrawer({
     onClose();
   };
 
+  useEffect(() => {
+    if (!isOpen) return;
+    acquireScrollLock();
+    return () => {
+      releaseScrollLock();
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  const backdropArmedRef = useRef(false);
+
+  const handleBackdropMouseDown = useCallback((e) => {
+    backdropArmedRef.current = e.target === e.currentTarget;
+  }, []);
+
+  const handleBackdropClick = useCallback(
+    (e) => {
+      if (e.target !== e.currentTarget) return;
+      if (!backdropArmedRef.current) return;
+      backdropArmedRef.current = false;
+      onClose();
+    },
+    [onClose]
+  );
+
   if (!isOpen) return null;
 
   return createPortal(
@@ -79,11 +116,8 @@ export function SideNavDrawer({
       className={`fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm transition-opacity duration-300 animate-fade-in flex ${isRTL ? 'justify-start' : 'justify-end'}`}
       role="dialog"
       aria-modal="true"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
+      onMouseDown={handleBackdropMouseDown}
+      onClick={handleBackdropClick}
     >
       {/* Off-canvas Sheet */}
       <div

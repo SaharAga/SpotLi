@@ -1,4 +1,5 @@
 import { parsePackageList } from '../schemas/packageSchema';
+import { exportRawToJSON } from '../utils/exportUtils.js';
 import { notificationService } from './notificationService';
 import { STORAGE_KEYS } from '../constants/storageKeys';
 import { APP_NAME } from '../constants/app';
@@ -210,19 +211,10 @@ export const deliveryService = {
   },
 
   /**
-   * Exports data as JSON string for download using memory-efficient Blob URL
+   * Exports data as a self-describing manifest JSON string for download (#91)
    */
   exportData: (packages) => {
-    const { packages: safePackages } = parsePackageList(packages);
-    const blob = new Blob([JSON.stringify(safePackages, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", url);
-    downloadAnchor.setAttribute("download", `${APP_NAME.toLowerCase()}_backup_${new Date().toISOString().slice(0, 10)}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-    URL.revokeObjectURL(url);
+    return exportRawToJSON(packages, true);
   },
 
   /**

@@ -825,8 +825,8 @@ export function AccountModal({
                 </div>
                 <p className="text-[11px] opacity-80 leading-relaxed">
                   {language === 'he'
-                    ? 'פעולה זו תמחק לחלוטין את כל החבילות שלך מהענן (Firestore), תמחק את החשבון האישי שלך, ותנקה את כל המידע השמור במכשיר זה. לא ניתן לשחזר את הנתונים לאחר ביצוע הפעולה.'
-                    : 'This action permanently deletes all your shipments from cloud storage, deletes your user account credentials, and wipes local device caches. This operation cannot be undone.'}
+                    ? 'פעולה זו תמחק לחלוטין את כל החבילות שלך מהענן (Firestore), תמחק את החשבון האישי שלך, ותנקה את כל המידע השמור במכשיר זה. לא ניתן לשחזר את הנתונים לאחר ביצוע הפעולה (משובים אנונימיים שנשלחו בעבר אינם מקושרים לחשבונך ונשמרים לשיפור השירות).'
+                    : 'This action permanently deletes all your shipments from cloud storage, deletes your user account credentials, and wipes local device caches. This operation cannot be undone (anonymized feedback previously submitted is not linked to your account and is retained for service reliability).'}
                 </p>
               </div>
 
