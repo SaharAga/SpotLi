@@ -32,7 +32,7 @@ describe('BottomNav', () => {
       onOpenStatus: vi.fn(),
       onOpenInsights: vi.fn(),
       onOpenAdd: vi.fn(),
-      onOpenLockers: vi.fn(),
+      onOpenActivity: vi.fn(),
       onOpenAccount: vi.fn()
     };
     renderNav(handlers);
@@ -41,8 +41,8 @@ describe('BottomNav', () => {
     await user.click(screen.getByText('תובנות'));
     expect(handlers.onOpenInsights).toHaveBeenCalledTimes(1);
 
-    await user.click(screen.getByText('לוקרים'));
-    expect(handlers.onOpenLockers).toHaveBeenCalledTimes(1);
+    await user.click(screen.getByText('פעילות'));
+    expect(handlers.onOpenActivity).toHaveBeenCalledTimes(1);
 
     await user.click(screen.getByText('חשבון'));
     expect(handlers.onOpenAccount).toHaveBeenCalledTimes(1);
@@ -54,12 +54,12 @@ describe('BottomNav', () => {
   });
 
   it('marks only the active tab with aria-current', () => {
-    renderNav({ activeTab: 'lockers' });
+    renderNav({ activeTab: 'activity' });
     const current = screen
       .getAllByRole('button')
       .filter((b) => b.getAttribute('aria-current') === 'page');
     expect(current).toHaveLength(1);
-    expect(current[0].textContent).toContain('לוקרים');
+    expect(current[0].textContent).toContain('פעילות');
   });
 
   it('uses no direction-specific classes, so RTL mirrors on its own', () => {

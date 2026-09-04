@@ -7,12 +7,17 @@ import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { SideNavDrawer } from './SideNavDrawer';
 import { BottomNav, TAB_FOR_MODAL } from './BottomNav';
+
+// The two tab destinations that ARE modals. Kept here rather than imported
+// from App.jsx, which imports this file — that cycle is what the ids avoid.
+const MODAL_IDS = { ANALYTICS: 'analytics', ACTIVITY: 'activity' };
 import { AccountSheet } from './AccountSheet';
 import { APP_VERSION } from '../constants/version';
 
 export function Navbar({
   isDemoMode,
   activeModal,
+  onGoToTab,
   onOpenAddModal,
   onOpenSmartImport,
   onOpenAnalytics,
@@ -34,6 +39,25 @@ export function Navbar({
   const [isSideDrawerOpen, setIsSideDrawerOpen] = useState(false);
   const [isAccountSheetOpen, setIsAccountSheetOpen] = useState(false);
   const [isAddActionSheetOpen, setIsAddActionSheetOpen] = useState(false);
+
+  /**
+   * A tab switch leaves wherever you are before arriving somewhere else.
+   *
+   * These screens are a stack under the hood, and without this, tapping a tab
+   * layered another screen on top of the one already open — so Status
+   * scrolled a list that was still buried, and the only ways back were the X
+   * or the OS back gesture. Tabs are not a stack; each one is a destination.
+   */
+  const switchTab = (modalId, afterSwitch) => () => {
+    setIsAccountSheetOpen(false);
+    setIsSideDrawerOpen(false);
+    setIsAddActionSheetOpen(false);
+    // One atomic stack replacement, not close-then-open — see goToTab in
+    // App.jsx for why the two-step version raced with history.
+    if (typeof onGoToTab === 'function') onGoToTab(modalId);
+    if (typeof afterSwitch === 'function') afterSwitch();
+    if (!modalId && !afterSwitch) window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleQuickClipboardPaste = async () => {
     setIsAddActionSheetOpen(false);
@@ -201,10 +225,14 @@ export function Navbar({
     </header>
 
       {/* SMART '+' INGESTION ACTION SHEET (Mobile / Touch Ergonomic Bottom Sheet) */}
+      {/* z-[70], above the bottom bar (z-[60]). The bar sits on top of PAGES on
+          purpose — it is how you leave them — but this sheet is the FAB's own
+          chooser, not a place you navigated to, and at z-50 the bar cut off its
+          lower half. */}
       {isAddActionSheetOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/80 backdrop-blur-md animate-fade-in" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-950/80 backdrop-blur-md animate-fade-in" role="dialog" aria-modal="true">
           <div className="fixed inset-0" onClick={() => setIsAddActionSheetOpen(false)} />
-          <div className="relative w-full max-w-lg bg-slate-900 border-t sm:border border-slate-800 rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl space-y-4 z-10 animate-slide-up">
+          <div className="relative w-full max-w-lg max-h-[85dvh] overflow-y-auto bg-slate-900 border-t sm:border border-slate-800 rounded-t-3xl sm:rounded-3xl p-4 sm:p-6 pb-[max(1rem,env(safe-area-inset-bottom,0px))] shadow-2xl space-y-4 z-10 animate-slide-up">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
                 <Plus className="w-5 h-5 text-blue-400" />
@@ -308,11 +336,11 @@ export function Navbar({
           wiring it from App would mean lifting both into App state. */}
       <BottomNav
         activeTab={isAccountSheetOpen ? 'account' : (TAB_FOR_MODAL[activeModal] || 'status')}
-        onOpenStatus={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        onOpenInsights={onOpenAnalytics}
+        onOpenStatus={switchTab(null)}
+        onOpenInsights={switchTab(MODAL_IDS.ANALYTICS)}
         onOpenAdd={() => setIsAddActionSheetOpen(true)}
-        onOpenLockers={onOpenLockerMap}
-        onOpenAccount={() => setIsAccountSheetOpen(true)}
+        onOpenActivity={switchTab(MODAL_IDS.ACTIVITY)}
+        onOpenAccount={switchTab(null, () => setIsAccountSheetOpen(true))}
       />
     </>
   );

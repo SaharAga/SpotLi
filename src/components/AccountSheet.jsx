@@ -99,7 +99,12 @@ export function AccountSheet({
     >
       <div className="flex items-center justify-between gap-3 p-4 sm:p-6 border-b border-slate-800">
         <Title>{he ? 'חשבון' : 'Account'}</Title>
-        <Button onClick={onClose}>{he ? 'סגור' : 'Close'}</Button>
+        {/* Desktop only. On a phone the bottom bar is on screen and is how you
+            leave a tab destination — a Close on top of it is a second exit for
+            one page, which is what made these read as popups. */}
+        <div className="hidden lg:block shrink-0">
+          <Button onClick={onClose} >{he ? 'סגור' : 'Close'}</Button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-6">

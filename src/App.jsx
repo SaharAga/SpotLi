@@ -39,6 +39,7 @@ const FeedbackModal = lazyModal(() => import('./components/FeedbackModal'), 'Fee
 const AdminFeedbackModal = lazyModal(() => import('./components/AdminFeedbackModal'), 'AdminFeedbackModal');
 const ExportModal = lazyModal(() => import('./components/ExportModal'), 'ExportModal');
 const LockerMapModal = lazyModal(() => import('./components/LockerMapModal'), 'LockerMapModal');
+const ActivityModal = lazyModal(() => import('./components/ActivityModal'), 'ActivityModal');
 const DeleteConfirmDialog = lazyModal(() => import('./components/DeleteConfirmDialog'), 'DeleteConfirmDialog');
 const AutoArchivePromptModal = lazyModal(() => import('./components/AutoArchivePromptModal'), 'AutoArchivePromptModal');
 const NavigationChoiceModal = lazyModal(() => import('./components/NavigationChoiceModal'), 'NavigationChoiceModal');
@@ -80,6 +81,7 @@ export const MODAL = {
   ACCOUNT: 'account',
   EXPORT: 'export',
   LOCKER_MAP: 'lockerMap',
+  ACTIVITY: 'activity',
   ABOUT: 'about',
   FEEDBACK: 'feedback',
   ADMIN_FEEDBACK: 'adminFeedback',
@@ -151,6 +153,52 @@ export function useModalRouter() {
     });
   }, []);
 
+  /**
+   * Switches to a tab: the stack becomes exactly this one screen, or empty.
+   *
+   * Not `closeAllModals()` then `openModal()`. Closing rewinds history with
+   * `history.go(-n)`, which fires `popstate` ASYNCHRONOUSLY — after the open
+   * had already run — and the popstate handler then popped the screen just
+   * opened. Lockers looked like it did nothing. Doing it in one update, with
+   * a single forward history entry, removes the race entirely.
+   */
+  const goToTab = useCallback((id = null, payload = null) => {
+    if (typeof window !== 'undefined') {
+      try {
+        window.history.pushState({ modalRouter: true, modalId: id }, '', window.location.href);
+      } catch {
+        // Ignore
+      }
+    }
+    setStack(id ? [{ id, payload }] : []);
+  }, []);
+
+  /**
+   * Empties the stack — what a bottom-bar tab does.
+   *
+   * Tabs are not a stack. Tapping Status used to scroll the list that was
+   * still sitting underneath whatever you had open, so the only ways back
+   * were the X or the OS back gesture. A tab now returns you to its own
+   * screen rather than layering another one on top.
+   *
+   * History is unwound entry by entry so the OS back button stays consistent
+   * with what is on screen — dropping the stack without rewinding would leave
+   * back gestures replaying screens you already dismissed.
+   */
+  const closeAllModals = useCallback(() => {
+    setStack((prev) => {
+      if (prev.length === 0) return prev;
+      if (typeof window !== 'undefined' && window.history.state?.modalRouter) {
+        try {
+          window.history.go(-prev.length);
+        } catch {
+          // Ignore
+        }
+      }
+      return [];
+    });
+  }, []);
+
   // Updates the payload of an already-open modal, and does nothing if it is
   // closed — which is exactly the `if (selectedDetailPackage?.id === x)`
   // guard that used to be written out at each call site.
@@ -173,6 +221,8 @@ export function useModalRouter() {
   return {
     activeModal: stack.length > 0 ? stack[stack.length - 1].id : null,
     openModal,
+    closeAllModals,
+    goToTab,
     closeModal,
     setModalPayload,
     isModalOpen,
@@ -226,6 +276,8 @@ export function DashboardContent() {
     activeModal,
     openModal,
     closeModal,
+    closeAllModals,
+    goToTab,
     setModalPayload,
     isModalOpen,
     getModalPayload
@@ -1012,6 +1064,21 @@ export function DashboardContent() {
       )
     },
     {
+      id: MODAL.ACTIVITY,
+      componentName: 'ActivityModal',
+      render: (isOpen) => (
+        <ActivityModal
+          isOpen={isOpen}
+          onClose={() => closeModal(MODAL.ACTIVITY)}
+          packages={packages}
+          onOpenPackage={(id) => {
+            const target = packages.find((p) => p.id === id);
+            if (target) handleOpenDetails(target);
+          }}
+        />
+      )
+    },
+    {
       id: MODAL.NAVIGATION_CHOICE,
       componentName: 'NavigationChoiceModal',
       render: (isOpen, payload) => (
@@ -1131,6 +1198,7 @@ export function DashboardContent() {
       <Navbar
         isDemoMode={isDemoMode}
         activeModal={activeModal}
+        onGoToTab={goToTab}
         onOpenAddModal={() => openModal(MODAL.ADD_EDIT)}
         onOpenSmartImport={() => openModal(MODAL.SMART_IMPORT)}
         onOpenAnalytics={() => openModal(MODAL.ANALYTICS)}
