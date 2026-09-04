@@ -413,8 +413,12 @@ export function AnalyticsModal({
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/80 flex justify-end shrink-0">
+        {/* Footer. `hidden lg:flex`: on a phone this is a tab destination with
+            the bottom bar always on screen, so the bar IS the way out and a
+            second Close underneath it is redundant — two exits for one page
+            was part of what still made these read as popups. Desktop has no
+            bottom bar, so it keeps the button. */}
+        <div className="hidden p-4 border-t border-slate-800 bg-slate-950/80 lg:flex justify-end shrink-0">
           <button
             onClick={onClose}
             className="min-w-[120px] min-h-[48px] px-6 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 hover:text-white text-xs font-bold transition-all border border-slate-700/60 shadow-md flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-indigo-500"

@@ -370,7 +370,9 @@
       display: flex;
       flex-direction: column;
       padding-top: env(safe-area-inset-top, 0px);
-      padding-bottom: env(safe-area-inset-bottom, 0px);
+      /* Clears the bottom tab bar, which now stays visible on top of pages
+         (BottomNav, z-[60]) rather than being covered by them. */
+      padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
     }
 
     /* The panel is now the viewport, so whatever inside it was scrolling

@@ -6,12 +6,13 @@ import {
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { SideNavDrawer } from './SideNavDrawer';
-import { BottomNav } from './BottomNav';
+import { BottomNav, TAB_FOR_MODAL } from './BottomNav';
 import { AccountSheet } from './AccountSheet';
 import { APP_VERSION } from '../constants/version';
 
 export function Navbar({
   isDemoMode,
+  activeModal,
   onOpenAddModal,
   onOpenSmartImport,
   onOpenAnalytics,
@@ -306,6 +307,7 @@ export function Navbar({
           component already owns the drawer and the add sheet the bar opens;
           wiring it from App would mean lifting both into App state. */}
       <BottomNav
+        activeTab={isAccountSheetOpen ? 'account' : (TAB_FOR_MODAL[activeModal] || 'status')}
         onOpenStatus={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         onOpenInsights={onOpenAnalytics}
         onOpenAdd={() => setIsAddActionSheetOpen(true)}
