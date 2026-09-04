@@ -43,6 +43,20 @@ export function detectSystemLanguage() {
 
 export function LanguageProvider({ children }) {
   const [language, setLanguage] = useState(() => {
+    // `?lang=he|en` wins over everything. It makes the language deep-linkable
+    // (useful for sharing a bug report in the language it happens in), and it
+    // is what lets devtools/preview.html run a Hebrew and an English frame
+    // side by side: the two iframes share an origin, so localStorage alone
+    // cannot keep them apart — whichever mounts last would win both.
+    // Deliberately not persisted: the param overrides the stored preference
+    // for that view without silently rewriting it.
+    try {
+      const param = new URLSearchParams(window.location.search).get('lang');
+      if (param === 'he' || param === 'en') return param;
+    } catch {
+      // No window/location (Node test env) — fall through.
+    }
+
     try {
       const stored = localStorage.getItem('deliveree_lang');
       if (stored === 'he' || stored === 'en') return stored;

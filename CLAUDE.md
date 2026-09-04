@@ -145,6 +145,19 @@ a different, subagent-driven workflow with its own skills under `.agents/skills/
 change any of the commands or architecture above, but if you're operating as one of those named
 subagent roles, `AGENTS.md` is the fuller spec.
 
+## Local device preview
+
+`devtools/preview.html` (dev server only — `http://localhost:5173/devtools/preview.html`)
+renders the app in two phone bezels side by side, Hebrew RTL and English LTR,
+with theme/size/mood controls. It iframes the real dev server, so HMR applies
+to both frames — this is the fast loop for UI work, instead of waiting ~15
+minutes on a staging deploy to see a change.
+
+It lives outside the Vite entry graph, so `npm run build` never emits it and it
+cannot ship. Language comes from `?lang=he|en` rather than localStorage: both
+frames share an origin and the app writes its language back, so a stored value
+could never keep them apart.
+
 ## Versioning & releases
 
 A PR that changes shipped code (`src/`, `functions/`, or `firestore.rules`) must declare that

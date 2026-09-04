@@ -251,6 +251,11 @@ server-side on every write).
 
 ## Deployment
 
+> **Production is broken? See [docs/ROLLBACK.md](docs/ROLLBACK.md).** Do not
+> roll back through CI — Firebase Hosting serves a previous release in seconds
+> from the console. Note that Firestore rules do *not* roll back with hosting,
+> and they reach production on every merge to `main`, not on release.
+
 CI (`.github/workflows/ci.yml`) runs on every push/PR to `main`: lint → test
 → build, then, on `main` only and gated behind the `FIREBASE_HOSTING_ENABLED`
 repository variable, deploys the built app to Firebase Hosting and pushes
