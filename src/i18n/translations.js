@@ -12,6 +12,15 @@ export const translations = {
       delivered: 'Delivered',
       customs: 'Customs / Action'
     },
+    // Short forms for the home filter chips. The `tabs.*` labels are written
+    // for the filter panel, where there is room for a sentence; on a chip row
+    // three of those overflow a 390px screen.
+    chips: {
+      all: 'All',
+      active: 'Active',
+      customs: 'Customs',
+      done: 'Done'
+    },
     tabs: {
       all: 'All Shipments',
       active: 'Active',
@@ -286,6 +295,12 @@ export const translations = {
       outForDelivery: 'נמסר לחלוקה / לאיסוף',
       delivered: 'נמסרו בהצלחה',
       customs: 'בדיקת מכס / דורש טיפול'
+    },
+    chips: {
+      all: 'הכל',
+      active: 'פעילים',
+      customs: 'במכס',
+      done: 'נמסרו'
     },
     tabs: {
       all: 'כל החבילות',

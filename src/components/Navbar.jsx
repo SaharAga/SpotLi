@@ -149,7 +149,7 @@ export function Navbar({
           {onOpenAdminFeedback && (
             <button
               onClick={onOpenAdminFeedback}
-              className="flex items-center justify-center p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 cursor-pointer min-h-[48px] min-w-[44px]"
+              className="flex items-center justify-center p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 cursor-pointer min-h-[48px] min-w-[48px]"
               title={language === 'he' ? 'מרכז ניהול ומדדים' : 'Admin Telemetry'}
             >
               <ShieldCheck className="w-4 h-4 text-indigo-400" />

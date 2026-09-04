@@ -232,7 +232,7 @@ export function CourierActionHub({ pkg, onShowToast }) {
           <button
             type="button"
             onClick={handleOpenNew}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-xs font-semibold text-emerald-300 transition-colors min-h-[36px] cursor-pointer"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-xs font-semibold text-emerald-300 transition-colors min-h-[48px] cursor-pointer"
             title={isHe ? 'הוסף תגובה חדשה' : 'Add custom template'}
           >
             <Plus className="w-3.5 h-3.5" />
@@ -344,7 +344,7 @@ export function CourierActionHub({ pkg, onShowToast }) {
                 triggerHapticFeedback(10);
                 setSelectedType(opt.id);
               }}
-              className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-semibold transition-all min-h-[44px] cursor-pointer ${
+              className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-semibold transition-all min-h-[48px] cursor-pointer ${
                 isActive
                   ? 'bg-emerald-600/20 border-emerald-500/50 text-emerald-300 shadow-sm'
                   : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
@@ -391,7 +391,7 @@ export function CourierActionHub({ pkg, onShowToast }) {
           <button
             type="button"
             onClick={handleOpenEditActive}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium transition-colors cursor-pointer min-h-[32px]"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium transition-colors cursor-pointer min-h-[48px]"
             title={isHe ? 'ערוך תגובה זו' : 'Edit this message'}
           >
             <Edit3 className="w-3 h-3 text-blue-400" />
@@ -402,7 +402,7 @@ export function CourierActionHub({ pkg, onShowToast }) {
             <button
               type="button"
               onClick={handleDeleteActive}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-medium transition-colors cursor-pointer min-h-[32px]"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-medium transition-colors cursor-pointer min-h-[48px]"
               title={isHe ? 'מחק / הסר תגובה זו' : 'Delete / hide this message'}
             >
               <Trash2 className="w-3 h-3" />

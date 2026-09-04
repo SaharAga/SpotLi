@@ -665,7 +665,7 @@ export function AuthModal({
                 {/* Legal consent — mandatory ToS/Privacy + optional AI-training opt-in */}
                 {activeTab === 'register' && (
                   <div className="space-y-2 pt-1">
-                    <label className="flex items-start gap-2 p-2.5 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer min-h-[44px]">
+                    <label className="flex items-start gap-2 p-2.5 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer min-h-[48px]">
                       <input
                         type="checkbox"
                         checked={agreedToTerms}
@@ -693,7 +693,7 @@ export function AuthModal({
                       </span>
                     </label>
 
-                    <label className="flex items-start gap-2 p-2.5 rounded-xl bg-blue-950/20 border border-blue-500/20 cursor-pointer min-h-[44px]">
+                    <label className="flex items-start gap-2 p-2.5 rounded-xl bg-blue-950/20 border border-blue-500/20 cursor-pointer min-h-[48px]">
                       <input
                         type="checkbox"
                         checked={aiOptIn}

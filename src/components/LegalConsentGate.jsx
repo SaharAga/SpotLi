@@ -82,7 +82,7 @@ export function LegalConsentGate({ onShowToast }) {
               <button
                 type="button"
                 onClick={() => setOpenDoc('terms')}
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer min-h-[44px]"
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer min-h-[48px]"
               >
                 <FileText className="w-3.5 h-3.5" />
                 <span>{language === 'he' ? 'תנאי שימוש' : 'Terms of Use'}</span>
@@ -90,14 +90,14 @@ export function LegalConsentGate({ onShowToast }) {
               <button
                 type="button"
                 onClick={() => setOpenDoc('privacy')}
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer min-h-[44px]"
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer min-h-[48px]"
               >
                 <FileText className="w-3.5 h-3.5" />
                 <span>{language === 'he' ? 'מדיניות פרטיות' : 'Privacy Policy'}</span>
               </button>
             </div>
 
-            <label className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-950/60 border border-slate-800 cursor-pointer min-h-[44px]">
+            <label className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-950/60 border border-slate-800 cursor-pointer min-h-[48px]">
               <input
                 type="checkbox"
                 checked={agreedToTerms}
@@ -111,7 +111,7 @@ export function LegalConsentGate({ onShowToast }) {
               </span>
             </label>
 
-            <label className="flex items-start gap-2.5 p-3 rounded-xl bg-blue-950/20 border border-blue-500/20 cursor-pointer min-h-[44px]">
+            <label className="flex items-start gap-2.5 p-3 rounded-xl bg-blue-950/20 border border-blue-500/20 cursor-pointer min-h-[48px]">
               <input
                 type="checkbox"
                 checked={aiOptIn}

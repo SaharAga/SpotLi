@@ -4,6 +4,7 @@ import {
   CheckCircle2, Package, Filter, ShieldCheck
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { ModalHeader } from './ui/Primitives';
 import { exportToCSV, exportToJSON, generatePrintableSummary } from '../utils/exportUtils';
 import { todayISO } from '../utils/dateUtils';
 import { Modal } from './Modal';
@@ -103,33 +104,17 @@ export function ExportModal({
       overlayClassName="p-3 sm:p-4"
       className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8"
     >
-        {/* Header */}
-        <div className="p-5 sm:p-6 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-600/10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold shadow-md">
-              <Download className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
-                <span>{language === 'he' ? 'מרכז ייצוא ודוחות' : 'Export Center & Reports'}</span>
-              </h2>
-              <p className="text-xs text-slate-400">
-                {language === 'he' ? 'דוחות לאקסל, JSON והדפסה — לצפייה, לא לשחזור' : 'Excel, JSON & printable reports — for reading, not restoring'}
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
-            aria-label="Close Export Modal"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        <ModalHeader
+          title={language === 'he' ? 'מרכז ייצוא ודוחות' : 'Export Center & Reports'}
+          subtitle={language === 'he'
+            ? 'דוחות לאקסל, JSON והדפסה — לצפייה, לא לשחזור'
+            : 'Excel, JSON & printable reports — for reading, not restoring'}
+          onClose={onClose}
+          closeLabel={language === 'he' ? 'סגור' : 'Close'}
+        />
 
         {/* Modal Body */}
-        <div className="p-5 sm:p-6 space-y-5 text-xs text-slate-200">
+        <div className="p-4 sm:p-6 space-y-5 text-xs text-slate-200">
           {/* 1. Format Selection */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-slate-200 flex items-center gap-2">
