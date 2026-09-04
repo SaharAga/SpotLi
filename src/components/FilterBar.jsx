@@ -63,6 +63,13 @@ export function FilterBar({
     { id: 'archived', label: t('tabs.archived') }
   ];
 
+  // The three chips carry their own counts. Everything finer stays in the panel.
+  const chips = [
+    { id: 'all', label: t('chips.all'), count: tabCounts.all ?? 0 },
+    { id: 'active', label: t('chips.active'), count: tabCounts.active ?? 0 },
+    { id: 'delivered', label: t('chips.done'), count: tabCounts.delivered ?? 0 }
+  ];
+
   const isFiltered = activeTab !== 'all' || selectedCarrier !== 'all' || sortBy !== 'newest';
 
   // Just a search bar with everything else — status, carrier, sort — tucked
@@ -97,64 +104,62 @@ export function FilterBar({
 
       </div>
 
-      {/* Controls row. The view toggles live here rather than beside the
-          search field — they are a preference you set once, not something
-          you reach for on every search. */}
+      {/* Chip row. The counts sit ON the filters rather than in a separate
+          legend, so one glance answers both "what can I filter by" and "how
+          many are there". Everything finer — carrier, sort, archived — stays
+          behind the one icon at the end, which is also where the view toggles
+          went: a view mode is a preference you set once, not something you
+          reach for on every search. */}
       <div className="flex items-center gap-2">
-      <button
-        onClick={() => setFiltersOpen((v) => !v)}
-        aria-expanded={filtersOpen}
-        aria-label={t('filters.status')}
-        className={`relative shrink-0 px-4 rounded-xl border transition-all min-h-[48px] flex items-center justify-center gap-2 text-xs font-bold ${
-          filtersOpen
-            ? 'bg-blue-600 border-blue-600 text-white'
-            : 'bg-slate-950 border-slate-800 text-slate-300 hover:text-slate-100 hover:bg-slate-800'
-        }`}
-      >
-        <SlidersHorizontal className="w-4 h-4" aria-hidden="true" />
-        <span>{t('filters.status')}</span>
-        {isFiltered && !filtersOpen && (
-          <span className="absolute -top-1 -end-1 w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-slate-900" aria-hidden="true" />
+        <div className="flex items-center gap-2 min-w-0 overflow-x-auto no-scrollbar">
+          {chips.map((chip) => {
+            const isOn = activeTab === chip.id;
+            return (
+              <button
+                key={chip.id}
+                onClick={() => onTabChange(chip.id)}
+                aria-pressed={isOn}
+                className={`shrink-0 min-h-[48px] px-4 rounded-full text-xs font-bold transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none ${
+                  isOn
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                }`}
+              >
+                {chip.label} <span className="[font-variant-numeric:tabular-nums] opacity-70">{chip.count}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          onClick={() => setFiltersOpen((v) => !v)}
+          aria-expanded={filtersOpen}
+          aria-label={t('filters.status')}
+          className={`relative shrink-0 ms-auto min-h-[48px] min-w-[48px] rounded-xl border transition-all flex items-center justify-center ${
+            filtersOpen
+              ? 'bg-blue-600 border-blue-600 text-white'
+              : 'bg-slate-900 border-slate-800 text-slate-300 hover:text-slate-100 hover:bg-slate-800'
+          }`}
+        >
+          <SlidersHorizontal className="w-4 h-4" aria-hidden="true" />
+          {isFiltered && !filtersOpen && (
+            <span className="absolute -top-1 -end-1 w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-slate-950" aria-hidden="true" />
+          )}
+        </button>
+
+        {onRefreshAll && (
+          <button
+            onClick={onRefreshAll}
+            disabled={isRefreshing}
+            title={t('tracking.refreshAll')}
+            aria-label={t('tracking.refreshAll')}
+            className={`shrink-0 min-h-[48px] min-w-[48px] rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-emerald-400 transition-all flex items-center justify-center ${
+              isRefreshing ? 'text-emerald-400' : ''
+            }`}
+          >
+            {isRefreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+          </button>
         )}
-      </button>
-
-      {onRefreshAll && (
-        <button
-          onClick={onRefreshAll}
-          disabled={isRefreshing}
-          title={t('tracking.refreshAll')}
-          aria-label={t('tracking.refreshAll')}
-          className={`shrink-0 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-emerald-400 transition-all min-h-[48px] min-w-[48px] flex items-center justify-center ${
-            isRefreshing ? 'text-emerald-400' : ''
-          }`}
-        >
-          {isRefreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-        </button>
-      )}
-
-      <div className="shrink-0 ms-auto flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800">
-        <button
-          onClick={() => onViewModeChange('grid')}
-          title={t('filters.gridView')}
-          aria-label={t('filters.gridView')}
-          className={`p-2 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center ${
-            viewMode === 'grid' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <LayoutGrid className="w-3.5 h-3.5" />
-        </button>
-        <button
-          onClick={() => onViewModeChange('table')}
-          title={t('filters.tableView')}
-          aria-label={t('filters.tableView')}
-          className={`p-2 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center ${
-            viewMode === 'table' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          <List className="w-3.5 h-3.5" />
-        </button>
-      </div>
-
       </div>
 
       {filtersOpen && (
