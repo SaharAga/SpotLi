@@ -38,7 +38,7 @@ export function QuickTimeline({ currentStatus }) {
           return (
             <div key={stage.id} className="relative z-10 flex flex-col items-center group">
               <div
-                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-[10px] font-bold transition-all duration-300 ${circleBg}`}
+                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 ${circleBg}`}
                 title={language === 'he' ? stage.hebrewLabel : stage.label}
               >
                 {isPassed ? (
@@ -63,7 +63,7 @@ export function QuickTimeline({ currentStatus }) {
       </div>
 
       {/* Stage Name Labels */}
-      <div className="flex justify-between items-center text-[11px] text-slate-400 mt-2 font-medium">
+      <div className="flex justify-between items-center text-xs text-slate-400 mt-2 font-medium">
         <span className={effectiveIndex >= 0 ? 'text-blue-400' : ''}>
           {language === 'he' ? STAGES[0]?.hebrewLabel : STAGES[0]?.label}
         </span>
