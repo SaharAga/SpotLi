@@ -223,9 +223,14 @@ export function LockerMapModal({
         </div>
 
         {/* Content Layout (Split: List & Interactive Preview) */}
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 overflow-y-auto divide-y md:divide-y-0 md:divide-x md:rtl:divide-x-reverse divide-slate-800">
+        {/* The split is a desktop layout. On a phone both halves shared one
+            scroller, and the tall detail panel squeezed the list down to a
+            single visible row — the list was effectively invisible. Each half
+            now scrolls on its own and the list gets a guaranteed share of the
+            height. */}
+        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 grid-rows-[minmax(0,2fr)_minmax(0,3fr)] md:grid-rows-1 divide-y md:divide-y-0 md:divide-x md:rtl:divide-x-reverse divide-slate-800">
           {/* Pickup List */}
-          <div className="p-4 space-y-3 overflow-y-auto max-h-[400px] md:max-h-full">
+          <div className="min-h-0 p-4 space-y-3 overflow-y-auto">
             {filteredPoints.length === 0 ? (
               <div className="py-12 text-center text-xs text-slate-500">
                 {isRTL ? 'לא נמצאו נקודות איסוף תואמות' : 'No pickup locations match your search'}
@@ -280,14 +285,14 @@ export function LockerMapModal({
           </div>
 
           {/* Active Location Detail & 1-Click Nav Card */}
-          <div className="p-6 bg-slate-950/40 flex flex-col justify-between space-y-6">
+          <div className="min-h-0 overflow-y-auto p-4 sm:p-6 bg-slate-950/40 flex flex-col justify-between space-y-6">
             {activePoint ? (
               <>
                 <div className="space-y-4">
                   {/* Simulated Map Visual Header */}
                   <div className="relative h-44 rounded-2xl bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-950 border border-slate-800 flex flex-col items-center justify-center p-4 text-center overflow-hidden">
                     <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:16px_16px]" />
-                    <div className="relative w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/40 mb-2 animate-bounce">
+                    <div className="relative w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/40 mb-2">
                       <MapPin className="w-6 h-6" />
                     </div>
                     <span className="relative text-xs font-bold text-slate-200">
