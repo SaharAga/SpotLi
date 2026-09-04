@@ -5,6 +5,14 @@ import { useLanguage } from '../context/LanguageContext';
 /**
  * Mobile bottom tab bar.
  *
+ * z-[60] deliberately sits ABOVE the base modal layer (z-50). Every screen in
+ * this app is a Modal, and once those became full-screen pages the bar was
+ * covered by whatever you opened — which left a "Close" button as the only way
+ * out, and made a page you navigated to feel like a popup. The bar stays put
+ * and the active tab follows you instead. Gate and top layers (z-[65]/z-[70])
+ * still cover it, which is correct: a legal consent gate is not somewhere you
+ * navigate away from.
+ *
  * Replaces the top-left hamburger as the primary way to reach things on a
  * phone: the top edge is the worst place on the screen for a thumb, and every
  * destination used to live behind it. Desktop keeps the drawer trigger in the
@@ -18,6 +26,27 @@ import { useLanguage } from '../context/LanguageContext';
  * The bar is a flex row, so RTL mirrors for free — no direction-specific
  * classes anywhere in here.
  */
+/**
+ * Which tab owns which screen. A page opened from Insights should light the
+ * Insights tab, not leave Status lit while you are somewhere else — that was
+ * the tell that these were popups rather than places.
+ */
+export const TAB_FOR_MODAL = {
+  analytics: 'insights',
+  lockerMap: 'lockers',
+  fullScreenLocker: 'lockers',
+  account: 'account',
+  auth: 'account',
+  about: 'account',
+  export: 'account',
+  feedback: 'account',
+  adminFeedback: 'account',
+  ingestionGuide: 'account',
+  smartImport: 'status',
+  addEdit: 'status',
+  detail: 'status'
+};
+
 function BottomNavImpl({
   activeTab = 'status',
   onOpenStatus,
@@ -64,7 +93,7 @@ function BottomNavImpl({
       /* The hairline picks up the ambient mood tint (see index.css
          [data-mood]) — down here it reads faster than the header does,
          because a thumb-driven eye is already at the bottom of the screen. */
-      className="lg:hidden fixed bottom-0 inset-x-0 z-40 flex items-start gap-1 px-2 pt-2 border-t border-[color:var(--chrome-line)] bg-slate-950/95 backdrop-blur-2xl transition-colors duration-500 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]"
+      className="lg:hidden fixed bottom-0 inset-x-0 z-[60] flex items-start gap-1 px-2 pt-2 border-t border-[color:var(--chrome-line)] bg-slate-950/95 backdrop-blur-2xl transition-colors duration-500 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]"
     >
       {leading.map(renderTab)}
 

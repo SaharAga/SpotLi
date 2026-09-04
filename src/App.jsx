@@ -1130,6 +1130,7 @@ export function DashboardContent() {
       {/* Top Navbar */}
       <Navbar
         isDemoMode={isDemoMode}
+        activeModal={activeModal}
         onOpenAddModal={() => openModal(MODAL.ADD_EDIT)}
         onOpenSmartImport={() => openModal(MODAL.SMART_IMPORT)}
         onOpenAnalytics={() => openModal(MODAL.ANALYTICS)}
