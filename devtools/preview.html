@@ -45,6 +45,23 @@
     flex:1; display:flex; gap:40px; padding:32px 20px 48px;
     justify-content:center; align-items:flex-start; flex-wrap:wrap;
   }
+  /* Opening this file straight off disk is the easy mistake to make, and it
+     fails as two silent black rectangles — the iframes resolve against
+     file:// and load nothing. Say so, loudly, with the fix. */
+  .fatal{
+    display:none; margin:48px auto; max-width:640px; padding:24px 28px;
+    background:oklch(28% 0.09 25); border:1px solid oklch(55% 0.17 25);
+    border-radius:14px; color:var(--ink);
+  }
+  .fatal h2{margin:0 0 10px; font-size:16px}
+  .fatal p{margin:0 0 14px; color:var(--ink-2); font-size:14px}
+  .fatal pre{
+    margin:0; padding:12px 14px; border-radius:9px; overflow-x:auto;
+    background:oklch(16% 0.02 255); color:var(--ink);
+    font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:13px;
+  }
+  body.has-fatal main{display:none}
+  body.has-fatal .fatal{display:block}
   figure{margin:0; display:flex; flex-direction:column; align-items:center; gap:12px}
   figcaption{font-size:12px; color:var(--ink-2); letter-spacing:0.04em}
   figcaption b{color:var(--ink); font-weight:700}
@@ -104,6 +121,18 @@
   <span class="hint" id="status">HMR is live — edit a file and both frames update.</span>
   <button id="reload">Reload both</button>
 </header>
+
+<div class="fatal" id="fatal">
+  <h2 id="fatal-title">Open this through the dev server, not from disk</h2>
+  <p id="fatal-body">
+    The phone frames load the real app from the Vite dev server. Opened as a
+    <code>file://</code> path they have nothing to point at, so they render
+    black. Run the dev server and open it over http:
+  </p>
+  <pre>npm run dev
+# then open:
+http://localhost:5173/devtools/preview.html</pre>
+</div>
 
 <main>
   <figure>
@@ -212,14 +241,32 @@
 
   document.getElementById('reload').addEventListener('click', loadAll);
 
-  // The dev server restarting (or the app failing to boot) is the one failure
-  // worth surfacing here rather than leaving two silent black rectangles.
-  fetch(APP_URL, { method: 'HEAD' }).catch(function () {
-    status.textContent = 'Dev server unreachable — run npm run dev.';
-  });
+  function fatal(title, body) {
+    document.getElementById('fatal-title').textContent = title;
+    if (body) document.getElementById('fatal-body').textContent = body;
+    document.body.classList.add('has-fatal');
+  }
 
-  applySize();
-  loadAll();
+  // Checked before anything loads: over file:// the iframes cannot reach the
+  // app at all, and the previous fetch-based guard did not reliably fire
+  // there — it left two black rectangles and a status line still claiming
+  // HMR was live.
+  if (location.protocol !== 'http:' && location.protocol !== 'https:') {
+    fatal('Open this through the dev server, not from disk');
+  } else {
+    fetch(APP_URL, { method: 'HEAD' }).then(function (r) {
+      if (!r.ok) throw new Error(String(r.status));
+    }).catch(function () {
+      fatal(
+        'Dev server is not responding',
+        'This page loaded, but the app it frames did not answer at ' +
+        location.origin + APP_URL + '. Start the dev server and reload:'
+      );
+    });
+
+    applySize();
+    loadAll();
+  }
 })();
 </script>
 </body>
