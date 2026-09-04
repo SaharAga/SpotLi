@@ -221,7 +221,7 @@ function PackageCardImpl({
             <Package className="w-4 h-4" />
             {pkg.isPinned && (
               <Pin
-                className={`absolute -top-1 w-3 h-3 fill-blue-400 text-blue-400 ${isRTL ? '-left-1' : '-right-1'}`}
+                className="absolute -top-1 -end-1 w-3 h-3 fill-blue-400 text-blue-400"
                 aria-hidden="true"
               />
             )}
@@ -389,9 +389,9 @@ function PackageCardImpl({
                 <>
                   <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }} />
                   <div
-                    className={`absolute z-50 w-48 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl py-1 text-xs ${
+                    className={`absolute z-50 w-48 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl py-1 text-xs end-0 ${
                       menuFlipUp ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
-                    } ${isRTL ? 'left-0' : 'right-0'}`}
+                    }`}
                   >
                     <button
                       onClick={(e) => {

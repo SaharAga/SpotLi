@@ -399,7 +399,7 @@ export const translations = {
       timelineTitle: 'היסטוריית תחנות ועדכוני מעקב',
       noCheckpoints: 'טרם נרשמו תחנות מעקב. ניתן לקדם את השלב או להוסיף תחנה מדומה לבדיקה.',
       addCheckpointBtn: '+ הוסף עדכון מעקב',
-      advanceStageBtn: 'קדם לשלב הבא ➔',
+      advanceStageBtn: 'קדם לשלב הבא ←',
       quickUpdate: 'עדכון סטטוס מהיר',
       checkpointModalTitle: 'סימולציית עדכון מעקב / הוספת תחנה',
       checkpointTitle: 'כותרת העדכון',

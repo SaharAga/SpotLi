@@ -1222,6 +1222,8 @@ export function DashboardContent() {
         packages={packages}
       />
 
+      {/* Dismissable Top PWA Installation Banner */}
+      <InstallPwaBanner />
 
       {/* Main Container */}
       {/* `relative` with NO z-index on purpose. It only needs to paint above
@@ -1407,20 +1409,26 @@ export function DashboardContent() {
           bar landed. During alpha this is the app's only channel for hearing
           about anything broken, so it needs to actually be on screen: above
           the bar, clear of the safe-area inset, and on the opposite edge from
-          the centre FAB so the two do not compete. */}
-      <aside
-        aria-label={language === 'he' ? 'משוב אלפא' : 'Alpha feedback'}
-        className="fixed z-[61] end-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] lg:bottom-5 lg:end-5"
-      >
-        <button
-          onClick={() => openModal(MODAL.FEEDBACK)}
-          className="flex items-center gap-2 px-4 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-600/40 transition-colors cursor-pointer min-h-[48px] focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 focus:outline-none"
-          title={language === 'he' ? 'משוב ודיווח תקלות' : 'Feedback & Bug Report'}
-        >
-          <MessageSquarePlus className="w-4 h-4" aria-hidden="true" />
-          <span>{language === 'he' ? 'משוב' : 'Feedback'}</span>
-        </button>
-      </aside>
+          the centre FAB so the two do not compete.
+          Hidden inside the feedback screen itself and during sub-modals so it
+          never obscures modal content or forms. */}
+      {(!activeModal || activeModal === MODAL.ANALYTICS || activeModal === MODAL.ACTIVITY) &&
+        !isModalOpen(MODAL.FEEDBACK) &&
+        !isModalOpen(MODAL.ADMIN_FEEDBACK) && (
+          <aside
+            aria-label={language === 'he' ? 'משוב אלפא' : 'Alpha feedback'}
+            className="fixed z-40 end-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] lg:bottom-5 lg:end-5"
+          >
+            <button
+              onClick={() => openModal(MODAL.FEEDBACK)}
+              className="flex items-center gap-2 px-4 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-600/40 transition-colors cursor-pointer min-h-[48px] focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 focus:outline-none"
+              title={language === 'he' ? 'משוב ודיווח תקלות' : 'Feedback & Bug Report'}
+            >
+              <MessageSquarePlus className="w-4 h-4" aria-hidden="true" />
+              <span>{language === 'he' ? 'משוב' : 'Feedback'}</span>
+            </button>
+          </aside>
+        )}
 
       {/* Footer */}
       <footer className="border-t border-slate-900/80 bg-slate-950/60 py-6 mt-12 text-center text-xs text-slate-400">
@@ -1487,9 +1495,6 @@ export function DashboardContent() {
           </div>
         </aside>
       )}
-
-      {/* Floating PWA Installation Banner */}
-      <InstallPwaBanner />
 
       {/* Floating Toast Notification */}
       <Toast toast={toast} onClose={() => setToast(null)} />

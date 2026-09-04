@@ -204,4 +204,32 @@ describe('App - lazily loaded modals', () => {
 
     vi.doUnmock('./components/AboutModal');
   });
+
+  it('hides the floating alpha feedback button inside the feedback modal and restores it on close', async () => {
+    const user = userEvent.setup();
+    seedOnePackage();
+    renderWithLanguage(<DashboardContent />);
+
+    // Initially on home screen, floating feedback button is present
+    const feedbackFab = await screen.findByLabelText(/Alpha feedback|משוב אלפא/i);
+    expect(feedbackFab).toBeInTheDocument();
+
+    // Click the button inside to open feedback modal
+    await user.click(within(feedbackFab).getByRole('button'));
+
+    // Feedback modal is now open
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+
+    // Floating feedback button MUST NOT appear inside the feedback page
+    expect(screen.queryByLabelText(/Alpha feedback|משוב אלפא/i)).toBeNull();
+
+    // Close the feedback modal
+    const closeBtn = screen.getByRole('button', { name: /Cancel|ביטול/i });
+    await user.click(closeBtn);
+
+    // Floating feedback button is restored
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Alpha feedback|משוב אלפא/i)).toBeInTheDocument();
+    });
+  });
 });

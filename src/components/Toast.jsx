@@ -26,7 +26,7 @@ export function Toast({ toast, onClose }) {
       /* `end-6`, not `right-6`: this pinned to the bottom-RIGHT even in
          Hebrew. Bottom offset clears the fixed tab bar on mobile (the bar
          is lg:hidden, so the larger offset is mobile-only too). */
-      className="fixed bottom-[calc(6.5rem+env(safe-area-inset-bottom,0px))] lg:bottom-6 end-6 z-50 flex flex-col gap-2 max-w-sm w-full animate-bounce-in"
+      className="fixed bottom-[calc(6.5rem+env(safe-area-inset-bottom,0px))] lg:bottom-6 end-6 z-[90] flex flex-col gap-2 max-w-sm w-full animate-bounce-in"
       role={isError ? 'alert' : 'status'}
       aria-live={isError ? 'assertive' : 'polite'}
     >

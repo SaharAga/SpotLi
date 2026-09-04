@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatDate, formatDateTime, getDaysRemaining, todayISO } from './dateUtils';
+import { formatDate, formatDateTime, getDaysRemaining, todayISO, toLocalISODate } from './dateUtils';
 
 describe('Date Utilities', () => {
   it('formats dates consistently in EN and HE locales', () => {
@@ -52,8 +52,8 @@ describe('Date Utilities', () => {
     expect(formatDateTime('not-a-date')).toBe('not-a-date');
   });
 
-  it('todayISO() returns a YYYY-MM-DD string equal to the inlined expression', () => {
+  it('todayISO() returns a YYYY-MM-DD string equal to toLocalISODate', () => {
     expect(todayISO()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(todayISO()).toBe(new Date().toISOString().slice(0, 10));
+    expect(todayISO()).toBe(toLocalISODate(new Date()));
   });
 });

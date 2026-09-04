@@ -37,20 +37,20 @@ function StatsCardsImpl({ packages = [], activeFilter, onSelectFilter }) {
    *
    * These are still filters — the whole row is tappable, same ids as before.
    */
-  const needsYou = attention > 0;
-
   const cells = [
-    needsYou
-      ? { id: 'customs', count: attention, label: t('stats.customs'), tone: 'text-rose-400', lead: true }
-      : { id: 'transit', count: transit, label: t('stats.inTransit'), tone: 'text-slate-100', lead: true },
-    needsYou
-      ? { id: 'transit', count: transit, label: t('stats.inTransit'), tone: 'text-slate-100' }
-      : { id: 'all', count: total, label: t('stats.total'), tone: 'text-slate-100' },
+    { id: 'all', count: total, label: t('stats.total'), tone: 'text-slate-100' },
+    { id: 'transit', count: transit, label: t('stats.inTransit'), tone: 'text-blue-400' },
+    {
+      id: 'customs',
+      count: attention,
+      label: t('stats.customs'),
+      tone: attention > 0 ? 'text-rose-400' : 'text-slate-400'
+    },
     { id: 'delivered', count: delivered, label: t('stats.delivered'), tone: 'text-slate-400' }
   ];
 
   return (
-    <div className="flex items-start gap-4 sm:gap-6 my-5 sm:my-6">
+    <div className="flex items-start gap-2.5 sm:gap-6 my-5 sm:my-6">
       {cells.map((cell) => {
         const isActive = activeFilter === cell.id;
         return (
@@ -59,13 +59,11 @@ function StatsCardsImpl({ packages = [], activeFilter, onSelectFilter }) {
             onClick={() => onSelectFilter(cell.id)}
             aria-current={isActive ? 'true' : undefined}
             className={`flex-1 min-w-0 flex flex-col items-start gap-1 text-start rounded-xl px-1 py-1 min-h-[48px] cursor-pointer transition-opacity focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none ${
-              isActive ? 'opacity-100' : 'opacity-90 hover:opacity-100'
+              isActive ? 'opacity-100' : 'opacity-80 hover:opacity-100'
             }`}
           >
             <span
-              className={`font-semibold leading-none tracking-tight [font-variant-numeric:tabular-nums] ${cell.tone} ${
-                cell.lead ? 'text-4xl' : 'text-2xl'
-              }`}
+              className={`font-semibold leading-none tracking-tight [font-variant-numeric:tabular-nums] ${cell.tone} text-2xl sm:text-3xl`}
             >
               {cell.count}
             </span>
