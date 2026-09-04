@@ -390,7 +390,7 @@ export function SmartImportModal({
             ? 'הדבק טקסט, הודעת SMS או אימייל לחילוץ פרטי משלוח'
             : 'Paste text, SMS message, or confirmation email to extract details'}
           onClose={onClose}
-          closeLabel={language === 'he' ? 'סגור' : 'Close'}
+          closeLabel={language === 'he' ? 'חזרה' : 'Back'}
         />
 
         {/* Body */}

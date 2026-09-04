@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { screen, cleanup } from '@testing-library/react';
+import { screen, cleanup, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AccountModal } from './AccountModal';
 import { renderWithLanguage } from '../test-utils/renderWithProviders';
@@ -79,7 +79,6 @@ function renderModal(props = {}) {
   return renderWithLanguage(
     <AccountModal
       isOpen
-      initialTab="data"
       onClose={vi.fn()}
       packages={[UNREPAIRED_PACKAGE]}
       {...props}
@@ -88,7 +87,7 @@ function renderModal(props = {}) {
 }
 
 async function clickBackup() {
-  const button = screen.getByRole('button', { name: /Download Full Backup \(JSON\)/i });
+  const button = screen.getByRole('button', { name: /Download full backup/i });
   await userEvent.click(button);
 }
 
@@ -236,8 +235,11 @@ describe('AccountModal — notification preference failures', () => {
       throw Object.assign(new Error('QuotaExceededError'), { name: 'QuotaExceededError' });
     });
 
-    const toggles = screen.getAllByRole('checkbox');
-    await userEvent.click(toggles[0]);
+    // Every section renders at once now, so pick the notification toggle by
+    // its own row rather than by position among all the switches on the page.
+    const section = document.querySelector('[data-section="notifications"]');
+    const toggle = within(section).getAllByRole('checkbox')[0];
+    await userEvent.click(toggle);
 
     expect(onShowToast).toHaveBeenCalledWith(
       expect.stringContaining('Could not save notification settings'),
@@ -274,14 +276,15 @@ describe('AccountModal — preferred navigation app', () => {
     renderWithLanguage(
       <AccountModal
         isOpen
-        initialTab="preferences"
         onClose={vi.fn()}
         onShowToast={onShowToast}
       />
     );
 
-    const navSelect = screen.getByDisplayValue(/Always Ask/i);
-    await user.selectOptions(navSelect, 'waze');
+    // A row that shows its value and opens a picker, not an inline select:
+    // one geometry for every setting is what makes the list read as one screen.
+    await user.click(screen.getByRole('button', { name: /Navigation app/i }));
+    await user.click(screen.getByRole('button', { name: /Waze/i }));
 
     expect(localStorage.getItem('deliveree_preferred_nav_app')).toBe('waze');
     expect(onShowToast).toHaveBeenCalledWith(

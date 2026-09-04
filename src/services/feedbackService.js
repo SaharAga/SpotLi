@@ -73,8 +73,16 @@ export function validateAndSanitizeFeedback(input) {
     throw new Error('Feedback message is required and cannot be empty');
   }
 
+  // A rating is optional and separate from the report itself. Defaulting an
+  // unrated bug report to 5 did not record "no opinion", it recorded a top
+  // score nobody gave — which inflates every average computed downstream.
+  // Unrated documents omit the field entirely rather than carrying a
+  // placeholder; the stats below already skip a non-numeric rating.
   const rawRating = Number(input.rating);
-  const rating = (!Number.isNaN(rawRating) && rawRating >= 1 && rawRating <= 5) ? Math.round(rawRating) : 5;
+  const rating = (input.rating !== null && input.rating !== undefined && input.rating !== ''
+    && !Number.isNaN(rawRating) && rawRating >= 1 && rawRating <= 5)
+    ? Math.round(rawRating)
+    : null;
 
   // Strict complete anonymity: Zero user tracking, no UID, name or email extraction
   const isAnonymous = true;
@@ -115,7 +123,6 @@ export function validateAndSanitizeFeedback(input) {
     status: 'pending',
     type,
     message,
-    rating,
     isAnonymous,
     appVersion,
     buildChannel,
@@ -124,6 +131,7 @@ export function validateAndSanitizeFeedback(input) {
     screenWidth,
     screenHeight,
     timestamp,
+    ...(rating !== null ? { rating } : {}),
     ...(screenshot ? { screenshot } : {})
   };
 }

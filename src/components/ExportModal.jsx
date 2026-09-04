@@ -110,7 +110,7 @@ export function ExportModal({
             ? 'דוחות לאקסל, JSON והדפסה — לצפייה, לא לשחזור'
             : 'Excel, JSON & printable reports — for reading, not restoring'}
           onClose={onClose}
-          closeLabel={language === 'he' ? 'סגור' : 'Close'}
+          closeLabel={language === 'he' ? 'חזרה' : 'Back'}
         />
 
         {/* Modal Body */}

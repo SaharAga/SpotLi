@@ -39,6 +39,7 @@ const FeedbackModal = lazyModal(() => import('./components/FeedbackModal'), 'Fee
 const AdminFeedbackModal = lazyModal(() => import('./components/AdminFeedbackModal'), 'AdminFeedbackModal');
 const ExportModal = lazyModal(() => import('./components/ExportModal'), 'ExportModal');
 const LockerMapModal = lazyModal(() => import('./components/LockerMapModal'), 'LockerMapModal');
+const ActivityModal = lazyModal(() => import('./components/ActivityModal'), 'ActivityModal');
 const DeleteConfirmDialog = lazyModal(() => import('./components/DeleteConfirmDialog'), 'DeleteConfirmDialog');
 const AutoArchivePromptModal = lazyModal(() => import('./components/AutoArchivePromptModal'), 'AutoArchivePromptModal');
 const NavigationChoiceModal = lazyModal(() => import('./components/NavigationChoiceModal'), 'NavigationChoiceModal');
@@ -80,6 +81,7 @@ export const MODAL = {
   ACCOUNT: 'account',
   EXPORT: 'export',
   LOCKER_MAP: 'lockerMap',
+  ACTIVITY: 'activity',
   ABOUT: 'about',
   FEEDBACK: 'feedback',
   ADMIN_FEEDBACK: 'adminFeedback',
@@ -1062,6 +1064,21 @@ export function DashboardContent() {
       )
     },
     {
+      id: MODAL.ACTIVITY,
+      componentName: 'ActivityModal',
+      render: (isOpen) => (
+        <ActivityModal
+          isOpen={isOpen}
+          onClose={() => closeModal(MODAL.ACTIVITY)}
+          packages={packages}
+          onOpenPackage={(id) => {
+            const target = packages.find((p) => p.id === id);
+            if (target) handleOpenDetails(target);
+          }}
+        />
+      )
+    },
+    {
       id: MODAL.NAVIGATION_CHOICE,
       componentName: 'NavigationChoiceModal',
       render: (isOpen, payload) => (
@@ -1193,7 +1210,6 @@ export function DashboardContent() {
             openModal(MODAL.AUTH, { initialMode: 'signin' });
           }
         }}
-        onOpenSettings={() => openModal(MODAL.ACCOUNT, { initialTab: 'preferences' })}
         onOpenAbout={() => openModal(MODAL.ABOUT)}
         onOpenFeedback={() => openModal(MODAL.FEEDBACK)}
         onOpenAdminFeedback={isAdminUser(user) ? () => openModal(MODAL.ADMIN_FEEDBACK) : undefined}
@@ -1203,6 +1219,7 @@ export function DashboardContent() {
         onImportData={handleImportData}
         onResetData={handleResetData}
         onShowToast={showToast}
+        packages={packages}
       />
 
 
@@ -1384,15 +1401,24 @@ export function DashboardContent() {
         )}
       </main>
 
-      {/* Floating Alpha Feedback Button */}
-      <aside aria-label="Alpha Feedback" className={`fixed z-30 bottom-5 ${isRTL ? 'left-5' : 'right-5'}`}>
+      {/* Floating Alpha Feedback Button.
+          It sat at z-30, bottom-5 — directly behind the bottom tab bar
+          (z-[60]) — so on a phone it had been completely invisible since the
+          bar landed. During alpha this is the app's only channel for hearing
+          about anything broken, so it needs to actually be on screen: above
+          the bar, clear of the safe-area inset, and on the opposite edge from
+          the centre FAB so the two do not compete. */}
+      <aside
+        aria-label={language === 'he' ? 'משוב אלפא' : 'Alpha feedback'}
+        className="fixed z-[61] end-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] lg:bottom-5 lg:end-5"
+      >
         <button
           onClick={() => openModal(MODAL.FEEDBACK)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white text-xs font-bold shadow-xl shadow-indigo-600/30 hover:scale-105 transition-all cursor-pointer min-h-[48px]"
+          className="flex items-center gap-2 px-4 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-600/40 transition-colors cursor-pointer min-h-[48px] focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 focus:outline-none"
           title={language === 'he' ? 'משוב ודיווח תקלות' : 'Feedback & Bug Report'}
         >
-          <MessageSquarePlus className="w-4 h-4" />
-          <span>{language === 'he' ? 'משוב אלפא' : 'Feedback'}</span>
+          <MessageSquarePlus className="w-4 h-4" aria-hidden="true" />
+          <span>{language === 'he' ? 'משוב' : 'Feedback'}</span>
         </button>
       </aside>
 

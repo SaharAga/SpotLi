@@ -1,9 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import {
-  X, MessageSquarePlus, Send,
-  Bug, Lightbulb, Heart, Smartphone, ShieldCheck,
-  ImagePlus, Trash2, Loader2
-} from 'lucide-react';
+import { X, MessageSquarePlus, Send, Bug, Lightbulb, Heart, Smartphone, ShieldCheck, ImagePlus, Trash2, Loader2, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { submitFeedback } from '../services/feedbackService';
 import {
@@ -22,7 +18,8 @@ export function FeedbackModal({
 
   const [feedbackType, setFeedbackType] = useState('bug'); // 'bug' | 'feature' | 'praise'
   const [message, setMessage] = useState('');
-  const [rating, setRating] = useState(5);
+  const [rating, setRating] = useState(null);
+  const [askedAboutRating, setAskedAboutRating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [screenshot, setScreenshot] = useState(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
@@ -76,6 +73,19 @@ export function FeedbackModal({
       if (onShowToast) onShowToast(
         language === 'he' ? 'נא לכתוב תוכן למשוב' : 'Please enter feedback text',
         'error'
+      );
+      return;
+    }
+
+    // Rating stays optional. Ask once, so someone who meant to score is not
+    // silently dropped, then send whatever they chose — including nothing.
+    if (rating === null && !askedAboutRating) {
+      setAskedAboutRating(true);
+      if (onShowToast) onShowToast(
+        language === 'he'
+          ? 'לא בחרת דירוג. שלח שוב כדי לשלוח בלי דירוג, או בחר כוכבים.'
+          : 'No rating chosen. Submit again to send without one, or pick a rating.',
+        'info'
       );
       return;
     }
@@ -143,7 +153,7 @@ export function FeedbackModal({
     >
         {/* Header */}
         <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-600/10">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-1 min-w-0 items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/20">
               <MessageSquarePlus className="w-5 h-5" />
             </div>
@@ -158,10 +168,10 @@ export function FeedbackModal({
           </div>
           <button
             onClick={onClose}
-            className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
-            aria-label="Close"
+            className="order-first me-3 p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
+            aria-label="Back"
           >
-            <X className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5 rtl:rotate-180" aria-hidden="true" />
           </button>
         </div>
 
@@ -214,27 +224,6 @@ export function FeedbackModal({
             </div>
           </div>
 
-          {/* Rating */}
-          <div>
-            <label className="block text-xs font-bold text-slate-300 mb-1.5">
-              {language === 'he' ? 'דירוג חוויית השימוש שלך' : 'Rate Your Experience'}
-            </label>
-            <div className="flex items-center justify-between gap-2 p-2 bg-slate-950 rounded-2xl border border-slate-800">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  onClick={() => setRating(star)}
-                  className={`flex-1 py-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-                    rating >= star ? 'bg-amber-500 text-slate-950' : 'bg-slate-900 text-slate-500'
-                  }`}
-                >
-                  ★ {star}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Description Textarea */}
           <div>
             <label className="block text-xs font-bold text-slate-300 mb-1.5">
@@ -259,6 +248,30 @@ export function FeedbackModal({
                 : 'Tip: you can paste a screenshot straight into the box (Ctrl+V).'}
             </p>
           </div>
+
+          {/* Rating */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1.5">
+              {language === 'he' ? 'דירוג חוויית השימוש (רשות)' : 'Rate your experience (optional)'}
+            </label>
+            <div className="flex items-center justify-between gap-1.5">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setRating((r) => (r === star ? null : star))}
+                  className={`flex-1 py-1.5 rounded-lg font-bold text-xs transition-all cursor-pointer border ${
+                    rating !== null && rating >= star
+                      ? 'bg-amber-500/15 text-amber-300 border-amber-500/40'
+                      : 'bg-slate-900/60 text-slate-600 border-slate-800'
+                  }`}
+                >
+                  ★ {star}
+                </button>
+              ))}
+            </div>
+          </div>
+
 
           {/* Screenshot attachment */}
           <div>

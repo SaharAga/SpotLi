@@ -97,9 +97,14 @@ service cloud.firestore {
         request.resource.data.status is string &&
         request.resource.data.status == 'pending' &&
         request.resource.data.type in ['bug', 'feature', 'praise'] &&
-        request.resource.data.rating is number &&
-        request.resource.data.rating >= 1 &&
-        request.resource.data.rating <= 5 &&
+        // Rating is OPTIONAL: it is a separate mechanism from the report, and
+        // a bug report submitted without one omits the field rather than
+        // carrying a placeholder score. Still bounded 1..5 when present.
+        (!('rating' in request.resource.data.keys()) || (
+          request.resource.data.rating is number &&
+          request.resource.data.rating >= 1 &&
+          request.resource.data.rating <= 5
+        )) &&
         request.resource.data.isAnonymous is bool &&
         request.resource.data.isAnonymous == true &&
         request.resource.data.appVersion is string && request.resource.data.appVersion.size() <= 30 &&

@@ -108,7 +108,7 @@ describe('AdminDashboardModal Component Tests', () => {
     const handleClose = vi.fn();
     renderDashboard({ onClose: handleClose });
 
-    const closeBtn = screen.getByLabelText('Close');
+    const closeBtn = screen.getByLabelText('Back');
     fireEvent.click(closeBtn);
     expect(handleClose).toHaveBeenCalledTimes(1);
   });

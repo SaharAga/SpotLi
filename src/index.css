@@ -177,6 +177,21 @@
     --stg-font: 'Atkinson Hyperlegible', var(--font-sans);
   }
 
+  /* Inline in the Account tab the sections are part of that page, not a
+     surface of their own: same typeface as everything around them, and card
+     fills that match the tab's own rows (slate-900 on slate-950) rather than
+     the lighter slate-800 the standalone modal used. Those two differences
+     were the whole reason the merged settings read as borrowed from another
+     app. */
+  .settings-theme.settings-inline {
+    --stg-font: var(--font-sans);
+  }
+
+  .dark .settings-theme.settings-inline {
+    --stg-surface-2: var(--color-slate-900);
+    --stg-surface: var(--color-slate-950);
+  }
+
   .dark .settings-theme {
     --stg-bg: var(--color-slate-950);
     --stg-surface: var(--color-slate-900);

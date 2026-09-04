@@ -71,11 +71,17 @@ describe('IngestionGuideModal Component Tests', () => {
       expect(screen.getByText(/Connect Gmail|חבר Gmail/i)).toBeTruthy();
     });
     expect(screen.getByText(/Connect Outlook|חבר Outlook/i)).toBeTruthy();
+    // The forwarding address now lives behind the fallback disclosure —
+    // it is the backup for people who cannot connect an inbox above, so it
+    // no longer competes with the one-tap buttons.
+    expect(screen.queryByText(/233b362d7b331adfde6e\+usr_testuser123@cloudmailin\.net/i)).toBeNull();
+    fireEvent.click(screen.getByText(/Don't use Gmail or Outlook\?|אין לך Gmail או Outlook\?/i));
     expect(screen.getByText(/233b362d7b331adfde6e\+usr_testuser123@cloudmailin\.net/i)).toBeTruthy();
   });
 
   it('switches between interactive provider setup guides smoothly', () => {
     renderModal();
+    fireEvent.click(screen.getByText(/Don't use Gmail or Outlook\?|אין לך Gmail או Outlook\?/i));
 
     // Click Outlook tab
     const outlookTab = screen.getByText(/Outlook \/ Hotmail/i);
@@ -175,7 +181,7 @@ describe('IngestionGuideModal Component Tests', () => {
     const handleClose = vi.fn();
     renderModal({ onClose: handleClose });
 
-    const closeBtn = screen.getByLabelText('Close');
+    const closeBtn = screen.getByLabelText('Back');
     fireEvent.click(closeBtn);
     expect(handleClose).toHaveBeenCalledTimes(1);
   });

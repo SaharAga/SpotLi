@@ -1,10 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  X, MessageSquare, Star, Trash2, Bug, Lightbulb, Heart,
-  RefreshCw, CloudOff, Cloud, AlertTriangle, ShieldCheck,
-  TrendingDown, TrendingUp, BarChart3, Activity, Download,
-  Cpu, Smartphone, Search, Filter, Layers, CheckCircle2
-} from 'lucide-react';
+import { X, MessageSquare, Star, Trash2, Bug, Lightbulb, Heart, RefreshCw, CloudOff, Cloud, AlertTriangle, ShieldCheck, TrendingDown, TrendingUp, BarChart3, Activity, Download, Cpu, Smartphone, Search, Filter, Layers, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { isAdminUser } from '../constants/admin';
@@ -230,7 +225,14 @@ export function AdminDashboardModal({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <button
+            onClick={onClose}
+            className="shrink-0 me-3 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
+            aria-label="Back"
+          >
+            <ArrowLeft className="w-5 h-5 rtl:rotate-180" aria-hidden="true" />
+          </button>
+          <div className="flex flex-1 min-w-0 items-center gap-2">
             {isAdmin && (
               <button
                 onClick={loadAllTelemetry}
@@ -242,13 +244,6 @@ export function AdminDashboardModal({
                 <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
               </button>
             )}
-            <button
-              onClick={onClose}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5" />
-            </button>
           </div>
         </div>
 

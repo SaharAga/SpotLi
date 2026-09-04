@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  X, ExternalLink, Copy, Check, Calendar, MapPin, Plus, 
-  Truck, Clock, RefreshCw, Info, RotateCcw, Edit3, AlertCircle, ChevronDown, ChevronUp, Flag, Maximize2, Layers, Phone, Trash2
-} from 'lucide-react';
+import { X, ExternalLink, Copy, Check, Calendar, MapPin, Plus, Truck, Clock, RefreshCw, Info, RotateCcw, Edit3, AlertCircle, ChevronDown, ChevronUp, Flag, Maximize2, Layers, Phone, Trash2, ArrowLeft } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { getCarrier } from '../types/carriers';
 import { detectStore } from '../utils/storeDetector';
@@ -314,7 +311,14 @@ export function PackageDetailModal({
             <Title className="mt-2 text-xl sm:text-2xl">{itemTitle}</Title>
           </div>
 
-          <div className="flex items-center gap-2">
+          <button
+            onClick={onClose}
+            className="shrink-0 me-3 p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
+            aria-label={language === 'he' ? 'חזרה' : 'Back'}
+          >
+            <ArrowLeft className="w-5 h-5 rtl:rotate-180" aria-hidden="true" />
+          </button>
+          <div className="flex flex-1 min-w-0 items-center gap-2">
             {onEdit && (
               <button
                 type="button"
@@ -342,13 +346,6 @@ export function PackageDetailModal({
                 <span className="text-xs font-semibold">{language === 'he' ? 'מחיקה' : 'Delete'}</span>
               </button>
             )}
-            <button
-              onClick={onClose}
-              className="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
-              aria-label={t('common.close') || 'Close'}
-            >
-              <X className="w-5 h-5" />
-            </button>
           </div>
         </div>
 

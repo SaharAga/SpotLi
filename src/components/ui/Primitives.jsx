@@ -168,30 +168,70 @@ export function Card({ children, className = '', tone }) {
   );
 }
 
-/** Modal header: title, optional subtitle, and a close that is a real target. */
-export function ModalHeader({ title, subtitle, onClose, closeLabel = 'Close', actions }) {
+/**
+ * Back, not close.
+ *
+ * An X says "this is a window over what you were doing"; a back arrow says
+ * "you are one level into something". Inner pages — About inside Account,
+ * Export inside Account, a package inside Status — are the latter, and the X
+ * was a large part of why they still read as popups after they became
+ * full-screen.
+ *
+ * The arrow is a directional icon, so it mirrors in RTL. Non-directional
+ * icons (package, user, search) must NOT be flipped — see the bilingual rule
+ * in the UI/UX protocol.
+ */
+export function BackButton({ onClick, label, className = '' }) {
   return (
-    <div className="flex items-start gap-3 p-4 sm:p-6 border-b border-slate-800">
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className={`inline-flex items-center justify-center min-h-[48px] min-w-[48px] rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-slate-100 border border-slate-800 hover:border-slate-700 transition-colors cursor-pointer ${FOCUS} ${className}`}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="w-5 h-5 rtl:rotate-180"
+        aria-hidden="true"
+      >
+        <path d="m15 18-6-6 6-6" />
+      </svg>
+    </button>
+  );
+}
+
+/** Modal header: title, optional subtitle, and a back control. */
+/**
+ * One way back, in one place: a back arrow on the LEADING edge — left in
+ * English, right in Hebrew, which `rtl:rotate-180` and normal flow give us for
+ * free.
+ *
+ * This used to show a back arrow on mobile and an X on desktop, which produced
+ * two problems at once. `hidden lg:inline-flex` silently lost to the
+ * `inline-flex` already in IconButton's own base classes, so phones got BOTH
+ * controls; and even working as intended, a screen that is reached by
+ * navigating deserves the same affordance at every width. An X means "dismiss
+ * this thing on top of the page" — these are pages.
+ */
+export function ModalHeader({ title, subtitle, onClose, closeLabel = 'Back', actions }) {
+  return (
+    <div className="flex items-center gap-3 p-4 sm:p-6 border-b border-slate-800">
+      {onClose && <BackButton onClick={onClose} label={closeLabel} className="shrink-0" />}
       <div className="min-w-0 flex-1 flex flex-col gap-1">
         <Title>{title}</Title>
         {subtitle && <p className="text-sm text-slate-400 leading-relaxed">{subtitle}</p>}
       </div>
       {actions}
-      {onClose && (
-        <IconButton icon={CloseIcon} label={closeLabel} onClick={onClose} className="shrink-0" />
-      )}
     </div>
   );
 }
 
-function CloseIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" {...props}>
-      <path d="M18 6 6 18" />
-      <path d="m6 6 12 12" />
-    </svg>
-  );
-}
 
 /** Footer action bar. Primary action last in DOM so it lands under the thumb. */
 export function ModalFooter({ children, className = '' }) {
@@ -199,5 +239,93 @@ export function ModalFooter({ children, className = '' }) {
     <div className={`flex items-center gap-2.5 p-4 sm:p-6 border-t border-slate-800 ${className}`}>
       {children}
     </div>
+  );
+}
+
+/**
+ * The single row shape every Account-tab list uses.
+ *
+ * One geometry for all of them — 52px, icon, label, optional trailing value,
+ * optional trailing control — is what makes a list read as one screen. The
+ * settings sections used to be bordered cards with label-above-value grids and
+ * inset selects, which is why they looked borrowed from another app even once
+ * their colours matched.
+ *
+ * A row with `onClick` and no `control` is a destination: it shows its current
+ * value and a chevron, and opens a Picker. A row with a `control` owns its
+ * value in place (a switch), so it gets no chevron and does not swallow the
+ * control's own clicks.
+ */
+export function SettingRow({ icon: Icon, label, value, hint, onClick, control, tone = 'default', disabled }) {
+  const tones = {
+    default: 'text-slate-100',
+    danger: 'text-rose-400',
+    accent: 'text-blue-400'
+  };
+  const iconTones = {
+    default: 'text-slate-400',
+    danger: 'text-rose-400',
+    accent: 'text-blue-400'
+  };
+  const base = `w-full flex items-center gap-3 min-h-[52px] px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-start ${
+    onClick && !disabled ? 'hover:bg-slate-800 hover:border-slate-700 transition-colors cursor-pointer' : ''
+  } ${FOCUS}`;
+
+  const body = (
+    <>
+      {Icon && <Icon className={`w-4 h-4 shrink-0 ${iconTones[tone]}`} aria-hidden="true" />}
+      <span className="flex-1 min-w-0">
+        <span className={`block text-sm font-bold truncate ${tones[tone] || tones.default}`}>{label}</span>
+        {hint && <span className="block text-xs text-slate-500 truncate mt-0.5">{hint}</span>}
+      </span>
+      {value && <span className="shrink-0 text-sm text-slate-400 max-w-[45%] truncate">{value}</span>}
+      {control}
+      {onClick && !control && (
+        <svg
+          viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"
+          strokeLinecap="round" strokeLinejoin="round"
+          className="w-4 h-4 shrink-0 text-slate-600 rtl:rotate-180" aria-hidden="true"
+        >
+          <path d="m9 18 6-6-6-6" />
+        </svg>
+      )}
+    </>
+  );
+
+  // Interactivity follows `onClick`, not the presence of a control: a picker
+  // option carries a checkmark AND has to be clickable. A row whose control is
+  // itself interactive (a Toggle) passes no onClick, so it stays a plain div
+  // and never nests one interactive element inside another.
+  if (!onClick) {
+    return <div className={base}>{body}</div>;
+  }
+  return (
+    <button type="button" onClick={onClick} disabled={disabled} className={base}>
+      {body}
+    </button>
+  );
+}
+
+/** The switch a SettingRow carries when it owns its value in place. */
+export function Toggle({ checked, onChange, disabled, label }) {
+  return (
+    <label className="relative inline-flex items-center cursor-pointer shrink-0">
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        onChange={onChange}
+        aria-label={label}
+        className="sr-only peer"
+      />
+      <span className="w-11 h-6 rounded-full bg-slate-700 peer-checked:bg-blue-500 peer-focus-visible:ring-2 peer-focus-visible:ring-blue-500 peer-disabled:opacity-50 transition-colors" />
+      {/* inset-inline-start, not a translate + rtl: pair — it already flips
+          with `dir`, so one conditional class is correct both ways. */}
+      <span
+        className={`absolute top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white shadow transition-[inset-inline-start] duration-150 ${
+          checked ? 'start-[22px]' : 'start-[2px]'
+        }`}
+      />
+    </label>
   );
 }
