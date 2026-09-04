@@ -9,7 +9,7 @@ import {
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
-import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 
 /**
  * Firebase Client Configuration.
@@ -85,6 +85,12 @@ export const functionsInstance = app ? getFunctions(app) : null;
  * it rejects requests that don't come from this app's real build, without
  * requiring sign-in.
  *
+ * reCAPTCHA ENTERPRISE, not the classic v3 provider: Firebase deprecated
+ * classic reCAPTCHA for App Check, and its console now refuses to register a
+ * web app with one. The env var keeps its name so nothing else has to change;
+ * the value is an Enterprise key ID from Google Cloud, which has no secret
+ * half — the key ID is public and ships in the bundle by design.
+ *
  * Optional and gated on VITE_RECAPTCHA_V3_SITE_KEY so a build with no key
  * behaves exactly as before — App Check simply isn't initialized. Setting up
  * the site key and turning on enforcement is a Firebase console step outside
@@ -103,7 +109,7 @@ if (app && recaptchaSiteKey) {
 
   try {
     initializeAppCheck(app, {
-      provider: new ReCaptchaV3Provider(recaptchaSiteKey),
+      provider: new ReCaptchaEnterpriseProvider(recaptchaSiteKey),
       isTokenAutoRefreshEnabled: true
     });
   } catch (err) {
