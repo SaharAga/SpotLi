@@ -23,6 +23,10 @@ const geminiApiKey = defineSecret('GEMINI_API_KEY');
 // endpoint — see gmailPushHandler.js for why. Set on the Pub/Sub push
 // subscription's endpoint URL as `?token=<value>`.
 const gmailPushToken = defineSecret('GMAIL_PUSH_TOKEN');
+// Shared secret that authorizes the inbound-email forwarding webhook
+// (CloudMailin/SendGrid/Mailgun/Postmark). Configured as `?token=<value>`
+// on the provider's webhook URL and checked in inboundEmailHandler.js.
+const inboundEmailToken = defineSecret('INBOUND_EMAIL_TOKEN');
 // Web Push VAPID keypair — generate once with `npx web-push generate-vapid-keys`,
 // store the private half as a secret, the public half also goes in the
 // client's VITE_VAPID_PUBLIC_KEY (it's not sensitive, just an EC public key).
@@ -70,12 +74,15 @@ export const parseWithAi = onCall(
 export const inboundEmailWebhook = onRequest(
   {
     cors: false,
+    secrets: [inboundEmailToken],
     timeoutSeconds: 30,
     memory: '256MiB'
   },
-  createInboundEmailHandler({
-    db: getFirestore()
-  })
+  (req, res) =>
+    createInboundEmailHandler({
+      db: getFirestore(),
+      webhookToken: inboundEmailToken.value()
+    })(req, res)
 );
 
 /**
