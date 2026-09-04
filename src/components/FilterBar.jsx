@@ -171,6 +171,37 @@ export function FilterBar({
               isRTL ? 'left-0' : 'right-0'
             }`}
           >
+            {/* View mode. It lived in the top bar beside search, which put a
+                preference you set once next to a control you use constantly.
+                It belongs with the other settings. */}
+            <div>
+              <label className="block text-xs font-bold text-slate-400 mb-1.5">{t('filters.gridView')} / {t('filters.tableView')}</label>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onViewModeChange('grid')}
+                  aria-label={t('filters.gridView')}
+                  aria-pressed={viewMode === 'grid'}
+                  className={`flex-1 flex items-center justify-center gap-2 min-h-[48px] rounded-xl text-xs font-bold transition-colors ${
+                    viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-slate-950 border border-slate-800 text-slate-300 hover:bg-slate-800'
+                  }`}
+                >
+                  <LayoutGrid className="w-4 h-4" aria-hidden="true" />
+                  <span>{t('filters.gridView')}</span>
+                </button>
+                <button
+                  onClick={() => onViewModeChange('table')}
+                  aria-label={t('filters.tableView')}
+                  aria-pressed={viewMode === 'table'}
+                  className={`flex-1 flex items-center justify-center gap-2 min-h-[48px] rounded-xl text-xs font-bold transition-colors ${
+                    viewMode === 'table' ? 'bg-blue-600 text-white' : 'bg-slate-950 border border-slate-800 text-slate-300 hover:bg-slate-800'
+                  }`}
+                >
+                  <List className="w-4 h-4" aria-hidden="true" />
+                  <span>{t('filters.tableView')}</span>
+                </button>
+              </div>
+            </div>
+
             <div>
               <label className="block text-xs font-bold text-slate-400 mb-1.5">{t('filters.status')}</label>
               <div className="flex flex-col gap-1">

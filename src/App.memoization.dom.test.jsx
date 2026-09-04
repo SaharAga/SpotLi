@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { screen, cleanup, waitFor } from '@testing-library/react';
+import { screen, cleanup, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DashboardContent } from './App';
 import { renderWithLanguage } from './test-utils/renderWithProviders';
@@ -162,6 +162,11 @@ describe('App - typing in the search box does not re-render the package list', (
 
     expect(await screen.findByText('Memo Parcel One')).toBeInTheDocument();
 
+    // View mode moved into the filters panel, so it has to be opened first.
+    // Scoped to the filter bar: the bottom tab bar also has a "Status" control.
+    await userEvent.click(
+      within(screen.getByTestId('filter-bar')).getByLabelText(/סטטוס|Status/i)
+    );
     await userEvent.click(screen.getByLabelText('Table'));
     expect(await screen.findByRole('table')).toBeInTheDocument();
 
