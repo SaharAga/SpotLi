@@ -1,4 +1,5 @@
 /** @vitest-environment jsdom */
+import React from 'react';
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { detectSystemLanguage } from './LanguageContext';
 
@@ -53,5 +54,41 @@ describe('detectSystemLanguage', () => {
   it('ignores non-string entries without throwing', () => {
     setLanguages([null, undefined, 'en'], 'en');
     expect(detectSystemLanguage()).toBe('en');
+  });
+});
+
+describe('?lang= URL override', () => {
+  const withSearch = async (search) => {
+    window.history.replaceState({}, '', search ? `/?${search}` : '/');
+    vi.resetModules();
+    const { LanguageProvider } = await import('./LanguageContext');
+    const { render } = await import('@testing-library/react');
+    render(<LanguageProvider><span>x</span></LanguageProvider>);
+    return document.documentElement.lang;
+  };
+
+  afterEach(() => {
+    window.history.replaceState({}, '', '/');
+    localStorage.clear();
+  });
+
+  it('wins over a stored preference', async () => {
+    localStorage.setItem('deliveree_lang', 'en');
+    expect(await withSearch('lang=he')).toBe('he');
+  });
+
+  it('works in the other direction too', async () => {
+    localStorage.setItem('deliveree_lang', 'he');
+    expect(await withSearch('lang=en')).toBe('en');
+  });
+
+  it('ignores an unsupported value and falls back to the stored preference', async () => {
+    localStorage.setItem('deliveree_lang', 'he');
+    expect(await withSearch('lang=fr')).toBe('he');
+  });
+
+  it('falls through to the stored preference when absent', async () => {
+    localStorage.setItem('deliveree_lang', 'he');
+    expect(await withSearch('')).toBe('he');
   });
 });

@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Deliveree · device preview</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --bg: oklch(15% 0.02 255);
+    --panel: oklch(21% 0.025 255);
+    --line: oklch(30% 0.03 255);
+    --ink: oklch(96% 0.01 255);
+    --ink-2: oklch(72% 0.025 255);
+    --accent: oklch(74% 0.145 289);
+    --font: 'Atkinson Hyperlegible', ui-sans-serif, system-ui, sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--font); font-size:14px; line-height:1.5;
+    min-height:100vh; display:flex; flex-direction:column;
+  }
+  header{
+    position:sticky; top:0; z-index:10;
+    display:flex; flex-wrap:wrap; align-items:center; gap:14px;
+    padding:12px 20px; background:var(--panel);
+    border-bottom:1px solid var(--line);
+  }
+  h1{font-size:14px; font-weight:700; margin:0; letter-spacing:-0.01em}
+  h1 span{color:var(--ink-2); font-weight:400}
+  .group{display:flex; align-items:center; gap:6px}
+  .group > label{font-size:11px; color:var(--ink-2); text-transform:uppercase; letter-spacing:0.07em}
+  button, select{
+    font-family:inherit; font-size:13px; color:var(--ink);
+    background:oklch(26% 0.03 255); border:1px solid var(--line);
+    border-radius:8px; padding:6px 11px; cursor:pointer;
+  }
+  button:hover, select:hover{background:oklch(31% 0.035 255)}
+  button[aria-pressed="true"]{background:var(--accent); color:oklch(15% 0.02 255); border-color:transparent; font-weight:700}
+  button:focus-visible, select:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  .spacer{flex:1}
+  .hint{font-size:12px; color:var(--ink-2)}
+
+  main{
+    flex:1; display:flex; gap:40px; padding:32px 20px 48px;
+    justify-content:center; align-items:flex-start; flex-wrap:wrap;
+  }
+  figure{margin:0; display:flex; flex-direction:column; align-items:center; gap:12px}
+  figcaption{font-size:12px; color:var(--ink-2); letter-spacing:0.04em}
+  figcaption b{color:var(--ink); font-weight:700}
+
+  /* Phone bezel — pure CSS, no images. */
+  .device{
+    position:relative; background:#0a0a0c; padding:12px;
+    border-radius:44px; box-shadow:
+      0 0 0 2px oklch(35% 0.02 255),
+      0 24px 60px oklch(0% 0 0 / 0.55);
+    transition:width .25s ease, height .25s ease;
+  }
+  .device::before{
+    content:''; position:absolute; top:20px; left:50%; transform:translateX(-50%);
+    width:96px; height:26px; border-radius:14px; background:#0a0a0c; z-index:3;
+    pointer-events:none;
+  }
+  .device.no-notch::before{display:none}
+  .device iframe{
+    display:block; border:0; border-radius:32px; background:#000;
+    width:100%; height:100%;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Deliveree <span>· device preview</span></h1>
+
+  <div class="group">
+    <label for="size">Size</label>
+    <select id="size">
+      <option value="390x844">iPhone 15 — 390×844</option>
+      <option value="375x812">iPhone X — 375×812</option>
+      <option value="430x932">iPhone Pro Max — 430×932</option>
+      <option value="360x800">Android — 360×800</option>
+      <option value="768x1024">iPad — 768×1024</option>
+    </select>
+  </div>
+
+  <div class="group">
+    <label>Theme</label>
+    <button data-theme="system" aria-pressed="true">System</button>
+    <button data-theme="dark" aria-pressed="false">Dark</button>
+    <button data-theme="light" aria-pressed="false">Light</button>
+  </div>
+
+  <div class="group">
+    <label>Mood</label>
+    <button data-mood="" aria-pressed="true">Real</button>
+    <button data-mood="calm" aria-pressed="false">Calm</button>
+    <button data-mood="today" aria-pressed="false">Today</button>
+    <button data-mood="stuck" aria-pressed="false">Stuck</button>
+  </div>
+
+  <div class="spacer"></div>
+  <span class="hint" id="status">HMR is live — edit a file and both frames update.</span>
+  <button id="reload">Reload both</button>
+</header>
+
+<main>
+  <figure>
+    <figcaption><b>עברית</b> · RTL</figcaption>
+    <div class="device" data-lang="he"><iframe title="Deliveree in Hebrew"></iframe></div>
+  </figure>
+  <figure>
+    <figcaption><b>English</b> · LTR</figcaption>
+    <div class="device" data-lang="en"><iframe title="Deliveree in English"></iframe></div>
+  </figure>
+</main>
+
+<script>
+(function () {
+  var APP_URL = '/?demo=true';
+  var devices = Array.prototype.slice.call(document.querySelectorAll('.device'));
+  var frames = devices.map(function (d) { return d.querySelector('iframe'); });
+  var status = document.getElementById('status');
+
+  var READY = 'HMR is live — edit a file and both frames update.';
+  var state = { size: '390x844', theme: 'system', mood: '' };
+
+  function applySize() {
+    var parts = state.size.split('x');
+    devices.forEach(function (d) {
+      d.style.width = (parseInt(parts[0], 10) + 24) + 'px';
+      d.style.height = (parseInt(parts[1], 10) + 24) + 'px';
+      d.classList.toggle('no-notch', parts[0] === '768');
+    });
+  }
+
+  // Language rides the URL (?lang=), not storage — the two frames share an
+  // origin, and the app writes its language back to localStorage, so a seeded
+  // value could never survive the other frame mounting. Theme has no such
+  // override, so it still goes through storage; both frames always show the
+  // same theme, which is what you want when comparing them anyway.
+  function seedTheme() {
+    try {
+      if (state.theme === 'system') localStorage.removeItem('deliveree_theme');
+      else localStorage.setItem('deliveree_theme', state.theme);
+    } catch (e) { /* private mode — the app has its own guards */ }
+  }
+
+  // Both frames are same-origin, so they SHARE this page's localStorage —
+  // seeding them in a loop meant the second seed clobbered the first before
+  // either app had booted, and both frames came up in the same language.
+  // Loading them one at a time fixes it: each React tree reads the storage at
+  // its own mount and then owns that value as state, so the next seed cannot
+  // reach back and change it.
+  function loadAll() {
+    var i = 0;
+    (function next() {
+      if (i >= devices.length) { status.textContent = READY; return; }
+      var idx = i++;
+      status.textContent = 'Loading ' + devices[idx].dataset.lang + '…';
+      seedTheme();
+      frames[idx].onload = function () {
+        frames[idx].onload = null;
+        if (state.mood) setTimeout(applyMood, 120);
+        next();
+      };
+      frames[idx].src = APP_URL + '&lang=' + devices[idx].dataset.lang + '&_=' + Date.now();
+    })();
+  }
+
+  // Mood is normally derived from the package list. This forces it purely so
+  // you can eyeball each state without hand-crafting data — React owns the
+  // attribute, so it reverts on the next render. "Real" clears the override.
+  function applyMood() {
+    frames.forEach(function (f) {
+      try {
+        var root = f.contentDocument && f.contentDocument.querySelector('[data-mood]');
+        if (root && state.mood) root.dataset.mood = state.mood;
+      } catch (e) { /* frame still loading */ }
+    });
+  }
+
+  function press(buttons, match) {
+    buttons.forEach(function (b) {
+      b.setAttribute('aria-pressed', String(match(b)));
+    });
+  }
+
+  document.getElementById('size').addEventListener('change', function (e) {
+    state.size = e.target.value;
+    applySize();
+  });
+
+  var themeButtons = Array.prototype.slice.call(document.querySelectorAll('[data-theme]'));
+  themeButtons.forEach(function (b) {
+    b.addEventListener('click', function () {
+      state.theme = b.dataset.theme;
+      press(themeButtons, function (x) { return x.dataset.theme === state.theme; });
+      loadAll();
+    });
+  });
+
+  var moodButtons = Array.prototype.slice.call(document.querySelectorAll('[data-mood]'));
+  moodButtons.forEach(function (b) {
+    b.addEventListener('click', function () {
+      state.mood = b.dataset.mood;
+      press(moodButtons, function (x) { return x.dataset.mood === state.mood; });
+      if (state.mood) applyMood(); else loadAll();
+    });
+  });
+
+  document.getElementById('reload').addEventListener('click', loadAll);
+
+  // The dev server restarting (or the app failing to boot) is the one failure
+  // worth surfacing here rather than leaving two silent black rectangles.
+  fetch(APP_URL, { method: 'HEAD' }).catch(function () {
+    status.textContent = 'Dev server unreachable — run npm run dev.';
+  });
+
+  applySize();
+  loadAll();
+})();
+</script>
+</body>
+</html>
