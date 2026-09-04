@@ -9,6 +9,7 @@ import { detectStore } from '../utils/storeDetector';
 import { copyToClipboard } from '../utils/clipboard';
 import { STAGES, CATEGORIES } from '../types/stages';
 import { useLanguage } from '../context/LanguageContext';
+import { Button, ModalFooter, Pill, Title } from './ui/Primitives';
 import { formatDate, formatDateTime, getDaysRemaining } from '../utils/dateUtils';
 import { getPickupCountdown, getReturnCountdown, calculateDefaultReturnDeadline } from '../utils/deadlineUtils';
 import { canTransition, TRANSITION_MATRIX } from '../services/deliveryService';
@@ -308,13 +309,9 @@ export function PackageDetailModal({
               <span className={`px-2.5 py-1 rounded-xl text-xs font-bold border shadow-sm ${carrier.badgeBg}`}>
                 {language === 'he' ? carrier.hebrewName : carrier.name}
               </span>
-              <span className="text-xs px-2.5 py-1 rounded-xl bg-slate-800/80 text-slate-300 font-medium">
-                {language === 'he' ? category.hebrewLabel : category.label}
-              </span>
+              <Pill>{language === 'he' ? category.hebrewLabel : category.label}</Pill>
             </div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-100 mt-2">
-              {itemTitle}
-            </h2>
+            <Title className="mt-2 text-xl sm:text-2xl">{itemTitle}</Title>
           </div>
 
           <div className="flex items-center gap-2">
@@ -357,6 +354,138 @@ export function PackageDetailModal({
 
         {/* Modal Body */}
         <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1">
+          {/* Stepper Progress Section & Status Transition Override */}
+          <div className="p-4 rounded-2xl bg-slate-950/40 border border-slate-800/80 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h3 className="text-sm font-bold text-slate-300 flex items-center gap-2">
+                <Truck className="w-4 h-4 text-blue-400" />
+                <span>{t('detailModal.currentStage')}:</span>
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${currentStage.badgeClass}`}>
+                  {language === 'he' ? currentStage.hebrewLabel : currentStage.label}
+                </span>
+              </h3>
+
+              <div className="flex flex-wrap items-center gap-2 w-full">
+                {/* State Machine Transition Selector (Only showing allowed transitions) */}
+                <select
+                  value={pkg.status}
+                  onChange={(e) => handleSetStage(e.target.value)}
+                  className="flex-1 min-w-0 bg-slate-900 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl px-3 py-1.5 focus:outline-none focus:border-blue-500 min-h-[48px] cursor-pointer"
+                  aria-label={t('tracking.overrideStatus')}
+                >
+                  {(TRANSITION_MATRIX[pkg.status] || [pkg.status])
+                    .filter((statusKey) => pkg.status !== 'delivered' || statusKey === 'delivered' || statusKey === 'archived')
+                    .map((statusKey) => {
+                    const stageObj = STAGES.find(s => s.id === statusKey);
+                    const label = stageObj
+                      ? (language === 'he' ? stageObj.hebrewLabel : stageObj.label)
+                      : statusKey;
+                    return (
+                      <option key={statusKey} value={statusKey}>
+                        {label}
+                      </option>
+                    );
+                    })}
+                </select>
+
+                {pkg.status === 'delivered' && (
+                  <button
+                    type="button"
+                    onClick={handleUndoDelivery}
+                    className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-bold transition-all border border-amber-500/30 min-h-[48px]"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>{language === 'he' ? 'ביטול מסירה' : 'Undo delivery'}</span>
+                  </button>
+                )}
+
+                {effectiveIndex < STAGES.length - 1 && canTransition(pkg.status, STAGES[effectiveIndex + 1]?.id) && (
+                  <button
+                    onClick={handleAdvanceStage}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold transition-all shadow-md min-h-[48px]"
+                  >
+                    <span>{t('detailModal.advanceStageBtn')}</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Visual 6 Stages Clickable Stepper */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+              {STAGES.map((s, idx) => {
+                const isPassed = idx < effectiveIndex;
+                const isCurrent = idx === effectiveIndex;
+                const isAllowed = pkg.status === 'delivered'
+                  ? s.id === 'delivered' || s.id === 'archived'
+                  : canTransition(pkg.status, s.id);
+
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => handleSetStage(s.id)}
+                    disabled={!isAllowed && !isCurrent}
+                    title={!isAllowed && !isCurrent ? (language === 'he' ? 'מעבר לא מורשה' : 'Transition not permitted') : ''}
+                    className={`flex flex-col items-center p-2.5 rounded-xl border text-center transition-all ${
+                      isCurrent
+                        ? 'border-blue-500 bg-blue-500/10 text-blue-300 ring-2 ring-blue-500/30'
+                        : isPassed
+                        ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-400'
+                        : isAllowed
+                        ? 'border-slate-800 bg-slate-900/50 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                        : 'border-slate-900/60 bg-slate-950/40 text-slate-600 opacity-40 cursor-not-allowed'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded-full mb-1 flex items-center justify-center text-xs font-bold ${
+                      isCurrent ? 'bg-blue-500 text-white' : isPassed ? 'bg-emerald-500 text-white' : isAllowed ? 'bg-slate-800 text-slate-400' : 'bg-slate-900 text-slate-700'
+                    }`}>
+                      {isPassed ? <Check className="w-3 h-3 stroke-[3]" /> : idx + 1}
+                    </div>
+                    <span className="text-xs font-semibold line-clamp-1">
+                      {language === 'he' ? s.hebrewLabel : s.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Key Details Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {/* Expected Delivery */}
+            <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800">
+              <span className="text-xs text-slate-500 font-semibold uppercase">{t('card.expectedOn')}</span>
+              <div className="flex items-center gap-2 mt-1 text-sm font-bold text-slate-200">
+                <Calendar className="w-4 h-4 text-blue-400" />
+                <span>{formatDate(pkg.expectedDeliveryDate, language) || '-'}</span>
+              </div>
+              {daysInfo && (
+                <span className={`inline-block text-xs font-semibold mt-1 px-2 py-0.5 rounded-md ${daysInfo.isUrgent ? 'bg-amber-500/20 text-amber-300' : 'bg-blue-500/20 text-blue-300'}`}>
+                  {daysInfo.text}
+                </span>
+              )}
+            </div>
+
+            {/* Route (Origin -> Destination) */}
+            <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800">
+              <span className="text-xs text-slate-500 font-semibold uppercase">{t('card.route')}</span>
+              <div className="flex items-center gap-1.5 mt-1 text-xs font-semibold text-slate-200">
+                <MapPin className="w-4 h-4 text-rose-400 shrink-0" />
+                <span className="truncate">{pkg.origin || 'Global'}</span>
+                <span>→</span>
+                <span className="truncate text-blue-300">{pkg.destination || 'Israel'}</span>
+              </div>
+            </div>
+
+            {/* Order Date */}
+            <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800">
+              <span className="text-xs text-slate-500 font-semibold uppercase">{t('card.orderedOn')}</span>
+              <div className="flex items-center gap-2 mt-1 text-sm font-semibold text-slate-200">
+                <Clock className="w-4 h-4 text-slate-400" />
+                <span>{formatDate(pkg.orderDate, language) || '-'}</span>
+              </div>
+            </div>
+          </div>
+
           {/* Pickup Information Card */}
           {(pkg.pickupCode || pkg.pickupLocation) && (
             <div className="flex flex-col gap-3 p-5 rounded-3xl bg-gradient-to-br from-emerald-500/10 to-teal-900/40 border-2 border-emerald-500/30 shadow-lg shadow-emerald-900/20 relative overflow-hidden">
@@ -646,6 +775,65 @@ export function PackageDetailModal({
             </div>
           )}
 
+          {/* 1-Click Courier & WhatsApp Actions Hub */}
+          <CourierActionHub pkg={pkg} onShowToast={onShowToast} />
+
+          {/* Quick Tracking & Official Link Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-slate-950/80 border border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="flex flex-col">
+                <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
+                  {t('card.trackingNumber')}
+                </span>
+                <span className="font-mono text-base font-bold text-slate-200">
+                  {pkg.trackingNumber}
+                </span>
+              </div>
+              <button
+                onClick={handleCopy}
+                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                title={t('card.copyTracking')}
+              >
+                {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {onRefreshTracking && (
+                <button
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-emerald-400 text-xs font-bold transition-all border border-slate-700/80 min-h-[48px]"
+                  title={t('card.refreshStatus')}
+                >
+                  <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
+                  <span>{t('card.refreshStatus')}</span>
+                </button>
+              )}
+
+              {onOpenLockerMap && (
+                <button
+                  onClick={onOpenLockerMap}
+                  className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-blue-400 text-xs font-bold transition-all border border-slate-700/80 min-h-[48px]"
+                  title={language === 'he' ? 'איתור נקודת איסוף ולוקרים' : 'Find Pickup Locker'}
+                >
+                  <MapPin className="w-4 h-4 text-rose-400" />
+                  <span>{language === 'he' ? 'לוקר / איסוף' : 'Locker'}</span>
+                </button>
+              )}
+
+              <a
+                href={carrier.getTrackingUrl(pkg.trackingNumber)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 min-h-[48px]"
+              >
+                <span>{t('detailModal.carrierDirectLink')}</span>
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            </div>
+          </div>
+
           {/* Return Policy & Window Box (Delivered or Return Set) */}
           {(pkg.status === 'delivered' || pkg.returnDeadline) && (
             <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-950/40 to-slate-900 border border-blue-500/30 flex flex-col gap-3">
@@ -721,197 +909,6 @@ export function PackageDetailModal({
               )}
             </div>
           )}
-
-          {/* 1-Click Courier & WhatsApp Actions Hub */}
-          <CourierActionHub pkg={pkg} onShowToast={onShowToast} />
-
-          {/* Quick Tracking & Official Link Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-slate-950/80 border border-slate-800">
-            <div className="flex items-center gap-3">
-              <div className="flex flex-col">
-                <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
-                  {t('card.trackingNumber')}
-                </span>
-                <span className="font-mono text-base font-bold text-slate-200">
-                  {pkg.trackingNumber}
-                </span>
-              </div>
-              <button
-                onClick={handleCopy}
-                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
-                title={t('card.copyTracking')}
-              >
-                {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {onRefreshTracking && (
-                <button
-                  onClick={handleRefresh}
-                  disabled={isRefreshing}
-                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-emerald-400 text-xs font-bold transition-all border border-slate-700/80 min-h-[48px]"
-                  title={t('card.refreshStatus')}
-                >
-                  <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
-                  <span>{t('card.refreshStatus')}</span>
-                </button>
-              )}
-
-              {onOpenLockerMap && (
-                <button
-                  onClick={onOpenLockerMap}
-                  className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-blue-400 text-xs font-bold transition-all border border-slate-700/80 min-h-[48px]"
-                  title={language === 'he' ? 'איתור נקודת איסוף ולוקרים' : 'Find Pickup Locker'}
-                >
-                  <MapPin className="w-4 h-4 text-rose-400" />
-                  <span>{language === 'he' ? 'לוקר / איסוף' : 'Locker'}</span>
-                </button>
-              )}
-
-              <a
-                href={carrier.getTrackingUrl(pkg.trackingNumber)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 min-h-[48px]"
-              >
-                <span>{t('detailModal.carrierDirectLink')}</span>
-                <ExternalLink className="w-4 h-4" />
-              </a>
-            </div>
-          </div>
-
-          {/* Stepper Progress Section & Status Transition Override */}
-          <div className="p-5 rounded-2xl bg-slate-950/40 border border-slate-800/80 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h3 className="text-sm font-bold text-slate-300 flex items-center gap-2">
-                <Truck className="w-4 h-4 text-blue-400" />
-                <span>{t('detailModal.currentStage')}:</span>
-                <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${currentStage.badgeClass}`}>
-                  {language === 'he' ? currentStage.hebrewLabel : currentStage.label}
-                </span>
-              </h3>
-
-              <div className="flex items-center gap-2">
-                {/* State Machine Transition Selector (Only showing allowed transitions) */}
-                <select
-                  value={pkg.status}
-                  onChange={(e) => handleSetStage(e.target.value)}
-                  className="bg-slate-900 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl px-3 py-1.5 focus:outline-none focus:border-blue-500 min-h-[48px] cursor-pointer"
-                  aria-label={t('tracking.overrideStatus')}
-                >
-                  {(TRANSITION_MATRIX[pkg.status] || [pkg.status])
-                    .filter((statusKey) => pkg.status !== 'delivered' || statusKey === 'delivered' || statusKey === 'archived')
-                    .map((statusKey) => {
-                    const stageObj = STAGES.find(s => s.id === statusKey);
-                    const label = stageObj
-                      ? (language === 'he' ? stageObj.hebrewLabel : stageObj.label)
-                      : statusKey;
-                    return (
-                      <option key={statusKey} value={statusKey}>
-                        {label}
-                      </option>
-                    );
-                    })}
-                </select>
-
-                {pkg.status === 'delivered' && (
-                  <button
-                    type="button"
-                    onClick={handleUndoDelivery}
-                    className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-bold transition-all border border-amber-500/30 min-h-[48px]"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                    <span>{language === 'he' ? 'ביטול מסירה' : 'Undo delivery'}</span>
-                  </button>
-                )}
-
-                {effectiveIndex < STAGES.length - 1 && canTransition(pkg.status, STAGES[effectiveIndex + 1]?.id) && (
-                  <button
-                    onClick={handleAdvanceStage}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold transition-all shadow-md min-h-[48px]"
-                  >
-                    <span>{t('detailModal.advanceStageBtn')}</span>
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Visual 6 Stages Clickable Stepper */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
-              {STAGES.map((s, idx) => {
-                const isPassed = idx < effectiveIndex;
-                const isCurrent = idx === effectiveIndex;
-                const isAllowed = pkg.status === 'delivered'
-                  ? s.id === 'delivered' || s.id === 'archived'
-                  : canTransition(pkg.status, s.id);
-
-                return (
-                  <button
-                    key={s.id}
-                    onClick={() => handleSetStage(s.id)}
-                    disabled={!isAllowed && !isCurrent}
-                    title={!isAllowed && !isCurrent ? (language === 'he' ? 'מעבר לא מורשה' : 'Transition not permitted') : ''}
-                    className={`flex flex-col items-center p-2.5 rounded-xl border text-center transition-all ${
-                      isCurrent
-                        ? 'border-blue-500 bg-blue-500/10 text-blue-300 ring-2 ring-blue-500/30'
-                        : isPassed
-                        ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-400'
-                        : isAllowed
-                        ? 'border-slate-800 bg-slate-900/50 text-slate-400 hover:border-slate-700 hover:text-slate-200'
-                        : 'border-slate-900/60 bg-slate-950/40 text-slate-600 opacity-40 cursor-not-allowed'
-                    }`}
-                  >
-                    <div className={`w-5 h-5 rounded-full mb-1 flex items-center justify-center text-xs font-bold ${
-                      isCurrent ? 'bg-blue-500 text-white' : isPassed ? 'bg-emerald-500 text-white' : isAllowed ? 'bg-slate-800 text-slate-400' : 'bg-slate-900 text-slate-700'
-                    }`}>
-                      {isPassed ? <Check className="w-3 h-3 stroke-[3]" /> : idx + 1}
-                    </div>
-                    <span className="text-xs font-semibold line-clamp-1">
-                      {language === 'he' ? s.hebrewLabel : s.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Key Details Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {/* Expected Delivery */}
-            <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800">
-              <span className="text-xs text-slate-500 font-semibold uppercase">{t('card.expectedOn')}</span>
-              <div className="flex items-center gap-2 mt-1 text-sm font-bold text-slate-200">
-                <Calendar className="w-4 h-4 text-blue-400" />
-                <span>{formatDate(pkg.expectedDeliveryDate, language) || '-'}</span>
-              </div>
-              {daysInfo && (
-                <span className={`inline-block text-xs font-semibold mt-1 px-2 py-0.5 rounded-md ${daysInfo.isUrgent ? 'bg-amber-500/20 text-amber-300' : 'bg-blue-500/20 text-blue-300'}`}>
-                  {daysInfo.text}
-                </span>
-              )}
-            </div>
-
-            {/* Route (Origin -> Destination) */}
-            <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800">
-              <span className="text-xs text-slate-500 font-semibold uppercase">{t('card.route')}</span>
-              <div className="flex items-center gap-1.5 mt-1 text-xs font-semibold text-slate-200">
-                <MapPin className="w-4 h-4 text-rose-400 shrink-0" />
-                <span className="truncate">{pkg.origin || 'Global'}</span>
-                <span>→</span>
-                <span className="truncate text-blue-300">{pkg.destination || 'Israel'}</span>
-              </div>
-            </div>
-
-            {/* Order Date */}
-            <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800">
-              <span className="text-xs text-slate-500 font-semibold uppercase">{t('card.orderedOn')}</span>
-              <div className="flex items-center gap-2 mt-1 text-sm font-semibold text-slate-200">
-                <Clock className="w-4 h-4 text-slate-400" />
-                <span>{formatDate(pkg.orderDate, language) || '-'}</span>
-              </div>
-            </div>
-          </div>
 
           {/* Notes / Locker / Instructions */}
           {itemNotes && (
@@ -1063,14 +1060,9 @@ export function PackageDetailModal({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/80 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors"
-          >
-            {language === 'he' ? 'סגור' : 'Close'}
-          </button>
-        </div>
+        <ModalFooter className="justify-end bg-slate-950/80">
+          <Button onClick={onClose}>{language === 'he' ? 'סגור' : 'Close'}</Button>
+        </ModalFooter>
       </Modal>
   );
 }
