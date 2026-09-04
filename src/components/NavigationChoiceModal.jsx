@@ -87,6 +87,7 @@ export function NavigationChoiceModal({
       onClose={onClose}
       layer="top"
       componentName="NavigationChoiceModal"
+      compact
       className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-6 flex flex-col"
     >
       {/* Header */}

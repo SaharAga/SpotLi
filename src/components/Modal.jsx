@@ -90,6 +90,14 @@ export function Modal({
   children,
   className,
   overlayClassName,
+  /**
+   * A short confirmation rather than a screen. Below `lg` a Modal takes the
+   * whole viewport (see index.css) because in this app a modal IS the page —
+   * but a three-line "are you sure?" is not a page. A full screen for one
+   * yes/no reads as heavier than the decision and hides the thing being
+   * decided about. `compact` keeps those centred at every width.
+   */
+  compact = false,
   style,
   dir,
   layer = 'base',
@@ -233,10 +241,17 @@ export function Modal({
 
   const panelClasses = twMerge(clsx('relative outline-none', className));
 
+  // `data-modal-*` are hooks for the mobile full-screen rules in index.css.
+  // They exist because every caller passes its own max-w/rounded/my-* classes,
+  // and a CSS media query can override those regardless of what was passed —
+  // whereas merging Tailwind utilities here could not, without auditing all
+  // sixteen call sites for conflicts.
+
   return createPortal(
     <div
       ref={overlayRef}
       className={overlayClasses}
+      data-modal-overlay={compact ? undefined : ""}
       role="dialog"
       aria-modal="true"
       aria-labelledby={labelledBy}
@@ -246,7 +261,7 @@ export function Modal({
       onClick={handleClick}
       onKeyDownCapture={handleKeyDownCapture}
     >
-      <div ref={panelRef} tabIndex={-1} className={panelClasses} style={style} dir={dir}>
+      <div ref={panelRef} tabIndex={-1} data-modal-panel={compact ? undefined : ""} className={panelClasses} style={style} dir={dir}>
         <ErrorBoundary compact componentName={componentName} onReset={requestClose}>
           {children}
         </ErrorBoundary>

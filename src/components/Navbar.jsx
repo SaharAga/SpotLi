@@ -7,6 +7,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { SideNavDrawer } from './SideNavDrawer';
 import { BottomNav } from './BottomNav';
+import { AccountSheet } from './AccountSheet';
 import { APP_VERSION } from '../constants/version';
 
 export function Navbar({
@@ -30,6 +31,7 @@ export function Navbar({
   const { user } = useAuth();
 
   const [isSideDrawerOpen, setIsSideDrawerOpen] = useState(false);
+  const [isAccountSheetOpen, setIsAccountSheetOpen] = useState(false);
   const [isAddActionSheetOpen, setIsAddActionSheetOpen] = useState(false);
 
   const handleQuickClipboardPaste = async () => {
@@ -282,6 +284,24 @@ export function Navbar({
         onShowToast={onShowToast}
       />
 
+      <AccountSheet
+        isOpen={isAccountSheetOpen}
+        onClose={() => setIsAccountSheetOpen(false)}
+        isDemoMode={isDemoMode}
+        onOpenAuth={onOpenAuth}
+        onOpenSettings={onOpenSettings}
+        onOpenSmartImport={onOpenSmartImport}
+        onOpenConnectModal={onOpenConnectModal}
+        onOpenAnalytics={onOpenAnalytics}
+        onOpenExport={onOpenExport}
+        onOpenLockerMap={onOpenLockerMap}
+        onOpenFeedback={onOpenFeedback}
+        onOpenAdminFeedback={onOpenAdminFeedback}
+        onOpenAbout={onOpenAbout}
+        onImportData={onImportData}
+        onResetData={onResetData}
+      />
+
       {/* Mobile bottom tab bar. Lives here rather than in App because this
           component already owns the drawer and the add sheet the bar opens;
           wiring it from App would mean lifting both into App state. */}
@@ -290,7 +310,7 @@ export function Navbar({
         onOpenInsights={onOpenAnalytics}
         onOpenAdd={() => setIsAddActionSheetOpen(true)}
         onOpenLockers={onOpenLockerMap}
-        onOpenAccount={() => setIsSideDrawerOpen(true)}
+        onOpenAccount={() => setIsAccountSheetOpen(true)}
       />
     </>
   );

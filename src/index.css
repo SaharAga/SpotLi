@@ -326,6 +326,60 @@
     font-family: var(--font-display);
   }
 
+  /* ------------------------------------------------------------------
+     On a phone, a modal IS the page.
+
+     Every surface in this app is a Modal, and each was styled as a card
+     floating on a dimmed backdrop — rounded corners, a max width, margins
+     down the sides. On a 390px screen that wastes the edges, shrinks the
+     content, and makes a full screen of settings read as a popup over the
+     package list rather than a place you navigated to.
+
+     Below `lg` the panel takes the whole viewport: no inset, no radius, no
+     max width, full dynamic height so the browser chrome does not clip it,
+     and safe-area padding so content clears the notch and home indicator.
+     Desktop keeps the centred dialog, where a card on a backdrop is right.
+
+     Done here rather than in Modal.jsx because every caller passes its own
+     max-w/rounded/my-* utilities; a media query overrides those whatever
+     they are, without auditing sixteen call sites for conflicts.
+     ------------------------------------------------------------------ */
+  @media (max-width: 1023px) {
+    [data-modal-overlay] {
+      padding: 0 !important;
+      align-items: stretch !important;
+      justify-content: stretch !important;
+      background: var(--color-slate-950);
+      backdrop-filter: none;
+      /* The overlay was the scroll container, so its scrollbar stole a few
+         px of width and the panel stopped short of the screen edge. The
+         panel owns the viewport now; scrolling belongs to its inner
+         content region. */
+      overflow: hidden !important;
+    }
+
+    [data-modal-panel] {
+      width: 100% !important;
+      max-width: none !important;
+      height: 100dvh;
+      max-height: none !important;
+      margin: 0 !important;
+      border-radius: 0 !important;
+      border-inline: 0 !important;
+      border-block: 0 !important;
+      display: flex;
+      flex-direction: column;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    /* The panel is now the viewport, so whatever inside it was scrolling
+       should fill the space rather than stop at an old max-height. */
+    [data-modal-panel] > * {
+      min-height: 0;
+    }
+  }
+
   .min-h-touch {
     /* 48, not 44 — CLAUDE.md and the UI/UX protocol both mandate a
        48x48 minimum (WCAG 2.5.8/2.5.5). This utility had drifted to 44
