@@ -164,46 +164,54 @@
      above (both themes share the hue). Scoped to .settings-theme (wraps
      AccountModal only) so it doesn't retint anything else. Prefixed
      --stg-* (not --color-*) so it never collides with or overrides the
-     global Tailwind tokens. */
+     global Tailwind tokens.
+
+     These now RESOLVE TO THE APP PALETTE rather than carrying their own
+     hex values. AccountModal was built against a parallel theme, so it
+     read as a different product from every other screen — subtly different
+     navy, different borders, different muted grey. Repointing the tokens
+     unifies it without touching its 102 call sites, which is both a much
+     smaller change than rewriting them and trivially reversible if the
+     settings surface ever wants its own identity again. */
   .settings-theme {
     --stg-font: 'Atkinson Hyperlegible', var(--font-sans);
   }
 
   .dark .settings-theme {
-    --stg-bg: #0B1220;
-    --stg-surface: #131C2E;
-    --stg-surface-2: #1A2438;
-    --stg-border: #263248;
-    --stg-text: #EEF2F8;
-    --stg-text-muted: #97A3B8;
-    --stg-primary: #EEF2F8;
-    --stg-primary-on: #0B1220;
-    --stg-accent: oklch(68% 0.155 284);
-    --stg-accent-soft: oklch(28% 0.065 274);
-    --stg-destructive: #F27272;
-    --stg-destructive-soft: #3A1414;
-    --stg-success: #6FD696;
-    --stg-success-soft: #12301E;
+    --stg-bg: var(--color-slate-950);
+    --stg-surface: var(--color-slate-900);
+    --stg-surface-2: var(--color-slate-800);
+    --stg-border: var(--color-slate-800);
+    --stg-text: var(--color-slate-100);
+    --stg-text-muted: var(--color-slate-400);
+    --stg-primary: var(--color-blue-600);
+    --stg-primary-on: var(--color-slate-950);
+    --stg-accent: var(--color-blue-500);
+    --stg-accent-soft: color-mix(in oklab, var(--color-blue-500) 16%, transparent);
+    --stg-destructive: oklch(72% 0.17 15);
+    --stg-destructive-soft: color-mix(in oklab, oklch(72% 0.17 15) 14%, transparent);
+    --stg-success: oklch(79% 0.15 160);
+    --stg-success-soft: color-mix(in oklab, oklch(79% 0.15 160) 14%, transparent);
   }
 
   .light .settings-theme {
     /* Same layout/font/shape language as dark, same indigo accent family
        too — pulled from --color-blue-600/-100 above so this stays locked
        to the app's real accent instead of an independent value. */
-    --stg-bg: #F8FAFC;
-    --stg-surface: #FFFFFF;
-    --stg-surface-2: #F1F5F9;
-    --stg-border: #E2E8F0;
-    --stg-text: #020617;
-    --stg-text-muted: #475569;
-    --stg-primary: #0F172A;
-    --stg-primary-on: #F8FAFC;
-    --stg-accent: oklch(55% 0.145 284);
-    --stg-accent-soft: oklch(93% 0.050 294);
-    --stg-destructive: #DC2626;
-    --stg-destructive-soft: #FEE2E2;
-    --stg-success: #15803D;
-    --stg-success-soft: #DCFCE7;
+    --stg-bg: var(--color-slate-950);
+    --stg-surface: var(--color-slate-900);
+    --stg-surface-2: var(--color-slate-800);
+    --stg-border: var(--color-slate-800);
+    --stg-text: var(--color-slate-100);
+    --stg-text-muted: var(--color-slate-400);
+    --stg-primary: var(--color-blue-600);
+    --stg-primary-on: var(--color-slate-950);
+    --stg-accent: var(--color-blue-600);
+    --stg-accent-soft: color-mix(in oklab, var(--color-blue-500) 12%, transparent);
+    --stg-destructive: oklch(58% 0.20 25);
+    --stg-destructive-soft: color-mix(in oklab, oklch(58% 0.20 25) 12%, transparent);
+    --stg-success: oklch(52% 0.14 160);
+    --stg-success-soft: color-mix(in oklab, oklch(52% 0.14 160) 12%, transparent);
   }
 
   /* ------------------------------------------------------------------
