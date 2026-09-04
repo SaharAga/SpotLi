@@ -211,7 +211,7 @@ export function FilterBar({
                   <button
                     key={opt.id}
                     onClick={() => onTabChange(opt.id)}
-                    className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold text-start transition-colors min-h-[40px] ${
+                    className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold text-start transition-colors min-h-[48px] ${
                       activeTab === opt.id ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'
                     }`}
                   >
@@ -227,7 +227,7 @@ export function FilterBar({
               <select
                 value={selectedCarrier}
                 onChange={(e) => onCarrierChange(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 text-slate-200 text-sm rounded-lg p-2.5 focus:outline-none focus:border-blue-500 cursor-pointer min-h-[44px]"
+                className="w-full bg-slate-950 border border-slate-800 text-slate-200 text-sm rounded-lg p-2.5 focus:outline-none focus:border-blue-500 cursor-pointer min-h-[48px]"
               >
                 <option value="all">{t('filters.allCarriers')}</option>
                 {CARRIER_LIST.map((carrier) => (
@@ -243,7 +243,7 @@ export function FilterBar({
               <select
                 value={sortBy}
                 onChange={(e) => onSortChange(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 text-slate-200 text-sm rounded-lg p-2.5 focus:outline-none focus:border-blue-500 cursor-pointer min-h-[44px]"
+                className="w-full bg-slate-950 border border-slate-800 text-slate-200 text-sm rounded-lg p-2.5 focus:outline-none focus:border-blue-500 cursor-pointer min-h-[48px]"
               >
                 <option value="newest">{t('filters.newest')}</option>
                 <option value="expected">{t('filters.expectedDate')}</option>

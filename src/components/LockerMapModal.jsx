@@ -428,7 +428,7 @@ export function LockerMapModal({
                       href={getWazeUrl(activePoint.lat, activePoint.lng)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 hover:text-white text-xs font-bold border border-cyan-500/30 transition-all cursor-pointer min-h-[44px]"
+                      className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 hover:text-white text-xs font-bold border border-cyan-500/30 transition-all cursor-pointer min-h-[48px]"
                     >
                       <Navigation className="w-3.5 h-3.5" />
                       <span>Waze</span>
@@ -441,7 +441,7 @@ export function LockerMapModal({
                       )}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition-all cursor-pointer min-h-[44px]"
+                      className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition-all cursor-pointer min-h-[48px]"
                     >
                       <ExternalLink className="w-3.5 h-3.5 text-blue-400" />
                       <span>Google Maps</span>

@@ -39,7 +39,7 @@ export function LegalDocumentModal({ isOpen, onClose, docType = 'terms' }) {
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -59,7 +59,7 @@ export function LegalDocumentModal({ isOpen, onClose, docType = 'terms' }) {
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-all cursor-pointer min-h-[44px]"
+            className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-all cursor-pointer min-h-[48px]"
           >
             {language === 'he' ? 'סגור' : 'Close'}
           </button>

@@ -492,7 +492,7 @@ export function IngestionGuideModal({
                 onClose();
                 if (onOpenSmartImport) onOpenSmartImport();
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all shadow-md shadow-blue-500/20 cursor-pointer min-h-[40px]"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all shadow-md shadow-blue-500/20 cursor-pointer min-h-[48px]"
             >
               <span>{language === 'he' ? 'פתח הדבקה' : 'Open Paste'}</span>
               <ArrowRight className={`w-3.5 h-3.5 ${isRTL ? 'rotate-180' : ''}`} />
@@ -529,7 +529,7 @@ export function IngestionGuideModal({
             </div>
             <button
               onClick={handleCopyEmail}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 min-h-[36px]"
+              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 min-h-[48px]"
             >
               {copiedEmail ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copiedEmail ? (language === 'he' ? 'הועתק!' : 'Copied!') : (language === 'he' ? 'העתק' : 'Copy')}</span>
@@ -548,7 +548,7 @@ export function IngestionGuideModal({
                 <button
                   key={tab.id}
                   onClick={() => setSelectedGuide(tab.id)}
-                  className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer min-h-[36px] ${
+                  className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer min-h-[48px] ${
                     selectedGuide === tab.id
                       ? 'bg-blue-600 text-white shadow-sm'
                       : 'text-slate-400 hover:text-slate-200'
@@ -620,7 +620,7 @@ export function IngestionGuideModal({
 
             <button
               onClick={() => setShowQR(!showQR)}
-              className="px-3 py-1 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs cursor-pointer min-h-[36px]"
+              className="px-3 py-1 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs cursor-pointer min-h-[48px]"
             >
               {showQR ? (language === 'he' ? 'הסתר QR' : 'Hide QR') : (language === 'he' ? 'סרוק QR' : 'Scan QR')}
             </button>

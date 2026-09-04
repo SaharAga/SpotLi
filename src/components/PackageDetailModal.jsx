@@ -322,7 +322,7 @@ export function PackageDetailModal({
               <button
                 type="button"
                 onClick={() => onEdit(pkg)}
-                className="p-2.5 px-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white transition-all flex items-center gap-1.5 border border-slate-700/80 shadow-sm min-h-[44px] cursor-pointer"
+                className="p-2.5 px-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white transition-all flex items-center gap-1.5 border border-slate-700/80 shadow-sm min-h-[48px] cursor-pointer"
                 title={language === 'he' ? 'עריכת פרטי חבילה' : 'Edit package details'}
                 aria-label={language === 'he' ? 'עריכת פרטי חבילה' : 'Edit package details'}
               >
@@ -337,7 +337,7 @@ export function PackageDetailModal({
                   onDelete(pkg.id);
                   onClose();
                 }}
-                className="p-2.5 px-3.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 hover:text-rose-200 transition-all flex items-center gap-1.5 border border-rose-500/30 shadow-sm min-h-[44px] cursor-pointer"
+                className="p-2.5 px-3.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 hover:text-rose-200 transition-all flex items-center gap-1.5 border border-rose-500/30 shadow-sm min-h-[48px] cursor-pointer"
                 title={language === 'he' ? 'מחיקת חבילה' : 'Delete package'}
                 aria-label={language === 'he' ? 'מחיקת חבילה' : 'Delete package'}
               >
@@ -347,7 +347,7 @@ export function PackageDetailModal({
             )}
             <button
               onClick={onClose}
-              className="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+              className="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
               aria-label={t('common.close') || 'Close'}
             >
               <X className="w-5 h-5" />
@@ -389,7 +389,7 @@ export function PackageDetailModal({
                             <button
                               type="button"
                               onClick={() => onOpenLockerMode(pkg)}
-                              className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500/25 hover:bg-emerald-500/40 text-emerald-200 hover:text-white border border-emerald-500/40 text-xs font-bold transition-all shadow-sm cursor-pointer min-h-[36px]"
+                              className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500/25 hover:bg-emerald-500/40 text-emerald-200 hover:text-white border border-emerald-500/40 text-xs font-bold transition-all shadow-sm cursor-pointer min-h-[48px]"
                               title={language === 'he' ? 'פתח מצב לוקר מוגדל' : 'Open Full-Screen Locker Mode'}
                             >
                               <Maximize2 className="w-3.5 h-3.5" />
@@ -466,7 +466,7 @@ export function PackageDetailModal({
                   {pkg.pickupPhone && (
                     <a
                       href={`tel:${pkg.pickupPhone}`}
-                      className="flex justify-center items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-800/40 hover:bg-emerald-700/50 text-emerald-200 hover:text-white text-xs font-bold transition-all min-h-[40px] border border-emerald-500/30"
+                      className="flex justify-center items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-800/40 hover:bg-emerald-700/50 text-emerald-200 hover:text-white text-xs font-bold transition-all min-h-[48px] border border-emerald-500/30"
                       title={language === 'he' ? `התקשר: ${pkg.pickupPhone}` : `Call: ${pkg.pickupPhone}`}
                     >
                       <Phone className="w-3.5 h-3.5" />
@@ -528,7 +528,7 @@ export function PackageDetailModal({
                           }
                           onClose();
                         }}
-                        className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition-all cursor-pointer min-h-[36px]"
+                        className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition-all cursor-pointer min-h-[48px]"
                       >
                         {(t('locationBundling.collectAll') || 'Mark All as Collected ({count})').replace('{count}', String(siblingPackages.length + 1))}
                       </button>
@@ -750,7 +750,7 @@ export function PackageDetailModal({
                 <button
                   onClick={handleRefresh}
                   disabled={isRefreshing}
-                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-emerald-400 text-xs font-bold transition-all border border-slate-700/80 min-h-[44px]"
+                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-emerald-400 text-xs font-bold transition-all border border-slate-700/80 min-h-[48px]"
                   title={t('card.refreshStatus')}
                 >
                   <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
@@ -761,7 +761,7 @@ export function PackageDetailModal({
               {onOpenLockerMap && (
                 <button
                   onClick={onOpenLockerMap}
-                  className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-blue-400 text-xs font-bold transition-all border border-slate-700/80 min-h-[44px]"
+                  className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-blue-400 text-xs font-bold transition-all border border-slate-700/80 min-h-[48px]"
                   title={language === 'he' ? 'איתור נקודת איסוף ולוקרים' : 'Find Pickup Locker'}
                 >
                   <MapPin className="w-4 h-4 text-rose-400" />
@@ -773,7 +773,7 @@ export function PackageDetailModal({
                 href={carrier.getTrackingUrl(pkg.trackingNumber)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 min-h-[44px]"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 min-h-[48px]"
               >
                 <span>{t('detailModal.carrierDirectLink')}</span>
                 <ExternalLink className="w-4 h-4" />
@@ -797,7 +797,7 @@ export function PackageDetailModal({
                 <select
                   value={pkg.status}
                   onChange={(e) => handleSetStage(e.target.value)}
-                  className="bg-slate-900 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl px-3 py-1.5 focus:outline-none focus:border-blue-500 min-h-[36px] cursor-pointer"
+                  className="bg-slate-900 border border-slate-700 text-slate-200 text-xs font-semibold rounded-xl px-3 py-1.5 focus:outline-none focus:border-blue-500 min-h-[48px] cursor-pointer"
                   aria-label={t('tracking.overrideStatus')}
                 >
                   {(TRANSITION_MATRIX[pkg.status] || [pkg.status])
@@ -829,7 +829,7 @@ export function PackageDetailModal({
                 {effectiveIndex < STAGES.length - 1 && canTransition(pkg.status, STAGES[effectiveIndex + 1]?.id) && (
                   <button
                     onClick={handleAdvanceStage}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold transition-all shadow-md min-h-[36px]"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold transition-all shadow-md min-h-[48px]"
                   >
                     <span>{t('detailModal.advanceStageBtn')}</span>
                   </button>
