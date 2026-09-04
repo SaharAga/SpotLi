@@ -6,8 +6,7 @@ import {
   deleteDoc,
   writeBatch,
   onSnapshot,
-  query,
-  orderBy
+  query
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './firebase';
 import { deliveryService } from './deliveryService';
@@ -74,6 +73,31 @@ function reconcileRemoteSnapshot(remotePackages, localPackages, userId) {
     if (mutation && mutation.type !== 'DELETE') merged.push(local);
   }
   return validateList(merged).sort((a, b) => packageTime(b) - packageTime(a));
+}
+
+/**
+ * Reconcile a remote snapshot against local, and NEVER shrink what is on disk.
+ *
+ * A remote snapshot can be empty or partial for reasons that have nothing to do
+ * with deletion: a first sync, a permissions error, a still-warming cache, or a
+ * document the query did not match (Firestore omits documents that lack the
+ * field an `orderBy` names). Deletions travel through tombstones, applied by the
+ * caller. Anything else that "disappears" from a snapshot is a read artefact,
+ * and persisting it is what destroyed users' packages.
+ *
+ * Returns the merged list plus the packages the raw reconcile would have
+ * dropped, so callers can log the near-miss.
+ */
+export function reconcileSnapshotPreservingLocal(remotePackages, localPackages, userId) {
+  const validated = reconcileRemoteSnapshot(remotePackages, localPackages, userId);
+  const dropped = localPackages.filter((pkg) => !validated.some((v) => v.id === pkg.id));
+
+  if (dropped.length === 0) return { packages: validated, dropped };
+
+  const kept = validateList([...validated, ...dropped]).sort(
+    (a, b) => packageTime(b) - packageTime(a)
+  );
+  return { packages: kept, dropped };
 }
 
 function getTombstonesStorageKey(userId) {
@@ -194,7 +218,12 @@ export class CloudStorageAdapter {
 
     try {
       const packagesRef = collection(db, "users", this.userId, "packages");
-      const q = query(packagesRef, orderBy("updatedAt", "desc"));
+      // No orderBy. Firestore silently OMITS documents that lack the ordering
+      // field, so `orderBy("updatedAt")` returned a partial snapshot for any
+      // package written without one — and the reconcile below then deleted the
+      // local copy of every package that "wasn't there". Ordering is presentation
+      // and is done client-side; it must never decide which records exist.
+      const q = query(packagesRef);
 
       this.firestoreUnsubscribe = onSnapshot(
         q,
@@ -212,13 +241,20 @@ export class CloudStorageAdapter {
             (p) => !this.tombstones.has(p.id)
           );
 
-          const validated = reconcileRemoteSnapshot(
+          const { packages: nextPackages, dropped } = reconcileSnapshotPreservingLocal(
             validateList(remotePackages),
             localPackages,
             this.userId
           );
-          deliveryService.savePackages(validated, this.userId);
-          this.notifyListeners(validated);
+
+          if (dropped.length > 0) {
+            console.warn(
+              `[CloudStorageAdapter] Snapshot omitted ${dropped.length} local package(s); keeping them rather than deleting.`
+            );
+          }
+
+          deliveryService.savePackages(nextPackages, this.userId);
+          this.notifyListeners(nextPackages);
         },
         (error) => {
           console.warn("[CloudStorageAdapter] Firestore onSnapshot warning:", error.message);

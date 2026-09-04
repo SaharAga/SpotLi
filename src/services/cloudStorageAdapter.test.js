@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
-import { CloudStorageAdapter } from './cloudStorageAdapter';
+import { CloudStorageAdapter, reconcileSnapshotPreservingLocal } from './cloudStorageAdapter';
 
 describe('CloudStorageAdapter', () => {
   let adapter;
@@ -101,5 +101,55 @@ describe('CloudStorageAdapter', () => {
       await expect(adapter.upsertPackageRemote({ id: 'pkg-1', title: 'X', trackingNumber: 'T1' }, ''))
         .rejects.toThrow(/userId/i);
     });
+  });
+});
+
+describe('reconcileSnapshotPreservingLocal (#91 — data loss on partial snapshots)', () => {
+  const pkg = (id, extra = {}) => ({
+    id,
+    trackingNumber: `RR${id}IL`,
+    title: `Package ${id}`,
+    carrier: 'other',
+    status: 'in_transit',
+    updatedAt: '2026-09-01T10:00:00Z',
+    ...extra
+  });
+
+  it('keeps local packages the snapshot did not return', () => {
+    // The bug: `orderBy("updatedAt")` omits documents lacking that field, so a
+    // perfectly alive package is simply absent from the snapshot. The old
+    // reconcile then dropped it and the listener persisted that — deleting real
+    // data off the user's disk.
+    const local = [pkg('a'), pkg('b'), pkg('c')];
+    const remote = [pkg('a')];
+
+    const { packages, dropped } = reconcileSnapshotPreservingLocal(remote, local, 'user-1');
+
+    expect(packages.map((p) => p.id).sort()).toEqual(['a', 'b', 'c']);
+    expect(dropped.map((p) => p.id).sort()).toEqual(['b', 'c']);
+  });
+
+  it('survives a completely empty snapshot without wiping the device', () => {
+    const local = [pkg('a'), pkg('b')];
+
+    const { packages } = reconcileSnapshotPreservingLocal([], local, 'user-1');
+
+    expect(packages).toHaveLength(2);
+  });
+
+  it('still takes remote updates that are newer than local', () => {
+    const local = [pkg('a', { title: 'Stale', updatedAt: '2026-09-01T10:00:00Z' })];
+    const remote = [pkg('a', { title: 'Fresh', updatedAt: '2026-09-05T10:00:00Z' })];
+
+    const { packages, dropped } = reconcileSnapshotPreservingLocal(remote, local, 'user-1');
+
+    expect(packages).toHaveLength(1);
+    expect(packages[0].title).toBe('Fresh');
+    expect(dropped).toHaveLength(0);
+  });
+
+  it('adds packages that exist only remotely', () => {
+    const { packages } = reconcileSnapshotPreservingLocal([pkg('remote-only')], [], 'user-1');
+    expect(packages.map((p) => p.id)).toEqual(['remote-only']);
   });
 });
