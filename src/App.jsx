@@ -1401,15 +1401,24 @@ export function DashboardContent() {
         )}
       </main>
 
-      {/* Floating Alpha Feedback Button */}
-      <aside aria-label="Alpha Feedback" className={`fixed z-30 bottom-5 ${isRTL ? 'left-5' : 'right-5'}`}>
+      {/* Floating Alpha Feedback Button.
+          It sat at z-30, bottom-5 — directly behind the bottom tab bar
+          (z-[60]) — so on a phone it had been completely invisible since the
+          bar landed. During alpha this is the app's only channel for hearing
+          about anything broken, so it needs to actually be on screen: above
+          the bar, clear of the safe-area inset, and on the opposite edge from
+          the centre FAB so the two do not compete. */}
+      <aside
+        aria-label={language === 'he' ? 'משוב אלפא' : 'Alpha feedback'}
+        className="fixed z-[61] end-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] lg:bottom-5 lg:end-5"
+      >
         <button
           onClick={() => openModal(MODAL.FEEDBACK)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white text-xs font-bold shadow-xl shadow-indigo-600/30 hover:scale-105 transition-all cursor-pointer min-h-[48px]"
+          className="flex items-center gap-2 px-4 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-600/40 transition-colors cursor-pointer min-h-[48px] focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 focus:outline-none"
           title={language === 'he' ? 'משוב ודיווח תקלות' : 'Feedback & Bug Report'}
         >
-          <MessageSquarePlus className="w-4 h-4" />
-          <span>{language === 'he' ? 'משוב אלפא' : 'Feedback'}</span>
+          <MessageSquarePlus className="w-4 h-4" aria-hidden="true" />
+          <span>{language === 'he' ? 'משוב' : 'Feedback'}</span>
         </button>
       </aside>
 
