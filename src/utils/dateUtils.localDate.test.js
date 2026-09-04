@@ -40,6 +40,17 @@ describe('toLocalISODate', () => {
     expect(toLocalISODate('not a date')).toBe('');
   });
 
+  // The cases above pin Asia/Jerusalem via vitest.config.js, which is the
+  // timezone the product targets. This one holds in ANY timezone, so the
+  // contract is not resting solely on that pin: `new Date(y, m, d, ...)`
+  // constructs in local time, so the local calendar date is knowable without
+  // assuming an offset.
+  it('returns the constructed local date regardless of timezone', () => {
+    expect(toLocalISODate(new Date(2026, 8, 5, 1, 30))).toBe('2026-09-05');
+    expect(toLocalISODate(new Date(2026, 9, 1, 0, 30))).toBe('2026-10-01');
+    expect(toLocalISODate(new Date(2026, 11, 31, 23, 59))).toBe('2026-12-31');
+  });
+
   it('accepts a parseable string', () => {
     expect(toLocalISODate('2026-03-14T12:00:00+02:00')).toBe('2026-03-14');
   });
