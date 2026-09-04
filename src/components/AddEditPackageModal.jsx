@@ -7,6 +7,7 @@ import { findPackageByTrackingNumber } from '../services/deliveryService.js';
 import { detectCarrier } from '../utils/carrierDetector.js';
 import { parseSmartText } from '../utils/smartParser.js';
 import { useLanguage } from '../context/LanguageContext';
+import { ModalHeader } from './ui/Primitives';
 import { useAuth } from '../context/AuthContext';
 import { recordParseCorrection } from '../services/parseCorrectionService';
 import { recordSmartImportAttempt } from '../services/smartImportAttemptService';
@@ -351,26 +352,14 @@ export function AddEditPackageModal({
       className="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8"
     >
       {/* Header */}
-      <div className="p-6 border-b border-slate-800 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
-            <Package className="w-5 h-5" />
-          </div>
-          <h2 className="text-lg font-bold text-slate-100">
-            {editPackage ? t('modal.editPackage') : t('modal.addNew')}
-          </h2>
-        </div>
-        <button
-          onClick={onClose}
-          className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer"
-          aria-label={t('modal.cancel')}
-        >
-          <X className="w-5 h-5" />
-        </button>
-      </div>
+      <ModalHeader
+        title={editPackage ? t('modal.editPackage') : t('modal.addNew')}
+        onClose={onClose}
+        closeLabel={t('modal.cancel')}
+      />
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+      <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
         {/* Item Title */}
         <div>
           <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
@@ -678,7 +667,7 @@ export function AddEditPackageModal({
                   d.setDate(d.getDate() + 14);
                   setReturnDeadline(toLocalISODate(d));
                 }}
-                className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition-colors"
+                className="px-3 min-h-[48px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition-colors"
               >
                 +14 {language === 'he' ? 'ימים' : 'days'}
               </button>
@@ -689,7 +678,7 @@ export function AddEditPackageModal({
                   d.setDate(d.getDate() + 30);
                   setReturnDeadline(toLocalISODate(d));
                 }}
-                className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition-colors"
+                className="px-3 min-h-[48px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition-colors"
               >
                 +30 {language === 'he' ? 'ימים' : 'days'}
               </button>
