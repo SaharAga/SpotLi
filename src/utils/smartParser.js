@@ -2,6 +2,7 @@ import { detectCarrier, sanitizeTrackingNumber } from './carrierDetector.js';
 import { detectStore } from './storeDetector.js';
 import { getCarrier } from '../types/carriers.js';
 import { sanitizeString } from './packageValidator.js';
+import { toLocalISODate } from './dateUtils.js';
 import { extractAndScoreCandidates, classifyConfidenceTier } from './candidateScorer.js';
 import { extractOpeningHours } from './openingHoursService.js';
 
@@ -777,10 +778,10 @@ export function extractDatesAndStatus(text) {
   if (!text || typeof text !== 'string') return {};
 
   const now = new Date();
-  const todayISO = now.toISOString().slice(0, 10);
+  const todayISO = toLocalISODate(now);
   const tomorrow = new Date(now);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowISO = tomorrow.toISOString().slice(0, 10);
+  const tomorrowISO = toLocalISODate(tomorrow);
 
   // 1. Relative dates with delivery phrasing
   if (/(?:תסופק היום|יסופק היום|היום עם שליח|השליח בדרך אליך היום|בדרך אליך היום|מגיע היום|צפוי להגיע היום|היום בין השעות|delivered today|out for delivery today)/i.test(text)) {

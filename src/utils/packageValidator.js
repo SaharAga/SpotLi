@@ -1,5 +1,6 @@
 import { CARRIERS, getCarrier } from '../types/carriers';
 import { STAGES, CATEGORIES } from '../types/stages';
+import { toLocalISODate } from './dateUtils';
 // NOTE: this module deliberately does NOT import from '../schemas/packageSchema'.
 // packageSchema imports `sanitizeString` from here; importing back created a
 // circular dependency. The canonical status list therefore lives here and is
@@ -211,7 +212,7 @@ export function validatePackage(pkg) {
   const category = VALID_CATEGORY_IDS.has(rawCategory) ? rawCategory : 'other';
 
   // 5. Dates & Routes
-  const orderDate = sanitizeString(safeObj.orderDate, 50) || new Date().toISOString().slice(0, 10);
+  const orderDate = sanitizeString(safeObj.orderDate, 50) || toLocalISODate();
   const expectedDeliveryDate = sanitizeString(safeObj.expectedDeliveryDate, 50) || '';
   const origin = sanitizeString(safeObj.origin, 150) || '';
   const destination = sanitizeString(safeObj.destination, 150) || 'Israel';

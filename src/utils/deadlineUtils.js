@@ -1,3 +1,5 @@
+import { toLocalISODate } from './dateUtils';
+
 /**
  * Utilities for calculating and formatting pickup & return deadline countdowns.
  */
@@ -189,5 +191,5 @@ export function calculateDefaultReturnDeadline(deliveryDate, windowDays = 14) {
   const base = deliveryDate ? new Date(deliveryDate) : new Date();
   const validBase = isNaN(base.getTime()) ? new Date() : base;
   const target = new Date(validBase.getTime() + windowDays * 24 * 60 * 60 * 1000);
-  return target.toISOString().slice(0, 10);
+  return toLocalISODate(target);
 }
