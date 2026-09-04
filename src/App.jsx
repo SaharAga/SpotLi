@@ -39,6 +39,7 @@ const FeedbackModal = lazyModal(() => import('./components/FeedbackModal'), 'Fee
 const AdminFeedbackModal = lazyModal(() => import('./components/AdminFeedbackModal'), 'AdminFeedbackModal');
 const ExportModal = lazyModal(() => import('./components/ExportModal'), 'ExportModal');
 const LockerMapModal = lazyModal(() => import('./components/LockerMapModal'), 'LockerMapModal');
+const ActivityModal = lazyModal(() => import('./components/ActivityModal'), 'ActivityModal');
 const DeleteConfirmDialog = lazyModal(() => import('./components/DeleteConfirmDialog'), 'DeleteConfirmDialog');
 const AutoArchivePromptModal = lazyModal(() => import('./components/AutoArchivePromptModal'), 'AutoArchivePromptModal');
 const NavigationChoiceModal = lazyModal(() => import('./components/NavigationChoiceModal'), 'NavigationChoiceModal');
@@ -80,6 +81,7 @@ export const MODAL = {
   ACCOUNT: 'account',
   EXPORT: 'export',
   LOCKER_MAP: 'lockerMap',
+  ACTIVITY: 'activity',
   ABOUT: 'about',
   FEEDBACK: 'feedback',
   ADMIN_FEEDBACK: 'adminFeedback',
@@ -1058,6 +1060,21 @@ export function DashboardContent() {
           onClose={() => closeModal(MODAL.LOCKER_MAP)}
           onOpenNavigation={(target) => openModal(MODAL.NAVIGATION_CHOICE, target)}
           onShowToast={showToast}
+        />
+      )
+    },
+    {
+      id: MODAL.ACTIVITY,
+      componentName: 'ActivityModal',
+      render: (isOpen) => (
+        <ActivityModal
+          isOpen={isOpen}
+          onClose={() => closeModal(MODAL.ACTIVITY)}
+          packages={packages}
+          onOpenPackage={(id) => {
+            const target = packages.find((p) => p.id === id);
+            if (target) handleOpenDetails(target);
+          }}
         />
       )
     },

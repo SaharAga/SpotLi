@@ -10,7 +10,7 @@ import { BottomNav, TAB_FOR_MODAL } from './BottomNav';
 
 // The two tab destinations that ARE modals. Kept here rather than imported
 // from App.jsx, which imports this file — that cycle is what the ids avoid.
-const MODAL_IDS = { ANALYTICS: 'analytics', LOCKER_MAP: 'lockerMap' };
+const MODAL_IDS = { ANALYTICS: 'analytics', ACTIVITY: 'activity' };
 import { AccountSheet } from './AccountSheet';
 import { APP_VERSION } from '../constants/version';
 
@@ -339,7 +339,7 @@ export function Navbar({
         onOpenStatus={switchTab(null)}
         onOpenInsights={switchTab(MODAL_IDS.ANALYTICS)}
         onOpenAdd={() => setIsAddActionSheetOpen(true)}
-        onOpenLockers={switchTab(MODAL_IDS.LOCKER_MAP)}
+        onOpenActivity={switchTab(MODAL_IDS.ACTIVITY)}
         onOpenAccount={switchTab(null, () => setIsAccountSheetOpen(true))}
       />
     </>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { List, BarChart3, Plus, MapPin, User } from 'lucide-react';
+import { List, BarChart3, Plus, Activity, User } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 /**
@@ -27,14 +27,20 @@ import { useLanguage } from '../context/LanguageContext';
  * classes anywhere in here.
  */
 /**
- * Which tab owns which screen. A page opened from Insights should light the
+ * Which tab owns which screen.
+ *
+ * Pickup points moved out of the bar and under Account: it was backed by four
+ * hardcoded locations, which is a poor use of one of four tab slots. Activity
+ * took the slot because it answers a question nothing else does — what moved
+ * since you last looked — off checkpoint data every package already carries. A page opened from Insights should light the
  * Insights tab, not leave Status lit while you are somewhere else — that was
  * the tell that these were popups rather than places.
  */
 export const TAB_FOR_MODAL = {
   analytics: 'insights',
-  lockerMap: 'lockers',
-  fullScreenLocker: 'lockers',
+  activity: 'activity',
+  lockerMap: 'account',
+  fullScreenLocker: 'account',
   account: 'account',
   auth: 'account',
   about: 'account',
@@ -52,7 +58,7 @@ function BottomNavImpl({
   onOpenStatus,
   onOpenInsights,
   onOpenAdd,
-  onOpenLockers,
+  onOpenActivity,
   onOpenAccount
 }) {
   const { language } = useLanguage();
@@ -61,7 +67,7 @@ function BottomNavImpl({
   const tabs = [
     { id: 'status', icon: List, label: isHe ? 'מצב' : 'Status', onClick: onOpenStatus },
     { id: 'insights', icon: BarChart3, label: isHe ? 'תובנות' : 'Insights', onClick: onOpenInsights },
-    { id: 'lockers', icon: MapPin, label: isHe ? 'לוקרים' : 'Lockers', onClick: onOpenLockers },
+    { id: 'activity', icon: Activity, label: isHe ? 'פעילות' : 'Activity', onClick: onOpenActivity },
     { id: 'account', icon: User, label: isHe ? 'חשבון' : 'Account', onClick: onOpenAccount }
   ];
 
