@@ -33,6 +33,12 @@ function PackageCardImpl({
   const { t, language, isRTL } = useLanguage();
   const [copied, setCopied] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  // The row menu opens downward by default. On the last cards in a list that
+  // put it under the bottom tab bar, so on open we measure the space actually
+  // left below the trigger and flip upward when the menu would not fit.
+  const [menuFlipUp, setMenuFlipUp] = useState(false);
+  const menuTriggerRef = useRef(null);
+  const MENU_HEIGHT = 250;
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Mobile Swipe Gesture State
@@ -164,8 +170,23 @@ function PackageCardImpl({
 
   return (
     <div
-      className={`relative rounded-2xl transition-all ${menuOpen ? 'z-30' : 'z-0'}`}
-      style={{ contentVisibility: 'auto', containIntrinsicSize: '140px' }}
+      /* z-50, not z-30: this element creates a stacking context while the
+         menu is open, so the menu's own z-50 is scoped INSIDE it and cannot
+         escape. At z-30 the whole card-plus-menu sat below the install banner
+         and the bottom nav (both z-40), and the menu was drawn behind them. */
+      className={`relative rounded-2xl transition-all ${menuOpen ? 'z-50' : 'z-0'}`}
+      /* `content-visibility: auto` implies `contain: layout style paint`, and
+         PAINT containment clips anything a descendant draws outside this box.
+         The row menu is positioned `absolute top-full` — below the card — so
+         it was being clipped away to nothing: the menu opened, and you saw
+         only the sliver that happened to fall inside the card's own bounds.
+         Dropping to `visible` while the menu is open removes the containment
+         for that one card; every other card in the list keeps the
+         skip-rendering win, which is what this was here for. */
+      style={{
+        contentVisibility: menuOpen ? 'visible' : 'auto',
+        containIntrinsicSize: '140px'
+      }}
     >
       {/* Swipe Action Background Indicator */}
       {isSwiping && (
@@ -346,8 +367,16 @@ function PackageCardImpl({
 
             <div className="relative">
               <button
+                ref={menuTriggerRef}
                 onClick={(e) => {
                   e.stopPropagation();
+                  if (!menuOpen && menuTriggerRef.current) {
+                    const { bottom } = menuTriggerRef.current.getBoundingClientRect();
+                    // 96px keeps it clear of the bottom tab bar and the home
+                    // indicator inset, which is the space the menu used to
+                    // disappear into.
+                    setMenuFlipUp(window.innerHeight - bottom < MENU_HEIGHT + 96);
+                  }
                   setMenuOpen(!menuOpen);
                 }}
                 title={t('card.viewDetails')}
@@ -360,9 +389,9 @@ function PackageCardImpl({
                 <>
                   <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }} />
                   <div
-                    className={`absolute z-50 top-full mt-1.5 w-48 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl py-1 text-xs ${
-                      isRTL ? 'left-0' : 'right-0'
-                    }`}
+                    className={`absolute z-50 w-48 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl py-1 text-xs ${
+                      menuFlipUp ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+                    } ${isRTL ? 'left-0' : 'right-0'}`}
                   >
                     <button
                       onClick={(e) => {

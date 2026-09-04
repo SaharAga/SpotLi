@@ -1155,9 +1155,16 @@ export function DashboardContent() {
 
 
       {/* Main Container */}
-      {/* pb clears the fixed bottom tab bar (BottomNav) plus the home
+      {/* `relative` with NO z-index on purpose. It only needs to paint above
+          .chrome-wash::before (z-0), and being later in DOM order already does
+          that. Adding `z-10` here created a stacking context that trapped
+          everything inside it — the package row menu's z-50 could then never
+          rise above the install banner or the bottom nav at z-40, so the menu
+          opened underneath them.
+
+          pb clears the fixed bottom tab bar (BottomNav) plus the home
           indicator inset; the bar is lg:hidden, so the padding is too. */}
-      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] lg:pb-6">
+      <main className="relative flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] lg:pb-6">
         {loading && !user ? (
           /* SLEEK INITIAL COLD-START SKELETON / LOADING STATE */
           <div className="max-w-2xl mx-auto my-12 p-8 sm:p-12 bg-slate-900/40 border border-slate-800/60 rounded-3xl backdrop-blur-xl text-center flex flex-col items-center justify-center animate-pulse">
