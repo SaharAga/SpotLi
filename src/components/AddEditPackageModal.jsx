@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Sparkles, Package, AlertTriangle, ExternalLink, MapPin, Key, ShoppingBag, Wand2 } from 'lucide-react';
 import { CARRIER_LIST, getCarrier } from '../types/carriers.js';
 import { STAGES, CATEGORIES } from '../types/stages.js';
+import { toLocalISODate } from '../utils/dateUtils';
 import { findPackageByTrackingNumber } from '../services/deliveryService.js';
 import { detectCarrier } from '../utils/carrierDetector.js';
 import { parseSmartText } from '../utils/smartParser.js';
@@ -138,7 +139,7 @@ export function AddEditPackageModal({
       setCarrier(carrier);
       setIsManualCarrier(false);
       setCategory(category);
-      const todayISO = new Date().toISOString().slice(0, 10);
+      const todayISO = toLocalISODate();
       setOrderDate(initialValues.orderDate || todayISO);
 
       if (initialValues.expectedDeliveryDate) {
@@ -148,7 +149,7 @@ export function AddEditPackageModal({
       } else {
         const nextDate = new Date();
         nextDate.setDate(nextDate.getDate() + 14);
-        setExpectedDeliveryDate(nextDate.toISOString().slice(0, 10));
+        setExpectedDeliveryDate(toLocalISODate(nextDate));
       }
       setOrigin(origin);
       setDestination(destination);
@@ -180,10 +181,10 @@ export function AddEditPackageModal({
       setCarrier('other');
       setIsManualCarrier(false);
       setCategory('electronics');
-      setOrderDate(new Date().toISOString().slice(0, 10));
+      setOrderDate(toLocalISODate());
       const nextDate = new Date();
       nextDate.setDate(nextDate.getDate() + 14);
-      setExpectedDeliveryDate(nextDate.toISOString().slice(0, 10));
+      setExpectedDeliveryDate(toLocalISODate(nextDate));
       setOrigin('');
       setDestination('Tel Aviv, Israel');
       setNotes('');
@@ -301,7 +302,7 @@ export function AddEditPackageModal({
       carrier: carrier,
       carrierName: carrierObj.name,
       category: category,
-      orderDate: orderDate || new Date().toISOString().slice(0, 10),
+      orderDate: orderDate || toLocalISODate(),
       expectedDeliveryDate: expectedDeliveryDate || '',
       origin: origin.trim(),
       destination: destination.trim() || 'Israel',
@@ -675,7 +676,7 @@ export function AddEditPackageModal({
                 onClick={() => {
                   const d = new Date();
                   d.setDate(d.getDate() + 14);
-                  setReturnDeadline(d.toISOString().slice(0, 10));
+                  setReturnDeadline(toLocalISODate(d));
                 }}
                 className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition-colors"
               >
@@ -686,7 +687,7 @@ export function AddEditPackageModal({
                 onClick={() => {
                   const d = new Date();
                   d.setDate(d.getDate() + 30);
-                  setReturnDeadline(d.toISOString().slice(0, 10));
+                  setReturnDeadline(toLocalISODate(d));
                 }}
                 className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition-colors"
               >

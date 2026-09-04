@@ -36,11 +36,34 @@ function getCachedFormatter(cache, locale, options) {
 }
 
 /**
- * Returns today's date as an ISO date-only string (YYYY-MM-DD).
+ * Formats a Date as a LOCAL calendar date (YYYY-MM-DD).
+ *
+ * Deliberately not `toISOString().slice(0, 10)`, which is what this and ~20
+ * inlined copies used to do. `toISOString()` is UTC, and Israel is UTC+2/+3 —
+ * so between midnight and 02:00/03:00 local, "today" came back as *yesterday*.
+ * That fed the default order date on every new package, the date pickers,
+ * deadline arithmetic, and the smart parser's today/tomorrow resolution, so a
+ * package added at 01:00 was silently dated a day early.
+ *
+ * The date this returns is the date on the user's wall calendar, which is what
+ * every caller actually meant.
+ *
+ * @param {Date} [date=new Date()]
+ * @returns {string} YYYY-MM-DD
+ */
+export function toLocalISODate(date = new Date()) {
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/**
+ * Returns today's date as a local ISO date-only string (YYYY-MM-DD).
  * @returns {string}
  */
 export function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  return toLocalISODate();
 }
 
 /**

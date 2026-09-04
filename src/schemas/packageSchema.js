@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { sanitizeString, VALID_STATUSES } from '../utils/packageValidator';
 import { CARRIERS, getCarrier } from '../types/carriers';
 import { CATEGORIES } from '../types/stages';
+import { toLocalISODate } from '../utils/dateUtils';
 
 export { VALID_STATUSES };
 
@@ -33,7 +34,7 @@ export const packageSchema = z.object({
   carrierName: z.string().max(100).optional().transform(s => (s ? sanitizeString(s, 100) : undefined)),
   status: z.enum(VALID_STATUSES).default('in_transit'),
   category: z.string().max(50).default('other').transform(s => sanitizeString(s, 50).toLowerCase()),
-  orderDate: z.string().max(50).optional().default(() => new Date().toISOString().slice(0, 10)),
+  orderDate: z.string().max(50).optional().default(() => toLocalISODate()),
   expectedDeliveryDate: z.string().max(50).optional().default(''),
   origin: z.string().max(150).optional().default('').transform(s => sanitizeString(s, 150)),
   destination: z.string().max(150).optional().default('Israel').transform(s => sanitizeString(s, 150)),
@@ -207,7 +208,7 @@ export const repairingPackageSchema = z.preprocess(
     carrierName: repairedString(100),
     status: repairedEnum(VALID_STAGE_IDS, 'in_transit'),
     category: repairedEnum(VALID_CATEGORY_IDS, 'other'),
-    orderDate: repairedString(50, () => new Date().toISOString().slice(0, 10)),
+    orderDate: repairedString(50, () => toLocalISODate()),
     expectedDeliveryDate: repairedString(50),
     origin: repairedString(150),
     destination: repairedString(150, 'Israel'),

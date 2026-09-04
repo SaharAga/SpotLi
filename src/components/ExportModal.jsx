@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { exportToCSV, exportToJSON, generatePrintableSummary } from '../utils/exportUtils';
+import { todayISO } from '../utils/dateUtils';
 import { Modal } from './Modal';
 import { useFeatureUsage } from '../hooks/useFeatureUsage';
 import { FEATURE_IDS } from '../constants/featureIds';
@@ -49,7 +50,7 @@ export function ExportModal({
     setIsExporting(true);
 
     try {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = todayISO();
       if (selectedFormat === 'csv') {
         exportToCSV(filteredExportPackages, true, `deliveree_export_${selectedScope}_${today}.csv`);
         if (onShowToast) {
