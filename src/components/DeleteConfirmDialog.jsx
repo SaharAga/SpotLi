@@ -17,6 +17,7 @@ export function DeleteConfirmDialog({
       isOpen={isOpen}
       onClose={onClose}
       componentName="DeleteConfirmDialog"
+      compact
       scrollable={false}
       className="relative w-full max-w-sm bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden p-6 space-y-4"
     >

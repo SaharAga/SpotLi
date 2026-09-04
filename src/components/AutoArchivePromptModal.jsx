@@ -17,6 +17,7 @@ export function AutoArchivePromptModal({
       isOpen={isOpen}
       onClose={onDecline}
       componentName="AutoArchivePromptModal"
+      compact
       scrollable={false}
       overlayClassName="bg-black/60 backdrop-blur-sm"
       labelledBy="auto-archive-title"
