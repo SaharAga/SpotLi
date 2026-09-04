@@ -301,7 +301,7 @@ export function IngestionGuideModal({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-bold text-[10px] tracking-wide uppercase border border-indigo-500/30">
+                <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-bold text-xs tracking-wide uppercase border border-indigo-500/30">
                   {language === 'he' ? 'מומלץ' : 'Recommended'}
                 </span>
                 <h3 className="text-sm font-bold text-slate-100">
@@ -372,7 +372,7 @@ export function IngestionGuideModal({
             connectedServices.outlook) && (
             <div className="pt-3 border-t border-slate-800/80 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-slate-200 flex items-center gap-1.5">
+                <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                   {language === 'he' ? 'תיבות מחוברות להעברה אוטומטית:' : 'Active Connected Inboxes:'}
                 </span>
@@ -382,7 +382,7 @@ export function IngestionGuideModal({
                       if (connectedServices.gmail) handleDisconnectService('gmail');
                       if (connectedServices.outlook) handleDisconnectService('outlook');
                     }}
-                    className="text-[10px] text-rose-400 hover:text-rose-300 underline font-medium cursor-pointer p-1"
+                    className="text-xs text-rose-400 hover:text-rose-300 underline font-medium cursor-pointer p-1"
                   >
                     {language === 'he' ? 'נתק הכל' : 'Disconnect All'}
                   </button>
@@ -397,27 +397,27 @@ export function IngestionGuideModal({
                       className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-slate-200 text-xs"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
+                        <span className={`px-1.5 py-0.5 rounded text-xs font-bold uppercase ${
                           acc.service === 'outlook' ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
                         }`}>
                           {acc.service || 'Gmail'}
                         </span>
-                        <span className="truncate font-medium text-[11px]" title={acc.email}>
+                        <span className="truncate font-medium text-xs" title={acc.email}>
                           {acc.email}
                         </span>
                         {acc.status === 'pending' ? (
-                          <span className="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse shrink-0">
+                          <span className="px-1.5 py-0.2 rounded text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse shrink-0">
                             {language === 'he' ? 'בהמתנה לאימות' : 'Setting up...'}
                           </span>
                         ) : (
-                          <span className="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">
+                          <span className="px-1.5 py-0.2 rounded text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">
                             {language === 'he' ? 'פעיל' : 'Active'}
                           </span>
                         )}
                       </div>
                       <button
                         onClick={() => handleDisconnectAccount(acc.email)}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 transition-colors cursor-pointer text-[10px] font-semibold shrink-0 ml-1"
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 transition-colors cursor-pointer text-xs font-semibold shrink-0 ml-1"
                         title={language === 'he' ? 'נתק חשבון' : 'Unlink account'}
                         aria-label={`Unlink ${acc.email}`}
                       >
@@ -430,13 +430,13 @@ export function IngestionGuideModal({
                   <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-slate-200 text-xs col-span-full">
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="text-[11px] font-medium">
+                      <span className="text-xs font-medium">
                         {connectedServices.gmail ? (user?.email || 'Gmail Auto-Sync') : 'Outlook Auto-Sync'}
                       </span>
                     </div>
                     <button
                       onClick={() => handleDisconnectService(connectedServices.gmail ? 'gmail' : 'outlook')}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 transition-colors cursor-pointer text-[10px] font-semibold"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 transition-colors cursor-pointer text-xs font-semibold"
                       aria-label="Unlink service"
                     >
                       <Trash2 className="w-3 h-3" />
@@ -447,7 +447,7 @@ export function IngestionGuideModal({
               </div>
 
               {gmailRenewalError && (
-                <div className="flex items-start gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px]">
+                <div className="flex items-start gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs">
                   <RefreshCw className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                   <span>
                     {language === 'he'
@@ -460,7 +460,7 @@ export function IngestionGuideModal({
           )}
 
           {/* Multi-email info note */}
-          <div className="text-[10px] text-slate-400/90 pt-1 flex items-center gap-1.5">
+          <div className="text-xs text-slate-400/90 pt-1 flex items-center gap-1.5">
             <Sparkles className="w-3 h-3 text-indigo-400 shrink-0" />
             <span>
               {language === 'he'
@@ -481,7 +481,7 @@ export function IngestionGuideModal({
                 <h3 className="font-bold text-sm text-slate-100">
                   {language === 'he' ? 'הדבקה חכמה מהירה מהלוח' : 'Rapid Clipboard Paste'}
                 </h3>
-                <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
+                <span className="text-xs text-emerald-400 font-bold uppercase tracking-wider">
                   {language === 'he' ? 'עובד מכל אפליקציה ו-SMS ⚡' : 'Works with any App & SMS ⚡'}
                 </span>
               </div>
@@ -499,7 +499,7 @@ export function IngestionGuideModal({
             </button>
           </div>
 
-          <p className="text-[11px] text-slate-300 leading-relaxed">
+          <p className="text-xs text-slate-300 leading-relaxed">
             {language === 'he'
               ? 'מעתיקים הודעת SMS, מספר מעקב או טקסט מכל אפליקציה — פותחים את Deliveree והפרטים מזוהים מיידית.'
               : 'Copy any SMS, tracking code, or confirmation email — Deliveree instantly recognizes the carrier and shipment.'}
@@ -512,7 +512,7 @@ export function IngestionGuideModal({
             <h3 className="font-bold text-sm text-slate-100">
               {language === 'he' ? 'תיבת המשלוחים האישית ומדריכי הגדרה' : 'Personal Ingestion Box & Setup Guides'}
             </h3>
-            <p className="text-[11px] text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-400 mt-0.5">
               {language === 'he' ? 'הגדרת כלל העברה אוטומטי באימייל שלך (One-Time Setup)' : 'One-time forwarding rule in your email client'}
             </p>
           </div>
@@ -520,7 +520,7 @@ export function IngestionGuideModal({
           {/* Email Copy Card */}
           <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between gap-2">
             <div className="min-w-0">
-              <span className="text-[10px] text-slate-500 block uppercase font-bold">
+              <span className="text-xs text-slate-500 block uppercase font-bold">
                 {language === 'he' ? 'כתובת ההעברה הייחודית שלך:' : 'Your Private Ingestion Address:'}
               </span>
               <span className="font-mono text-xs text-blue-400 font-semibold truncate block select-all">
@@ -560,14 +560,14 @@ export function IngestionGuideModal({
             </div>
 
             {/* Guide Step Details */}
-            <div className="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800/80 space-y-2 text-[11px] text-slate-300">
+            <div className="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800/80 space-y-2 text-xs text-slate-300">
               {selectedGuide === 'gmail' && (
                 <ol className="list-decimal list-inside space-y-1.5 leading-relaxed">
                   <li>{language === 'he' ? 'פתחו את Gmail במחשב ולחצו על גלגל השיניים (הגדרות) ⚙️.' : 'Open Gmail on desktop and click the Settings gear ⚙️.'}</li>
                   <li>{language === 'he' ? 'עברו ללשונית "מסננים וכתובות חסומות" ולחצו "צור מסנן חדש".' : 'Go to "Filters and Blocked Addresses" and click "Create a new filter".'}</li>
                   <li>
                     {language === 'he' ? 'בשדה "כולל את המילים", הזינו:' : 'In the "Has the words" field, enter:'}
-                    <code className="block my-1 p-1.5 bg-slate-950 rounded text-blue-400 font-mono text-[10px] select-all break-all">
+                    <code className="block my-1 p-1.5 bg-slate-950 rounded text-blue-400 font-mono text-xs select-all break-all">
                       {DEFAULT_FORWARDING_FILTER_QUERY}
                     </code>
                   </li>
@@ -612,7 +612,7 @@ export function IngestionGuideModal({
                 <h3 className="font-bold text-sm text-slate-100">
                   {language === 'he' ? 'התקנה בטלפון הנייד (PWA)' : 'Mobile Phone Installation (PWA)'}
                 </h3>
-                <span className="text-[10px] text-slate-400 font-semibold">
+                <span className="text-xs text-slate-400 font-semibold">
                   {language === 'he' ? 'שימוש נוח במסך הבית' : 'Seamless Home Screen Access'}
                 </span>
               </div>
@@ -632,10 +632,10 @@ export function IngestionGuideModal({
                 <img src={qrCodeImageUrl} alt="QR Code" className="w-32 h-32" />
               </div>
               <div className="space-y-1.5 text-start">
-                <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider">
+                <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
                   {language === 'he' ? 'כיצד לפתוח בטלפון:' : 'How to open on phone:'}
                 </span>
-                <ol className="list-decimal list-inside space-y-1 text-slate-400 text-[11px]">
+                <ol className="list-decimal list-inside space-y-1 text-slate-400 text-xs">
                   <li>{language === 'he' ? 'סרוק את הברקוד במצלמת הטלפון.' : 'Scan QR code with phone camera.'}</li>
                   <li>{language === 'he' ? 'האפליקציה תיפתח מיידית בדפדפן הנייד.' : 'Deliveree opens immediately.'}</li>
                   <li>{language === 'he' ? 'לחץ "הוסף למסך הבית" להתקנה כאפליקציה חלקה.' : 'Tap "Add to Home Screen" to install.'}</li>

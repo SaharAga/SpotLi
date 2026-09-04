@@ -209,7 +209,7 @@ export function CourierActionHub({ pkg, onShowToast }) {
             <h3 className="text-sm font-bold text-slate-100">
               {isHe ? 'תגובה מהירה לשליח' : 'Courier Quick Response'}
             </h3>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-xs text-slate-400">
               {isHe
                 ? 'בחר, ערוך או הוסף הודעות מוכנות לשליח בוואטסאפ וב-SMS'
                 : 'Select, edit, or create pre-filled messages for WhatsApp & SMS'}
@@ -281,7 +281,7 @@ export function CourierActionHub({ pkg, onShowToast }) {
           />
 
           {/* Quick Variable Insert Pills */}
-          <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+          <div className="flex flex-wrap items-center gap-1.5 text-xs">
             <span className="text-slate-400">{isHe ? 'הוסף משתנה:' : 'Insert variable:'}</span>
             <button
               type="button"
@@ -374,11 +374,11 @@ export function CourierActionHub({ pkg, onShowToast }) {
       {/* Message Preview Box */}
       <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300 leading-relaxed font-sans whitespace-pre-line relative">
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+          <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">
             {isHe ? 'תצוגה מקדימה של ההודעה:' : 'Message Preview:'}
           </span>
           {activeTemplate && (
-            <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 font-medium">
+            <span className="text-xs px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 font-medium">
               {activeTemplate.label}
             </span>
           )}
@@ -391,7 +391,7 @@ export function CourierActionHub({ pkg, onShowToast }) {
           <button
             type="button"
             onClick={handleOpenEditActive}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-medium transition-colors cursor-pointer min-h-[32px]"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium transition-colors cursor-pointer min-h-[32px]"
             title={isHe ? 'ערוך תגובה זו' : 'Edit this message'}
           >
             <Edit3 className="w-3 h-3 text-blue-400" />
@@ -402,7 +402,7 @@ export function CourierActionHub({ pkg, onShowToast }) {
             <button
               type="button"
               onClick={handleDeleteActive}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-[11px] font-medium transition-colors cursor-pointer min-h-[32px]"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-medium transition-colors cursor-pointer min-h-[32px]"
               title={isHe ? 'מחק / הסר תגובה זו' : 'Delete / hide this message'}
             >
               <Trash2 className="w-3 h-3" />

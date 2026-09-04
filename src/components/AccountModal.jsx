@@ -31,7 +31,7 @@ const ACCOUNT_SECTIONS = [
 // Design tokens: --stg-* custom properties (index.css), a pilot navy+gold
 // palette scoped to .settings-theme — see that block's comment for why.
 const card = 'p-4 bg-[var(--stg-surface-2)] border border-[var(--stg-border)] rounded-xl';
-const label = 'text-[11px] text-[var(--stg-text-muted)] block mb-1';
+const label = 'text-xs text-[var(--stg-text-muted)] block mb-1';
 const sectionTitle = 'text-xs font-bold text-[var(--stg-text)] flex items-center gap-2';
 const selectCls = 'w-full bg-[var(--stg-surface)] border border-[var(--stg-border)] text-[var(--stg-text)] text-base sm:text-sm rounded-lg p-2.5 focus:border-[var(--stg-accent)] focus:outline-none cursor-pointer min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed';
 
@@ -328,7 +328,7 @@ export function AccountModal({
               <h2 className="text-base sm:text-lg font-bold text-[var(--stg-text)] flex items-center gap-2">
                 <span>{user ? user.name : (language === 'he' ? 'הגדרות' : 'Settings')}</span>
                 {user && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--stg-accent-soft)] text-[var(--stg-accent)] font-semibold">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--stg-accent-soft)] text-[var(--stg-accent)] font-semibold">
                     {user.plan || 'Personal'}
                   </span>
                 )}
@@ -467,14 +467,14 @@ export function AccountModal({
                     <span className="font-bold text-[var(--stg-text)] block text-xs">
                       {language === 'he' ? 'סטטוס סנכרון ענן' : 'Cloud Sync Status'}
                     </span>
-                    <span className="text-[11px] text-[var(--stg-text-muted)]">
+                    <span className="text-xs text-[var(--stg-text-muted)]">
                       {syncStatus === 'syncing'
                         ? (language === 'he' ? 'מסנכרן כעת...' : 'Syncing now...')
                         : (language === 'he' ? `מעודכן (${lastSyncTime ? new Date(lastSyncTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'כרגע'})` : `Synced (${lastSyncTime ? new Date(lastSyncTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'})`)}
                     </span>
                   </div>
                 </div>
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--stg-success-soft)] text-[var(--stg-success)] text-[11px] font-bold">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--stg-success-soft)] text-[var(--stg-success)] text-xs font-bold">
                   <Check className="w-3 h-3" />
                   <span>{language === 'he' ? 'פעיל' : 'Active'}</span>
                 </span>
@@ -492,7 +492,7 @@ export function AccountModal({
                     <span className="font-bold text-[var(--stg-text)] block text-xs">
                       {language === 'he' ? 'עזרו לשפר דיוק (AI)' : 'Help Improve AI Accuracy'}
                     </span>
-                    <span className="text-[11px] text-[var(--stg-text-muted)] leading-relaxed block mt-0.5">
+                    <span className="text-xs text-[var(--stg-text-muted)] leading-relaxed block mt-0.5">
                       {language === 'he'
                         ? 'שמירת טקסט מודבק ותיקונים שביצעת לשיפור מנוע החילוץ (ללא תמונות). כיבוי מוחק מיידית כל מידע שכבר נאסף.'
                         : 'Stores pasted text and your corrections to improve the parser (never images). Turning this off immediately deletes any data already collected.'}
@@ -515,7 +515,7 @@ export function AccountModal({
                       <Bell className="w-4 h-4 text-[var(--stg-accent)]" />
                       <span>{t('notifications.webPush')}</span>
                     </span>
-                    <p className="text-[11px] text-[var(--stg-text-muted)] leading-relaxed">
+                    <p className="text-xs text-[var(--stg-text-muted)] leading-relaxed">
                       {t('notifications.webPushDesc')}
                     </p>
                   </div>
@@ -527,7 +527,7 @@ export function AccountModal({
                         onChange={(e) => handleUpdateNotifPref('pushEnabled', e.target.checked)}
                       />
                     ) : permissionStatus === 'denied' ? (
-                      <span className="text-[10px] px-2.5 py-1 rounded-lg bg-[var(--stg-destructive-soft)] text-[var(--stg-destructive)] font-semibold">
+                      <span className="text-xs px-2.5 py-1 rounded-lg bg-[var(--stg-destructive-soft)] text-[var(--stg-destructive)] font-semibold">
                         {t('notifications.permissionDenied')}
                       </span>
                     ) : (
@@ -545,14 +545,14 @@ export function AccountModal({
 
                 {permissionStatus === 'granted' && (
                   <div className="flex items-center justify-between pt-2 border-t border-[var(--stg-border)]">
-                    <div className="flex items-center gap-2 text-[11px] text-[var(--stg-success)] font-semibold">
+                    <div className="flex items-center gap-2 text-xs text-[var(--stg-success)] font-semibold">
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       <span>{t('notifications.permissionGranted')}</span>
                     </div>
                     <button
                       type="button"
                       onClick={handleSendTestNotification}
-                      className="px-3 py-1.5 rounded-lg bg-[var(--stg-surface)] hover:bg-[var(--stg-surface-elevated)] border border-[var(--stg-border)] text-[var(--stg-text)] text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1.5 min-h-[36px]"
+                      className="px-3 py-1.5 rounded-lg bg-[var(--stg-surface)] hover:bg-[var(--stg-surface-elevated)] border border-[var(--stg-border)] text-[var(--stg-text)] text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 min-h-[36px]"
                     >
                       <Sparkles className="w-3 h-3 text-[var(--stg-accent)]" />
                       <span>{language === 'he' ? 'שלח התראת בדיקה' : 'Send Test Notification'}</span>
@@ -575,7 +575,7 @@ export function AccountModal({
                     { key: 'notifyOnException', copy: 'notifyOnException' }
                   ].map(({ key, copy }) => (
                     <label key={key} className="flex items-center justify-between p-2.5 rounded-lg bg-[var(--stg-surface)] border border-[var(--stg-border)] cursor-pointer min-h-[44px]">
-                      <span className="text-[11px] font-semibold text-[var(--stg-text)]">
+                      <span className="text-xs font-semibold text-[var(--stg-text)]">
                         {t(`notifications.${copy}`)}
                       </span>
                       <input
@@ -614,7 +614,7 @@ export function AccountModal({
                   ))}
                 </select>
                 {!user && (
-                  <p className="text-[10px] text-[var(--stg-text-muted)]">
+                  <p className="text-xs text-[var(--stg-text-muted)]">
                     {language === 'he' ? 'התחברו כדי לשמור העדפה זו לחשבונכם' : 'Sign in to save this to your account'}
                   </p>
                 )}
@@ -631,7 +631,7 @@ export function AccountModal({
                     <span className="font-bold text-[var(--stg-text)] block text-xs">
                       {t("autoArchive.settingTitle")}
                     </span>
-                    <span className="text-[11px] text-[var(--stg-text-muted)] leading-relaxed block mt-0.5">
+                    <span className="text-xs text-[var(--stg-text-muted)] leading-relaxed block mt-0.5">
                       {t("autoArchive.settingDesc")}
                     </span>
                   </div>
@@ -698,7 +698,7 @@ export function AccountModal({
                         key={value}
                         type="button"
                         onClick={() => setTheme(value)}
-                        className={`py-2.5 px-2 rounded-lg border text-[11px] font-bold transition-all flex flex-col items-center justify-center gap-1 cursor-pointer min-h-[44px] ${
+                        className={`py-2.5 px-2 rounded-lg border text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 cursor-pointer min-h-[44px] ${
                           theme === value
                             ? 'bg-[var(--stg-accent-soft)] border-[var(--stg-accent)] text-[var(--stg-accent)]'
                             : 'bg-[var(--stg-surface)] border-[var(--stg-border)] text-[var(--stg-text-muted)] hover:text-[var(--stg-text)]'
@@ -727,7 +727,7 @@ export function AccountModal({
                     <option value="YYYY-MM-DD">YYYY-MM-DD (2026-08-19)</option>
                   </select>
                   {!user && (
-                    <p className="text-[10px] text-[var(--stg-text-muted)]">
+                    <p className="text-xs text-[var(--stg-text-muted)]">
                       {language === 'he' ? 'התחברו כדי לשמור העדפה זו לחשבונכם' : 'Sign in to save this to your account'}
                     </p>
                   )}
@@ -751,7 +751,7 @@ export function AccountModal({
                   <option value={NAV_APPS.APPLE_MAPS}>{language === 'he' ? 'Apple Maps (אפל מפות)' : 'Apple Maps'}</option>
                   <option value={NAV_APPS.MOOVIT}>{language === 'he' ? 'Moovit (תחבורה ציבורית)' : 'Moovit (Public Transit)'}</option>
                 </select>
-                <p className="text-[10px] text-[var(--stg-text-muted)]">
+                <p className="text-xs text-[var(--stg-text-muted)]">
                   {language === 'he' 
                     ? 'משמש לפתיחה מיידית בלחיצה אחת על כפתור הניווט בפרטי החבילה' 
                     : 'Used for instant 1-click navigation from package pickup details'}
@@ -768,7 +768,7 @@ export function AccountModal({
                   <span className="text-xs font-bold text-[var(--stg-text)] block">
                     {language === 'he' ? 'סה"כ חבילות בחשבונך' : 'Total Packages in Your Account'}
                   </span>
-                  <span className="text-[11px] text-[var(--stg-text-muted)]">
+                  <span className="text-xs text-[var(--stg-text-muted)]">
                     {language === 'he' ? `${packages.length} משלוחים שמורים בענן ובמכשיר` : `${packages.length} deliveries synced locally & on cloud`}
                   </span>
                 </div>
@@ -793,7 +793,7 @@ export function AccountModal({
                     <Download className="w-4 h-4" />
                     <span>{language === 'he' ? 'מרכז דוחות וייצוא' : 'Export Center (Reports)'}</span>
                   </div>
-                  <p className="text-[11px] text-[var(--stg-text-muted)] leading-relaxed">
+                  <p className="text-xs text-[var(--stg-text-muted)] leading-relaxed">
                     {language === 'he' ? 'דוחות לקריאה (CSV/JSON/PDF) עם סינון — לצפייה ולא לשחזור.' : 'Readable reports (CSV/JSON/PDF) with filtering — for reading, not for restoring.'}
                   </p>
                 </button>
@@ -807,7 +807,7 @@ export function AccountModal({
                     <Database className="w-4 h-4" />
                     <span>{language === 'he' ? 'הורדת גיבוי מלא (JSON)' : 'Download Full Backup (JSON)'}</span>
                   </div>
-                  <p className="text-[11px] text-[var(--stg-text-muted)] leading-relaxed">
+                  <p className="text-xs text-[var(--stg-text-muted)] leading-relaxed">
                     {language === 'he' ? 'קובץ שחזור מלא הנקרא ישירות מהאחסון — כולל כל השדות, וניתן לייבוא חזרה לאפליקציה.' : 'A restorable snapshot read straight from storage — every field, importable back into the app.'}
                   </p>
                 </button>
@@ -823,7 +823,7 @@ export function AccountModal({
                   <AlertTriangle className="w-4 h-4 shrink-0" />
                   <span>{language === 'he' ? 'מחיקה בלתי הפיכה - פרטיות ו-GDPR' : 'Irreversible Account & Data Deletion (GDPR)'}</span>
                 </div>
-                <p className="text-[11px] opacity-80 leading-relaxed">
+                <p className="text-xs opacity-80 leading-relaxed">
                   {language === 'he'
                     ? 'פעולה זו תמחק לחלוטין את כל החבילות שלך מהענן (Firestore), תמחק את החשבון האישי שלך, ותנקה את כל המידע השמור במכשיר זה. לא ניתן לשחזר את הנתונים לאחר ביצוע הפעולה (משובים אנונימיים שנשלחו בעבר אינם מקושרים לחשבונך ונשמרים לשיפור השירות).'
                     : 'This action permanently deletes all your shipments from cloud storage, deletes your user account credentials, and wipes local device caches. This operation cannot be undone (anonymized feedback previously submitted is not linked to your account and is retained for service reliability).'}
@@ -871,13 +871,13 @@ export function AccountModal({
                         v{APP_VERSION}
                       </span>
                     </div>
-                    <span className="text-[11px] text-[var(--stg-text-muted)]">
+                    <span className="text-xs text-[var(--stg-text-muted)]">
                       {RELEASE_DATE} • {BUILD_CHANNEL}
                     </span>
                   </div>
                 </div>
 
-                <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-[var(--stg-success-soft)] text-[var(--stg-success)] flex items-center gap-1">
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[var(--stg-success-soft)] text-[var(--stg-success)] flex items-center gap-1">
                   <ShieldCheck className="w-3 h-3" />
                   <span>OWASP ASVS L3</span>
                 </span>
@@ -890,7 +890,7 @@ export function AccountModal({
                     <Globe className="w-4 h-4 text-[var(--stg-accent)]" />
                     <span>{language === 'he' ? 'ספקי שילוח נתמכים' : 'Supported Carriers'}</span>
                   </span>
-                  <span className="text-[10px] text-[var(--stg-text-muted)] font-semibold bg-[var(--stg-surface)] border border-[var(--stg-border)] px-2 py-0.5 rounded-full">
+                  <span className="text-xs text-[var(--stg-text-muted)] font-semibold bg-[var(--stg-surface)] border border-[var(--stg-border)] px-2 py-0.5 rounded-full">
                     {CARRIER_LIST.length} {language === 'he' ? 'ספקים' : 'Carriers'}
                   </span>
                 </div>
@@ -902,7 +902,7 @@ export function AccountModal({
                       className="p-2 rounded-lg bg-[var(--stg-surface)] border border-[var(--stg-border)] flex items-center gap-2"
                     >
                       <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${carrier.color || 'from-blue-500 to-indigo-500'} shrink-0`} />
-                      <span className="font-semibold text-[var(--stg-text)] text-[11px] truncate">
+                      <span className="font-semibold text-[var(--stg-text)] text-xs truncate">
                         {language === 'he' ? (carrier.hebrewName || carrier.name) : carrier.name}
                       </span>
                     </div>
@@ -916,7 +916,7 @@ export function AccountModal({
                   <Sparkles className="w-4 h-4 text-[var(--stg-accent)]" />
                   <span>{language === 'he' ? `חידושים בגרסה ${APP_VERSION}` : `Release Highlights (${APP_VERSION})`}</span>
                 </span>
-                <div className="space-y-1.5 text-[11px] text-[var(--stg-text)]">
+                <div className="space-y-1.5 text-xs text-[var(--stg-text)]">
                   <div className="flex items-start gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-[var(--stg-success)] shrink-0 mt-0.5" />
                     <span>{language === 'he' ? 'סנכרון ענן מאובטח בזמן אמת עם Firebase Firestore.' : 'Real-time multi-device cloud synchronization via Firestore.'}</span>
@@ -970,7 +970,7 @@ export function AccountModal({
             {language === 'he' ? 'התנתקות מהחשבון' : 'Sign Out'}
           </button>
 
-          <span className="hidden sm:inline text-[11px] text-[var(--stg-text-muted)]">
+          <span className="hidden sm:inline text-xs text-[var(--stg-text-muted)]">
             {language === 'he' ? `Deliveree v${APP_VERSION} • אבטחת מידע Zero-Trust` : `Deliveree v${APP_VERSION} • Zero-Trust Privacy`}
           </span>
           <button

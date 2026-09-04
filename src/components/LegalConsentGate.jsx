@@ -140,7 +140,7 @@ export function LegalConsentGate({ onShowToast }) {
             <button
               type="button"
               onClick={() => logout()}
-              className="w-full flex items-center justify-center gap-1.5 text-slate-500 hover:text-slate-300 text-[11px] font-semibold cursor-pointer py-1"
+              className="w-full flex items-center justify-center gap-1.5 text-slate-500 hover:text-slate-300 text-xs font-semibold cursor-pointer py-1"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>{language === 'he' ? 'התנתקות במקום זאת' : 'Sign out instead'}</span>

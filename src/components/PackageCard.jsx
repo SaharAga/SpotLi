@@ -210,7 +210,7 @@ function PackageCardImpl({
             <h3 className="text-sm font-semibold text-slate-100 group-hover:text-blue-400 transition-colors line-clamp-1">
               {itemTitle}
             </h3>
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5 truncate">
+            <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-0.5 truncate">
               <span className="font-mono"><bdi dir="ltr">{pkg.trackingNumber}</bdi></span>
               <span className="opacity-50">·</span>
               <span className="truncate">
@@ -225,7 +225,7 @@ function PackageCardImpl({
                     onOpenLockerMode(pkg);
                   }}
                   title={language === 'he' ? 'פתח מצב לוקר מוגדל' : 'Open Full-Screen Locker Mode'}
-                  className="ms-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 font-mono text-[10px] font-bold cursor-pointer transition-colors shrink-0"
+                  className="ms-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 font-mono text-xs font-bold cursor-pointer transition-colors shrink-0"
                 >
                   <span>PIN {pkg.pickupCode}</span>
                 </button>
@@ -233,7 +233,7 @@ function PackageCardImpl({
               {pkg.isRedirected && (
                 <span
                   title={language === 'he' ? 'חברת השילוח העבירה את החבילה לנקודה חלופית' : 'Package was redirected to an alternate pickup location'}
-                  className="ms-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold shrink-0"
+                  className="ms-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold shrink-0"
                 >
                   <AlertTriangle className="w-2.5 h-2.5" />
                   <span>{t('redirectDetection.badge')}</span>
@@ -244,7 +244,7 @@ function PackageCardImpl({
                   title={language === 'he'
                     ? 'הסטטוס מבוסס על אימייל אישור הזמנה, ולא על מעקב מאומת מול חברת השילוח'
                     : 'Status is based on your order confirmation email, not carrier-verified tracking'}
-                  className="ms-1 inline-flex items-center px-1.5 py-0.5 rounded-md bg-slate-700/50 text-slate-300 border border-slate-600/50 text-[10px] font-bold shrink-0"
+                  className="ms-1 inline-flex items-center px-1.5 py-0.5 rounded-md bg-slate-700/50 text-slate-300 border border-slate-600/50 text-xs font-bold shrink-0"
                 >
                   {language === 'he' ? 'מאישור הזמנה' : 'from order confirmation'}
                 </span>
@@ -252,20 +252,20 @@ function PackageCardImpl({
             </div>
           </div>
 
-          <span className={`shrink-0 inline-flex items-center px-2 py-1 rounded-lg text-[11px] font-semibold border ${stage.badgeClass}`}>
+          <span className={`shrink-0 inline-flex items-center px-2 py-1 rounded-lg text-xs font-semibold border ${stage.badgeClass}`}>
             {language === 'he' ? stage.hebrewLabel : stage.label}
           </span>
         </div>
 
         {/* Pickup Location & Same-Location Bundling Tag */}
         {pkg.pickupLocation && (
-          <div className="flex items-center justify-between gap-1.5 text-[11px] px-2.5 py-1.5 rounded-xl bg-slate-950/60 border border-slate-800/80 text-slate-300">
+          <div className="flex items-center justify-between gap-1.5 text-xs px-2.5 py-1.5 rounded-xl bg-slate-950/60 border border-slate-800/80 text-slate-300">
             <div className="flex items-center gap-1.5 min-w-0">
               <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0" />
               <span className="truncate">{pkg.pickupLocation}</span>
             </div>
             {sameLocationSiblings.length > 0 && (
-              <span className="shrink-0 px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-bold">
+              <span className="shrink-0 px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-bold">
                 {language === 'he' ? `עוד ${sameLocationSiblings.length} כאן` : `+${sameLocationSiblings.length} here`}
               </span>
             )}
@@ -274,7 +274,7 @@ function PackageCardImpl({
 
         {/* Optional Countdown Banner for Pickup or Return */}
         {pkg.status !== 'delivered' && pickupCountdown.hasDeadline && (
-          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-bold border ${
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold border ${
             pickupCountdown.urgency === 'critical' || pickupCountdown.urgency === 'expired'
               ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
               : pickupCountdown.urgency === 'warning'
@@ -287,7 +287,7 @@ function PackageCardImpl({
         )}
 
         {pkg.status === 'delivered' && returnCountdown.hasDeadline && (
-          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-bold border ${
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold border ${
             returnCountdown.urgency === 'critical' || returnCountdown.urgency === 'expired'
               ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
               : returnCountdown.urgency === 'warning'
@@ -306,7 +306,7 @@ function PackageCardImpl({
             <span className="truncate">{formatDate(pkg.expectedDeliveryDate, language)}</span>
             {daysInfo && pkg.status !== 'delivered' && (
               <span
-                className={`shrink-0 text-[10px] px-1.5 py-0.2 rounded-md font-bold ${
+                className={`shrink-0 text-xs px-1.5 py-0.2 rounded-md font-bold ${
                   daysInfo.isUrgent ? 'bg-amber-500/15 text-amber-400' : 'bg-slate-800 text-slate-400'
                 }`}
               >

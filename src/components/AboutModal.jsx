@@ -178,7 +178,7 @@ export function AboutModal({
                 <h2 id="about-modal-title" className="text-base sm:text-lg font-black tracking-tight text-white">
                   {t('appTitle')}
                 </h2>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-bold border border-blue-500/30 uppercase tracking-wider">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-bold border border-blue-500/30 uppercase tracking-wider">
                   v{APP_VERSION}
                 </span>
               </div>
@@ -209,14 +209,14 @@ export function AboutModal({
                 <span className="font-mono text-xs text-blue-400 font-bold bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">
                   {APP_VERSION}
                 </span>
-                <span className="text-[11px] text-slate-400">
+                <span className="text-xs text-slate-400">
                   ({RELEASE_DATE})
                 </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 uppercase font-semibold">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 uppercase font-semibold">
                   {BUILD_CHANNEL}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-xs text-slate-400">
                 {language === 'he'
                   ? 'ארכיטקטורת React 19 + PWA מאובטחת לסנכרון ומעקב חבילות רב-ספקי.'
                   : 'React 19 + PWA zero-trust client architecture for multi-carrier tracking.'}
@@ -260,7 +260,7 @@ export function AboutModal({
                   <span className="font-bold text-slate-100 block text-xs">
                     {language === 'he' ? 'גרסה חדשה מוכנה להתקנה!' : 'New Version Ready!'}
                   </span>
-                  <span className="text-[11px] text-slate-300">
+                  <span className="text-xs text-slate-300">
                     {language === 'he' ? 'עדכון תוכנה זמין. רענן את האפליקציה להחלת השינויים.' : 'Software update available. Refresh app to apply changes.'}
                   </span>
                 </div>
@@ -287,7 +287,7 @@ export function AboutModal({
                 </h3>
                 {bistResult && (
                   <span
-                    className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1 ${
+                    className={`text-xs px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1 ${
                       bistResult.status === 'PASS'
                         ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                         : bistResult.status === 'WARN'
@@ -334,16 +334,16 @@ export function AboutModal({
                         ) : (
                           <XCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
                         )}
-                        <span className="font-semibold text-slate-200 text-[11px] truncate">
+                        <span className="font-semibold text-slate-200 text-xs truncate">
                           {check.name}
                         </span>
                       </div>
-                      <p className="text-[10px] text-slate-400 leading-tight">
+                      <p className="text-xs text-slate-400 leading-tight">
                         {check.message}
                       </p>
                     </div>
                     <span
-                      className={`text-[9px] px-1.5 py-0.5 rounded font-mono font-bold shrink-0 ${
+                      className={`text-xs px-1.5 py-0.5 rounded font-mono font-bold shrink-0 ${
                         check.status === 'PASS'
                           ? 'bg-emerald-500/15 text-emerald-400'
                           : check.status === 'WARN'
@@ -371,8 +371,8 @@ export function AboutModal({
                   <Award className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="font-bold text-slate-100 block text-[11px]">OWASP ASVS L3</span>
-                  <span className="text-[10px] text-slate-400 leading-tight block">
+                  <span className="font-bold text-slate-100 block text-xs">OWASP ASVS L3</span>
+                  <span className="text-xs text-slate-400 leading-tight block">
                     {language === 'he' ? 'עמידה בתקני אבטחת אפליקציות מחמירים' : 'Application security verification'}
                   </span>
                 </div>
@@ -383,8 +383,8 @@ export function AboutModal({
                   <Lock className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="font-bold text-slate-100 block text-[11px]">Zero-Trust Firestore</span>
-                  <span className="text-[10px] text-slate-400 leading-tight block">
+                  <span className="font-bold text-slate-100 block text-xs">Zero-Trust Firestore</span>
+                  <span className="text-xs text-slate-400 leading-tight block">
                     {language === 'he' ? 'בידוד נתונים מוחלט לכל משתמש' : 'Strict user data isolation rules'}
                   </span>
                 </div>
@@ -395,8 +395,8 @@ export function AboutModal({
                   <Cpu className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="font-bold text-slate-100 block text-[11px]">Client-Side First</span>
-                  <span className="text-[10px] text-slate-400 leading-tight block">
+                  <span className="font-bold text-slate-100 block text-xs">Client-Side First</span>
+                  <span className="text-xs text-slate-400 leading-tight block">
                     {language === 'he' ? 'אימות קלט קליינט וחישוב מקומי' : 'Safe local regex & offline caches'}
                   </span>
                 </div>
@@ -411,7 +411,7 @@ export function AboutModal({
                 <Globe className="w-4 h-4 text-blue-400" />
                 <span>{language === 'he' ? 'ספקי שילוח נתמכים' : 'Supported Carriers'}</span>
               </h3>
-              <span className="text-[10px] font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-full">
+              <span className="text-xs font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-full">
                 {CARRIER_LIST.length} {language === 'he' ? 'ספקים' : 'Carriers'}
               </span>
             </div>
@@ -424,10 +424,10 @@ export function AboutModal({
                 >
                   <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${carrier.color || 'from-blue-500 to-indigo-500'} shrink-0`} />
                   <div className="min-w-0 flex-1">
-                    <span className="font-semibold text-slate-200 text-[11px] block truncate">
+                    <span className="font-semibold text-slate-200 text-xs block truncate">
                       {language === 'he' ? (carrier.hebrewName || carrier.name) : carrier.name}
                     </span>
-                    <span className="text-[9px] text-slate-400 block truncate">
+                    <span className="text-xs text-slate-400 block truncate">
                       {carrier.country || 'Global'}
                     </span>
                   </div>

@@ -297,7 +297,7 @@ export function PackageDetailModal({
       className="relative w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8 max-h-[90vh] flex flex-col"
     >
         {/* Header with Carrier Brand Color Banner */}
-        <div className={`p-6 border-b border-slate-800/80 bg-gradient-to-r ${carrier.color} bg-opacity-10 relative flex items-start justify-between gap-4`}>
+        <div className={`p-4 sm:p-6 border-b border-slate-800/80 bg-gradient-to-r ${carrier.color} bg-opacity-10 relative flex items-start justify-between gap-3 sm:gap-4 flex-wrap`}>
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2 flex-wrap">
               {store && (
@@ -356,18 +356,18 @@ export function PackageDetailModal({
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1">
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1">
           {/* Pickup Information Card */}
           {(pkg.pickupCode || pkg.pickupLocation) && (
             <div className="flex flex-col gap-3 p-5 rounded-3xl bg-gradient-to-br from-emerald-500/10 to-teal-900/40 border-2 border-emerald-500/30 shadow-lg shadow-emerald-900/20 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl" />
+              <div className="absolute top-0 end-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl" />
               
               <div className="flex flex-wrap items-start justify-between gap-4 relative z-10">
                 <div className="flex flex-col gap-2 flex-1">
                   {pkg.pickupCode && (
                     <div className="flex items-center gap-3">
                       <div className="flex flex-col">
-                        <span className="text-[11px] text-emerald-400 uppercase tracking-widest font-extrabold mb-1">
+                        <span className="text-xs text-emerald-400 uppercase tracking-widest font-extrabold mb-1">
                           {language === 'he' ? 'קוד איסוף' : 'Pickup Code'}
                         </span>
                         <div className="flex items-center gap-2">
@@ -406,7 +406,7 @@ export function PackageDetailModal({
                     {pickupCountdown.hasDeadline && (
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold ${
                         pickupCountdown.urgency === 'critical' || pickupCountdown.urgency === 'expired'
-                          ? 'bg-rose-500/25 text-rose-300 border border-rose-500/40 animate-pulse' 
+                          ? 'bg-rose-500/25 text-rose-300 border border-rose-500/40' 
                           : pickupCountdown.urgency === 'warning'
                             ? 'bg-amber-500/25 text-amber-300 border border-amber-500/40'
                             : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
@@ -419,7 +419,7 @@ export function PackageDetailModal({
 
                     {/* Live Operating Status Badge */}
                     <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${storeStatus.badgeClass}`}>
-                      <span className={`w-2 h-2 rounded-full ${storeStatus.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'}`} />
+                      <span className={`w-2 h-2 rounded-full ${storeStatus.isOpen ? 'bg-emerald-400' : 'bg-slate-400'}`} />
                       <span>{language === 'he' ? storeStatus.badgeTextHe : storeStatus.badgeTextEn}</span>
                       <span className="opacity-80 font-normal">
                         • {language === 'he' ? storeStatus.nextChangeHe : storeStatus.nextChangeEn}
@@ -483,11 +483,11 @@ export function PackageDetailModal({
                     <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
                     <span>{t('redirectDetection.bannerTitle')}</span>
                   </div>
-                  <p className="text-amber-200/90 text-[11px] leading-relaxed">
+                  <p className="text-amber-200/90 text-xs leading-relaxed">
                     {t('redirectDetection.bannerDesc')}
                   </p>
                   {pkg.originalPickupLocation && (
-                    <div className="pt-1 text-[11px] text-amber-300/80 flex items-center gap-1.5 flex-wrap">
+                    <div className="pt-1 text-xs text-amber-300/80 flex items-center gap-1.5 flex-wrap">
                       <span className="font-semibold">{t('redirectDetection.originalLocation')}</span>
                       <span className="line-through opacity-75">{pkg.originalPickupLocation}</span>
                     </div>
@@ -537,7 +537,7 @@ export function PackageDetailModal({
 
                   {/* Sibling List pills */}
                   <div className="space-y-1.5 pt-1">
-                    <span className="text-[11px] text-slate-400 font-medium block">
+                    <span className="text-xs text-slate-400 font-medium block">
                       {t('locationBundling.siblingPackagesWaiting')}
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -548,7 +548,7 @@ export function PackageDetailModal({
                             key={sib.id}
                             type="button"
                             onClick={() => onSelectPackage && onSelectPackage(sib)}
-                            className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-indigo-500/50 text-[11px] cursor-pointer transition-all text-start group/sib shadow-sm hover:scale-[1.02] active:scale-[0.98]"
+                            className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-indigo-500/50 text-xs cursor-pointer transition-all text-start group/sib shadow-sm hover:scale-[1.02] active:scale-[0.98]"
                             title={language === 'he' ? `עבור לחבילה ${sibTitle}` : `Switch to ${sibTitle}`}
                           >
                             <span className="font-semibold text-slate-200 group-hover/sib:text-indigo-300 truncate max-w-[140px]">{sibTitle}</span>
@@ -593,7 +593,7 @@ export function PackageDetailModal({
                         {language === 'he' ? resolvedHours.hoursHe : resolvedHours.hoursEn}
                       </span>
                       {resolvedHours.isEstimated && (
-                        <span className="text-[10px] text-amber-400/90 italic">
+                        <span className="text-xs text-amber-400/90 italic">
                           ({language === 'he' ? 'משוער' : 'Estimated'})
                         </span>
                       )}
@@ -602,7 +602,7 @@ export function PackageDetailModal({
                     <button
                       type="button"
                       onClick={() => setIsReportingHours(!isReportingHours)}
-                      className="text-[11px] text-indigo-300 hover:text-indigo-200 underline font-medium flex items-center gap-1 cursor-pointer"
+                      className="text-xs text-indigo-300 hover:text-indigo-200 underline font-medium flex items-center gap-1 cursor-pointer"
                     >
                       <Flag className="w-3 h-3" />
                       <span>{t('openingHours.reportWrongHours')}</span>
@@ -612,7 +612,7 @@ export function PackageDetailModal({
                   {/* Inline Report Incorrect Hours Box */}
                   {isReportingHours && (
                     <form onSubmit={handleReportWrongHours} className="p-3 rounded-xl bg-slate-900 border border-indigo-500/30 space-y-2 animate-fade-in text-xs">
-                      <label className="block text-[11px] font-bold text-indigo-200">
+                      <label className="block text-xs font-bold text-indigo-200">
                         {t('openingHours.reportPromptTitle')}
                       </label>
                       <input
@@ -658,7 +658,7 @@ export function PackageDetailModal({
                     <h3 className="text-sm font-bold text-slate-100">
                       {language === 'he' ? 'חלון החזרה לחנות' : 'Store Return Window'}
                     </h3>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-xs text-slate-400">
                       {language === 'he' ? 'מעקב אחר מדיניות ההחזרה ומועד אחרון לזיכוי' : 'Track return policy deadline and refunds'}
                     </p>
                   </div>
@@ -729,7 +729,7 @@ export function PackageDetailModal({
           <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-slate-950/80 border border-slate-800">
             <div className="flex items-center gap-3">
               <div className="flex flex-col">
-                <span className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">
+                <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
                   {t('card.trackingNumber')}
                 </span>
                 <span className="font-mono text-base font-bold text-slate-200">
@@ -862,12 +862,12 @@ export function PackageDetailModal({
                         : 'border-slate-900/60 bg-slate-950/40 text-slate-600 opacity-40 cursor-not-allowed'
                     }`}
                   >
-                    <div className={`w-5 h-5 rounded-full mb-1 flex items-center justify-center text-[10px] font-bold ${
+                    <div className={`w-5 h-5 rounded-full mb-1 flex items-center justify-center text-xs font-bold ${
                       isCurrent ? 'bg-blue-500 text-white' : isPassed ? 'bg-emerald-500 text-white' : isAllowed ? 'bg-slate-800 text-slate-400' : 'bg-slate-900 text-slate-700'
                     }`}>
                       {isPassed ? <Check className="w-3 h-3 stroke-[3]" /> : idx + 1}
                     </div>
-                    <span className="text-[11px] font-semibold line-clamp-1">
+                    <span className="text-xs font-semibold line-clamp-1">
                       {language === 'he' ? s.hebrewLabel : s.label}
                     </span>
                   </button>
@@ -880,13 +880,13 @@ export function PackageDetailModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {/* Expected Delivery */}
             <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800">
-              <span className="text-[11px] text-slate-500 font-semibold uppercase">{t('card.expectedOn')}</span>
+              <span className="text-xs text-slate-500 font-semibold uppercase">{t('card.expectedOn')}</span>
               <div className="flex items-center gap-2 mt-1 text-sm font-bold text-slate-200">
                 <Calendar className="w-4 h-4 text-blue-400" />
                 <span>{formatDate(pkg.expectedDeliveryDate, language) || '-'}</span>
               </div>
               {daysInfo && (
-                <span className={`inline-block text-[11px] font-semibold mt-1 px-2 py-0.5 rounded-md ${daysInfo.isUrgent ? 'bg-amber-500/20 text-amber-300' : 'bg-blue-500/20 text-blue-300'}`}>
+                <span className={`inline-block text-xs font-semibold mt-1 px-2 py-0.5 rounded-md ${daysInfo.isUrgent ? 'bg-amber-500/20 text-amber-300' : 'bg-blue-500/20 text-blue-300'}`}>
                   {daysInfo.text}
                 </span>
               )}
@@ -894,7 +894,7 @@ export function PackageDetailModal({
 
             {/* Route (Origin -> Destination) */}
             <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800">
-              <span className="text-[11px] text-slate-500 font-semibold uppercase">{t('card.route')}</span>
+              <span className="text-xs text-slate-500 font-semibold uppercase">{t('card.route')}</span>
               <div className="flex items-center gap-1.5 mt-1 text-xs font-semibold text-slate-200">
                 <MapPin className="w-4 h-4 text-rose-400 shrink-0" />
                 <span className="truncate">{pkg.origin || 'Global'}</span>
@@ -905,7 +905,7 @@ export function PackageDetailModal({
 
             {/* Order Date */}
             <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800">
-              <span className="text-[11px] text-slate-500 font-semibold uppercase">{t('card.orderedOn')}</span>
+              <span className="text-xs text-slate-500 font-semibold uppercase">{t('card.orderedOn')}</span>
               <div className="flex items-center gap-2 mt-1 text-sm font-semibold text-slate-200">
                 <Clock className="w-4 h-4 text-slate-400" />
                 <span>{formatDate(pkg.orderDate, language) || '-'}</span>
@@ -916,7 +916,7 @@ export function PackageDetailModal({
           {/* Notes / Locker / Instructions */}
           {itemNotes && (
             <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800">
-              <span className="text-[11px] text-slate-500 font-semibold uppercase">{t('card.notes')}</span>
+              <span className="text-xs text-slate-500 font-semibold uppercase">{t('card.notes')}</span>
               <p className="text-xs text-slate-300 mt-1 font-medium leading-relaxed">
                 {itemNotes}
               </p>
@@ -941,7 +941,7 @@ export function PackageDetailModal({
                 <Clock className="w-4 h-4 text-indigo-400" />
                 <span>{t('detailModal.timelineTitle')}</span>
                 {!isLiveTrackingSupported(pkg.carrier) && (
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-400/90 bg-amber-500/10 border border-amber-500/25 rounded-md px-1.5 py-0.5">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-amber-400/90 bg-amber-500/10 border border-amber-500/25 rounded-md px-1.5 py-0.5">
                     {t('tracking.manualBadge')}
                   </span>
                 )}
@@ -1010,7 +1010,7 @@ export function PackageDetailModal({
                 {t('detailModal.noCheckpoints')}
               </div>
             ) : (
-              <div className="relative pl-6 pr-6 space-y-6 before:absolute before:top-2 before:bottom-2 ltr:before:left-[35px] rtl:before:right-[35px] before:w-0.5 before:bg-slate-800">
+              <div className="relative px-4 sm:px-6 space-y-6 before:absolute before:top-2 before:bottom-2 ltr:before:left-[35px] rtl:before:right-[35px] before:w-0.5 before:bg-slate-800">
                 {pkg.checkpoints.map((cp, index) => {
                   const cpTitle = (language === 'he' && cp.titleHe) ? cp.titleHe : cp.title;
                   const cpDesc = (language === 'he' && cp.descriptionHe) ? cp.descriptionHe : cp.description;
@@ -1024,7 +1024,7 @@ export function PackageDetailModal({
                           : 'bg-slate-900 border-slate-700 text-slate-400'
                       }`}>
                         {index === 0 ? (
-                          <span className="w-2 h-2 bg-white rounded-full animate-ping" />
+                          <span className="w-2 h-2 bg-white rounded-full" />
                         ) : (
                           <Check className="w-3 h-3" />
                         )}
@@ -1036,13 +1036,13 @@ export function PackageDetailModal({
                           <h4 className="text-xs font-bold text-slate-200">
                             {cpTitle}
                           </h4>
-                          <span className="text-[10px] text-slate-500 font-mono">
+                          <span className="text-xs text-slate-500 font-mono">
                             {formatDateTime(cp.timestamp, language)}
                           </span>
                         </div>
 
                         {cp.location && (
-                          <div className="flex items-center gap-1 text-[11px] text-blue-400 font-medium mb-1">
+                          <div className="flex items-center gap-1 text-xs text-blue-400 font-medium mb-1">
                             <MapPin className="w-3 h-3 shrink-0" />
                             <span>{cp.location}</span>
                           </div>

@@ -155,7 +155,7 @@ export function FilterBar({
             }`}
           >
             <div>
-              <label className="block text-[11px] font-bold text-slate-400 mb-1.5">{t('filters.status')}</label>
+              <label className="block text-xs font-bold text-slate-400 mb-1.5">{t('filters.status')}</label>
               <div className="flex flex-col gap-1">
                 {statusOptions.map((opt) => (
                   <button
@@ -173,7 +173,7 @@ export function FilterBar({
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-slate-400 mb-1.5">{t('filters.allCarriers')}</label>
+              <label className="block text-xs font-bold text-slate-400 mb-1.5">{t('filters.allCarriers')}</label>
               <select
                 value={selectedCarrier}
                 onChange={(e) => onCarrierChange(e.target.value)}
@@ -189,7 +189,7 @@ export function FilterBar({
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-slate-400 mb-1.5">{t('filters.sortBy')}</label>
+              <label className="block text-xs font-bold text-slate-400 mb-1.5">{t('filters.sortBy')}</label>
               <select
                 value={sortBy}
                 onChange={(e) => onSortChange(e.target.value)}

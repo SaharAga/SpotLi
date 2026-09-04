@@ -53,7 +53,7 @@ function BottomNavImpl({
         } focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none`}
       >
         <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-blue-400' : ''}`} aria-hidden="true" />
-        <span className="text-[11px] font-semibold truncate max-w-full">{label}</span>
+        <span className="text-xs font-semibold truncate max-w-full">{label}</span>
       </button>
     );
   };

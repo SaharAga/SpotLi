@@ -61,7 +61,7 @@ export function AdminScreenshotLightbox({
         <div className="p-3 sm:p-4 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between z-10">
           <div className="flex items-center gap-2 text-slate-300 text-xs font-semibold">
             <span>{language === 'he' ? 'צילום מסך מצורף' : 'Attached Screenshot'}</span>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-mono">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-mono">
               {zoomLevel}x
             </span>
           </div>

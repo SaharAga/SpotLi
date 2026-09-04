@@ -413,7 +413,7 @@ export function SmartImportModal({
             <button
               type="button"
               onClick={() => onSwitchToManual(rawText)}
-              className="text-[11px] font-semibold text-slate-400 hover:text-blue-400 underline underline-offset-2 transition-colors cursor-pointer"
+              className="text-xs font-semibold text-slate-400 hover:text-blue-400 underline underline-offset-2 transition-colors cursor-pointer"
             >
               {language === 'he' ? 'להזין ידנית במקום זאת' : 'Enter details manually instead'}
             </button>
@@ -441,7 +441,7 @@ export function SmartImportModal({
           <div className="space-y-4 animate-fade-in">
             {/* Quick Examples */}
             <div>
-              <span className="text-[11px] font-semibold text-slate-400 block mb-1.5">
+              <span className="text-xs font-semibold text-slate-400 block mb-1.5">
                 {language === 'he' ? 'או בחר דוגמת הודעה מוכנה לבדיקה:' : 'Or try a sample message:'}
               </span>
               <div className="flex flex-wrap gap-2">
@@ -453,7 +453,7 @@ export function SmartImportModal({
                       setRawText(s.text);
                       runTextParse(s.text);
                     }}
-                    className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium border border-slate-700 transition-all text-start cursor-pointer min-h-[48px] flex items-center"
+                    className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition-all text-start cursor-pointer min-h-[48px] flex items-center"
                   >
                     {s.label}
                   </button>
@@ -490,7 +490,7 @@ export function SmartImportModal({
             {/* Screenshot attach — a screenshot has no text to run the
                 deterministic parser on, so this always goes straight to AI. */}
             <div>
-              <label className="block text-[11px] font-bold text-slate-400 mb-1.5">
+              <label className="block text-xs font-bold text-slate-400 mb-1.5">
                 {language === 'he' ? 'או צרפו צילום מסך' : 'Or attach a screenshot'}
               </label>
 
@@ -501,7 +501,7 @@ export function SmartImportModal({
                     alt={language === 'he' ? 'צילום מסך מצורף' : 'Attached screenshot'}
                     className="w-full max-h-40 object-contain bg-slate-900"
                   />
-                  <div className="flex items-center justify-between px-3 py-2 text-[10px] text-slate-400">
+                  <div className="flex items-center justify-between px-3 py-2 text-xs text-slate-400">
                     <span>{screenshot.width}×{screenshot.height} • {Math.round(screenshot.bytes / 1024)}KB</span>
                     <button
                       type="button"
@@ -541,7 +541,7 @@ export function SmartImportModal({
                 </label>
               )}
 
-              {imageError && <p className="text-[10px] text-rose-400 mt-1.5">{imageError}</p>}
+              {imageError && <p className="text-xs text-rose-400 mt-1.5">{imageError}</p>}
             </div>
           </div>
 
@@ -557,13 +557,13 @@ export function SmartImportModal({
                       <span>{t('smartModal.parsedSuccess')}</span>
                     </div>
                     {matchedExistingPackage && (
-                      <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[11px] font-medium flex items-center gap-1">
+                      <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-xs font-medium flex items-center gap-1">
                         <span>{language === 'he' ? 'חבילה קיימת מעודכנת' : 'Matching Existing Package'}</span>
                       </span>
                     )}
                   </div>
                   {matchedExistingPackage && (
-                    <p className="text-[11px] text-blue-200/80 bg-blue-500/10 p-2 rounded-lg border border-blue-500/20">
+                    <p className="text-xs text-blue-200/80 bg-blue-500/10 p-2 rounded-lg border border-blue-500/20">
                       ℹ️ {t('modal.existingMatchFound')}
                     </p>
                   )}
@@ -571,7 +571,7 @@ export function SmartImportModal({
                   {showLowConfidenceHint && (
                     <div className="flex items-start gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30">
                       <ShieldAlert className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                      <p className="text-[11px] text-amber-200/90 leading-relaxed">
+                      <p className="text-xs text-amber-200/90 leading-relaxed">
                         {language === 'he'
                           ? 'AI לא בטוח לגמרי בתוצאה הזו — כדאי לבדוק את הפרטים לפני השמירה.'
                           : 'AI wasn’t fully confident here — worth double-checking the details before saving.'}
@@ -581,17 +581,17 @@ export function SmartImportModal({
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
-                      <span className="text-[10px] text-slate-500 uppercase font-bold">{t('modal.itemTitle')}</span>
+                      <span className="text-xs text-slate-500 uppercase font-bold">{t('modal.itemTitle')}</span>
                       <p className="font-semibold text-slate-200 mt-0.5">{parsed.title}</p>
                     </div>
 
                     <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
-                      <span className="text-[10px] text-slate-500 uppercase font-bold">{t('modal.trackingNum')}</span>
+                      <span className="text-xs text-slate-500 uppercase font-bold">{t('modal.trackingNum')}</span>
                       <p className="font-mono font-bold text-blue-400 mt-0.5">{parsed.trackingNumber}</p>
                     </div>
 
                     <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
-                      <span className="text-[10px] text-slate-500 uppercase font-bold">{t('modal.carrier')}</span>
+                      <span className="text-xs text-slate-500 uppercase font-bold">{t('modal.carrier')}</span>
                       <p className="font-semibold text-slate-200 mt-0.5">
                         {language === 'he' ? detectedCarrierObj.hebrewName : detectedCarrierObj.name}
                       </p>
@@ -599,7 +599,7 @@ export function SmartImportModal({
 
                     {parsed.pickupLocation && (
                       <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
-                        <span className="text-[10px] text-slate-500 uppercase font-bold">{language === 'he' ? 'נקודת איסוף' : 'Pickup Point'}</span>
+                        <span className="text-xs text-slate-500 uppercase font-bold">{language === 'he' ? 'נקודת איסוף' : 'Pickup Point'}</span>
                         <p className="font-semibold text-amber-300 mt-0.5">{parsed.pickupLocation}</p>
                       </div>
                     )}
@@ -610,7 +610,7 @@ export function SmartImportModal({
                       type="button"
                       onClick={handleReportWrongParse}
                       disabled={isReportingWrong || reportedWrong}
-                      className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 hover:text-rose-400 transition-colors cursor-pointer disabled:cursor-default disabled:hover:text-slate-500"
+                      className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-rose-400 transition-colors cursor-pointer disabled:cursor-default disabled:hover:text-slate-500"
                     >
                       {isReportingWrong ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />

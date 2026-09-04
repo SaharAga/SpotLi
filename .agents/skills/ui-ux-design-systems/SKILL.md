@@ -51,9 +51,17 @@ This skill provides exhaustive guidelines for ensuring world-class, frictionless
 
 * **Glassmorphism & Surface Depth**:
   * Use subtle backdrop blurs (`backdrop-blur-md` / `backdrop-blur-2xl`), semi-transparent surfaces (`bg-slate-900/80`), and distinct specular borders (`border-slate-800/80`) to establish clear z-index depth without visual noise.
+  * **Chrome only — never behind body text.** A translucent surface makes contrast a function of whatever scrolls underneath it, which cannot be measured and therefore cannot satisfy §4. Glass belongs on navigation bars, modal backdrops and sheets; the surface a paragraph, label or number sits on must be opaque. This resolves what was previously a direct conflict between this section and §4.
 * **Physics & Micro-Animations**:
   * Micro-interactions should feel tactile and fast: duration $150\text{ms} - 300\text{ms}$ with `cubic-bezier(0.4, 0, 0.2, 1)`.
   * Avoid sluggish animations that delay user intent. Provide instant optimistic feedback on tap.
+  * **No infinite loops in always-on UI.** A `pulse`/`ping`/`spin` that never stops cannot be dismissed, never stops competing for attention, and keeps the compositor awake on a PWA meant to sit in the background. Reserve looping animation for genuinely indeterminate progress that the user is actively waiting on. State that persists (a held package, an approaching deadline) belongs at a larger scale — colour, position, a banner — not a pixel blinking forever.
+  * **No entrance staggers on content the user came to read.** A list that animates in on every load delays the content and is the most recognisable tell of generated design.
+  * **`prefers-reduced-motion` is not optional.** Honour it once, app-wide, rather than per-component (see `index.css` for the pattern). The concern is vestibular — movement, parallax, scaling — so a colour-only cross-fade may reasonably be exempted, but nothing that moves.
+
+* **Attention Budget**:
+  * Every screen has a fixed budget of "look at me". Colour, motion, badges, dots and bold weight all spend from it, and spending everywhere is identical to spending nowhere.
+  * **One signal per state, at the largest scale available.** Before adding an indicator, find the thing it duplicates and remove that. Three signals competing at three scales is worse than one that lands.
 * **Informative Empty & Error States**:
   * Every empty view must contain a friendly graphic or icon, clear bilingual explanation, and a direct 1-click CTA button to guide the user back into the flow.
 
@@ -64,6 +72,18 @@ This skill provides exhaustive guidelines for ensuring world-class, frictionless
 * **Contrast Ratios**:
   * Normal text ($< 18\text{pt}$ or $< 14\text{pt}$ bold): Minimum contrast ratio $\ge 7:1$ against background (AAA level).
   * Large text ($\ge 18\text{pt}$ or $\ge 14\text{pt}$ bold) and essential UI components: Minimum contrast ratio $\ge 4.5:1$.
+  * Contrast is only measurable against an **opaque** surface — see §3's glass rule.
+
+* **Dynamic Type & Reflow** (WCAG 1.4.4 / 1.4.10):
+  * **Never use an arbitrary pixel font size.** `text-[10px]`, `font-size: 11px` and friends ignore the user's browser and OS text-size setting entirely: a reader who scales to 150% gets a half-scaled interface where the labels stay tiny. Use the rem-based scale (`text-xs` … `text-2xl`) so every size grows together.
+  * Text must scale to **200%** without loss of content or function, and the page must reflow at 320px CSS width without a horizontal scrollbar.
+  * Set a floor: nothing below `text-xs` (0.75rem). If a label only fits at 10px, the layout is too dense — fix the layout, not the type.
+  * The one legitimate pixel value is the mobile input anti-zoom hack (`font-size: 16px` on `input`/`select`/`textarea`), which prevents iOS zooming on focus.
+
+* **Differentiate Without Colour** (WCAG 1.4.1):
+  * **Colour may never be the only carrier of meaning.** Roughly 1 in 12 men cannot separate the red/amber/green a status system leans on, and colour also fails in bright sun, on cheap displays and in greyscale.
+  * Every state needs a **second, non-colour cue**: a text label, a distinct icon shape, a position, or a pattern. A status pill that says "Customs" in rose passes; a rose dot alone does not.
+  * Test by rendering the screen in greyscale and asking whether every state is still distinguishable.
 * **Focus & Keyboard Navigation**:
   * Visible, high-contrast focus rings (`focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none`) on all interactive controls.
   * Tab order must follow logical visual reading flow in both LTR and RTL.
@@ -89,11 +109,15 @@ This skill provides exhaustive guidelines for ensuring world-class, frictionless
 - **Icon Rotation & BDI Isolation**: [Pass | Issue: file:line]
 
 ### 3. Visual Hierarchy & Animation
-- **Glassmorphism & Depth**: [Pass | Issue]
+- **Glassmorphism & Depth**: [Pass | Issue] — glass on chrome only, never behind text
 - **Micro-interactions**: [Pass | Sluggish animation at: file:line]
+- **No Infinite Loops**: [Pass | Looping animation at: file:line]
+- **Attention Budget**: [Pass | Competing signals at: description]
 - **Empty / Loading States**: [Pass | Missing empty state CTA]
 
 ### 4. Accessibility (WCAG 2.2 AAA)
 - **Contrast Ratios (>= 7:1)**: [Pass | Contrast failure at: file:line]
+- **Dynamic Type (no arbitrary px, >=text-xs)**: [Pass | Fixed size at: file:line]
+- **Differentiate Without Colour**: [Pass | Colour-only state at: file:line]
 - **Focus Rings & ARIA Attributes**: [Pass | Missing ARIA labels at: file:line]
 ```

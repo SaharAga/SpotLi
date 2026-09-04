@@ -220,7 +220,7 @@ export function AdminDashboardModal({
             <div>
               <h2 className="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
                 <span>{language === 'he' ? 'מרכז ניהול ומדדי איכות' : 'Admin Telemetry & Quality Center'}</span>
-                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/30">
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/30">
                   v{APP_VERSION}
                 </span>
               </h2>
@@ -253,7 +253,7 @@ export function AdminDashboardModal({
         </div>
 
         {/* Status / Cloud Banner */}
-        <div className="px-4 sm:px-6 py-2.5 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between text-[11px] gap-2 flex-wrap">
+        <div className="px-4 sm:px-6 py-2.5 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between text-xs gap-2 flex-wrap">
           <div className="flex items-center gap-2">
             {isAdmin ? (
               cloudError ? (
@@ -287,7 +287,7 @@ export function AdminDashboardModal({
             )}
           </div>
 
-          <div className="text-slate-400 text-[10px] flex items-center gap-2">
+          <div className="text-slate-400 text-xs flex items-center gap-2">
             <span>👤 {user?.email || (language === 'he' ? 'משתמש אורח' : 'Guest / Local')}</span>
             {user?.emailVerified && <span className="text-emerald-400 font-bold">✓ Verified</span>}
           </div>
@@ -317,7 +317,7 @@ export function AdminDashboardModal({
           >
             <MessageSquare className="w-3.5 h-3.5" />
             <span>{language === 'he' ? 'משובי בודקים' : 'User Feedback'}</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-300">
+            <span className="text-xs px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-300">
               {allFeedbacks.length}
             </span>
           </button>
@@ -332,7 +332,7 @@ export function AdminDashboardModal({
           >
             <AlertTriangle className="w-3.5 h-3.5" />
             <span>{language === 'he' ? 'ניטור קריסות' : 'Crash Monitor'}</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-orange-500/20 text-orange-300">
+            <span className="text-xs px-1.5 py-0.2 rounded-full bg-orange-500/20 text-orange-300">
               {crashGroups.length}
             </span>
           </button>
@@ -347,7 +347,7 @@ export function AdminDashboardModal({
           >
             <Cpu className="w-3.5 h-3.5" />
             <span>{language === 'he' ? 'פיענוח חכם' : 'Smart Parser'}</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-500/20 text-blue-300">
+            <span className="text-xs px-1.5 py-0.2 rounded-full bg-blue-500/20 text-blue-300">
               {parseCorrections.length}
             </span>
           </button>
@@ -394,7 +394,7 @@ export function AdminDashboardModal({
                     <span>{feedbackAnalytics.averageRating || '—'}</span>
                     <span className="text-xs text-slate-500 font-normal">/ 5.0</span>
                   </div>
-                  <div className="text-[10px] text-slate-400">
+                  <div className="text-xs text-slate-400">
                     {feedbackAnalytics.total} {language === 'he' ? 'דירוגים שנאספו' : 'total ratings collected'}
                   </div>
                 </div>
@@ -408,7 +408,7 @@ export function AdminDashboardModal({
                   <div className="text-2xl sm:text-3xl font-extrabold text-rose-400">
                     {feedbackAnalytics.bugCount}
                   </div>
-                  <div className="text-[10px] text-slate-400">
+                  <div className="text-xs text-slate-400">
                     {feedbackAnalytics.total > 0
                       ? `${Math.round((feedbackAnalytics.bugCount / feedbackAnalytics.total) * 100)}% ${language === 'he' ? 'מכלל המשובים' : 'of feedback'}`
                       : '0%'}
@@ -424,7 +424,7 @@ export function AdminDashboardModal({
                   <div className="text-2xl sm:text-3xl font-extrabold text-orange-400">
                     {crashGroups.length}
                   </div>
-                  <div className="text-[10px] text-slate-400">
+                  <div className="text-xs text-slate-400">
                     {crashReports.length} {language === 'he' ? 'מופעי קריסה סה״כ' : 'total crash instances'}
                   </div>
                 </div>
@@ -438,7 +438,7 @@ export function AdminDashboardModal({
                   <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400">
                     {feedbackAnalytics.featureCount + feedbackAnalytics.praiseCount}
                   </div>
-                  <div className="text-[10px] text-slate-400">
+                  <div className="text-xs text-slate-400">
                     {feedbackAnalytics.featureCount} 💡 {language === 'he' ? 'הצעות' : 'ideas'} • {feedbackAnalytics.praiseCount} ❤️ {language === 'he' ? 'שבחים' : 'praise'}
                   </div>
                 </div>
@@ -451,7 +451,7 @@ export function AdminDashboardModal({
                     <Activity className="w-4 h-4 text-indigo-400" />
                     <span>{language === 'he' ? 'השוואת איכות לפי גרסאות אפליקציה' : 'Quality Trends by App Version'}</span>
                   </h3>
-                  <span className="text-[11px] text-slate-400">
+                  <span className="text-xs text-slate-400">
                     {language === 'he' ? 'מדידת ירידה בכמות התקלות בין שחרורים' : 'Measuring issue reduction across releases'}
                   </span>
                 </div>
@@ -508,7 +508,7 @@ export function AdminDashboardModal({
                   <div className="space-y-2.5">
                     {feedbackAnalytics.weeklyTrends.map((wt) => (
                       <div key={wt.week} className="space-y-1">
-                        <div className="flex justify-between text-[11px] text-slate-400">
+                        <div className="flex justify-between text-xs text-slate-400">
                           <span>{wt.label} ({wt.week})</span>
                           <span>{wt.total} {language === 'he' ? 'דיווחים' : 'reports'} • ⭐ {wt.avgRating}</span>
                         </div>
@@ -627,7 +627,7 @@ export function AdminDashboardModal({
                             <Star className="w-3 h-3 fill-amber-400" /> {fb.rating}/5
                           </span>
                         </div>
-                        <span className="text-[10px] text-slate-500 font-mono">
+                        <span className="text-xs text-slate-500 font-mono">
                           {fb.timestamp ? new Date(fb.timestamp).toLocaleString() : ''}
                         </span>
                       </div>
@@ -657,7 +657,7 @@ export function AdminDashboardModal({
                         </div>
                       )}
 
-                      <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 flex-wrap gap-2">
+                      <div className="flex items-center justify-between text-xs text-slate-400 pt-1 flex-wrap gap-2">
                         <span className="truncate flex items-center gap-1.5">
                           👤 Anonymous Tester
                           {fb.source === 'cloud' && (
@@ -681,7 +681,7 @@ export function AdminDashboardModal({
                   <AlertTriangle className="w-4 h-4 text-orange-400" />
                   <span>{language === 'he' ? 'דוחות קריסה מקובצים לפי חתימת תקלה' : 'Crash Reports Grouped by Error Signature'}</span>
                 </span>
-                <span className="text-[11px] text-slate-400 font-mono">
+                <span className="text-xs text-slate-400 font-mono">
                   {crashReports.length} {language === 'he' ? 'סך מופעים' : 'total events'}
                 </span>
               </div>
@@ -714,7 +714,7 @@ export function AdminDashboardModal({
                             </span>
                           )}
                         </div>
-                        <span className="text-[10px] text-slate-500 font-mono">
+                        <span className="text-xs text-slate-500 font-mono">
                           {language === 'he' ? 'נצפה לאחרונה:' : 'Last seen:'} {group.lastSeen ? new Date(group.lastSeen).toLocaleString() : ''}
                         </span>
                       </div>
@@ -723,7 +723,7 @@ export function AdminDashboardModal({
                         {group.message}
                       </p>
 
-                      <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1">
+                      <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
                         <span className="font-mono">Sig: {group.signature}</span>
                         <span>Version: v{group.appVersion || APP_VERSION}</span>
                       </div>
@@ -843,7 +843,7 @@ export function AdminDashboardModal({
           {/* TAB: FEATURE ADOPTION */}
           {activeTab === 'adoption' && (
             <div className="space-y-6">
-              <p className="text-[11px] text-slate-500">
+              <p className="text-xs text-slate-500">
                 {language === 'he'
                   ? 'אחוז מבוסס על ימי-שימוש (לא משתמשים ייחודיים לאורך התקופה) — ראו הערת עיצוב ב-featureAdoptionStatsService.js'
                   : 'Rate is app-visit-days based, not true period-unique users — see the design note in featureAdoptionStatsService.js'}
@@ -893,11 +893,11 @@ export function AdminDashboardModal({
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
-                    <span className="text-[10px] text-slate-400">{language === 'he' ? 'ממתינים לסנכרון' : 'Pending Mutations'}</span>
+                    <span className="text-xs text-slate-400">{language === 'he' ? 'ממתינים לסנכרון' : 'Pending Mutations'}</span>
                     <div className="text-lg font-bold text-blue-400">{syncQueueHealth.pendingCount}</div>
                   </div>
                   <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
-                    <span className="text-[10px] text-slate-400">{language === 'he' ? 'הישן ביותר ממתין' : 'Oldest Pending'}</span>
+                    <span className="text-xs text-slate-400">{language === 'he' ? 'הישן ביותר ממתין' : 'Oldest Pending'}</span>
                     <div className="text-lg font-bold text-amber-400">
                       {syncQueueHealth.oldestPendingAgeMs === null
                         ? '—'
@@ -905,7 +905,7 @@ export function AdminDashboardModal({
                     </div>
                   </div>
                   <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
-                    <span className="text-[10px] text-slate-400">{language === 'he' ? 'נכשלו לצמיתות' : 'Dead-Lettered'}</span>
+                    <span className="text-xs text-slate-400">{language === 'he' ? 'נכשלו לצמיתות' : 'Dead-Lettered'}</span>
                     <div className="text-lg font-bold text-rose-400">{syncQueueHealth.deadLetterCount}</div>
                   </div>
                 </div>

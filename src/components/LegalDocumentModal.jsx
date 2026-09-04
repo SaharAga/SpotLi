@@ -34,7 +34,7 @@ export function LegalDocumentModal({ isOpen, onClose, docType = 'terms' }) {
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-slate-100">{content.title}</h2>
-              <p className="text-[11px] text-slate-400">{content.updated}</p>
+              <p className="text-xs text-slate-400">{content.updated}</p>
             </div>
           </div>
           <button

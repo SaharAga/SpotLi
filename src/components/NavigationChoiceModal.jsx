@@ -118,14 +118,14 @@ export function NavigationChoiceModal({
         <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-slate-900 border border-slate-800">
           <MapPin className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
           <div className="min-w-0 flex-1">
-            <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold block">
+            <span className="text-xs text-slate-500 uppercase tracking-wider font-bold block">
               {t('navigation.destination') || 'Destination'}
             </span>
             <p className="text-xs font-semibold text-slate-200 truncate mt-0.5">
               {destinationQuery}
             </p>
             {lat !== null && lng !== null && (
-              <span className="text-[10px] font-mono text-slate-500 block mt-0.5">
+              <span className="text-xs font-mono text-slate-500 block mt-0.5">
                 GPS: {Number(lat).toFixed(4)}, {Number(lng).toFixed(4)}
               </span>
             )}
@@ -161,13 +161,13 @@ export function NavigationChoiceModal({
                       {appName}
                     </span>
                     {isPreferred && (
-                      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">
+                      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">
                         <Check className="w-3 h-3" />
                         <span>{t('navigation.preferredBadge') || 'Default'}</span>
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                  <p className="text-xs text-slate-400 truncate mt-0.5">
                     {appDesc}
                   </p>
                 </div>
