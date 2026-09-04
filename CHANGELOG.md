@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.25.0] - 2026-09-04
+
+### Added
+- Added a mobile bottom tab bar (Status / Insights / + / Lockers / Account) and
+moved the drawer trigger off the top-left corner on phones, where it was the
+worst reach for a thumb; the hamburger and header "+" are now desktop-only.
+
+Added ambient state chrome: one derived value tints the header wash, the header
+hairline, the app mark and the bottom-nav hairline amber when something needs
+collecting today and rose when a package is held at customs or has stalled.
+Shipped alongside removing three infinite `animate-*` loops — the pinging
+attention dot, the out-for-delivery badge pulse, and the header logo glow —
+which carried the same signal a pixel at a time and never stopped competing.
+
+Language now follows the browser/OS on first run instead of always defaulting to
+Hebrew, matching how theme has always honoured `prefers-color-scheme`. An
+explicit toggle still pins the choice.
+
+Fixed the toast and PWA install banner pinning to the bottom-right in Hebrew as
+well as English, and raised `.min-h-touch` from 44px to the 48px the project's
+own accessibility spec mandates.
+
+### Fixed
+- Added a regression test driving the real "mark delivered" -> auto-archive prompt -> confirm/decline path through the App, covering the class of bug fixed in #60 (part of #91).
+
+- Resolved open user feedback and tracker issues: persisted user sort order selection (#133), disambiguated offline from online failure toasts in feedback submissions (#132), fixed carrier dropdown bidi label scrambling in Hebrew RTL (#137), prevented mobile drawer snap-back and locked background scrolling (#136), suppressed phone number misclassifications and improved AliExpress/Cainiao URL and domestic tracking extraction (#134), extracted delivery dates and status cues during smart text ingestion (#135), deduplicated deliveryService.exportData into exportRawToJSON (#91), and clarified anonymous feedback retention during account deletion (#25).
+
+- Fixed Gmail sync spamming a separate untracked package card for every
+follow-up email in an order's lifecycle (order confirmed, shipped, out for
+delivery, delivery issue, ...) when no carrier tracking number was found. A
+follow-up email for a store already represented by one of these order-status
+packages now updates that package's status instead of creating a duplicate.
+
 ## [0.24.0] - 2026-09-02
 
 ### Added
