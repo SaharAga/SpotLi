@@ -44,7 +44,7 @@ export function QuickTimeline({ currentStatus }) {
                 {isPassed ? (
                   <Check className="w-3.5 h-3.5 stroke-[3]" />
                 ) : isCurrent ? (
-                  <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                  <span className="w-2 h-2 rounded-full bg-white" />
                 ) : (
                   <span>{idx + 1}</span>
                 )}

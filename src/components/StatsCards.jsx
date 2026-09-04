@@ -87,7 +87,7 @@ function StatsCardsImpl({ packages = [], activeFilter, onSelectFilter }) {
             <span className={`absolute inset-y-0 start-0 w-[3px] ${item.stripe}`} aria-hidden="true" />
 
             <div className="flex items-center justify-between w-full mb-2 sm:mb-3">
-              <span className="text-[11px] sm:text-xs font-semibold text-slate-400 group-hover:text-slate-200 transition-colors truncate">
+              <span className="text-xs sm:text-xs font-semibold text-slate-400 group-hover:text-slate-200 transition-colors truncate">
                 {item.title}
               </span>
               <div className={`p-1.5 sm:p-2 rounded-xl ${item.iconBg} shrink-0`}>

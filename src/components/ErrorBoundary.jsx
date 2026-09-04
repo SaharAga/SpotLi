@@ -60,12 +60,12 @@ export class ErrorBoundary extends React.Component {
               <AlertTriangle className="w-4 h-4" />
               <span>{this.props.componentName || 'Component'} failed to render</span>
             </div>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-xs text-slate-400">
               {this.state.error?.message || 'An unexpected rendering error occurred.'}
             </p>
             <button
               onClick={this.handleReset}
-              className="px-3 py-1.5 rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white text-[11px] font-medium"
+              className="px-3 py-1.5 rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white text-xs font-medium"
             >
               Try again
             </button>
@@ -88,7 +88,7 @@ export class ErrorBoundary extends React.Component {
               {this.state.error?.message || 'An unexpected error occurred while rendering Deliveree.'}
             </p>
 
-            <div className="p-3 bg-slate-950 rounded-xl text-[11px] font-mono text-rose-300 text-start overflow-x-auto max-h-32 border border-slate-800">
+            <div className="p-3 bg-slate-950 rounded-xl text-xs font-mono text-rose-300 text-start overflow-x-auto max-h-32 border border-slate-800">
               {this.state.error?.stack || String(this.state.error)}
             </div>
 

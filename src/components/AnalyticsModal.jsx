@@ -103,7 +103,7 @@ export function AnalyticsModal({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {/* Total Packages */}
             <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 flex flex-col justify-between min-h-[84px] shadow-sm">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 {t('insights.totalCount')}
               </span>
               <p className="text-2xl font-extrabold text-slate-100 mt-1">
@@ -113,7 +113,7 @@ export function AnalyticsModal({
 
             {/* Active Parcels */}
             <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 flex flex-col justify-between min-h-[84px] shadow-sm">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 {t('insights.activeCount')}
               </span>
               <p className="text-2xl font-extrabold text-blue-400 mt-1">
@@ -123,7 +123,7 @@ export function AnalyticsModal({
 
             {/* Average Transit Days */}
             <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 flex flex-col justify-between min-h-[84px] shadow-sm">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 {t('insights.avgTime')}
               </span>
               <div className="flex items-baseline gap-1 mt-1">
@@ -138,7 +138,7 @@ export function AnalyticsModal({
 
             {/* Top Carrier by Volume */}
             <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 flex flex-col justify-between min-h-[84px] shadow-sm">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider truncate">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider truncate">
                 {t('insights.topCarrier')}
               </span>
               <p className="text-base font-bold text-amber-400 mt-1 truncate">
@@ -263,7 +263,7 @@ export function AnalyticsModal({
                 <Award className="w-4 h-4 text-amber-400" />
                 <span>{t('insights.turnaroundLeaderboard')}</span>
               </h3>
-              <span className="text-[11px] text-slate-400 hidden sm:inline">
+              <span className="text-xs text-slate-400 hidden sm:inline">
                 {t('insights.turnaroundLeaderboardDesc')}
               </span>
             </div>
@@ -295,7 +295,7 @@ export function AnalyticsModal({
                         <p className="text-xs font-bold text-slate-200 truncate">
                           {language === 'he' ? item.carrierHebrewName : item.carrierName}
                         </p>
-                        <p className="text-[11px] text-slate-400">
+                        <p className="text-xs text-slate-400">
                           {item.totalDelivered} {t('insights.delivered')} · {item.totalActive} {t('insights.active')}
                         </p>
                       </div>
@@ -322,7 +322,7 @@ export function AnalyticsModal({
                 <Coins className="w-4 h-4 text-emerald-400" />
                 <span>{t('insights.currencyBreakdown')}</span>
               </h3>
-              <span className="text-[11px] text-slate-400 hidden sm:inline">
+              <span className="text-xs text-slate-400 hidden sm:inline">
                 {t('insights.currencyBreakdownDesc')}
               </span>
             </div>
@@ -341,7 +341,7 @@ export function AnalyticsModal({
                     <p className="text-xl font-extrabold text-slate-100 tracking-tight">
                       {cur.symbol}{cur.total.toLocaleString(language === 'he' ? 'he-IL' : 'en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                     </p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">
+                    <p className="text-xs text-slate-400 mt-0.5">
                       {cur.count} {t('insights.packages')}
                     </p>
                   </div>
@@ -350,7 +350,7 @@ export function AnalyticsModal({
             </div>
 
             {!currencyBreakdown.hasValues && (
-              <p className="text-[11px] text-slate-500 text-center pt-1">
+              <p className="text-xs text-slate-500 text-center pt-1">
                 {t('insights.noCurrencyData')}
               </p>
             )}
@@ -400,7 +400,7 @@ export function AnalyticsModal({
                     key={s.id}
                     className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800/80 flex flex-col justify-between min-h-[64px]"
                   >
-                    <span className="text-[11px] text-slate-400 font-medium">
+                    <span className="text-xs text-slate-400 font-medium">
                       {language === 'he' ? s.hebrewLabel : s.label}
                     </span>
                     <span className="text-xl font-bold text-slate-200 mt-1">

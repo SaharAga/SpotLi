@@ -47,7 +47,7 @@ function PackageTableImpl({
     <div className="w-full overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900 shadow-sm">
       <table className="w-full text-start text-xs border-collapse">
         <thead>
-          <tr className="border-b border-slate-800 bg-slate-950 text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
+          <tr className="border-b border-slate-800 bg-slate-950 text-slate-400 font-semibold uppercase tracking-wider text-xs">
             <th className="py-3.5 px-4 text-start w-10"></th>
             <th className="py-3.5 px-4 text-start">{t('modal.itemTitle')}</th>
             <th className="py-3.5 px-4 text-start">{t('card.trackingNumber')}</th>
@@ -94,7 +94,7 @@ function PackageTableImpl({
                 {/* Tracking Number */}
                 <td className="py-3 px-4 font-mono text-slate-300">
                   <div className="flex items-center gap-2">
-                    <span className="bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-[11px]">
+                    <span className="bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-xs">
                       {pkg.trackingNumber}
                     </span>
                     <button
@@ -109,14 +109,14 @@ function PackageTableImpl({
 
                 {/* Carrier */}
                 <td className="py-3 px-4">
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold border ${carrier.badgeBg}`}>
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold border ${carrier.badgeBg}`}>
                     {language === 'he' ? carrier.hebrewName : carrier.name}
                   </span>
                 </td>
 
                 {/* Status Stage */}
                 <td className="py-3 px-4">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${stage.badgeClass}`}>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border ${stage.badgeClass}`}>
                     {language === 'he' ? stage.hebrewLabel : stage.label}
                   </span>
                 </td>
@@ -126,7 +126,7 @@ function PackageTableImpl({
                   <div className="flex items-center gap-1.5">
                     <span>{formatDate(pkg.expectedDeliveryDate, language)}</span>
                     {daysInfo && pkg.status !== 'delivered' && (
-                      <span className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${daysInfo.isUrgent ? 'bg-amber-500/20 text-amber-300' : 'bg-slate-800 text-slate-400'}`}>
+                      <span className={`text-xs px-1.5 py-0.2 rounded font-semibold ${daysInfo.isUrgent ? 'bg-amber-500/20 text-amber-300' : 'bg-slate-800 text-slate-400'}`}>
                         {daysInfo.text}
                       </span>
                     )}

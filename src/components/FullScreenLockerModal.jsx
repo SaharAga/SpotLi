@@ -145,7 +145,7 @@ export function FullScreenLockerModal({
       <div className="p-5 border-b border-slate-800 bg-gradient-to-r from-emerald-950/60 via-slate-900 to-teal-950/60 flex items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
-            {isBundled ? <Layers className="w-5 h-5 animate-pulse" /> : <Sun className="w-5 h-5 animate-pulse" />}
+            {isBundled ? <Layers className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
           </div>
           <div>
             <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
@@ -155,7 +155,7 @@ export function FullScreenLockerModal({
                   : t('lockerMode.title')}
               </span>
               {!isBundled && (
-                <span className="text-[10px] uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+                <span className="text-xs uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
                   {language === 'he' ? carrier.hebrewName : carrier.name}
                 </span>
               )}
@@ -181,7 +181,7 @@ export function FullScreenLockerModal({
       <div className="p-6 overflow-y-auto space-y-6 flex-1 flex flex-col items-center">
         
         {/* Wake Lock & High-Brightness Indicator */}
-        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-[11px] text-emerald-300/90 font-medium">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-xs text-emerald-300/90 font-medium">
           <Sun className="w-3.5 h-3.5 text-amber-400" />
           <span>{t('lockerMode.wakeLockActive')}</span>
         </div>
@@ -206,12 +206,12 @@ export function FullScreenLockerModal({
                   <span className="font-extrabold text-emerald-300 truncate max-w-[220px] sm:max-w-xs text-start">
                     {itemTitle}
                   </span>
-                  <span className="text-[10px] font-mono font-bold text-slate-400 shrink-0">
+                  <span className="text-xs font-mono font-bold text-slate-400 shrink-0">
                     {item.trackingNumber}
                   </span>
                 </div>
 
-                <span className="text-[11px] text-emerald-400 uppercase tracking-widest font-black block mb-2">
+                <span className="text-xs text-emerald-400 uppercase tracking-widest font-black block mb-2">
                   {itemPin ? t('lockerMode.pickupPin') : t('locationBundling.pinCode')}
                 </span>
 
@@ -243,7 +243,7 @@ export function FullScreenLockerModal({
                   ) : (
                     <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-400">
                       <span className="font-semibold">{t('locationBundling.noPin')}</span>
-                      <p className="text-[11px] text-slate-500 mt-0.5">{t('locationBundling.storeClerkHint')}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{t('locationBundling.storeClerkHint')}</p>
                     </div>
                   )}
                 </div>
@@ -283,22 +283,22 @@ export function FullScreenLockerModal({
                     {pkg.pickupLocation}
                   </h4>
                   {pkg.isRedirected && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
                       {t('redirectDetection.badge')}
                     </span>
                   )}
                 </div>
                 {pkg.isRedirected && pkg.originalPickupLocation && (
-                  <p className="text-[10px] text-amber-300/80 mt-0.5">
+                  <p className="text-xs text-amber-300/80 mt-0.5">
                     <span className="opacity-75">{t('redirectDetection.originalLocation')} </span>
                     <span className="line-through">{pkg.originalPickupLocation}</span>
                   </p>
                 )}
                 <div className="flex items-center gap-2 mt-1">
-                  <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold border ${storeStatus.badgeClass}`}>
+                  <span className={`text-xs px-2 py-0.5 rounded-md font-bold border ${storeStatus.badgeClass}`}>
                     {language === 'he' ? storeStatus.badgeTextHe : storeStatus.badgeTextEn}
                   </span>
-                  <span className="text-[11px] text-slate-400">
+                  <span className="text-xs text-slate-400">
                     {language === 'he' ? storeStatus.nextChangeHe : storeStatus.nextChangeEn}
                   </span>
                 </div>

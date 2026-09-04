@@ -132,7 +132,7 @@ export function SideNavDrawer({
             </div>
             <div>
               <h3 className="font-bold text-sm text-slate-100">Deliveree Pro</h3>
-              <span className="text-[10px] text-slate-400 font-mono">v{APP_VERSION}</span>
+              <span className="text-xs text-slate-400 font-mono">v{APP_VERSION}</span>
             </div>
           </div>
 
@@ -172,7 +172,7 @@ export function SideNavDrawer({
               <span className="font-bold block truncate">
                 {user ? user.name : (language === 'he' ? 'התחברות לחשבון' : 'Sign In / Account')}
               </span>
-              <span className="text-[10px] text-slate-400 truncate">
+              <span className="text-xs text-slate-400 truncate">
                 {user ? user.email : (language === 'he' ? 'סנכרון ענן וגיבוי' : 'Cloud sync & backup')}
               </span>
             </div>

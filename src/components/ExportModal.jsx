@@ -151,7 +151,7 @@ export function ExportModal({
                 </div>
                 <div>
                   <span className="font-bold text-slate-100 block text-xs">Excel / CSV</span>
-                  <span className="text-[10px] text-slate-400">
+                  <span className="text-xs text-slate-400">
                     {language === 'he' ? 'תאימות מלאה לעברית (UTF-8 BOM)' : 'RFC 4180 with UTF-8 BOM'}
                   </span>
                 </div>
@@ -175,7 +175,7 @@ export function ExportModal({
                   <span className="font-bold text-slate-100 block text-xs">
                     {language === 'he' ? 'ייצוא JSON' : 'JSON Export'}
                   </span>
-                  <span className="text-[10px] text-slate-400">
+                  <span className="text-xs text-slate-400">
                     {language === 'he' ? 'לפי הסינון שנבחר — לא קובץ שחזור' : 'Filtered by scope — not a restore file'}
                   </span>
                 </div>
@@ -197,7 +197,7 @@ export function ExportModal({
                 </div>
                 <div>
                   <span className="font-bold text-slate-100 block text-xs">Print / PDF</span>
-                  <span className="text-[10px] text-slate-400">
+                  <span className="text-xs text-slate-400">
                     {language === 'he' ? 'דוח מסודר להדפסה' : 'Printable summary sheet'}
                   </span>
                 </div>
@@ -263,7 +263,7 @@ export function ExportModal({
             </span>
           </div>
 
-          <div className="flex items-center gap-2 text-[11px] text-slate-400">
+          <div className="flex items-center gap-2 text-xs text-slate-400">
             <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>
               {language === 'he' 

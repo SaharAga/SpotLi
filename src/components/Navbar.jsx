@@ -68,16 +68,16 @@ export function Navbar({
               <span className="text-base sm:text-lg font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 truncate">
                 {t('appTitle')}
               </span>
-              <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono font-bold tracking-wider">
+              <span className="text-xs px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono font-bold tracking-wider">
                 v{APP_VERSION}
               </span>
               {typeof window !== 'undefined' && (window.location.hostname.includes('staging') || window.location.hostname.includes('localhost')) && (
-                <span className="text-[9px] px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-black tracking-wider animate-pulse flex items-center gap-1 shadow-sm shadow-amber-500/20">
+                <span className="text-xs px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-black tracking-wider flex items-center gap-1 shadow-sm shadow-amber-500/20">
                   STAGING
                 </span>
               )}
             </div>
-            <span className="hidden sm:block text-[10px] text-slate-400 font-medium -mt-0.5 truncate">
+            <span className="hidden sm:block text-xs text-slate-400 font-medium -mt-0.5 truncate">
               {t('appTagline')}
             </span>
           </div>
@@ -105,7 +105,7 @@ export function Navbar({
           >
             {user ? (
               <>
-                <div className="w-5 h-5 rounded-full relative shrink-0 overflow-hidden bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-[10px] font-bold text-white border border-blue-500/40">
+                <div className="w-5 h-5 rounded-full relative shrink-0 overflow-hidden bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-xs font-bold text-white border border-blue-500/40">
                   <span>{user.name?.charAt(0) || 'U'}</span>
                   {user.avatar && (
                     <img
@@ -173,7 +173,7 @@ export function Navbar({
             ) : (
               <>
                 <LogIn className="w-3.5 h-3.5 text-blue-400" />
-                <span className="text-[11px] font-bold text-blue-400">{language === 'he' ? 'התחבר' : 'Login'}</span>
+                <span className="text-xs font-bold text-blue-400">{language === 'he' ? 'התחבר' : 'Login'}</span>
               </>
             )}
           </button>
@@ -225,7 +225,7 @@ export function Navbar({
                     <span className="text-sm font-bold text-slate-100 block">
                       {language === 'he' ? 'הדבקה חכמה מלוח ההעתקה' : 'Smart Clipboard Auto-Paste'}
                     </span>
-                    <span className="text-[11px] text-blue-300">
+                    <span className="text-xs text-blue-300">
                       {language === 'he' ? 'זיהוי אוטומטי מ-SMS, אימייל או מספר מעקב' : 'Auto-detect carrier and code from SMS or email'}
                     </span>
                   </div>
@@ -248,7 +248,7 @@ export function Navbar({
                   <span className="text-sm font-bold text-slate-200 block">
                     {language === 'he' ? 'הזנה ידנית בטופס' : 'Manual Form Entry'}
                   </span>
-                  <span className="text-[11px] text-slate-400">
+                  <span className="text-xs text-slate-400">
                     {language === 'he' ? 'מילוי פרטי משלוח באופן ידני' : 'Fill in custom title, carrier & tracking code'}
                   </span>
                 </div>

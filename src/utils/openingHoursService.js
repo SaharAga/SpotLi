@@ -460,7 +460,7 @@ export function getLiveStoreStatus(hoursStr = '', options = {}) {
         nextChangeEn: `Closes in ${minutesToClose} min (${closeTimeStr})`,
         warningHe: fridayWarningHe,
         warningEn: fridayWarningEn,
-        badgeClass: 'bg-amber-500/25 text-amber-300 border-amber-500/40 animate-pulse'
+        badgeClass: 'bg-amber-500/25 text-amber-300 border-amber-500/40'
       };
     }
 

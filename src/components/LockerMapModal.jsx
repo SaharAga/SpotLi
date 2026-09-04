@@ -251,10 +251,10 @@ export function LockerMapModal({
                     <div className="flex items-start justify-between gap-2">
                       <h4 className="text-xs sm:text-sm font-bold text-slate-100">{name}</h4>
                       <div className="flex items-center gap-1.5 shrink-0">
-                        <span className={`text-[10px] px-2 py-0.5 rounded-md font-semibold border ${pointStatus.badgeClass}`}>
+                        <span className={`text-xs px-2 py-0.5 rounded-md font-semibold border ${pointStatus.badgeClass}`}>
                           {language === 'he' ? pointStatus.badgeTextHe : pointStatus.badgeTextEn}
                         </span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 text-blue-400 font-semibold">
+                        <span className="text-xs px-2 py-0.5 rounded-md bg-slate-800 text-blue-400 font-semibold">
                           {point.distance}
                         </span>
                       </div>
@@ -265,7 +265,7 @@ export function LockerMapModal({
                       <span>{address}</span>
                     </p>
 
-                    <div className="flex items-center gap-4 mt-2 text-[11px] text-slate-400">
+                    <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
                       <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3 text-emerald-400" />
                         <span>{hours}</span>
@@ -293,7 +293,7 @@ export function LockerMapModal({
                     <span className="relative text-xs font-bold text-slate-200">
                       {language === 'he' ? activePoint.nameHe : activePoint.name}
                     </span>
-                    <span className="relative text-[10px] text-blue-400 mt-0.5">
+                    <span className="relative text-xs text-blue-400 mt-0.5">
                       GPS: {activePoint.lat.toFixed(4)}, {activePoint.lng.toFixed(4)}
                     </span>
                   </div>
@@ -311,10 +311,10 @@ export function LockerMapModal({
                         <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs">
                           <div className="flex items-center gap-2">
                             <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold border ${activeStatus.badgeClass}`}>
-                              <span className={`w-2 h-2 rounded-full ${activeStatus.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'}`} />
+                              <span className={`w-2 h-2 rounded-full ${activeStatus.isOpen ? 'bg-emerald-400' : 'bg-slate-400'}`} />
                               <span>{language === 'he' ? activeStatus.badgeTextHe : activeStatus.badgeTextEn}</span>
                             </span>
-                            <span className="text-slate-300 text-[11px]">
+                            <span className="text-slate-300 text-xs">
                               {language === 'he' ? activeStatus.nextChangeHe : activeStatus.nextChangeEn}
                             </span>
                           </div>
@@ -322,7 +322,7 @@ export function LockerMapModal({
                           <button
                             type="button"
                             onClick={() => setIsReportingHours(!isReportingHours)}
-                            className="text-[10px] text-indigo-300 hover:text-indigo-200 underline font-medium flex items-center gap-1 cursor-pointer"
+                            className="text-xs text-indigo-300 hover:text-indigo-200 underline font-medium flex items-center gap-1 cursor-pointer"
                           >
                             <Flag className="w-3 h-3" />
                             <span>{t('openingHours.reportWrongHours')}</span>
@@ -341,7 +341,7 @@ export function LockerMapModal({
                     {/* Inline Report Incorrect Hours Box */}
                     {isReportingHours && (
                       <form onSubmit={handleReportWrongHours} className="p-3 rounded-xl bg-slate-900 border border-indigo-500/30 space-y-2 animate-fade-in text-xs">
-                        <label className="block text-[11px] font-bold text-indigo-200">
+                        <label className="block text-xs font-bold text-indigo-200">
                           {t('openingHours.reportPromptTitle')}
                         </label>
                         <input
@@ -391,7 +391,7 @@ export function LockerMapModal({
                 {/* 1-Click Navigation Buttons */}
                 <div className="space-y-2.5 pt-4 border-t border-slate-800">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-slate-400 font-semibold uppercase block">
+                    <span className="text-xs text-slate-400 font-semibold uppercase block">
                       {isRTL ? 'ניווט מהיר ליעד' : 'Direct Navigation'}
                     </span>
                     <button
@@ -408,7 +408,7 @@ export function LockerMapModal({
                           });
                         }
                       }}
-                      className="text-[11px] text-blue-400 hover:text-blue-300 underline font-medium cursor-pointer"
+                      className="text-xs text-blue-400 hover:text-blue-300 underline font-medium cursor-pointer"
                     >
                       {isRTL ? 'בחר אפליקציה אחרת' : 'Choose app'}
                     </button>

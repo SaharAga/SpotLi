@@ -169,7 +169,7 @@ export function FeedbackModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs">
           {/* Feedback Type Tabs */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-300 mb-1.5">
+            <label className="block text-xs font-bold text-slate-300 mb-1.5">
               {language === 'he' ? 'סוג המשוב' : 'Feedback Category'}
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -216,7 +216,7 @@ export function FeedbackModal({
 
           {/* Rating */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-300 mb-1.5">
+            <label className="block text-xs font-bold text-slate-300 mb-1.5">
               {language === 'he' ? 'דירוג חוויית השימוש שלך' : 'Rate Your Experience'}
             </label>
             <div className="flex items-center justify-between gap-2 p-2 bg-slate-950 rounded-2xl border border-slate-800">
@@ -237,7 +237,7 @@ export function FeedbackModal({
 
           {/* Description Textarea */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-300 mb-1.5">
+            <label className="block text-xs font-bold text-slate-300 mb-1.5">
               {language === 'he' ? 'פירוט המשוב או תיאור הבעיה' : 'Detailed Feedback / Description'} *
             </label>
             <textarea
@@ -253,7 +253,7 @@ export function FeedbackModal({
               onPaste={handlePaste}
               className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 rounded-xl p-3 focus:border-indigo-500 focus:outline-none resize-none leading-relaxed"
             />
-            <p className="text-[10px] text-slate-500 mt-1">
+            <p className="text-xs text-slate-500 mt-1">
               {language === 'he'
                 ? 'טיפ: אפשר להדביק צילום מסך ישירות לתיבה (Ctrl+V).'
                 : 'Tip: you can paste a screenshot straight into the box (Ctrl+V).'}
@@ -262,7 +262,7 @@ export function FeedbackModal({
 
           {/* Screenshot attachment */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-300 mb-1.5">
+            <label className="block text-xs font-bold text-slate-300 mb-1.5">
               {language === 'he' ? 'צילום מסך (רשות)' : 'Screenshot (optional)'}
             </label>
 
@@ -273,7 +273,7 @@ export function FeedbackModal({
                   alt={language === 'he' ? 'צילום מסך מצורף' : 'Attached screenshot'}
                   className="w-full max-h-48 object-contain bg-slate-900"
                 />
-                <div className="flex items-center justify-between px-3 py-2 text-[10px] text-slate-400">
+                <div className="flex items-center justify-between px-3 py-2 text-xs text-slate-400">
                   <span>
                     {screenshot.width}×{screenshot.height} • {Math.round(screenshot.bytes / 1024)}KB
                   </span>
@@ -321,13 +321,13 @@ export function FeedbackModal({
             )}
 
             {imageError && (
-              <p className="text-[10px] text-rose-400 mt-1.5">{imageError}</p>
+              <p className="text-xs text-rose-400 mt-1.5">{imageError}</p>
             )}
 
             {/* The rest of the payload is scrubbed of PII automatically; the
                 contents of an image cannot be. Say so plainly. */}
             {screenshot && (
-              <p className="text-[10px] text-amber-400/90 mt-1.5 leading-tight">
+              <p className="text-xs text-amber-400/90 mt-1.5 leading-tight">
                 {language === 'he'
                   ? '⚠️ שימו לב: לא ניתן להסתיר פרטים אישיים בתוך תמונה. ודאו שהצילום אינו כולל כתובת, טלפון או פרטי תשלום.'
                   : '⚠️ Note: personal details inside an image can’t be masked automatically. Check the screenshot doesn’t show an address, phone number, or payment details.'}
@@ -342,7 +342,7 @@ export function FeedbackModal({
               <span className="font-bold text-xs text-indigo-200">
                 {language === 'he' ? '🔒 כל המשובים נשלחים בצורה אנונימית לחלוטין' : '🔒 All feedback is submitted 100% anonymously'}
               </span>
-              <span className="text-[10px] text-slate-400 leading-tight">
+              <span className="text-xs text-slate-400 leading-tight">
                 {language === 'he'
                   ? 'ללא שמירת פרטי משתמש, מייל או מזהים אישיים (Zero Tracking & PII).'
                   : 'Zero user tracking, email extraction, or personal identification.'}
@@ -351,7 +351,7 @@ export function FeedbackModal({
           </div>
 
           {/* Device metadata indicator */}
-          <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 text-[10px] text-slate-400">
+          <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 text-xs text-slate-400">
             <Smartphone className="w-3.5 h-3.5 text-blue-400 shrink-0" />
             <span>
               {language === 'he' 
