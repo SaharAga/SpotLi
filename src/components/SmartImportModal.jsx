@@ -7,6 +7,7 @@ import { parseSmartText } from '../utils/smartParser';
 import { getCarrier } from '../types/carriers';
 import { findPackageByTrackingNumber } from '../services/deliveryService';
 import { useLanguage } from '../context/LanguageContext';
+import { ModalHeader } from './ui/Primitives';
 import { parseWithAi } from '../services/aiParseService';
 import { compressImageFile, extractImageFromPaste, ACCEPTED_IMAGE_TYPES } from '../utils/imageCompressor';
 import { submitFeedback } from '../services/feedbackService';
@@ -384,31 +385,17 @@ export function SmartImportModal({
       className="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8"
     >
         {/* Header */}
-        <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-blue-600/10 to-indigo-600/10">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/20">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-slate-100">
-                {language === 'he' ? 'ייבוא חכם מהודעה או טקסט' : 'Smart Import from Message or Text'}
-              </h2>
-              <p className="text-xs text-slate-400">
-                {language === 'he' ? 'הדבק טקסט, הודעת SMS או אימייל לחילוץ פרטי משלוח' : 'Paste text, SMS message, or confirmation email to extract details'}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
-            aria-label="Close"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        <ModalHeader
+          title={language === 'he' ? 'ייבוא חכם מהודעה או טקסט' : 'Smart Import from Message or Text'}
+          subtitle={language === 'he'
+            ? 'הדבק טקסט, הודעת SMS או אימייל לחילוץ פרטי משלוח'
+            : 'Paste text, SMS message, or confirmation email to extract details'}
+          onClose={onClose}
+          closeLabel={language === 'he' ? 'סגור' : 'Close'}
+        />
 
         {/* Body */}
-        <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+        <div className="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
           {onSwitchToManual && (
             <button
               type="button"
