@@ -81,12 +81,15 @@ describe('SmartImportModal (rendered)', () => {
     expect(await screen.findByText('RS948219483IL')).toBeInTheDocument();
   });
 
-  it('the close button calls onClose', () => {
+  it('the back control calls onClose', () => {
+    // Inner pages lead with a back arrow rather than an X — they are one
+    // level into a tab, not a window over it. Two controls render (a leading
+    // back on mobile, a trailing close on desktop); either dismisses.
     const onClose = vi.fn();
     renderWithLanguage(
       <SmartImportModal isOpen onClose={onClose} onParsedResult={vi.fn()} />
     );
-    fireEvent.click(screen.getByLabelText('Close'));
+    fireEvent.click(screen.getAllByLabelText(/back|close/i)[0]);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 

@@ -156,9 +156,14 @@ describe('FeedbackService Unit & Resilience Test Suite', () => {
       expect(result.message).toContain('[REDACTED_PERSONAL_INFO]');
     });
 
-    it('validates rating within 1-5 range and defaults invalid values to 5', () => {
+    it('keeps a rating only when it is a real 1-5 score, never a placeholder', () => {
+      // Out of range is "no rating", not "top marks" — a placeholder 5 would
+      // inflate every average computed from these documents.
       const low = validateAndSanitizeFeedback({ message: 'Low rating test', rating: -2 });
-      expect(low.rating).toBe(5);
+      expect('rating' in low).toBe(false);
+
+      const unrated = validateAndSanitizeFeedback({ message: 'No rating given', rating: null });
+      expect('rating' in unrated).toBe(false);
 
       const validHigh = validateAndSanitizeFeedback({ message: 'High rating test', rating: 5 });
       expect(validHigh.rating).toBe(5);

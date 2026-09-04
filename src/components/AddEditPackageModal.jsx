@@ -355,7 +355,7 @@ export function AddEditPackageModal({
       <ModalHeader
         title={editPackage ? t('modal.editPackage') : t('modal.addNew')}
         onClose={onClose}
-        closeLabel={t('modal.cancel')}
+        closeLabel={language === 'he' ? 'חזרה' : 'Back'}
       />
 
       {/* Form */}

@@ -37,6 +37,8 @@ describe('FeedbackModal toast distinction (#132)', () => {
     await userEvent.type(textarea, 'Online failure report');
 
     const submitBtn = screen.getByRole('button', { name: /שלח משוב|Send Feedback/i });
+    // Rating is optional: the first submit asks about it once, the second sends.
+    await userEvent.click(submitBtn);
     await userEvent.click(submitBtn);
 
     expect(onShowToast).toHaveBeenCalledWith(
@@ -62,6 +64,8 @@ describe('FeedbackModal toast distinction (#132)', () => {
     await userEvent.type(textarea, 'Offline report');
 
     const submitBtn = screen.getByRole('button', { name: /שלח משוב|Send Feedback/i });
+    // Rating is optional: the first submit asks about it once, the second sends.
+    await userEvent.click(submitBtn);
     await userEvent.click(submitBtn);
 
     expect(onShowToast).toHaveBeenCalledWith(

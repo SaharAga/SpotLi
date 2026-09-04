@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  X, Package, Sparkles, RefreshCw, ShieldCheck, Heart,
-  CheckCircle2, Lock, Cpu, Award, Globe, Activity, AlertTriangle, XCircle, FileText
-} from 'lucide-react';
+import { X, Package, Sparkles, RefreshCw, ShieldCheck, Heart, CheckCircle2, Lock, Cpu, Award, Globe, Activity, AlertTriangle, XCircle, FileText, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { CARRIER_LIST } from '../types/carriers';
 import { APP_VERSION, RELEASE_DATE, BUILD_CHANNEL } from '../constants/version';
@@ -166,7 +163,7 @@ export function AboutModal({
     >
         {/* Header */}
         <div className="p-5 sm:p-6 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-600/10 shrink-0">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-1 min-w-0 items-center gap-3">
             <div className="relative group shrink-0">
               <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 opacity-80 blur-sm group-hover:opacity-100 transition duration-500" />
               <div className="relative w-11 h-11 rounded-2xl bg-slate-900 border border-slate-700/80 flex items-center justify-center text-blue-400 shadow-md">
@@ -190,10 +187,10 @@ export function AboutModal({
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
-            aria-label="Close"
+            className="order-first me-3 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
+            aria-label="Back"
           >
-            <X className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5 rtl:rotate-180" aria-hidden="true" />
           </button>
         </div>
 
@@ -524,7 +521,7 @@ export function AboutModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-all cursor-pointer min-h-[48px] w-full sm:w-auto"
+            className="hidden lg:block px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-all cursor-pointer min-h-[48px] w-full sm:w-auto"
           >
             {language === 'he' ? 'סגור' : 'Close'}
           </button>

@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  X, MapPin, Clock, Phone, Navigation, ExternalLink, ShieldCheck, Search, Flag, AlertCircle
-} from 'lucide-react';
+import { X, MapPin, Clock, Phone, Navigation, ExternalLink, ShieldCheck, Search, Flag, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { Modal } from './Modal';
 import { getPreferredNavigationApp, openNavigationApp } from '../utils/navigationService';
@@ -184,7 +182,14 @@ export function LockerMapModal({
     >
         {/* Header */}
         <div className="p-5 border-b border-slate-800 flex items-center justify-between gap-4 bg-slate-950/50">
-          <div className="flex items-center gap-3">
+          <button
+            onClick={onClose}
+            className="shrink-0 me-3 flex shrink-0 items-center justify-center min-h-[48px] min-w-[48px] rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none"
+            aria-label={isRTL ? 'חזרה' : 'Back'}
+          >
+            <ArrowLeft className="w-5 h-5 rtl:rotate-180" aria-hidden="true" />
+          </button>
+          <div className="flex flex-1 min-w-0 items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400">
               <MapPin className="w-5 h-5" />
             </div>
@@ -197,13 +202,6 @@ export function LockerMapModal({
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="hidden lg:flex p-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
-            aria-label="Close"
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
 
         {/* Search Bar */}

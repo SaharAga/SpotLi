@@ -1,11 +1,8 @@
 import React, { useMemo } from 'react';
-import {
-  X, BarChart3, PieChart, TrendingUp,
-  Award, Coins, CheckCircle2,
-  Clock
-} from 'lucide-react';
+import { BarChart3, PieChart, TrendingUp, Award, Coins, CheckCircle2, Clock } from 'lucide-react';
 import { getCarrier } from '../types/carriers';
 import { STAGES } from '../types/stages';
+import { Button } from './ui/Primitives';
 import { useLanguage } from '../context/LanguageContext';
 import {
   buildTransitDaysMap,
@@ -88,13 +85,12 @@ export function AnalyticsModal({
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            aria-label={language === 'he' ? 'סגור חלון' : 'Close modal'}
-            className="hidden lg:flex min-w-[48px] min-h-[48px] p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-all items-center justify-center border border-slate-700/50 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          {/* A tab destination, so no back arrow: the bottom bar is how you
+              leave it. Desktop has no bottom bar, hence a Close — the same one
+              Activity and Account use, so the three tabs match. */}
+          <div className="hidden lg:block shrink-0">
+            <Button onClick={onClose}>{language === 'he' ? 'סגור' : 'Close'}</Button>
+          </div>
         </div>
 
         {/* Scrollable Body */}

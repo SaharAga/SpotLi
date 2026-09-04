@@ -12,7 +12,6 @@ import { BottomNav, TAB_FOR_MODAL } from './BottomNav';
 // from App.jsx, which imports this file — that cycle is what the ids avoid.
 const MODAL_IDS = { ANALYTICS: 'analytics', ACTIVITY: 'activity' };
 import { AccountSheet } from './AccountSheet';
-import { APP_VERSION } from '../constants/version';
 
 export function Navbar({
   isDemoMode,
@@ -30,7 +29,8 @@ export function Navbar({
   onOpenLockerMap,
   onImportData,
   onResetData,
-  onOpenSettings,
+  onExportData,
+  packages = [],
   onShowToast
 }) {
   const { language, t } = useLanguage();
@@ -98,9 +98,6 @@ export function Navbar({
             <div className="flex items-center gap-1.5">
               <span className="text-base sm:text-lg font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 truncate">
                 {t('appTitle')}
-              </span>
-              <span className="text-xs px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono font-bold tracking-wider">
-                v{APP_VERSION}
               </span>
               {typeof window !== 'undefined' && (window.location.hostname.includes('staging') || window.location.hostname.includes('localhost')) && (
                 <span className="text-xs px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-black tracking-wider flex items-center gap-1 shadow-sm shadow-amber-500/20">
@@ -299,7 +296,7 @@ export function Navbar({
         isDemoMode={isDemoMode}
         onClose={() => setIsSideDrawerOpen(false)}
         onOpenAuth={onOpenAuth}
-        onOpenSettings={onOpenSettings}
+        onOpenSettings={() => { setIsSideDrawerOpen(false); setIsAccountSheetOpen(true); }}
         onOpenSmartImport={onOpenSmartImport}
         onOpenConnectModal={onOpenConnectModal}
         onOpenAnalytics={onOpenAnalytics}
@@ -316,9 +313,7 @@ export function Navbar({
       <AccountSheet
         isOpen={isAccountSheetOpen}
         onClose={() => setIsAccountSheetOpen(false)}
-        isDemoMode={isDemoMode}
         onOpenAuth={onOpenAuth}
-        onOpenSettings={onOpenSettings}
         onOpenSmartImport={onOpenSmartImport}
         onOpenConnectModal={onOpenConnectModal}
         onOpenAnalytics={onOpenAnalytics}
@@ -328,7 +323,9 @@ export function Navbar({
         onOpenAdminFeedback={onOpenAdminFeedback}
         onOpenAbout={onOpenAbout}
         onImportData={onImportData}
-        onResetData={onResetData}
+        onExportData={onExportData}
+        onShowToast={onShowToast}
+        packages={packages}
       />
 
       {/* Mobile bottom tab bar. Lives here rather than in App because this

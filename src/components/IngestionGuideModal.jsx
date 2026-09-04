@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  X, ClipboardCheck, Smartphone, 
-  Sparkles, ArrowRight, CheckCircle2, Copy,
-  RefreshCw, Plus, Trash2
-} from 'lucide-react';
+import { Smartphone, Sparkles, CheckCircle2, Copy, RefreshCw, Plus, Trash2, ArrowLeft, ChevronDown } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { copyToClipboard } from '../utils/clipboard';
@@ -22,14 +18,14 @@ import { Modal } from './Modal';
 export function IngestionGuideModal({
   isOpen,
   onClose,
-  onOpenSmartImport,
   onShowToast
 }) {
-  const { language, isRTL } = useLanguage();
+  const { language } = useLanguage();
   const { user, loginWithGoogle } = useAuth();
   
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  const [showForwarding, setShowForwarding] = useState(false);
   const [selectedGuide, setSelectedGuide] = useState('gmail'); // 'gmail' | 'outlook' | 'icloud' | 'yahoo'
   const [isConnectingGmail, setIsConnectingGmail] = useState(false);
   const [isConnectingOutlook, setIsConnectingOutlook] = useState(false);
@@ -271,7 +267,7 @@ export function IngestionGuideModal({
     >
       {/* Header */}
       <div className="p-5 sm:p-6 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-600/10 shrink-0">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-1 min-w-0 items-center gap-3">
           <div className="p-2.5 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/20">
             <Sparkles className="w-5 h-5" />
           </div>
@@ -286,10 +282,10 @@ export function IngestionGuideModal({
         </div>
         <button
           onClick={onClose}
-          className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
-          aria-label="Close"
+          className="order-first me-3 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
+          aria-label="Back"
         >
-          <X className="w-5 h-5" />
+          <ArrowLeft className="w-5 h-5 rtl:rotate-180" aria-hidden="true" />
         </button>
       </div>
 
@@ -470,53 +466,35 @@ export function IngestionGuideModal({
           </div>
         </div>
 
-        {/* Method 2: 1-Click Clipboard Smart Paste */}
-        <div className="p-4 rounded-2xl bg-slate-950/80 border border-blue-500/20 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-                <ClipboardCheck className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="font-bold text-sm text-slate-100">
-                  {language === 'he' ? 'הדבקה חכמה מהירה מהלוח' : 'Rapid Clipboard Paste'}
-                </h3>
-                <span className="text-xs text-emerald-400 font-bold uppercase tracking-wider">
-                  {language === 'he' ? 'עובד מכל אפליקציה ו-SMS ⚡' : 'Works with any App & SMS ⚡'}
-                </span>
-              </div>
+        {/* The forwarding rule is the fallback for people who cannot or will
+            not connect an inbox above. Showing its address, provider tabs and
+            numbered steps unprompted buried the one-tap path it backs up, so it
+            opens on request. */}
+        <div className="rounded-2xl bg-slate-950/80 border border-slate-800 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setShowForwarding((v) => !v)}
+            aria-expanded={showForwarding}
+            className="w-full flex items-center gap-3 p-4 sm:p-5 text-start cursor-pointer hover:bg-slate-900/60 transition-colors min-h-[48px] focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none"
+          >
+            <div className="min-w-0 flex-1">
+              <h3 className="font-bold text-sm text-slate-100">
+                {language === 'he' ? 'אין לך Gmail או Outlook?' : "Don't use Gmail or Outlook?"}
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {language === 'he'
+                  ? 'הגדרת כלל העברה חד-פעמי לתיבה האישית שלך'
+                  : 'Set up a one-time forwarding rule to your personal box'}
+              </p>
             </div>
-
-            <button
-              onClick={() => {
-                onClose();
-                if (onOpenSmartImport) onOpenSmartImport();
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all shadow-md shadow-blue-500/20 cursor-pointer min-h-[48px]"
-            >
-              <span>{language === 'he' ? 'פתח הדבקה' : 'Open Paste'}</span>
-              <ArrowRight className={`w-3.5 h-3.5 ${isRTL ? 'rotate-180' : ''}`} />
-            </button>
-          </div>
-
-          <p className="text-xs text-slate-300 leading-relaxed">
-            {language === 'he'
-              ? 'מעתיקים הודעת SMS, מספר מעקב או טקסט מכל אפליקציה — פותחים את Deliveree והפרטים מזוהים מיידית.'
-              : 'Copy any SMS, tracking code, or confirmation email — Deliveree instantly recognizes the carrier and shipment.'}
-          </p>
-        </div>
-
-        {/* Method 3: Ingestion Email & Interactive Setup Guides */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-4">
-          <div>
-            <h3 className="font-bold text-sm text-slate-100">
-              {language === 'he' ? 'תיבת המשלוחים האישית ומדריכי הגדרה' : 'Personal Ingestion Box & Setup Guides'}
-            </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              {language === 'he' ? 'הגדרת כלל העברה אוטומטי באימייל שלך (One-Time Setup)' : 'One-time forwarding rule in your email client'}
-            </p>
-          </div>
-
+            <ChevronDown
+              className={`w-4 h-4 shrink-0 text-slate-400 transition-transform ${showForwarding ? 'rotate-180' : ''}`}
+              aria-hidden="true"
+            />
+          </button>
+        
+          {showForwarding && (
+          <div className="p-4 sm:p-5 pt-0 space-y-4">
           {/* Email Copy Card */}
           <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between gap-2">
             <div className="min-w-0">
@@ -601,6 +579,8 @@ export function IngestionGuideModal({
               )}
             </div>
           </div>
+          </div>
+          )}
         </div>
 
         {/* Method 4: Mobile App QR Code */}

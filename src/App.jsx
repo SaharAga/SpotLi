@@ -1210,7 +1210,6 @@ export function DashboardContent() {
             openModal(MODAL.AUTH, { initialMode: 'signin' });
           }
         }}
-        onOpenSettings={() => openModal(MODAL.ACCOUNT, { initialTab: 'preferences' })}
         onOpenAbout={() => openModal(MODAL.ABOUT)}
         onOpenFeedback={() => openModal(MODAL.FEEDBACK)}
         onOpenAdminFeedback={isAdminUser(user) ? () => openModal(MODAL.ADMIN_FEEDBACK) : undefined}
@@ -1220,6 +1219,7 @@ export function DashboardContent() {
         onImportData={handleImportData}
         onResetData={handleResetData}
         onShowToast={showToast}
+        packages={packages}
       />
 
 
