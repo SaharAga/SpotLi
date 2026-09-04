@@ -68,23 +68,26 @@ export function FilterBar({
   // Just a search bar with everything else — status, carrier, sort — tucked
   // behind one "Filters" button beside it, opening a small panel rather
   // than ever wrapping or horizontally scrolling the bar itself.
+  // Two rows, not one. Search, filters, refresh and both view toggles used to
+  // share a single 390px line — five controls competing, and the search field
+  // squeezed down to whatever was left. Search now owns its row; the controls
+  // sit underneath where they can breathe.
   return (
-    <div data-testid="filter-bar" className="relative flex items-center gap-2 bg-slate-900 p-2.5 sm:p-3 rounded-2xl border border-slate-800 mb-6 shadow-sm">
+    <div data-testid="filter-bar" className="relative flex flex-col gap-2.5 mb-6">
+      <div className="flex items-center gap-2">
       <div className="relative flex-1 min-w-0">
-        <Search className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 ${isRTL ? 'right-3' : 'left-3'}`} />
+        <Search className="absolute top-1/2 -translate-y-1/2 start-4 w-4 h-4 text-slate-400" aria-hidden="true" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={t('searchPlaceholder')}
-          className={`w-full bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-500 text-sm rounded-xl py-2.5 transition-all focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[44px] ${
-            isRTL ? 'pr-9 pl-9' : 'pl-9 pr-9'
-          }`}
+          className="w-full bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 text-sm rounded-2xl py-3 ps-11 pe-11 transition-all focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[48px]"
         />
         {searchQuery && (
           <button
             onClick={() => onSearchChange('')}
-            className={`absolute top-1/2 -translate-y-1/2 p-2 rounded-md text-slate-400 hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center ${isRTL ? 'left-1' : 'right-1'}`}
+            className="absolute top-1/2 -translate-y-1/2 end-1.5 p-2 rounded-lg text-slate-400 hover:text-white min-h-[48px] min-w-[48px] flex items-center justify-center"
             aria-label="Clear search"
           >
             <X className="w-4 h-4" />
@@ -92,17 +95,24 @@ export function FilterBar({
         )}
       </div>
 
+      </div>
+
+      {/* Controls row. The view toggles live here rather than beside the
+          search field — they are a preference you set once, not something
+          you reach for on every search. */}
+      <div className="flex items-center gap-2">
       <button
         onClick={() => setFiltersOpen((v) => !v)}
         aria-expanded={filtersOpen}
         aria-label={t('filters.status')}
-        className={`relative shrink-0 p-2.5 rounded-xl border transition-all min-h-[44px] min-w-[44px] flex items-center justify-center ${
+        className={`relative shrink-0 px-4 rounded-xl border transition-all min-h-[48px] flex items-center justify-center gap-2 text-xs font-bold ${
           filtersOpen
             ? 'bg-blue-600 border-blue-600 text-white'
             : 'bg-slate-950 border-slate-800 text-slate-300 hover:text-slate-100 hover:bg-slate-800'
         }`}
       >
-        <SlidersHorizontal className="w-4 h-4" />
+        <SlidersHorizontal className="w-4 h-4" aria-hidden="true" />
+        <span>{t('filters.status')}</span>
         {isFiltered && !filtersOpen && (
           <span className="absolute -top-1 -end-1 w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-slate-900" aria-hidden="true" />
         )}
@@ -114,7 +124,7 @@ export function FilterBar({
           disabled={isRefreshing}
           title={t('tracking.refreshAll')}
           aria-label={t('tracking.refreshAll')}
-          className={`shrink-0 p-2.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-emerald-400 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center ${
+          className={`shrink-0 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-emerald-400 transition-all min-h-[48px] min-w-[48px] flex items-center justify-center ${
             isRefreshing ? 'text-emerald-400' : ''
           }`}
         >
@@ -122,12 +132,12 @@ export function FilterBar({
         </button>
       )}
 
-      <div className="shrink-0 flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
+      <div className="shrink-0 ms-auto flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800">
         <button
           onClick={() => onViewModeChange('grid')}
           title={t('filters.gridView')}
           aria-label={t('filters.gridView')}
-          className={`p-2 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center ${
+          className={`p-2 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center ${
             viewMode === 'grid' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
@@ -137,12 +147,14 @@ export function FilterBar({
           onClick={() => onViewModeChange('table')}
           title={t('filters.tableView')}
           aria-label={t('filters.tableView')}
-          className={`p-2 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center ${
+          className={`p-2 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center ${
             viewMode === 'table' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
           <List className="w-3.5 h-3.5" />
         </button>
+      </div>
+
       </div>
 
       {filtersOpen && (

@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { Package, Truck, CheckCircle2, AlertOctagon } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { TAB_PREDICATES } from '../types/stages';
 
@@ -26,87 +25,65 @@ function StatsCardsImpl({ packages = [], activeFilter, onSelectFilter }) {
     return counts;
   }, [packages]);
 
-  const stats = [
-    {
-      id: 'all',
-      title: t('stats.total'),
-      count: total,
-      icon: Package,
-      stripe: 'bg-blue-500',
-      iconBg: 'bg-blue-500/15 text-blue-400',
-      activeRing: 'ring-2 ring-blue-500'
-    },
-    {
-      id: 'transit',
-      title: t('stats.inTransit'),
-      count: transit,
-      icon: Truck,
-      stripe: 'bg-cyan-500',
-      iconBg: 'bg-cyan-500/15 text-cyan-400',
-      activeRing: 'ring-2 ring-cyan-500'
-    },
-    {
-      id: 'delivered',
-      title: t('stats.delivered'),
-      count: delivered,
-      icon: CheckCircle2,
-      stripe: 'bg-emerald-500',
-      iconBg: 'bg-emerald-500/15 text-emerald-400',
-      activeRing: 'ring-2 ring-emerald-500'
-    },
-    {
-      id: 'customs',
-      title: t('stats.customs'),
-      count: attention,
-      icon: AlertOctagon,
-      stripe: 'bg-amber-500',
-      iconBg: 'bg-amber-500/15 text-amber-400',
-      activeRing: 'ring-2 ring-amber-500',
-      glow: attention > 0
-    }
+  /**
+   * One focal number, not four equal tiles.
+   *
+   * The old 2x2 grid gave "total", "in transit", "delivered" and "attention"
+   * identical visual weight, so nothing led and the eye had to read all four
+   * to find the one that mattered. Here the count that needs a decision is set
+   * large and in rose; the rest step down from it. When nothing needs you the
+   * lead slot falls back to what is moving, so the emphasis always points at
+   * something true rather than at a permanent zero.
+   *
+   * These are still filters — the whole row is tappable, same ids as before.
+   */
+  const needsYou = attention > 0;
+
+  const cells = [
+    needsYou
+      ? { id: 'customs', count: attention, label: t('stats.customs'), tone: 'text-rose-400', lead: true }
+      : { id: 'transit', count: transit, label: t('stats.inTransit'), tone: 'text-slate-100', lead: true },
+    needsYou
+      ? { id: 'transit', count: transit, label: t('stats.inTransit'), tone: 'text-slate-100' }
+      : { id: 'all', count: total, label: t('stats.total'), tone: 'text-slate-100' },
+    { id: 'delivered', count: delivered, label: t('stats.delivered'), tone: 'text-slate-400' }
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 my-4 sm:my-6">
-      {stats.map((item) => {
-        const Icon = item.icon;
-        const isActive = activeFilter === item.id;
-
+    <div className="flex items-start gap-4 sm:gap-6 my-5 sm:my-6">
+      {cells.map((cell) => {
+        const isActive = activeFilter === cell.id;
         return (
           <button
-            key={item.id}
-            onClick={() => onSelectFilter(item.id)}
-            className={`flex flex-col p-3 sm:p-4 rounded-2xl border transition-all duration-200 text-start group relative overflow-hidden shadow-sm ${
-              isActive
-                ? `${item.activeRing} bg-slate-900 shadow-lg`
-                : 'bg-slate-900 hover:bg-slate-800 border-slate-800 hover:border-slate-700'
+            key={cell.id}
+            onClick={() => onSelectFilter(cell.id)}
+            aria-current={isActive ? 'true' : undefined}
+            className={`flex-1 min-w-0 flex flex-col items-start gap-1 text-start rounded-xl px-1 py-1 min-h-[48px] cursor-pointer transition-opacity focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none ${
+              isActive ? 'opacity-100' : 'opacity-90 hover:opacity-100'
             }`}
           >
-            {/* Identity stripe — always visible, not just on hover/active, so
-                each tile's category reads at a glance in a scan. */}
-            <span className={`absolute inset-y-0 start-0 w-[3px] ${item.stripe}`} aria-hidden="true" />
-
-            <div className="flex items-center justify-between w-full mb-2 sm:mb-3">
-              <span className="text-xs sm:text-xs font-semibold text-slate-400 group-hover:text-slate-200 transition-colors truncate">
-                {item.title}
-              </span>
-              <div className={`p-1.5 sm:p-2 rounded-xl ${item.iconBg} shrink-0`}>
-                <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              </div>
-            </div>
-
-            <div className="flex items-baseline justify-between">
-              <span className="text-xl sm:text-3xl font-semibold text-slate-100 tracking-tight [font-variant-numeric:tabular-nums]">
-                {item.count}
-              </span>
-              {/* A static dot, not a pulsing one. The ambient mood chrome
-                  (index.css [data-mood]) now signals "something needs you"
-                  across the whole surface, so this tile no longer has to
-                  animate forever to be noticed. */}
-              {item.id === 'customs' && item.count > 0 && (
-                <span className="inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-amber-500" aria-hidden="true"></span>
-              )}
-            </div>
+            <span
+              className={`font-semibold leading-none tracking-tight [font-variant-numeric:tabular-nums] ${cell.tone} ${
+                cell.lead ? 'text-4xl' : 'text-2xl'
+              }`}
+            >
+              {cell.count}
+            </span>
+            {/* Two lines rather than an ellipsis. These labels are long in
+                both languages — "Customs / Action", "בדיקת מכס / דורש טיפול" —
+                and truncating the one that matters most defeats the point of
+                promoting it. The fixed height keeps the three numbers on a
+                common baseline whether a label wraps or not. */}
+            <span
+              className={`text-xs font-bold leading-tight line-clamp-2 min-h-[2.1em] ${
+                isActive ? 'text-slate-200' : 'text-slate-400'
+              }`}
+            >
+              {cell.label}
+            </span>
+            {isActive && (
+              <span className="block h-0.5 w-6 rounded-full bg-blue-500" aria-hidden="true" />
+            )}
           </button>
         );
       })}
