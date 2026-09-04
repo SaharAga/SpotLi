@@ -53,13 +53,20 @@ export function extractUserIdFromToAddress(toAddress) {
 
 /**
  * Creates the inbound email HTTP handler.
- * @param {{ db: any }} deps
+ * @param {{ db: any, webhookToken?: string }} deps
  */
-export function createInboundEmailHandler({ db }) {
+export function createInboundEmailHandler({ db, webhookToken }) {
   return async function handleInboundEmail(req, res) {
     // Only accept POST requests
     if (req.method !== 'POST') {
       res.status(405).json({ error: 'Method Not Allowed' });
+      return;
+    }
+
+    // Authenticate the webhook with a shared secret before any document
+    // mutation, mirroring gmailPushNotification's `?token=` query-param check.
+    if (webhookToken && req.query?.token !== webhookToken) {
+      res.status(401).json({ error: 'Unauthorized' });
       return;
     }
 

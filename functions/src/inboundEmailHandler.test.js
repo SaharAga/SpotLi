@@ -390,5 +390,57 @@ describe('inboundEmailHandler Unit Tests', () => {
       expect(docSetMock).toHaveBeenCalledTimes(4);
     });
 
+    it('rejects with 401 Unauthorized when webhookToken is configured and query token is missing or mismatched', async () => {
+      const handler = createInboundEmailHandler({ db: {}, webhookToken: 'secret-token-123' });
+      const reqMissing = {
+        method: 'POST',
+        query: {},
+        body: { to: 'usr_user123@in.deliveree.app' }
+      };
+      const resMissing = {
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn()
+      };
+
+      await handler(reqMissing, resMissing);
+      expect(resMissing.status).toHaveBeenCalledWith(401);
+      expect(resMissing.json).toHaveBeenCalledWith({ error: 'Unauthorized' });
+
+      const reqMismatched = {
+        method: 'POST',
+        query: { token: 'wrong-token' },
+        body: { to: 'usr_user123@in.deliveree.app' }
+      };
+      const resMismatched = {
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn()
+      };
+
+      await handler(reqMismatched, resMismatched);
+      expect(resMismatched.status).toHaveBeenCalledWith(401);
+      expect(resMismatched.json).toHaveBeenCalledWith({ error: 'Unauthorized' });
+    });
+
+    it('accepts the request when webhookToken matches query token', async () => {
+      const handler = createInboundEmailHandler({ db: {}, webhookToken: 'secret-token-123' });
+      const req = {
+        method: 'POST',
+        query: { token: 'secret-token-123' },
+        body: {
+          to: 'usr_testuser@in.deliveree.app',
+          text: 'Hello world no tracking number here'
+        }
+      };
+      const res = {
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn()
+      };
+
+      await handler(req, res);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ ok: false, message: expect.stringContaining('No verified tracking') }));
+    });
+
   });
 });
+
