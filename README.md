@@ -37,6 +37,7 @@ can never ship silently pointed at the wrong project.
 | Command | Does |
 | --- | --- |
 | `npm run dev` | Start the Vite dev server |
+| `npm run dev:device` | Dev server **and** open the phone preview (below) |
 | `npm run build` | Production build to `dist/` (requires env vars) |
 | `npm run preview` | Serve the production build locally |
 | `npm test` | Run the Vitest suite |
@@ -45,6 +46,23 @@ can never ship silently pointed at the wrong project.
 `npm run prepare` (runs automatically on `npm install`) points git at
 `.githooks/`, which includes a pre-commit scan for accidentally committed
 secrets (`scripts/pre_commit_secrets_check.js`).
+
+### Phone preview
+
+```bash
+npm run dev:device
+```
+
+Opens `devtools/preview.html`, which renders the running app in two phone
+bezels side by side — Hebrew RTL and English LTR — with theme, device-size and
+ambient-mood controls. It iframes the dev server, so hot reload applies to both
+frames and a change appears in under a second. This is the loop for UI work;
+you should not need a staging deploy to see how something looks.
+
+It must be served over http. Opening the file directly (`file://…`) gives the
+frames nothing to point at — the page detects that and tells you, rather than
+rendering two black rectangles. It also lives outside the Vite entry graph, so
+`npm run build` never emits it and it cannot ship.
 
 ## Architecture
 
