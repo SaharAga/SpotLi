@@ -270,7 +270,7 @@ export function AboutModal({
                 onClick={() => {
                   if (typeof window !== 'undefined') window.location.reload();
                 }}
-                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all shadow-md cursor-pointer shrink-0 min-h-[44px]"
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all shadow-md cursor-pointer shrink-0 min-h-[48px]"
               >
                 {language === 'he' ? 'רענן כעת' : 'Reload Now'}
               </button>
@@ -495,14 +495,14 @@ export function AboutModal({
               <button
                 type="button"
                 onClick={() => setOpenLegalDoc('terms')}
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-semibold transition-colors cursor-pointer min-h-[44px]"
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-semibold transition-colors cursor-pointer min-h-[48px]"
               >
                 <span>{language === 'he' ? 'תנאי שימוש' : 'Terms of Use'}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setOpenLegalDoc('privacy')}
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-semibold transition-colors cursor-pointer min-h-[44px]"
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-semibold transition-colors cursor-pointer min-h-[48px]"
               >
                 <span>{language === 'he' ? 'מדיניות פרטיות' : 'Privacy Policy'}</span>
               </button>

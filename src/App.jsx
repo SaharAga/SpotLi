@@ -1226,7 +1226,7 @@ export function DashboardContent() {
             <div className="pt-4 border-t border-slate-800/80">
               <button
                 onClick={handleLaunchDemoMode}
-                className="text-xs text-indigo-400 hover:text-indigo-300 underline font-medium cursor-pointer p-2 min-h-[44px]"
+                className="text-xs text-indigo-400 hover:text-indigo-300 underline font-medium cursor-pointer p-2 min-h-[48px]"
               >
                 {isRTL ? 'או צפה בהדגמה אינטראקטיבית עם חבילות לדוגמה' : 'Or explore the interactive demo with mock packages'}
               </button>
@@ -1280,13 +1280,13 @@ export function DashboardContent() {
                       setSelectedCarrier('all');
                       setActiveTab('all');
                     }}
-                    className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-all cursor-pointer min-h-[44px]"
+                    className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-all cursor-pointer min-h-[48px]"
                   >
                     {t('filters.clearFilters')}
                   </button>
                   <button
                     onClick={() => openModal(MODAL.SMART_IMPORT)}
-                    className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 cursor-pointer min-h-[44px]"
+                    className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 cursor-pointer min-h-[48px]"
                   >
                     <Plus className="w-4 h-4" />
                     <span>{t('addPackage')}</span>
@@ -1336,7 +1336,7 @@ export function DashboardContent() {
       <aside aria-label="Alpha Feedback" className={`fixed z-30 bottom-5 ${isRTL ? 'left-5' : 'right-5'}`}>
         <button
           onClick={() => openModal(MODAL.FEEDBACK)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white text-xs font-bold shadow-xl shadow-indigo-600/30 hover:scale-105 transition-all cursor-pointer min-h-[44px]"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white text-xs font-bold shadow-xl shadow-indigo-600/30 hover:scale-105 transition-all cursor-pointer min-h-[48px]"
           title={language === 'he' ? 'משוב ודיווח תקלות' : 'Feedback & Bug Report'}
         >
           <MessageSquarePlus className="w-4 h-4" />

@@ -176,7 +176,7 @@ export function FeedbackModal({
               <button
                 type="button"
                 onClick={() => setFeedbackType('bug')}
-                className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer min-h-[44px] ${
+                className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer min-h-[48px] ${
                   feedbackType === 'bug'
                     ? 'bg-rose-500/10 border-rose-500/40 text-rose-300'
                     : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
@@ -189,7 +189,7 @@ export function FeedbackModal({
               <button
                 type="button"
                 onClick={() => setFeedbackType('feature')}
-                className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer min-h-[44px] ${
+                className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer min-h-[48px] ${
                   feedbackType === 'feature'
                     ? 'bg-blue-500/10 border-blue-500/40 text-blue-300'
                     : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
@@ -202,7 +202,7 @@ export function FeedbackModal({
               <button
                 type="button"
                 onClick={() => setFeedbackType('praise')}
-                className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer min-h-[44px] ${
+                className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer min-h-[48px] ${
                   feedbackType === 'praise'
                     ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300'
                     : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'

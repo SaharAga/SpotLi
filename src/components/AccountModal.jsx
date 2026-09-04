@@ -33,7 +33,7 @@ const ACCOUNT_SECTIONS = [
 const card = 'p-4 bg-[var(--stg-surface-2)] border border-[var(--stg-border)] rounded-xl';
 const label = 'text-xs text-[var(--stg-text-muted)] block mb-1';
 const sectionTitle = 'text-xs font-bold text-[var(--stg-text)] flex items-center gap-2';
-const selectCls = 'w-full bg-[var(--stg-surface)] border border-[var(--stg-border)] text-[var(--stg-text)] text-base sm:text-sm rounded-lg p-2.5 focus:border-[var(--stg-accent)] focus:outline-none cursor-pointer min-h-[44px] disabled:opacity-40 disabled:cursor-not-allowed';
+const selectCls = 'w-full bg-[var(--stg-surface)] border border-[var(--stg-border)] text-[var(--stg-text)] text-base sm:text-sm rounded-lg p-2.5 focus:border-[var(--stg-accent)] focus:outline-none cursor-pointer min-h-[48px] disabled:opacity-40 disabled:cursor-not-allowed';
 
 function Switch({ checked, onChange, disabled }) {
   // Thumb position is driven directly by `checked` via logical inset-start
@@ -43,7 +43,7 @@ function Switch({ checked, onChange, disabled }) {
   // so one conditional class is correct in both directions with no
   // rtl: variant needed at all.
   return (
-    <label className="relative inline-flex items-center cursor-pointer min-h-[44px] shrink-0">
+    <label className="relative inline-flex items-center cursor-pointer min-h-[48px] shrink-0">
       <input
         type="checkbox"
         checked={checked}
@@ -347,7 +347,7 @@ export function AccountModal({
                   if (onShowToast) onShowToast(language === 'he' ? 'התנתקת מהחשבון' : 'Logged out', 'info');
                   onClose();
                 }}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--stg-destructive-soft)] hover:opacity-80 text-[var(--stg-destructive)] font-semibold text-xs transition-opacity cursor-pointer min-h-[40px]"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--stg-destructive-soft)] hover:opacity-80 text-[var(--stg-destructive)] font-semibold text-xs transition-opacity cursor-pointer min-h-[48px]"
                 title={language === 'he' ? 'התנתקות מהחשבון' : 'Sign Out'}
                 id="account-modal-signout-btn"
               >
@@ -357,7 +357,7 @@ export function AccountModal({
               onOpenAuth && (
                 <button
                   onClick={() => { onClose(); onOpenAuth(); }}
-                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--stg-accent-soft)] hover:opacity-80 text-[var(--stg-accent)] font-semibold text-xs transition-opacity cursor-pointer min-h-[40px]"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--stg-accent-soft)] hover:opacity-80 text-[var(--stg-accent)] font-semibold text-xs transition-opacity cursor-pointer min-h-[48px]"
                 >
                   <span>{language === 'he' ? 'התחברות' : 'Sign In'}</span>
                 </button>
@@ -366,7 +366,7 @@ export function AccountModal({
 
             <button
               onClick={onClose}
-              className="p-2 rounded-lg bg-[var(--stg-border)] hover:opacity-80 text-[var(--stg-text-muted)] hover:text-[var(--stg-text)] transition-opacity cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="p-2 rounded-lg bg-[var(--stg-border)] hover:opacity-80 text-[var(--stg-text-muted)] hover:text-[var(--stg-text)] transition-opacity cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
@@ -384,7 +384,7 @@ export function AccountModal({
                 <button
                   key={section.id}
                   onClick={() => setActiveTab(section.id)}
-                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-bold transition-colors cursor-pointer whitespace-nowrap min-h-[44px] text-start ${
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-bold transition-colors cursor-pointer whitespace-nowrap min-h-[48px] text-start ${
                     isActive
                       ? section.danger
                         ? 'bg-[var(--stg-destructive-soft)] text-[var(--stg-destructive)]'
@@ -419,7 +419,7 @@ export function AccountModal({
               {onOpenAuth && (
                 <button
                   onClick={() => { onClose(); onOpenAuth(); }}
-                  className="px-4 py-2.5 rounded-lg bg-[var(--stg-primary)] text-[var(--stg-primary-on)] font-bold text-xs transition-all cursor-pointer min-h-[44px]"
+                  className="px-4 py-2.5 rounded-lg bg-[var(--stg-primary)] text-[var(--stg-primary-on)] font-bold text-xs transition-all cursor-pointer min-h-[48px]"
                 >
                   {language === 'he' ? 'התחברות / הרשמה' : 'Sign In / Register'}
                 </button>
@@ -534,7 +534,7 @@ export function AccountModal({
                       <button
                         type="button"
                         onClick={handleRequestPushPermission}
-                        className="px-3 py-2 rounded-lg bg-[var(--stg-primary)] text-[var(--stg-primary-on)] font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer min-h-[44px]"
+                        className="px-3 py-2 rounded-lg bg-[var(--stg-primary)] text-[var(--stg-primary-on)] font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer min-h-[48px]"
                       >
                         <Bell className="w-3.5 h-3.5" />
                         <span>{t('notifications.requestPermission')}</span>
@@ -552,7 +552,7 @@ export function AccountModal({
                     <button
                       type="button"
                       onClick={handleSendTestNotification}
-                      className="px-3 py-1.5 rounded-lg bg-[var(--stg-surface)] hover:bg-[var(--stg-surface-elevated)] border border-[var(--stg-border)] text-[var(--stg-text)] text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 min-h-[36px]"
+                      className="px-3 py-1.5 rounded-lg bg-[var(--stg-surface)] hover:bg-[var(--stg-surface-elevated)] border border-[var(--stg-border)] text-[var(--stg-text)] text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 min-h-[48px]"
                     >
                       <Sparkles className="w-3 h-3 text-[var(--stg-accent)]" />
                       <span>{language === 'he' ? 'שלח התראת בדיקה' : 'Send Test Notification'}</span>
@@ -574,7 +574,7 @@ export function AccountModal({
                     { key: 'notifyOnCustoms', copy: 'notifyOnCustoms' },
                     { key: 'notifyOnException', copy: 'notifyOnException' }
                   ].map(({ key, copy }) => (
-                    <label key={key} className="flex items-center justify-between p-2.5 rounded-lg bg-[var(--stg-surface)] border border-[var(--stg-border)] cursor-pointer min-h-[44px]">
+                    <label key={key} className="flex items-center justify-between p-2.5 rounded-lg bg-[var(--stg-surface)] border border-[var(--stg-border)] cursor-pointer min-h-[48px]">
                       <span className="text-xs font-semibold text-[var(--stg-text)]">
                         {t(`notifications.${copy}`)}
                       </span>
@@ -656,7 +656,7 @@ export function AccountModal({
                   <button
                     type="button"
                     onClick={() => handleLanguagePreferenceChange('he')}
-                    className={`py-2.5 px-3 rounded-lg border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[44px] ${
+                    className={`py-2.5 px-3 rounded-lg border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[48px] ${
                       language === 'he'
                         ? 'bg-[var(--stg-accent-soft)] border-[var(--stg-accent)] text-[var(--stg-accent)]'
                         : 'bg-[var(--stg-surface)] border-[var(--stg-border)] text-[var(--stg-text-muted)] hover:text-[var(--stg-text)]'
@@ -669,7 +669,7 @@ export function AccountModal({
                   <button
                     type="button"
                     onClick={() => handleLanguagePreferenceChange('en')}
-                    className={`py-2.5 px-3 rounded-lg border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[44px] ${
+                    className={`py-2.5 px-3 rounded-lg border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[48px] ${
                       language === 'en'
                         ? 'bg-[var(--stg-accent-soft)] border-[var(--stg-accent)] text-[var(--stg-accent)]'
                         : 'bg-[var(--stg-surface)] border-[var(--stg-border)] text-[var(--stg-text-muted)] hover:text-[var(--stg-text)]'
@@ -698,7 +698,7 @@ export function AccountModal({
                         key={value}
                         type="button"
                         onClick={() => setTheme(value)}
-                        className={`py-2.5 px-2 rounded-lg border text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 cursor-pointer min-h-[44px] ${
+                        className={`py-2.5 px-2 rounded-lg border text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 cursor-pointer min-h-[48px] ${
                           theme === value
                             ? 'bg-[var(--stg-accent-soft)] border-[var(--stg-accent)] text-[var(--stg-accent)]'
                             : 'bg-[var(--stg-surface)] border-[var(--stg-border)] text-[var(--stg-text-muted)] hover:text-[var(--stg-text)]'
@@ -839,14 +839,14 @@ export function AccountModal({
                   value={deleteConfirmationInput}
                   onChange={(e) => setDeleteConfirmationInput(e.target.value)}
                   placeholder={language === 'he' ? 'הקלד מחק או DELETE' : 'Type DELETE'}
-                  className="w-full bg-[var(--stg-surface)] border border-[var(--stg-border)] text-[var(--stg-text)] text-base sm:text-sm rounded-lg p-3 focus:border-[var(--stg-destructive)] focus:outline-none min-h-[44px]"
+                  className="w-full bg-[var(--stg-surface)] border border-[var(--stg-border)] text-[var(--stg-text)] text-base sm:text-sm rounded-lg p-3 focus:border-[var(--stg-destructive)] focus:outline-none min-h-[48px]"
                 />
 
                 <button
                   type="button"
                   disabled={isDeleting || (deleteConfirmationInput.trim().toUpperCase() !== 'DELETE' && deleteConfirmationInput.trim().toUpperCase() !== 'מחק')}
                   onClick={handleDeleteAccount}
-                  className="w-full py-3 px-4 rounded-lg bg-[var(--stg-destructive)] disabled:opacity-40 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
+                  className="w-full py-3 px-4 rounded-lg bg-[var(--stg-destructive)] disabled:opacity-40 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[48px]"
                 >
                   <Trash2 className="w-4 h-4" />
                   <span>{isDeleting ? (language === 'he' ? 'מוחק נתונים...' : 'Wiping all data...') : (language === 'he' ? 'מחק את החשבון וכל הנתונים לצמיתות' : 'Delete Account & Wipe All Data')}</span>
@@ -937,14 +937,14 @@ export function AccountModal({
                 <button
                   type="button"
                   onClick={() => setOpenLegalDoc('terms')}
-                  className="flex-1 py-2.5 px-3 rounded-lg bg-[var(--stg-surface)] hover:bg-[var(--stg-border)] border border-[var(--stg-border)] text-[var(--stg-text)] text-xs font-semibold transition-colors cursor-pointer min-h-[44px]"
+                  className="flex-1 py-2.5 px-3 rounded-lg bg-[var(--stg-surface)] hover:bg-[var(--stg-border)] border border-[var(--stg-border)] text-[var(--stg-text)] text-xs font-semibold transition-colors cursor-pointer min-h-[48px]"
                 >
                   {language === 'he' ? 'תנאי שימוש' : 'Terms of Use'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setOpenLegalDoc('privacy')}
-                  className="flex-1 py-2.5 px-3 rounded-lg bg-[var(--stg-surface)] hover:bg-[var(--stg-border)] border border-[var(--stg-border)] text-[var(--stg-text)] text-xs font-semibold transition-colors cursor-pointer min-h-[44px]"
+                  className="flex-1 py-2.5 px-3 rounded-lg bg-[var(--stg-surface)] hover:bg-[var(--stg-border)] border border-[var(--stg-border)] text-[var(--stg-text)] text-xs font-semibold transition-colors cursor-pointer min-h-[48px]"
                 >
                   {language === 'he' ? 'מדיניות פרטיות' : 'Privacy Policy'}
                 </button>
@@ -965,7 +965,7 @@ export function AccountModal({
               if (onShowToast) onShowToast(language === 'he' ? 'התנתקת מהחשבון' : 'Logged out', 'info');
               onClose();
             }}
-            className="sm:hidden px-3.5 py-2 rounded-lg bg-[var(--stg-destructive-soft)] hover:opacity-80 text-[var(--stg-destructive)] font-bold text-xs transition-opacity cursor-pointer min-h-[44px]"
+            className="sm:hidden px-3.5 py-2 rounded-lg bg-[var(--stg-destructive-soft)] hover:opacity-80 text-[var(--stg-destructive)] font-bold text-xs transition-opacity cursor-pointer min-h-[48px]"
           >
             {language === 'he' ? 'התנתקות מהחשבון' : 'Sign Out'}
           </button>
@@ -976,7 +976,7 @@ export function AccountModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 rounded-lg bg-[var(--stg-border)] hover:opacity-80 text-[var(--stg-text)] font-bold text-xs transition-opacity cursor-pointer min-h-[44px]"
+            className="px-5 py-2.5 rounded-lg bg-[var(--stg-border)] hover:opacity-80 text-[var(--stg-text)] font-bold text-xs transition-opacity cursor-pointer min-h-[48px]"
           >
             {language === 'he' ? 'סגור' : 'Close'}
           </button>

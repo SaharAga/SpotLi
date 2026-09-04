@@ -347,7 +347,7 @@ function PackageCardImpl({
                 disabled={isRefreshing}
                 title={t('card.refreshStatus')}
                 aria-label={t('card.refreshStatus')}
-                className={`p-2 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-slate-800 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center ${
+                className={`p-2 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-slate-800 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center ${
                   isRefreshing ? 'animate-spin text-emerald-400' : ''
                 }`}
               >
@@ -358,7 +358,7 @@ function PackageCardImpl({
             <button
               onClick={handleMarkDelivered}
               title={pkg.status === 'delivered' ? t('card.markActive') : t('card.markDelivered')}
-              className={`p-2 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center ${
+              className={`p-2 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center ${
                 pkg.status === 'delivered' ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-400 hover:text-emerald-400 hover:bg-slate-800'
               }`}
             >
@@ -380,7 +380,7 @@ function PackageCardImpl({
                   setMenuOpen(!menuOpen);
                 }}
                 title={t('card.viewDetails')}
-                className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+                className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
               >
                 <MoreVertical className="w-3.5 h-3.5" />
               </button>
@@ -399,7 +399,7 @@ function PackageCardImpl({
                         setMenuOpen(false);
                         handleCopy(e);
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white min-h-[40px]"
+                      className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white min-h-[48px]"
                     >
                       {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                       <span>{t('card.copyTracking')}</span>
@@ -412,7 +412,7 @@ function PackageCardImpl({
                           setMenuOpen(false);
                           onOpenLockerMode(pkg);
                         }}
-                        className="w-full flex items-center gap-2 px-3 py-2.5 text-emerald-400 hover:bg-slate-800 hover:text-emerald-300 min-h-[40px] font-semibold"
+                        className="w-full flex items-center gap-2 px-3 py-2.5 text-emerald-400 hover:bg-slate-800 hover:text-emerald-300 min-h-[48px] font-semibold"
                       >
                         <Sun className="w-3.5 h-3.5" />
                         <span>{language === 'he' ? 'מצב לוקר מוגדל' : 'Locker Mode'}</span>
@@ -424,7 +424,7 @@ function PackageCardImpl({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }}
-                      className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white min-h-[40px]"
+                      className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white min-h-[48px]"
                     >
                       <ArrowUpRight className="w-3.5 h-3.5" />
                       <span>{t('card.viewCarrier')}</span>
@@ -436,7 +436,7 @@ function PackageCardImpl({
                         setMenuOpen(false);
                         onTogglePin(pkg.id);
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white min-h-[40px]"
+                      className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white min-h-[48px]"
                     >
                       <Pin className={`w-3.5 h-3.5 ${pkg.isPinned ? 'fill-blue-400 text-blue-400' : ''}`} />
                       <span>{pkg.isPinned ? t('card.unpin') : t('card.pin')}</span>
@@ -448,7 +448,7 @@ function PackageCardImpl({
                         setMenuOpen(false);
                         onEdit(pkg);
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white min-h-[40px]"
+                      className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white min-h-[48px]"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
                       <span>{t('card.edit')}</span>
@@ -460,7 +460,7 @@ function PackageCardImpl({
                         setMenuOpen(false);
                         onToggleArchive(pkg.id);
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white min-h-[40px]"
+                      className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white min-h-[48px]"
                     >
                       <Archive className="w-3.5 h-3.5" />
                       <span>{pkg.isArchived ? t('card.unarchive') : t('card.archive')}</span>
@@ -472,7 +472,7 @@ function PackageCardImpl({
                         setMenuOpen(false);
                         onDelete(pkg.id);
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2.5 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 min-h-[40px]"
+                      className="w-full flex items-center gap-2 px-3 py-2.5 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 min-h-[48px]"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>{t('card.delete')}</span>

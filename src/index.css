@@ -38,6 +38,12 @@
     --font-sans: 'Atkinson Hyperlegible', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     --font-hebrew: 'Rubik', 'Inter', system-ui, sans-serif;
 
+    /* Display face for titles and numerals. Rubik deliberately — it is
+       already loaded as the Hebrew face, so pairing it with Atkinson for
+       Latin costs nothing and gives headings a voice distinct from body
+       text in both languages. */
+    --font-display: 'Rubik', 'Inter', system-ui, sans-serif;
+
     /* Dark Theme Slate Colors (Default) — navy-tinted (H~255), matching
        the Settings pilot's trust-navy ground (was H~284 indigo). Chroma
        raised slightly at the darkest steps so the background itself
@@ -308,6 +314,10 @@
   .safe-right {
     padding-right: env(safe-area-inset-right, 0px);
   }
+  .font-display {
+    font-family: var(--font-display);
+  }
+
   .min-h-touch {
     /* 48, not 44 — CLAUDE.md and the UI/UX protocol both mandate a
        48x48 minimum (WCAG 2.5.8/2.5.5). This utility had drifted to 44

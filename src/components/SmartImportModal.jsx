@@ -645,7 +645,7 @@ export function SmartImportModal({
                     <button
                       type="button"
                       onClick={() => onSwitchToManual(rawText)}
-                      className="w-full px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all cursor-pointer min-h-[44px]"
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all cursor-pointer min-h-[48px]"
                     >
                       {language === 'he' ? 'הזן פרטים ידנית' : 'Enter Details Manually'}
                     </button>

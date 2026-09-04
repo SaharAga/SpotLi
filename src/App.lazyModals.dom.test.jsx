@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { screen, cleanup, waitFor } from '@testing-library/react';
+import { screen, cleanup, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DashboardContent } from './App';
 import { renderWithLanguage } from './test-utils/renderWithProviders';
@@ -164,6 +164,11 @@ describe('App - lazily loaded modals', () => {
     // A re-render of the dashboard must not re-suspend this dialog. If the
     // Suspense boundary sat where it re-triggered (or if the modal were
     // unmounted and remounted), the input would be blown away here.
+    // View mode moved into the filters panel, so it has to be opened first.
+    // Scoped to the filter bar: the bottom tab bar also has a "Status" control.
+    await user.click(
+      within(screen.getByTestId('filter-bar')).getByLabelText(/סטטוס|Status/i)
+    );
     await user.click(screen.getByLabelText('Table'));
     expect(await screen.findByRole('table')).toBeInTheDocument();
 
