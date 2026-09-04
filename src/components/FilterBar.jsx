@@ -67,6 +67,7 @@ export function FilterBar({
   const chips = [
     { id: 'all', label: t('chips.all'), count: tabCounts.all ?? 0 },
     { id: 'active', label: t('chips.active'), count: tabCounts.active ?? 0 },
+    { id: 'customs', label: t('chips.customs'), count: tabCounts.customs ?? 0 },
     { id: 'delivered', label: t('chips.done'), count: tabCounts.delivered ?? 0 }
   ];
 
@@ -111,7 +112,7 @@ export function FilterBar({
           went: a view mode is a preference you set once, not something you
           reach for on every search. */}
       <div className="flex items-center gap-2">
-        <div className="flex items-center gap-2 min-w-0 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-1.5 min-w-0 overflow-x-auto no-scrollbar">
           {chips.map((chip) => {
             const isOn = activeTab === chip.id;
             return (
@@ -119,7 +120,7 @@ export function FilterBar({
                 key={chip.id}
                 onClick={() => onTabChange(chip.id)}
                 aria-pressed={isOn}
-                className={`shrink-0 min-h-[48px] px-4 rounded-full text-xs font-bold transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none ${
+                className={`shrink-0 min-h-[48px] px-3.5 rounded-full text-xs font-bold transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none ${
                   isOn
                     ? 'bg-blue-600 text-white'
                     : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
@@ -147,19 +148,6 @@ export function FilterBar({
           )}
         </button>
 
-        {onRefreshAll && (
-          <button
-            onClick={onRefreshAll}
-            disabled={isRefreshing}
-            title={t('tracking.refreshAll')}
-            aria-label={t('tracking.refreshAll')}
-            className={`shrink-0 min-h-[48px] min-w-[48px] rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-emerald-400 transition-all flex items-center justify-center ${
-              isRefreshing ? 'text-emerald-400' : ''
-            }`}
-          >
-            {isRefreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-          </button>
-        )}
       </div>
 
       {filtersOpen && (
@@ -171,6 +159,20 @@ export function FilterBar({
               isRTL ? 'left-0' : 'right-0'
             }`}
           >
+            {onRefreshAll && (
+              <button
+                onClick={onRefreshAll}
+                disabled={isRefreshing}
+                aria-label={t('tracking.refreshAll')}
+                className={`w-full flex items-center justify-center gap-2 min-h-[48px] rounded-xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-emerald-400 hover:bg-slate-800 transition-colors text-xs font-bold ${
+                  isRefreshing ? 'text-emerald-400' : ''
+                }`}
+              >
+                {isRefreshing ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <RefreshCw className="w-4 h-4" aria-hidden="true" />}
+                <span>{t('tracking.refreshAll')}</span>
+              </button>
+            )}
+
             {/* View mode. It lived in the top bar beside search, which put a
                 preference you set once next to a control you use constantly.
                 It belongs with the other settings. */}

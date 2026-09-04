@@ -18,6 +18,7 @@ export const translations = {
     chips: {
       all: 'All',
       active: 'Active',
+      customs: 'Customs',
       done: 'Done'
     },
     tabs: {
@@ -298,6 +299,7 @@ export const translations = {
     chips: {
       all: 'הכל',
       active: 'פעילים',
+      customs: 'במכס',
       done: 'נמסרו'
     },
     tabs: {
