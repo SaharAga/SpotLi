@@ -8,6 +8,7 @@ import { PackageTable } from './components/PackageTable';
 import { LegalConsentGate } from './components/LegalConsentGate';
 import { ModalLoadingFallback } from './components/ModalLoadingFallback';
 import { findPackageByTrackingNumber } from './services/deliveryService';
+import { deriveMood } from './utils/ambientMood';
 
 /**
  * Every dialog is loaded on demand.
@@ -784,6 +785,18 @@ export function DashboardContent() {
   // when the list really changed.
   const lastFilteredRef = useRef([]);
 
+  /**
+   * Ambient mood — one derived value that tints the app chrome (header wash,
+   * header hairline, app mark, bottom-nav hairline) and nothing else.
+   *
+   * Derived from the FULL list, not `filteredPackages`: a customs hold you
+   * have filtered out of view is still a customs hold, and the whole point is
+   * that the surface reports your actual situation rather than your current
+   * filter. Recomputed only when packages change — it must not re-run on
+   * every keystroke in the search box.
+   */
+  const ambientMood = useMemo(() => deriveMood(packages), [packages]);
+
   const filteredPackages = useMemo(() => {
     // Normalised once for the whole pass, not once per package per keystroke.
     const q = searchQuery.trim().toLowerCase();
@@ -1097,7 +1110,8 @@ export function DashboardContent() {
   return (
     <div
       data-active-modal={activeModal || undefined}
-      className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans transition-colors duration-200"
+      data-mood={ambientMood}
+      className="relative chrome-wash min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans transition-colors duration-200"
     >
       {/* Demo Banner indicator when in Demo Mode */}
       {isDemoMode && !user && (
@@ -1141,7 +1155,9 @@ export function DashboardContent() {
 
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* pb clears the fixed bottom tab bar (BottomNav) plus the home
+          indicator inset; the bar is lg:hidden, so the padding is too. */}
+      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] lg:pb-6">
         {loading && !user ? (
           /* SLEEK INITIAL COLD-START SKELETON / LOADING STATE */
           <div className="max-w-2xl mx-auto my-12 p-8 sm:p-12 bg-slate-900/40 border border-slate-800/60 rounded-3xl backdrop-blur-xl text-center flex flex-col items-center justify-center animate-pulse">

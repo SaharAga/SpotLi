@@ -54,7 +54,7 @@ export const STAGES = [
     desc: 'With local courier or awaiting pickup at local branch/locker',
     hebrewDesc: 'נמסר לשליח או ממתין לאיסוף בנקודת מסירה / לוקר / סניף דואר',
     color: 'amber',
-    badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/30 animate-pulse-subtle'
+    badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/30'
   },
   {
     id: 'delivered',

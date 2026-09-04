@@ -1,5 +1,29 @@
 @import "tailwindcss";
 
+/* Ambient chrome tokens, registered as typed <color> properties. Registration
+   gives them a real initial value and makes them interpolable, so the elements
+   that reference them cross-fade cleanly when the mood changes. `initial-value`
+   cannot contain var(), so these three are literal; they are only the
+   pre-cascade fallback and every real value comes from the [data-mood] rules
+   below. */
+@property --chrome-line {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: oklch(26.5% 0.052 255);
+}
+
+@property --chrome-wash {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --chrome-mark {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: oklch(78% 0.130 294);
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
@@ -176,6 +200,71 @@
     --stg-success-soft: #DCFCE7;
   }
 
+  /* ------------------------------------------------------------------
+     Ambient mood chrome.
+
+     One derived value (src/utils/ambientMood.js) sets these three
+     properties on the app root; the header wash, header hairline, app
+     mark and bottom-nav hairline read them and nothing else does. The
+     point is that state reaches the surface at the largest available
+     scale, so the small stuff doesn't have to shout — this landed
+     together with deleting the three infinite `animate-*` loops that
+     used to carry the same signal a pixel at a time.
+
+     Keep this list at three. A fourth property is the signal that the
+     effect has stopped being ambient.
+     ------------------------------------------------------------------ */
+  [data-mood] {
+    --chrome-line: oklch(26.5% 0.052 255);
+    --chrome-wash: transparent;
+    --chrome-mark: oklch(78% 0.130 294);
+
+    /* The tokens themselves are NOT transitioned. They change instantly and
+       the 450ms cross-fade is declared on the properties that reference them
+       (header/nav border-color via `transition-colors`, and `.chrome-wash`
+       background below). Transitioning the custom properties instead makes
+       them animate on this element while their dependents keep the old
+       value, which is not what you want. */
+  }
+
+  /* Literal oklch rather than color-mix(in oklab, var(--color-x) N%,
+     transparent). A registered <color> property has to be directly
+     interpolable, and Tailwind rewrites color-mix into an @supports pair
+     whose value does not survive registration — the token silently falls
+     back to initial-value and the hairline never moves. The numbers below
+     are the palette's own: slate/blue from the :root block above, amber and
+     rose at their Tailwind stock values (the app overrides blue, indigo and
+     purple, not these two). Keep them in sync by hand if the palette moves. */
+  [data-mood="calm"] {
+    --chrome-wash: oklch(74% 0.145 289 / 0.14);
+  }
+
+  [data-mood="today"] {
+    --chrome-line: oklch(76.9% 0.188 70.08 / 0.42);
+    --chrome-wash: oklch(76.9% 0.188 70.08 / 0.18);
+    --chrome-mark: oklch(82.8% 0.189 84.429);
+  }
+
+  [data-mood="stuck"] {
+    --chrome-line: oklch(64.5% 0.246 16.439 / 0.45);
+    --chrome-wash: oklch(64.5% 0.246 16.439 / 0.20);
+    --chrome-mark: oklch(71.2% 0.194 13.428);
+  }
+
+  /* The wash itself. Sits behind the header only — never behind body
+     text, so text contrast stays a fixed, measurable pair. */
+  .chrome-wash::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: 0;
+    block-size: 240px;
+    z-index: 0;
+    pointer-events: none;
+    background: radial-gradient(120% 78% at 50% -14%, var(--chrome-wash), transparent 68%);
+    transition: background 450ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
   [dir="rtl"] {
     font-family: var(--font-hebrew);
   }
@@ -220,8 +309,11 @@
     padding-right: env(safe-area-inset-right, 0px);
   }
   .min-h-touch {
-    min-height: 44px;
-    min-width: 44px;
+    /* 48, not 44 — CLAUDE.md and the UI/UX protocol both mandate a
+       48x48 minimum (WCAG 2.5.8/2.5.5). This utility had drifted to 44
+       and quietly undercut every caller that reached for it. */
+    min-height: 48px;
+    min-width: 48px;
   }
 }
 
@@ -268,21 +360,12 @@
   border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-/* Shimmer pulse for active shipments */
-@keyframes pulse-subtle {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.02);
-  }
-}
-
-.animate-pulse-subtle {
-  animation: pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
+/* `pulse-subtle` used to loop forever on the out-for-delivery badge and
+   the header logo glow. Infinite animation is the worst cost/benefit in
+   UI — it never stops competing for attention, and it keeps the
+   compositor awake on a PWA that is meant to sit in the background. The
+   ambient mood chrome carries that signal now, at a scale you can
+   actually read; the keyframes are gone rather than merely unused. */
 
 /* Glow effects */
 .glow-blue {
