@@ -452,21 +452,20 @@ jobs:
           path: ~/.npm/_npx
           key: npx-firebase-tools-14-${{ runner.os }}
 
-      - name: Deploy to Firebase Hosting
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DELIVEREE }}'
-          projectId: deliveree-app-2a938
-          channelId: live
-
-      # Hosting deploys do not touch Firestore rules, so without this step the
-      # live security rules drift from firestore.rules in this repo.
-      - name: Authenticate for Firestore rules deploy
+      # Same swap as the staging job — see the note there. `hosting:deploy`
+      # publishes to the live channel, which is what channelId: live meant.
+      - name: Authenticate for Firebase deploys
         uses: google-github-actions/auth@v2
         with:
           credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DELIVEREE }}'
 
+      - name: Deploy to Firebase Hosting
+        run: |
+          npx --yes firebase-tools@14 deploy --only hosting \
+            --project deliveree-app-2a938 --non-interactive
+
+      # Hosting deploys do not touch Firestore rules, so without this step the
+      # live security rules drift from firestore.rules in this repo.
       # Skipped when firestore.rules is unchanged. Hosting deploys never touch
       # Firestore rules, so this step has to exist — but redeploying an
       # identical file cost ~7.5 minutes on every single merge. Note staging
@@ -580,18 +579,21 @@ jobs:
           path: ~/.npm/_npx
           key: npx-firebase-tools-14-${{ runner.os }}
 
-      - name: Deploy to Firebase Hosting (staging channel)
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DELIVEREE }}'
-          projectId: deliveree-app-2a938
-          channelId: staging
-
-      - name: Authenticate for Firestore rules deploy
+      # Was FirebaseExtended/action-hosting-deploy@v0, which shells out to
+      # `npx firebase-tools@latest` internally — a cold ~450s install on every
+      # run that no cache of ours could hit (we pin @14, it resolved 15.29.0),
+      # and a deploy toolchain whose version drifted silently whenever npm
+      # published. Calling the CLI directly makes the version explicit and lets
+      # the ~/.npm/_npx cache above actually apply.
+      - name: Authenticate for Firebase deploys
         uses: google-github-actions/auth@v2
         with:
           credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DELIVEREE }}'
+
+      - name: Deploy to Firebase Hosting (staging channel)
+        run: |
+          npx --yes firebase-tools@14 hosting:channel:deploy staging \
+            --expires 7d --project deliveree-app-2a938 --non-interactive
 
       # Skipped when firestore.rules is unchanged. Hosting deploys never touch
       # Firestore rules, so this step has to exist — but redeploying an

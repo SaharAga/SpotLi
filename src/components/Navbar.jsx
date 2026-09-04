@@ -57,7 +57,11 @@ export function Navbar({
 
           <div className="flex items-center gap-2.5 min-w-0">
           <div className="relative group shrink-0">
-            <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 opacity-70 blur-sm group-hover:opacity-100 transition duration-500" />
+            <div
+              className="absolute -inset-0.5 rounded-xl opacity-60 blur-sm group-hover:opacity-90 transition duration-500"
+              style={{ background: 'var(--chrome-mark)' }}
+              aria-hidden="true"
+            />
             <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-900 border border-slate-700/80 flex items-center justify-center text-[color:var(--chrome-mark)] transition-colors duration-500 shadow-md">
               <Package className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:scale-110" />
             </div>
