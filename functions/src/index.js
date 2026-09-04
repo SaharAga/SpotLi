@@ -1,6 +1,6 @@
 import { onCall, onRequest } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { onDocumentCreated } from 'firebase-functions/v2/firestore';
+import { onDocumentCreated, onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { defineSecret } from 'firebase-functions/params';
 import { initializeApp, getApps } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -16,6 +16,7 @@ import { createGmailDisconnectHandler } from './gmailDisconnect.js';
 import { createGmailConnectionStatusHandler } from './gmailConnectionStatus.js';
 import { createFeatureAdoptionRollupHandler } from './featureAdoptionRollup.js';
 import { createNewPackagePushHandler } from './newPackagePush.js';
+import { createUpdatePackagePushHandler } from './updatePackagePush.js';
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
 // Shared-secret query param that authorizes calls to the Pub/Sub push
@@ -273,3 +274,26 @@ export const notifyOnNewPackage = onDocumentCreated(
       vapidSubject: 'mailto:support@deliveree.app'
     })(event)
 );
+
+/**
+ * Fires a Web Push notification whenever an existing package document is updated
+ * with an advanced delivery status (out for delivery, ready for pickup, delivered),
+ * an assigned locker PIN, or a rerouted pickup point.
+ */
+export const notifyOnPackageUpdated = onDocumentUpdated(
+  {
+    document: 'users/{uid}/packages/{packageId}',
+    secrets: [vapidPrivateKey, vapidPublicKey],
+    timeoutSeconds: 30,
+    memory: '256MiB'
+  },
+  (event) =>
+    createUpdatePackagePushHandler({
+      db: getFirestore(),
+      webpush,
+      vapidPublicKey: vapidPublicKey.value(),
+      vapidPrivateKey: vapidPrivateKey.value(),
+      vapidSubject: 'mailto:support@deliveree.app'
+    })(event)
+);
+

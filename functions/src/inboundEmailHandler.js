@@ -11,9 +11,15 @@
  * see gmailPushHandler.js — and never sends mail to this webhook.
  */
 
-import { sanitizeEmailHtml, extractTrackingDetails, inferDeliveryStatus } from './trackingExtraction.js';
+import {
+  sanitizeEmailHtml,
+  extractTrackingDetails,
+  extractAllTrackingDetails,
+  inferDeliveryStatus,
+  shouldAdvanceStatus
+} from './trackingExtraction.js';
 
-export { sanitizeEmailHtml, extractTrackingDetails, inferDeliveryStatus };
+export { sanitizeEmailHtml, extractTrackingDetails, extractAllTrackingDetails, inferDeliveryStatus, shouldAdvanceStatus };
 
 /**
  * Extracts userId from the recipient email address.
@@ -75,7 +81,10 @@ export function createInboundEmailHandler({ db }) {
       const rawHtml = payload.html || payload['body-html'] || payload.HtmlBody || '';
       const rawText = payload.plain || payload.text || payload['body-plain'] || payload.TextBody || '';
 
-      const cleanText = rawText || sanitizeEmailHtml(rawHtml);
+      const cleanHtml = rawHtml ? sanitizeEmailHtml(rawHtml) : '';
+      const cleanText = (rawText && cleanHtml)
+        ? `${rawText}\n\n${cleanHtml}`
+        : (rawText || cleanHtml);
       const userId = extractUserIdFromToAddress(to);
 
       if (!userId) {
@@ -83,12 +92,12 @@ export function createInboundEmailHandler({ db }) {
         return;
       }
 
-      const { trackingNumber, carrier, title, status: detectionStatus } = extractTrackingDetails(subject, cleanText);
+      const allExtracted = extractAllTrackingDetails(subject, cleanText, '', { html: rawHtml });
+      const verifiedPackages = allExtracted.filter((pkg) => pkg.trackingNumber && pkg.status === 'verified');
 
-      // Forwarded email is an unattended ingestion path.  A plausible token
-      // is not enough to create persistent package data: only the extractor's
+      // Forwarded email is an unattended ingestion path. Only the extractor's
       // strongest, deterministic tier may cross this boundary.
-      if (!trackingNumber || detectionStatus !== 'verified') {
+      if (verifiedPackages.length === 0) {
         // Return 200 to acknowledge webhook receipt so provider doesn't re-deliver in a retry loop
         res.status(200).json({
           ok: false,
@@ -97,39 +106,127 @@ export function createInboundEmailHandler({ db }) {
         return;
       }
 
-      const packageId = `pkg-email-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
       const nowIso = new Date().toISOString();
+      const userPackagesRef = db ? db.collection('users').doc(userId).collection('packages') : null;
+      const results = [];
 
-      const newPackage = {
-        id: packageId,
-        userId,
-        title,
-        trackingNumber,
-        carrier,
-        status: inferDeliveryStatus(subject, cleanText),
-        source: 'email_forwarding',
-        notes: subject ? `From Email: ${subject.slice(0, 100)}` : '',
-        createdAt: nowIso,
-        updatedAt: nowIso,
-        isArchived: false
-      };
+      for (let idx = 0; idx < verifiedPackages.length; idx += 1) {
+        const ext = verifiedPackages[idx];
+        const upperTrackingNumber = ext.trackingNumber.toUpperCase();
+        const inferredStatus = ext.deliveryStatus || inferDeliveryStatus(subject, cleanText);
 
-      if (db) {
-        // Save to user's scoped packages collection so client real-time listener sees it
-        const userPkgRef = db.collection('users').doc(userId).collection('packages').doc(packageId);
-        await userPkgRef.set(newPackage);
+        let existingDocId = null;
+        let existingData = null;
 
-        // Also save to root packages collection for backwards compatibility
-        const rootPkgRef = db.collection('packages').doc(packageId);
-        await rootPkgRef.set(newPackage);
+        if (userPackagesRef && typeof userPackagesRef.where === 'function') {
+          // eslint-disable-next-line no-await-in-loop
+          const existingQuery = await userPackagesRef
+            .where('trackingNumber', '==', upperTrackingNumber)
+            .limit(1)
+            .get();
+
+          if (existingQuery && !existingQuery.empty) {
+            const existingDoc = existingQuery.docs[0];
+            existingData = existingDoc.data() || {};
+            existingDocId = existingDoc.id;
+
+            const patch = { updatedAt: nowIso };
+            if (shouldAdvanceStatus(existingData.status, inferredStatus)) {
+              patch.status = inferredStatus;
+            }
+            if (ext.lockerPin && !existingData.lockerPin) {
+              patch.lockerPin = ext.lockerPin;
+            }
+            if (ext.lockerPin && !existingData.pickupCode) {
+              patch.pickupCode = ext.lockerPin;
+            }
+            if (ext.pickupLocation && (!existingData.pickupLocation || ext.isRedirected)) {
+              patch.pickupLocation = ext.pickupLocation;
+            }
+            if (ext.pickupHours && !existingData.pickupHours) {
+              patch.pickupHours = ext.pickupHours;
+            }
+            if (ext.pickupPhone && !existingData.pickupPhone) {
+              patch.pickupPhone = ext.pickupPhone;
+            }
+            if (ext.isRedirected) {
+              patch.isRedirected = true;
+              if (ext.originalPickupLocation || existingData.pickupLocation) {
+                patch.originalPickupLocation = ext.originalPickupLocation || existingData.pickupLocation;
+              }
+              if (ext.redirectReason) {
+                patch.redirectReason = ext.redirectReason;
+              }
+            }
+
+            const userPkgRef = userPackagesRef.doc(existingDocId);
+            // eslint-disable-next-line no-await-in-loop
+            await userPkgRef.set(patch, { merge: true });
+
+            const rootPkgRef = db.collection('packages').doc(existingDocId);
+            // eslint-disable-next-line no-await-in-loop
+            await rootPkgRef.set(patch, { merge: true });
+
+            results.push({
+              ok: true,
+              packageId: existingDocId,
+              trackingNumber: upperTrackingNumber,
+              carrier: ext.carrier,
+              title: existingData.title || ext.title,
+              updated: true
+            });
+            continue;
+          }
+        }
+
+        const packageId = verifiedPackages.length > 1
+          ? `pkg-email-${Date.now()}-${idx + 1}-${Math.random().toString(36).slice(2, 7)}`
+          : `pkg-email-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+        const newPackage = {
+          id: packageId,
+          userId,
+          title: ext.title,
+          trackingNumber: upperTrackingNumber,
+          carrier: ext.carrier,
+          status: inferredStatus,
+          source: 'email_forwarding',
+          notes: subject ? `From Email: ${subject.slice(0, 100)}` : '',
+          ...(ext.lockerPin ? { lockerPin: ext.lockerPin, pickupCode: ext.lockerPin } : {}),
+          ...(ext.pickupLocation ? { pickupLocation: ext.pickupLocation } : {}),
+          ...(ext.pickupHours ? { pickupHours: ext.pickupHours } : {}),
+          ...(ext.pickupPhone ? { pickupPhone: ext.pickupPhone } : {}),
+          ...(ext.isRedirected ? { isRedirected: ext.isRedirected } : {}),
+          ...(ext.originalPickupLocation ? { originalPickupLocation: ext.originalPickupLocation } : {}),
+          ...(ext.redirectReason ? { redirectReason: ext.redirectReason } : {}),
+          createdAt: nowIso,
+          updatedAt: nowIso,
+          isArchived: false
+        };
+
+        if (db) {
+          const userPkgRef = userPackagesRef.doc(packageId);
+          // eslint-disable-next-line no-await-in-loop
+          await userPkgRef.set(newPackage);
+
+          const rootPkgRef = db.collection('packages').doc(packageId);
+          // eslint-disable-next-line no-await-in-loop
+          await rootPkgRef.set(newPackage);
+        }
+
+        results.push({
+          ok: true,
+          packageId,
+          trackingNumber: upperTrackingNumber,
+          carrier: ext.carrier,
+          title: ext.title
+        });
       }
 
+      const primary = results[0];
       res.status(200).json({
-        ok: true,
-        packageId,
-        trackingNumber,
-        carrier,
-        title
+        ...primary,
+        packages: results
       });
     } catch (err) {
       console.error('[InboundEmailHandler] Error processing email:', err);

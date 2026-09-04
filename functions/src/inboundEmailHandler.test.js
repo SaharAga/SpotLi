@@ -193,5 +193,202 @@ describe('inboundEmailHandler Unit Tests', () => {
       expect(set).not.toHaveBeenCalled();
     });
 
+    it('updates existing package when tracking number is already present instead of creating a duplicate', async () => {
+      const mergeSetMock = vi.fn().mockResolvedValue();
+      const userPackagesDocMock = vi.fn(() => ({
+        set: mergeSetMock
+      }));
+      const globalPackagesDocMock = vi.fn(() => ({
+        set: mergeSetMock
+      }));
+
+      const existingPackageData = {
+        id: 'pkg-existing-1',
+        userId: 'user123',
+        title: 'Original Title',
+        status: 'ordered',
+        trackingNumber: 'LP00512345678901'
+      };
+
+      const userPackagesColMock = {
+        doc: userPackagesDocMock,
+        where: vi.fn(() => ({
+          limit: vi.fn(() => ({
+            get: vi.fn().mockResolvedValue({
+              empty: false,
+              docs: [{ id: 'pkg-existing-1', data: () => existingPackageData }]
+            })
+          }))
+        }))
+      };
+
+      const dbMock = {
+        collection: vi.fn((name) => {
+          if (name === 'users') {
+            return {
+              doc: vi.fn(() => ({
+                collection: vi.fn(() => userPackagesColMock)
+              }))
+            };
+          }
+          return {
+            doc: globalPackagesDocMock
+          };
+        })
+      };
+
+      const handler = createInboundEmailHandler({ db: dbMock });
+      const req = {
+        method: 'POST',
+        body: {
+          to: 'usr_user123@in.deliveree.app',
+          subject: 'AliExpress - Package LP00512345678901 is ready for pickup',
+          html: '<p>Package tracking: <b>LP00512345678901</b>. קוד איסוף: 7788</p>'
+        }
+      };
+      const res = {
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn()
+      };
+
+      await handler(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+        ok: true,
+        packageId: 'pkg-existing-1',
+        updated: true,
+        trackingNumber: 'LP00512345678901'
+      }));
+      expect(mergeSetMock).toHaveBeenCalled();
+      const [patchArg, optionsArg] = mergeSetMock.mock.calls[0];
+      expect(optionsArg).toEqual({ merge: true });
+      expect(patchArg.status).toBe('ready_for_pickup');
+      expect(patchArg.lockerPin).toBe('7788');
+      expect(patchArg.updatedAt).toBeDefined();
+    });
+
+    it('extracts and persists pickup location, hours, phone, and redirect info on inbound email', async () => {
+      const docSetMock = vi.fn().mockResolvedValue();
+      const userPackagesDocMock = vi.fn(() => ({
+        set: docSetMock
+      }));
+      const globalPackagesDocMock = vi.fn(() => ({
+        set: docSetMock
+      }));
+
+      const userPackagesColMock = {
+        doc: userPackagesDocMock,
+        where: vi.fn(() => ({
+          limit: vi.fn(() => ({
+            get: vi.fn().mockResolvedValue({ empty: true, docs: [] })
+          }))
+        }))
+      };
+
+      const dbMock = {
+        collection: vi.fn((name) => {
+          if (name === 'users') {
+            return {
+              doc: vi.fn(() => ({
+                collection: vi.fn(() => userPackagesColMock)
+              }))
+            };
+          }
+          return {
+            doc: globalPackagesDocMock
+          };
+        })
+      };
+
+      const handler = createInboundEmailHandler({ db: dbMock });
+      const req = {
+        method: 'POST',
+        body: {
+          to: 'usr_user123@in.deliveree.app',
+          subject: 'דואר ישראל: חבילתך הועברה לנקודת איסוף חלופית',
+          text: 'בשל עומס בלוקר סנטר, חבילתך RR000000005IL הועברה לנקודת איסוף מכולת העיר. קוד איסוף: 9988. שעות פתיחה: א-ה 08:00-20:00. טלפון: 03-6789012.'
+        }
+      };
+      const res = {
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn()
+      };
+
+      await handler(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(docSetMock).toHaveBeenCalled();
+      const [savedDoc] = docSetMock.mock.calls[0];
+      expect(savedDoc.trackingNumber).toBe('RR000000005IL');
+      expect(savedDoc.pickupLocation).toBe('מכולת העיר');
+      expect(savedDoc.lockerPin).toBe('9988');
+      expect(savedDoc.pickupHours).toBe('א-ה 08:00-20:00');
+      expect(savedDoc.pickupPhone).toBe('03-6789012');
+      expect(savedDoc.isRedirected).toBe(true);
+      expect(savedDoc.originalPickupLocation).toBe('סנטר');
+    });
+
+    it('disaggregates and persists multiple packages from a single inbound email', async () => {
+      const docSetMock = vi.fn().mockResolvedValue();
+      const userPackagesDocMock = vi.fn(() => ({
+        set: docSetMock
+      }));
+      const globalPackagesDocMock = vi.fn(() => ({
+        set: docSetMock
+      }));
+
+      const userPackagesColMock = {
+        doc: userPackagesDocMock,
+        where: vi.fn(() => ({
+          limit: vi.fn(() => ({
+            get: vi.fn().mockResolvedValue({ empty: true, docs: [] })
+          }))
+        }))
+      };
+
+      const dbMock = {
+        collection: vi.fn((name) => {
+          if (name === 'users') {
+            return {
+              doc: vi.fn(() => ({
+                collection: vi.fn(() => userPackagesColMock)
+              }))
+            };
+          }
+          return {
+            doc: globalPackagesDocMock
+          };
+        })
+      };
+
+      const handler = createInboundEmailHandler({ db: dbMock });
+      const req = {
+        method: 'POST',
+        body: {
+          to: 'usr_user123@in.deliveree.app',
+          subject: 'Your Amazon order has shipped in 2 packages',
+          text: 'Package 1 tracking: 1Z9999999999999999\nPackage 2 tracking: RR000000005IL'
+        }
+      };
+      const res = {
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn()
+      };
+
+      await handler(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+        ok: true,
+        packages: expect.arrayContaining([
+          expect.objectContaining({ trackingNumber: '1Z9999999999999999', carrier: 'ups' }),
+          expect.objectContaining({ trackingNumber: 'RR000000005IL', carrier: 'israel-post' })
+        ])
+      }));
+      // 2 packages * 2 writes each (user collection + root collection) = 4 doc set calls
+      expect(docSetMock).toHaveBeenCalledTimes(4);
+    });
+
   });
 });

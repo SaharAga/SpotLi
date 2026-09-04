@@ -3,7 +3,9 @@ import {
   parseSmartText, 
   extractTrackingCandidates, 
   extractUrlsAndTrackings, 
-  extractPickupLocation 
+  extractPickupLocation,
+  unwrapRedirectUrl,
+  extractAllTrackingDetails
 } from './smartParser';
 
 describe('smartParser - extractUrlsAndTrackings', () => {
@@ -296,4 +298,63 @@ describe('smartParser - parseSmartText', () => {
     expect(parsed.lockerPin).toBe('4892');
     expect(parsed.pickupPhone).toBe('03-5123456');
   });
+
+  describe('ESP redirect unwrapping and Schema.org structured data in Smart Parser', () => {
+    it('unwraps SendGrid and Klaviyo redirect URLs directly', () => {
+      const sg = 'https://ct.sendgrid.net/ls/click?upn=abc123xyz&url=https%3A%2F%2Fwww.ups.com%2Ftrack%3Ftracknum%3D1Z9999999999999999';
+      expect(unwrapRedirectUrl(sg)).toBe('https://www.ups.com/track?tracknum=1Z9999999999999999');
+
+      const klaviyo = 'https://trk.klaviyo.com/mpss/c/4AA/xyz123?dest=https%3A%2F%2Ftracking.hfd.co.il%2F%3Ft%3DHFD90481029';
+      expect(unwrapRedirectUrl(klaviyo)).toBe('https://tracking.hfd.co.il/?t=HFD90481029');
+    });
+
+    it('extracts carrier and tracking from SendGrid redirect URL in extractUrlsAndTrackings', () => {
+      const text = 'Track your package: https://ct.sendgrid.net/ls/click?upn=xyz&url=https%3A%2F%2Fwww.ups.com%2Ftrack%3Ftracknum%3D1Z9999999999999999';
+      const res = extractUrlsAndTrackings(text);
+      expect(res).toHaveLength(1);
+      expect(res[0].trackingNumber).toBe('1Z9999999999999999');
+      expect(res[0].carrierHint).toBe('ups');
+    });
+
+    it('extracts tracking candidate from HTML anchor with redirect URL', () => {
+      const html = '<a href="https://trk.klaviyo.com/mpss/c/4AA/xyz?dest=https%3A%2F%2Ftracking.hfd.co.il%2F%3Ft%3DHFD90481029">View Status</a>';
+      const candidates = extractTrackingCandidates(html);
+      expect(candidates).toContain('HFD90481029');
+    });
+
+    it('extracts tracking candidate from Schema.org JSON-LD in pasted HTML', () => {
+      const html = `
+        <script type="application/ld+json">
+        {
+          "@context": "http://schema.org",
+          "@type": "ParcelDelivery",
+          "trackingNumber": "1Z9999999999999999",
+          "carrier": "UPS"
+        }
+        </script>
+      `;
+      const candidates = extractTrackingCandidates(html);
+      expect(candidates).toContain('1Z9999999999999999');
+    });
+  });
+
+  describe('extractAllTrackingDetails disaggregation in Smart Parser', () => {
+    it('disaggregates multiple verified tracking numbers from pasted email text', () => {
+      const text = 'Your Amazon order has shipped in 2 packages:\nPackage 1: 1Z9999999999999999 via UPS\nPackage 2: RR000000005IL via Israel Post';
+      const pkgs = extractAllTrackingDetails(text);
+      expect(pkgs).toHaveLength(2);
+      expect(pkgs[0].trackingNumber).toBe('1Z9999999999999999');
+      expect(pkgs[0].carrier).toBe('ups');
+      expect(pkgs[1].trackingNumber).toBe('RR000000005IL');
+      expect(pkgs[1].carrier).toBe('israel-post');
+    });
+
+    it('returns single package for single tracking text', () => {
+      const text = 'Tracking: 1Z9999999999999999 via UPS';
+      const pkgs = extractAllTrackingDetails(text);
+      expect(pkgs).toHaveLength(1);
+      expect(pkgs[0].trackingNumber).toBe('1Z9999999999999999');
+    });
+  });
 });
+

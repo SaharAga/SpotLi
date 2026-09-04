@@ -35,6 +35,10 @@ function mapAiResultToParsed(aiResult, isGroundedCandidate = false) {
     notes: aiResult.notes || '',
     notesHe: aiResult.notes || '',
     pickupLocation: aiResult.pickupLocation || '',
+    pickupCode: aiResult.lockerPin || aiResult.pickupCode || '',
+    pickupHours: aiResult.pickupHours || '',
+    pickupPhone: aiResult.pickupPhone || '',
+    lockerPin: aiResult.lockerPin || '',
     isGroundedCandidate
   };
 }
@@ -200,12 +204,11 @@ export function SmartImportModal({
 
       setIsAiParsing(true);
       try {
-        // There is no deterministic OCR candidate list for screenshots yet;
-        // the server deliberately abstains rather than letting a model invent
-        // a tracking number from image pixels.
+        // Parse screenshot via two-stage grounded OCR
         const aiResponse = await parseWithAi({ mode: 'image', imageBase64: result.dataUrl, candidates: [] });
         if (aiResponse.success && aiResponse.data?.trackingNumber && aiResponse.data.confidence !== 'none') {
-          setParsed(mapAiResultToParsed(aiResponse.data, false));
+          const isGrounded = Boolean(aiResponse.data.isGroundedCandidate);
+          setParsed(mapAiResultToParsed(aiResponse.data, isGrounded));
           setParseSource('ai');
           setAiConfidence(aiResponse.data.confidence);
         } else {
@@ -277,11 +280,7 @@ export function SmartImportModal({
   };
 
   const handleApply = () => {
-    const canApply = parsed?.trackingNumber && (
-      (parseSource === 'regex' && parsed.candidateStatus === 'verified') ||
-      (parseSource === 'ai' && parsed.isGroundedCandidate === true && aiConfidence && aiConfidence !== 'none')
-    );
-    if (canApply) {
+    if (canApplyParsed) {
       onParsedResult({
         title: parsed.title,
         titleHe: parsed.titleHe,
@@ -492,7 +491,13 @@ export function SmartImportModal({
                     <span>{screenshot.width}×{screenshot.height} • {Math.round(screenshot.bytes / 1024)}KB</span>
                     <button
                       type="button"
-                      onClick={() => { setScreenshot(null); setImageError(null); }}
+                      onClick={() => {
+                        setScreenshot(null);
+                        setImageError(null);
+                        if (parseSource === 'ai') {
+                          setParsed(null);
+                        }
+                      }}
                       className="flex items-center gap-1 text-rose-400 hover:text-rose-300 font-semibold cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />

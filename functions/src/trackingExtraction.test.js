@@ -6,8 +6,50 @@ import {
   extractTrackingDetails,
   inferDeliveryStatus,
   generateCleanTitle,
-  extractOrderStatusDetails
+  extractOrderStatusDetails,
+  shouldAdvanceStatus,
+  unwrapRedirectUrl,
+  extractSchemaOrgData,
+  extractPickupLocation,
+  extractOpeningHours,
+  extractPickupPhone,
+  extractRedirectInfo,
+  extractAllTrackingDetails
 } from './trackingExtraction.js';
+
+describe('shouldAdvanceStatus', () => {
+  it('advances status forward along standard lifecycle', () => {
+    expect(shouldAdvanceStatus('ordered', 'shipped')).toBe(true);
+    expect(shouldAdvanceStatus('shipped', 'in_transit')).toBe(true);
+    expect(shouldAdvanceStatus('in_transit', 'customs')).toBe(true);
+    expect(shouldAdvanceStatus('customs', 'out_for_delivery')).toBe(true);
+    expect(shouldAdvanceStatus('out_for_delivery', 'ready_for_pickup')).toBe(true);
+    expect(shouldAdvanceStatus('ready_for_pickup', 'delivered')).toBe(true);
+    expect(shouldAdvanceStatus('in_transit', 'ready_for_pickup')).toBe(true);
+  });
+
+  it('rejects status regressions to prevent downgrades', () => {
+    expect(shouldAdvanceStatus('shipped', 'ordered')).toBe(false);
+    expect(shouldAdvanceStatus('customs', 'in_transit')).toBe(false);
+    expect(shouldAdvanceStatus('ready_for_pickup', 'ordered')).toBe(false);
+    expect(shouldAdvanceStatus('out_for_delivery', 'in_transit')).toBe(false);
+    expect(shouldAdvanceStatus('delivered', 'in_transit')).toBe(false);
+    expect(shouldAdvanceStatus('ready_for_pickup', 'ready_for_pickup')).toBe(false);
+  });
+
+  it('handles exception state transitions safely', () => {
+    expect(shouldAdvanceStatus('in_transit', 'exception')).toBe(true);
+    expect(shouldAdvanceStatus('exception', 'out_for_delivery')).toBe(true);
+    expect(shouldAdvanceStatus('exception', 'ready_for_pickup')).toBe(true);
+    expect(shouldAdvanceStatus('exception', 'delivered')).toBe(true);
+    expect(shouldAdvanceStatus('exception', 'in_transit')).toBe(false);
+  });
+
+  it('rejects invalid or unknown statuses', () => {
+    expect(shouldAdvanceStatus('unknown_state', 'in_transit')).toBe(false);
+    expect(shouldAdvanceStatus('ordered', 'invalid_status')).toBe(false);
+  });
+});
 
 describe('inferDeliveryStatus', () => {
   it('infers ready_for_pickup correctly from English and Hebrew phrases', () => {
@@ -243,3 +285,351 @@ describe('extractOrderStatusDetails', () => {
     expect(result).toBeNull();
   });
 });
+
+describe('unwrapRedirectUrl', () => {
+  it('unwraps SendGrid click redirect URLs', () => {
+    const raw = 'https://ct.sendgrid.net/ls/click?upn=abc123xyz&url=https%3A%2F%2Fwww.ups.com%2Ftrack%3Ftracknum%3D1Z9999999999999999';
+    expect(unwrapRedirectUrl(raw)).toBe('https://www.ups.com/track?tracknum=1Z9999999999999999');
+  });
+
+  it('unwraps Klaviyo redirect URLs', () => {
+    const raw = 'https://trk.klaviyo.com/mpss/c/4AA/xyz123?dest=https%3A%2F%2Ftracking.hfd.co.il%2F%3Ft%3DHFD90481029';
+    expect(unwrapRedirectUrl(raw)).toBe('https://tracking.hfd.co.il/?t=HFD90481029');
+  });
+
+  it('unwraps AliExpress and Shein redirect URLs', () => {
+    const ali = 'https://click.aliexpress.com/e/_oF123?target=https%3A%2F%2Fglobal.cainiao.com%2Fdetail.htm%3FmailNoList%3DLP00123456789012';
+    expect(unwrapRedirectUrl(ali)).toBe('https://global.cainiao.com/detail.htm?mailNoList=LP00123456789012');
+
+    const shein = 'https://links.shein.com/a/track?redirect=https%3A%2F%2Fmypost.israelpost.co.il%2Fitemtrace%2FRR000000005IL';
+    expect(unwrapRedirectUrl(shein)).toBe('https://mypost.israelpost.co.il/itemtrace/RR000000005IL');
+  });
+
+  it('handles double-encoded redirect parameters gracefully', () => {
+    const double = 'https://email.store.com/r?target=https%253A%252F%252Fwww.fedex.com%252Ffedextrack%252F%253Ftrknbr%253D123456789012';
+    expect(unwrapRedirectUrl(double)).toBe('https://www.fedex.com/fedextrack/?trknbr=123456789012');
+  });
+
+  it('returns null for non-redirect standard URLs', () => {
+    expect(unwrapRedirectUrl('https://www.google.com/search?q=tracking')).toBeNull();
+    expect(unwrapRedirectUrl('not-a-url')).toBeNull();
+    expect(unwrapRedirectUrl('')).toBeNull();
+  });
+});
+
+describe('extractSchemaOrgData', () => {
+  it('extracts ParcelDelivery structured data from Amazon JSON-LD fixture', () => {
+    const html = `
+      <html>
+        <head>
+          <script type="application/ld+json">
+          {
+            "@context": "http://schema.org",
+            "@type": "ParcelDelivery",
+            "trackingNumber": "1Z9999999999999999",
+            "trackingUrl": "https://www.ups.com/track?tracknum=1Z9999999999999999",
+            "carrier": {
+              "@type": "Organization",
+              "name": "UPS"
+            },
+            "itemShipped": {
+              "@type": "Product",
+              "name": "Sony WH-1000XM5 Headphones"
+            },
+            "partOfOrder": {
+              "@type": "Order",
+              "orderNumber": "114-8291029-1928301",
+              "merchant": {
+                "@type": "Organization",
+                "name": "Amazon"
+              }
+            },
+            "deliveryStatus": "http://schema.org/InTransit"
+          }
+          </script>
+        </head>
+        <body>Order details</body>
+      </html>
+    `;
+
+    const shipments = extractSchemaOrgData(html);
+    expect(shipments).toHaveLength(1);
+    expect(shipments[0].trackingNumber).toBe('1Z9999999999999999');
+    expect(shipments[0].carrier).toBe('UPS');
+    expect(shipments[0].title).toBe('Sony WH-1000XM5 Headphones');
+    expect(shipments[0].store).toBe('Amazon');
+    expect(shipments[0].orderNumber).toBe('114-8291029-1928301');
+    expect(shipments[0].status).toBe('in_transit');
+  });
+
+  it('extracts Order with orderDelivery from AliExpress JSON-LD fixture', () => {
+    const html = `
+      <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Order",
+        "orderNumber": "8127391823",
+        "seller": {
+          "@type": "Organization",
+          "name": "AliExpress"
+        },
+        "orderDelivery": {
+          "@type": "ParcelDelivery",
+          "trackingNumber": "LP00123456789012",
+          "carrier": "Cainiao",
+          "itemShipped": {
+            "name": "Magnetic Phone Holder"
+          }
+        }
+      }
+      </script>
+    `;
+
+    const shipments = extractSchemaOrgData(html);
+    expect(shipments).toHaveLength(1);
+    expect(shipments[0].trackingNumber).toBe('LP00123456789012');
+    expect(shipments[0].carrier).toBe('Cainiao');
+    expect(shipments[0].title).toBe('Magnetic Phone Holder');
+    expect(shipments[0].store).toBe('AliExpress');
+  });
+
+  it('extracts from @graph array format', () => {
+    const json = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'ParcelDelivery',
+          trackingNumber: 'RR000000005IL',
+          carrier: 'Israel Post'
+        }
+      ]
+    });
+
+    const shipments = extractSchemaOrgData(json);
+    expect(shipments).toHaveLength(1);
+    expect(shipments[0].trackingNumber).toBe('RR000000005IL');
+    expect(shipments[0].carrier).toBe('Israel Post');
+  });
+});
+
+describe('extractTrackingDetails - Schema.org and ESP unwrap integration', () => {
+  it('extracts verified tracking and item title from HTML with Schema.org JSON-LD', () => {
+    const html = `
+      <div>
+        <p>Your order is on the way!</p>
+        <script type="application/ld+json">
+        {
+          "@context": "http://schema.org",
+          "@type": "ParcelDelivery",
+          "trackingNumber": "1Z9999999999999999",
+          "carrier": "UPS",
+          "itemShipped": {
+            "name": "Mechanical Keyboard RGB"
+          },
+          "partOfOrder": {
+            "merchant": "Amazon"
+          }
+        }
+        </script>
+      </div>
+    `;
+
+    const res = extractTrackingDetails('Your Amazon order has shipped', html, 'Amazon <ship-confirm@amazon.com>');
+    expect(res.trackingNumber).toBe('1Z9999999999999999');
+    expect(res.carrier).toBe('ups');
+    expect(res.title).toBe('Mechanical Keyboard RGB');
+    expect(res.store).toBe('Amazon');
+    expect(res.status).toBe('verified');
+    expect(res.confidence).toBe('high');
+  });
+
+  it('unwraps ESP redirect links embedded in HTML buttons to detect tracking number', () => {
+    const html = `
+      <html>
+        <body>
+          <h2>Your shipment has been dispatched</h2>
+          <a href="https://ct.sendgrid.net/ls/click?upn=abc123xyz&url=https%3A%2F%2Fwww.ups.com%2Ftrack%3Ftracknum%3D1Z9999999999999999">
+            Track Your Package
+          </a>
+        </body>
+      </html>
+    `;
+
+    const res = extractTrackingDetails('Your order has shipped', html, 'Orders <orders@mystore.com>');
+    expect(res.trackingNumber).toBe('1Z9999999999999999');
+    expect(res.carrier).toBe('ups');
+    expect(res.status).toBe('verified');
+  });
+});
+
+describe('extractPickupLocation', () => {
+  it('extracts Hebrew pickup point from SMS/email notification', () => {
+    const text = 'שלום, חבילתך מחכה לך בנקודת איסוף: סופר פארם קניון עזריאלי. קוד איסוף: 4819';
+    expect(extractPickupLocation(text)).toBe('סופר פארם קניון עזריאלי');
+  });
+
+  it('extracts locker location and trims hours/phone suffixes', () => {
+    const text = 'החבילה הגיעה ללוקר שופרסל דיזנגוף סנטר - שעות פתיחה: א-ה 08:00-22:00';
+    expect(extractPickupLocation(text)).toBe('שופרסל דיזנגוף סנטר');
+  });
+
+  it('extracts English pickup location', () => {
+    const text = 'Your parcel is waiting at the pickup point: MailBoxes Etc High Street. PIN: 9021';
+    expect(extractPickupLocation(text)).toBe('MailBoxes Etc High Street');
+  });
+
+  it('returns empty string when no pickup location exists', () => {
+    expect(extractPickupLocation('Your order has shipped via FedEx.')).toBe('');
+    expect(extractPickupLocation('')).toBe('');
+  });
+});
+
+describe('extractOpeningHours', () => {
+  it('extracts Hebrew opening hours', () => {
+    const text = 'נקודת איסוף: סופר פארם. שעות פתיחה: א-ה 08:00-20:00, ו 08:00-14:00';
+    expect(extractOpeningHours(text)).toBe('א-ה 08:00-20:00, ו 08:00-14:00');
+  });
+
+  it('extracts 24/7 hours indicator', () => {
+    const text = 'איסוף מלוקר פתוח 24/7 (כל שעות היממה)';
+    expect(extractOpeningHours(text)).toContain('24/7');
+  });
+
+  it('extracts English business hours', () => {
+    const text = 'Pickup location: Downtown Locker. Opening hours: Mon-Fri 9am-6pm';
+    expect(extractOpeningHours(text)).toBe('Mon-Fri 9am-6pm');
+  });
+});
+
+describe('extractPickupPhone', () => {
+  it('extracts Israeli mobile phone number', () => {
+    const text = 'לשאלות ובירורים, טלפון ליצירת קשר: 054-9876543';
+    expect(extractPickupPhone(text)).toBe('054-9876543');
+  });
+
+  it('extracts Israeli landline with prefix', () => {
+    const text = 'נקודת שירות. טלפון סניף: 03-6123456';
+    expect(extractPickupPhone(text)).toBe('03-6123456');
+  });
+
+  it('extracts 1-700 / 1-800 courier support numbers', () => {
+    const text = 'בירורים במוקד: 1-700-500-123';
+    expect(extractPickupPhone(text)).toBe('1-700-500-123');
+  });
+});
+
+describe('extractRedirectInfo', () => {
+  it('detects overflow rerouting with prefix reason and original location', () => {
+    const text = 'בשל עומס בלוקר דיזנגוף סנטר, חבילתך RR000000005IL הועברה לנקודת איסוף מכולת העיר בוגרשוב 12. קוד: 8192.';
+    const res = extractRedirectInfo(text);
+    expect(res.isRedirected).toBe(true);
+    expect(res.newPickupLocation).toBe('מכולת העיר בוגרשוב 12');
+    expect(res.originalPickupLocation).toBe('דיזנגוף סנטר');
+    expect(res.redirectReason).toBe('locker_capacity');
+  });
+
+  it('detects redirected pickup location pattern', () => {
+    const text = 'הודעה: חבילתך הועברה לנקודת איסוף חלופית: סופר פארם אבן גבירול. שעות פתיחה: 08:00-22:00';
+    const res = extractRedirectInfo(text);
+    expect(res.isRedirected).toBe(true);
+    expect(res.newPickupLocation).toBe('סופר פארם אבן גבירול');
+  });
+
+  it('returns isRedirected false for regular delivery notices', () => {
+    const text = 'חבילתך ממתינה לאיסוף בלוקר סנטר';
+    expect(extractRedirectInfo(text)).toEqual({ isRedirected: false });
+  });
+});
+
+describe('extractTrackingDetails - pickup and redirect parity integration', () => {
+  it('extracts tracking number, pickup location, hours, and redirect metadata simultaneously', () => {
+    const text = `
+      שלום, עקב עומס בלוקר עזריאלי, חבילתך במספר RR000000005IL הועברה לנקודת איסוף מכולת השכונה שדרות ירושלים 10.
+      קוד איסוף: 5544
+      שעות פתיחה: א-ה 07:00-21:00
+      טלפון: 03-5551234
+    `;
+    const res = extractTrackingDetails('חבילתך הועברה לנקודת איסוף', text, 'דואר ישראל <service@israelpost.co.il>');
+    expect(res.trackingNumber).toBe('RR000000005IL');
+    expect(res.carrier).toBe('israel-post');
+    expect(res.status).toBe('verified');
+    expect(res.pickupLocation).toBe('מכולת השכונה שדרות ירושלים 10');
+    expect(res.lockerPin).toBe('5544');
+    expect(res.pickupHours).toBe('א-ה 07:00-21:00');
+    expect(res.pickupPhone).toBe('03-5551234');
+    expect(res.isRedirected).toBe(true);
+    expect(res.redirectReason).toBe('locker_capacity');
+  });
+});
+
+describe('extractAllTrackingDetails', () => {
+  it('disaggregates multiple verified tracking numbers from labeled patterns in text', () => {
+    const text = `
+      Your order from Amazon has shipped in 2 packages:
+      Package 1: tracking number 1Z9999999999999999 via UPS
+      Package 2: tracking number RR000000005IL via Israel Post
+    `;
+    const pkgs = extractAllTrackingDetails('Your Amazon order has shipped', text, 'ship-confirm@amazon.com');
+    expect(pkgs).toHaveLength(2);
+
+    expect(pkgs[0].trackingNumber).toBe('1Z9999999999999999');
+    expect(pkgs[0].carrier).toBe('ups');
+    expect(pkgs[0].status).toBe('verified');
+
+    expect(pkgs[1].trackingNumber).toBe('RR000000005IL');
+    expect(pkgs[1].carrier).toBe('israel-post');
+    expect(pkgs[1].status).toBe('verified');
+  });
+
+  it('disaggregates multi-parcel shipment from Schema.org JSON-LD graph', () => {
+    const html = `
+      <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "ParcelDelivery",
+            "trackingNumber": "1Z9999999999999999",
+            "carrier": "UPS",
+            "itemShipped": { "name": "Mechanical Keyboard" }
+          },
+          {
+            "@type": "ParcelDelivery",
+            "trackingNumber": "RR000000005IL",
+            "carrier": "Israel Post",
+            "itemShipped": { "name": "Desk Mat XXL" }
+          }
+        ]
+      }
+      </script>
+    `;
+    const pkgs = extractAllTrackingDetails('Your order has shipped', html, 'Amazon <ship@amazon.com>');
+    expect(pkgs).toHaveLength(2);
+
+    expect(pkgs[0].trackingNumber).toBe('1Z9999999999999999');
+    expect(pkgs[0].title).toBe('Mechanical Keyboard');
+    expect(pkgs[0].carrier).toBe('ups');
+
+    expect(pkgs[1].trackingNumber).toBe('RR000000005IL');
+    expect(pkgs[1].title).toBe('Desk Mat XXL');
+    expect(pkgs[1].carrier).toBe('israel-post');
+  });
+
+  it('returns single package for email with single tracking number', () => {
+    const text = 'Your package 1Z9999999999999999 has shipped.';
+    const pkgs = extractAllTrackingDetails('Order shipped', text, 'UPS <noreply@ups.com>');
+    expect(pkgs).toHaveLength(1);
+    expect(pkgs[0].trackingNumber).toBe('1Z9999999999999999');
+  });
+
+  it('falls back to order status record when no tracking numbers found', () => {
+    const text = 'Your order is out for delivery today.';
+    const pkgs = extractAllTrackingDetails('AliExpress - out for delivery', text, 'AliExpress <no-reply@aliexpress.com>');
+    expect(pkgs).toHaveLength(1);
+    expect(pkgs[0].isOrderStatusOnly).toBe(true);
+    expect(pkgs[0].store).toBe('AliExpress');
+    expect(pkgs[0].deliveryStatus).toBe('out_for_delivery');
+  });
+});
+
+
