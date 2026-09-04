@@ -14,7 +14,10 @@
 import { HttpsError } from 'firebase-functions/v2/https';
 import { DEFAULT_FORWARDING_FILTER_QUERY } from './emailFilterQuery.js';
 import { getGmailConnection, getGmailClientForUser } from './gmailAuth.js';
-import { buildPackageFromGmailMessageWithAiFallback, buildOrderStatusUpdateFromGmailMessage } from './gmailPackageSync.js';
+import {
+  buildPackagesFromGmailMessageWithAiFallback,
+  buildOrderStatusUpdateFromGmailMessage
+} from './gmailPackageSync.js';
 import { logUsageEvent } from './analyticsEvents.js';
 import { GMAIL_AI_LIMITS, GMAIL_BACKFILL_LIMITS } from './config.js';
 import { checkAndIncrementUsage } from './guards.js';
@@ -154,7 +157,7 @@ export async function runBackfillForUser({ db, uid, refreshToken, clientSecret, 
     }
 
     // eslint-disable-next-line no-await-in-loop
-    const pkg = await buildPackageFromGmailMessageWithAiFallback({
+    const pkgs = await buildPackagesFromGmailMessageWithAiFallback({
       gmailMessage: msgData,
       userId: uid,
       existingTrackingNumbers,
@@ -162,17 +165,19 @@ export async function runBackfillForUser({ db, uid, refreshToken, clientSecret, 
       ai: geminiApiKey ? { db, apiKey: geminiApiKey, runBudget } : undefined
     });
 
-    if (!pkg) {
+    if (!pkgs || pkgs.length === 0) {
       skipped += 1;
       continue;
     }
 
-    if (pkg.source === 'gmail_sync_ai') aiResolved += 1;
-    if (pkg.source === 'gmail_sync_order_status' && pkg.store) {
-      storeToNewPackageIndex.set(pkg.store.toUpperCase(), packagesToSave.length);
+    for (const pkg of pkgs) {
+      if (pkg.source === 'gmail_sync_ai') aiResolved += 1;
+      if (pkg.source === 'gmail_sync_order_status' && pkg.store) {
+        storeToNewPackageIndex.set(pkg.store.toUpperCase(), packagesToSave.length);
+      }
+      packagesToSave.push(pkg);
+      if (pkg.trackingNumber) existingTrackingNumbers.add(pkg.trackingNumber.toUpperCase());
     }
-    packagesToSave.push(pkg);
-    if (pkg.trackingNumber) existingTrackingNumbers.add(pkg.trackingNumber.toUpperCase());
   }
 
   // Atomic batch commit for all discovered packages plus any order-status

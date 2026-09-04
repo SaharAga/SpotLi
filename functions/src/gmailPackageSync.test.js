@@ -4,8 +4,11 @@ import {
   isDuplicateTrackingNumber,
   extractSubjectAndBodyFromGmailMessage,
   buildPackageFromGmailMessage,
+  buildPackagesFromGmailMessage,
   buildPackageFromGmailMessageWithAiFallback,
-  buildOrderStatusUpdateFromGmailMessage
+  buildPackagesFromGmailMessageWithAiFallback,
+  buildOrderStatusUpdateFromGmailMessage,
+  buildStatusUpdateFromGmailMessage
 } from './gmailPackageSync.js';
 
 function makeGmailMessage({ id = 'msg1', subject = '', text = '', from = '' } = {}) {
@@ -168,6 +171,40 @@ describe('buildPackageFromGmailMessage', () => {
   });
 });
 
+describe('buildStatusUpdateFromGmailMessage', () => {
+  it('extracts status update and locker PIN from delivery notice email', () => {
+    const msg = makeGmailMessage({
+      subject: 'חבילה ממתינה לאיסוף בלוקר אי-פוסט',
+      text: 'חבילתך RR000000005IL הגיעה ללוקר סופר-פארם דיזנגוף. קוד איסוף: 9482'
+    });
+    const update = buildStatusUpdateFromGmailMessage({ gmailMessage: msg });
+    expect(update).not.toBeNull();
+    expect(update.trackingNumber).toBe('RR000000005IL');
+    expect(update.status).toBe('ready_for_pickup');
+    expect(update.lockerPin).toBe('9482');
+  });
+
+  it('extracts out for delivery status without locker pin', () => {
+    const msg = makeGmailMessage({
+      subject: 'Your order is out for delivery',
+      text: 'Your package RR000000005IL is with courier Aviad today.'
+    });
+    const update = buildStatusUpdateFromGmailMessage({ gmailMessage: msg });
+    expect(update).not.toBeNull();
+    expect(update.trackingNumber).toBe('RR000000005IL');
+    expect(update.status).toBe('out_for_delivery');
+    expect(update.lockerPin).toBeUndefined();
+  });
+
+  it('returns null when tracking number is absent or unverified', () => {
+    const msg = makeGmailMessage({
+      subject: 'No tracking here',
+      text: 'Hello, your receipt is attached.'
+    });
+    expect(buildStatusUpdateFromGmailMessage({ gmailMessage: msg })).toBeNull();
+  });
+});
+
 describe('buildOrderStatusUpdateFromGmailMessage', () => {
   it('extracts a store + status update from a follow-up order-status email', () => {
     const msg = makeGmailMessage({
@@ -250,4 +287,192 @@ describe('buildPackageFromGmailMessageWithAiFallback', () => {
     });
     expect(pkg).toBeNull();
   });
+
+  it('bypasses AI fallback when Schema.org JSON-LD in HTML yields a verified candidate', async () => {
+    const htmlContent = `
+      <script type="application/ld+json">
+      {
+        "@context": "http://schema.org",
+        "@type": "ParcelDelivery",
+        "trackingNumber": "1Z9999999999999999",
+        "carrier": "UPS"
+      }
+      </script>
+    `;
+    const msg = {
+      id: 'msg-schema-ai',
+      payload: {
+        headers: [{ name: 'Subject', value: 'Order dispatched' }],
+        parts: [
+          { mimeType: 'text/html', body: { data: Buffer.from(htmlContent, 'utf8').toString('base64url') } }
+        ]
+      }
+    };
+
+    let aiCalled = false;
+    const pkg = await buildPackageFromGmailMessageWithAiFallback({
+      gmailMessage: msg,
+      userId: 'user-1',
+      existingTrackingNumbers: new Set(),
+      ai: {
+        db: createFakeDb(),
+        apiKey: 'test-key',
+        parseFn: async () => {
+          aiCalled = true;
+          return { confidence: 'none' };
+        }
+      }
+    });
+
+    expect(aiCalled).toBe(false);
+    expect(pkg).not.toBeNull();
+    expect(pkg.trackingNumber).toBe('1Z9999999999999999');
+    expect(pkg.carrier).toBe('ups');
+    expect(pkg.source).toBe('gmail_sync');
+  });
+
+  it('builds package from multipart Gmail message with plain preview and Schema.org HTML', () => {
+    const plainText = 'Order confirmation: please check details online.';
+    const htmlContent = `
+      <div>
+        <script type="application/ld+json">
+        {
+          "@context": "http://schema.org",
+          "@type": "ParcelDelivery",
+          "trackingNumber": "1Z9999999999999999",
+          "carrier": "UPS",
+          "itemShipped": { "name": "4K Gaming Monitor" },
+          "partOfOrder": { "merchant": "Amazon" },
+          "deliveryStatus": "http://schema.org/InTransit"
+        }
+        </script>
+      </div>
+    `;
+
+    const msg = {
+      id: 'msg-multipart-1',
+      payload: {
+        headers: [
+          { name: 'Subject', value: 'Your order has shipped!' },
+          { name: 'From', value: 'ship-confirm@amazon.com' }
+        ],
+        parts: [
+          {
+            mimeType: 'text/plain',
+            body: { data: Buffer.from(plainText, 'utf8').toString('base64url') }
+          },
+          {
+            mimeType: 'text/html',
+            body: { data: Buffer.from(htmlContent, 'utf8').toString('base64url') }
+          }
+        ]
+      }
+    };
+
+    const pkg = buildPackageFromGmailMessage({
+      gmailMessage: msg,
+      userId: 'user-multi',
+      existingTrackingNumbers: new Set()
+    });
+
+    expect(pkg).not.toBeNull();
+    expect(pkg.trackingNumber).toBe('1Z9999999999999999');
+    expect(pkg.carrier).toBe('ups');
+    expect(pkg.title).toBe('4K Gaming Monitor');
+    expect(pkg.status).toBe('in_transit');
+  });
+
+  it('builds package with pickup location, hours, phone, and redirect details', () => {
+    const msg = makeGmailMessage({
+      subject: 'חבילתך הועברה לנקודת איסוף חלופית',
+      text: 'בשל עומס בלוקר סנטר, חבילתך RR000000005IL הועברה לנקודת איסוף מכולת השכונה. קוד איסוף: 1234. שעות פעילות: א-ה 08:00-20:00. טלפון: 03-5554321.'
+    });
+
+    const pkg = buildPackageFromGmailMessage({
+      gmailMessage: msg,
+      userId: 'user-pickup',
+      existingTrackingNumbers: new Set()
+    });
+
+    expect(pkg).not.toBeNull();
+    expect(pkg.trackingNumber).toBe('RR000000005IL');
+    expect(pkg.pickupLocation).toBe('מכולת השכונה');
+    expect(pkg.lockerPin).toBe('1234');
+    expect(pkg.pickupHours).toBe('א-ה 08:00-20:00');
+    expect(pkg.pickupPhone).toBe('03-5554321');
+    expect(pkg.isRedirected).toBe(true);
+    expect(pkg.originalPickupLocation).toBe('סנטר');
+    expect(pkg.redirectReason).toBe('locker_capacity');
+  });
+
+  it('builds status update with pickup location, hours, phone, and redirect details', () => {
+    const msg = makeGmailMessage({
+      subject: 'עדכון: חבילתך הועברה לנקודת איסוף',
+      text: 'בשל עומס בלוקר עזריאלי, חבילתך RR000000005IL הועברה לנקודת איסוף סופר פארם השלום. שעות פתיחה: 08:00-22:00. טלפון: 054-1234567.'
+    });
+
+    const update = buildStatusUpdateFromGmailMessage({ gmailMessage: msg });
+    expect(update).not.toBeNull();
+    expect(update.trackingNumber).toBe('RR000000005IL');
+    expect(update.pickupLocation).toBe('סופר פארם השלום');
+    expect(update.pickupHours).toBe('08:00-22:00');
+    expect(update.pickupPhone).toBe('054-1234567');
+    expect(update.isRedirected).toBe(true);
+    expect(update.originalPickupLocation).toBe('עזריאלי');
+  });
+
+  it('buildPackagesFromGmailMessage disaggregates email with multiple parcels', () => {
+    const msg = makeGmailMessage({
+      id: 'order-multi-123',
+      subject: 'Your Amazon order has shipped in 2 packages',
+      text: 'Package 1 tracking: 1Z9999999999999999\nPackage 2 tracking: RR000000005IL',
+      from: 'ship-confirm@amazon.com'
+    });
+
+    const pkgs = buildPackagesFromGmailMessage({
+      gmailMessage: msg,
+      userId: 'user-multi',
+      existingTrackingNumbers: new Set()
+    });
+
+    expect(pkgs).toHaveLength(2);
+    expect(pkgs[0].id).toBe('pkg-gmail-order-multi-123-1');
+    expect(pkgs[0].trackingNumber).toBe('1Z9999999999999999');
+    expect(pkgs[0].carrier).toBe('ups');
+
+    expect(pkgs[1].id).toBe('pkg-gmail-order-multi-123-2');
+    expect(pkgs[1].trackingNumber).toBe('RR000000005IL');
+    expect(pkgs[1].carrier).toBe('israel-post');
+  });
+
+  it('buildPackagesFromGmailMessageWithAiFallback handles multi-parcel email without invoking AI', async () => {
+    const msg = makeGmailMessage({
+      id: 'order-multi-456',
+      subject: 'Your Amazon order has shipped in 2 packages',
+      text: 'Package 1 tracking: 1Z9999999999999999\nPackage 2 tracking: RR000000005IL',
+      from: 'ship-confirm@amazon.com'
+    });
+
+    let aiCalled = false;
+    const pkgs = await buildPackagesFromGmailMessageWithAiFallback({
+      gmailMessage: msg,
+      userId: 'user-multi',
+      existingTrackingNumbers: new Set(),
+      ai: {
+        db: createFakeDb(),
+        apiKey: 'test-key',
+        parseFn: async () => {
+          aiCalled = true;
+          return { confidence: 'none' };
+        }
+      }
+    });
+
+    expect(aiCalled).toBe(false);
+    expect(pkgs).toHaveLength(2);
+    expect(pkgs[0].trackingNumber).toBe('1Z9999999999999999');
+    expect(pkgs[1].trackingNumber).toBe('RR000000005IL');
+  });
 });
+
+

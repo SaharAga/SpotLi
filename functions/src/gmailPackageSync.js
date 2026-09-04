@@ -7,11 +7,15 @@
 
 import {
   extractTrackingDetails,
+  extractAllTrackingDetails,
   sanitizeEmailHtml,
   inferDeliveryStatus,
-  extractOrderStatusDetails
+  extractOrderStatusDetails,
+  shouldAdvanceStatus
 } from './trackingExtraction.js';
 import { resolveUnverifiedCandidateWithAi } from './gmailAiFallback.js';
+
+export { shouldAdvanceStatus };
 
 /**
  * Rough "looks already delivered" heuristic for backfill — mirrors the
@@ -25,55 +29,84 @@ export function looksAlreadyDelivered(subject = '', body = '') {
   return (
     /\bdelivered\b/.test(text) ||
     /נמסרה בהצלחה/.test(text) ||
-    /package (was |has )?delivered/i.test(text)
+    /נמסר ליעד/.test(text) ||
+    /החבילה נמסרה/.test(text)
   );
 }
 
 /**
- * @param {Set<string>} existingTrackingNumbers Uppercased tracking numbers already saved for this user
- * @param {string|null} trackingNumber
+ * Helper to check duplicate tracking numbers (case-insensitive).
+ * @param {Set<string>} existingTrackingNumbers
+ * @param {string} candidate
  * @returns {boolean}
  */
-export function isDuplicateTrackingNumber(existingTrackingNumbers, trackingNumber) {
-  if (!trackingNumber) return false;
-  return existingTrackingNumbers.has(trackingNumber.toUpperCase());
+export function isDuplicateTrackingNumber(existingTrackingNumbers, candidate) {
+  if (!candidate || !existingTrackingNumbers) return false;
+  return existingTrackingNumbers.has(candidate.toUpperCase());
 }
 
 /**
- * Extracts the plain-text body from a Gmail API `messages.get` payload
- * (format: 'full'), preferring text/plain parts and falling back to
- * sanitized text/html.
- * @param {object} gmailMessage Gmail API Message resource
- * @returns {{ subject: string, body: string }}
+ * Extracts subject, plain text body, sender email, and optional raw HTML from a Gmail message resource.
+ * @param {object} message
+ * @returns {{ subject: string, body: string, from: string, html: string }}
  */
-export function extractSubjectAndBodyFromGmailMessage(gmailMessage) {
-  const headers = gmailMessage?.payload?.headers || [];
-  const subject = headers.find((h) => h.name?.toLowerCase() === 'subject')?.value || '';
-  const from = headers.find((h) => h.name?.toLowerCase() === 'from')?.value || '';
+export function extractSubjectAndBodyFromGmailMessage(message) {
+  if (!message || !message.payload) {
+    return { subject: '', body: '', from: '', html: '' };
+  }
 
-  const parts = [];
-  const walk = (part) => {
+  let subject = '';
+  let from = '';
+  const headers = message.payload.headers || [];
+  for (const h of headers) {
+    if (h.name && h.name.toLowerCase() === 'subject') {
+      subject = h.value || '';
+    }
+    if (h.name && h.name.toLowerCase() === 'from') {
+      from = h.value || '';
+    }
+  }
+
+  let bodyText = '';
+  let htmlText = '';
+
+  function traverseParts(part) {
     if (!part) return;
-    if (part.body?.data) parts.push({ mimeType: part.mimeType, data: part.body.data });
-    if (Array.isArray(part.parts)) part.parts.forEach(walk);
-  };
-  walk(gmailMessage?.payload);
 
-  const decode = (data) => Buffer.from(data, 'base64url').toString('utf8');
+    if (part.mimeType === 'text/plain' && part.body && part.body.data) {
+      try {
+        const decoded = Buffer.from(part.body.data, 'base64url').toString('utf8');
+        bodyText += `\n${decoded}`;
+      } catch (err) {
+        console.warn('[gmailPackageSync] Failed to decode text/plain part:', err.message);
+      }
+    } else if (part.mimeType === 'text/html' && part.body && part.body.data) {
+      try {
+        const decoded = Buffer.from(part.body.data, 'base64url').toString('utf8');
+        htmlText += `\n${decoded}`;
+      } catch (err) {
+        console.warn('[gmailPackageSync] Failed to decode text/html part:', err.message);
+      }
+    }
 
-  const plainPart = parts.find((p) => p.mimeType === 'text/plain');
-  if (plainPart) return { subject, from, body: decode(plainPart.data) };
+    if (Array.isArray(part.parts)) {
+      for (const p of part.parts) {
+        traverseParts(p);
+      }
+    }
+  }
 
-  const htmlPart = parts.find((p) => p.mimeType === 'text/html');
-  if (htmlPart) return { subject, from, body: sanitizeEmailHtml(decode(htmlPart.data)) };
+  traverseParts(message.payload);
 
-  return { subject, from, body: gmailMessage?.snippet || '' };
+  const cleanHtmlText = htmlText ? sanitizeEmailHtml(htmlText) : '';
+  const body = [bodyText, cleanHtmlText].filter(Boolean).join('\n\n').trim() || message?.snippet || '';
+
+  return { subject, body, from, html: htmlText };
 }
 
 /**
- * Builds a package record from a Gmail message, or returns null if no
- * tracking number was found, if it looks already delivered (backfill only),
- * or if it duplicates an existing tracking number.
+ * Builds package objects from a Gmail message, disaggregating multi-parcel shipments.
+ * When an email contains multiple distinct verified tracking numbers, returns one package per parcel.
  *
  * @param {{
  *   gmailMessage: object,
@@ -81,51 +114,61 @@ export function extractSubjectAndBodyFromGmailMessage(gmailMessage) {
  *   existingTrackingNumbers: Set<string>,
  *   skipDelivered?: boolean
  * }} params
- * @returns {object|null}
+ * @returns {Array<object>}
  */
-export function buildPackageFromGmailMessage({
+export function buildPackagesFromGmailMessage({
   gmailMessage,
   userId,
   existingTrackingNumbers,
   skipDelivered = false
 }) {
-  const { subject, body, from } = extractSubjectAndBodyFromGmailMessage(gmailMessage);
-  const { trackingNumber, carrier, title, store, status: detectionStatus } = extractTrackingDetails(subject, body, from);
-
+  const { subject, body, from, html } = extractSubjectAndBodyFromGmailMessage(gmailMessage);
+  const allExtracted = extractAllTrackingDetails(subject, body, from, { html });
   const nowIso = new Date().toISOString();
 
-  // Gmail sync runs without a confirmation screen, so never create a package
-  // from a merely probable/uncertain candidate.
-  if (trackingNumber && detectionStatus === 'verified') {
-    if (isDuplicateTrackingNumber(existingTrackingNumbers, trackingNumber)) return null;
-    if (skipDelivered && looksAlreadyDelivered(subject, body)) return null;
+  const verifiedPackages = allExtracted.filter((pkg) => pkg.trackingNumber && pkg.status === 'verified');
 
-    return {
-      id: `pkg-gmail-${gmailMessage.id || Date.now()}`,
-      userId,
-      title,
-      trackingNumber,
-      carrier,
-      status: inferDeliveryStatus(subject, body),
-      source: 'gmail_sync',
-      notes: store ? `${store} order` : (subject ? `From Gmail: ${subject.slice(0, 80)}` : ''),
-      createdAt: nowIso,
-      updatedAt: nowIso,
-      isArchived: false
-    };
+  if (verifiedPackages.length > 0) {
+    const packages = [];
+    for (let idx = 0; idx < verifiedPackages.length; idx += 1) {
+      const ext = verifiedPackages[idx];
+      if (isDuplicateTrackingNumber(existingTrackingNumbers, ext.trackingNumber)) continue;
+      if (skipDelivered && looksAlreadyDelivered(subject, body)) continue;
+
+      const pkgId = verifiedPackages.length > 1
+        ? `pkg-gmail-${gmailMessage.id || Date.now()}-${idx + 1}`
+        : `pkg-gmail-${gmailMessage.id || Date.now()}`;
+
+      packages.push({
+        id: pkgId,
+        userId,
+        title: ext.title,
+        trackingNumber: ext.trackingNumber,
+        carrier: ext.carrier,
+        status: ext.deliveryStatus || inferDeliveryStatus(subject, body),
+        source: 'gmail_sync',
+        notes: ext.store ? `${ext.store} order` : (subject ? `From Gmail: ${subject.slice(0, 80)}` : ''),
+        ...(ext.lockerPin ? { lockerPin: ext.lockerPin, pickupCode: ext.lockerPin } : {}),
+        ...(ext.pickupLocation ? { pickupLocation: ext.pickupLocation } : {}),
+        ...(ext.pickupHours ? { pickupHours: ext.pickupHours } : {}),
+        ...(ext.pickupPhone ? { pickupPhone: ext.pickupPhone } : {}),
+        ...(ext.isRedirected ? { isRedirected: ext.isRedirected } : {}),
+        ...(ext.originalPickupLocation ? { originalPickupLocation: ext.originalPickupLocation } : {}),
+        ...(ext.redirectReason ? { redirectReason: ext.redirectReason } : {}),
+        createdAt: nowIso,
+        updatedAt: nowIso,
+        isArchived: false
+      });
+    }
+    return packages;
   }
 
-  // No verifiable carrier tracking number (e.g. a marketplace order number
-  // like AliExpress's, which means nothing to any carrier) — fall back to a
-  // lower-confidence "order status" record built from the store + an
-  // explicit lifecycle phrase in the email, rather than creating nothing.
-  // Kept structurally distinct (no trackingNumber, its own `source` and
-  // `confidence`) so it never gets confused with a carrier-verified package.
+  // No verifiable carrier tracking number — fall back to order status record
   const orderStatus = extractOrderStatusDetails(subject, body, from);
-  if (!orderStatus) return null;
-  if (skipDelivered && looksAlreadyDelivered(subject, body)) return null;
+  if (!orderStatus) return [];
+  if (skipDelivered && looksAlreadyDelivered(subject, body)) return [];
 
-  return {
+  return [{
     id: `pkg-gmail-order-${gmailMessage.id || Date.now()}`,
     userId,
     title: orderStatus.title,
@@ -139,20 +182,28 @@ export function buildPackageFromGmailMessage({
     createdAt: nowIso,
     updatedAt: nowIso,
     isArchived: false
-  };
+  }];
 }
 
 /**
- * Same as buildPackageFromGmailMessage, but when the deterministic parser
- * only found a `probable`/`uncertain` candidate (not enough to create a
- * package unattended on its own), tries the Gemini fallback
- * (gmailAiFallback.js) to disambiguate before giving up on it — see that
- * module for why this can't hallucinate a package out of nothing. Falls
- * back to the exact same order-status / null behavior as the sync version
- * whenever AI is unavailable, capped, or declines.
+ * Builds a single package record from a Gmail message (for backwards compatibility).
+ * Returns the first discovered parcel, or null if none discovered.
  *
- * `ai` is optional — when omitted (e.g. GEMINI_API_KEY not configured),
- * this behaves identically to the synchronous version.
+ * @param {{
+ *   gmailMessage: object,
+ *   userId: string,
+ *   existingTrackingNumbers: Set<string>,
+ *   skipDelivered?: boolean
+ * }} params
+ * @returns {object|null}
+ */
+export function buildPackageFromGmailMessage(params) {
+  const pkgs = buildPackagesFromGmailMessage(params);
+  return pkgs.length > 0 ? pkgs[0] : null;
+}
+
+/**
+ * Disaggregates multi-parcel Gmail messages with AI fallback support for ambiguous single-parcel emails.
  *
  * @param {{
  *   gmailMessage: object,
@@ -161,22 +212,25 @@ export function buildPackageFromGmailMessage({
  *   skipDelivered?: boolean,
  *   ai?: { db: FirebaseFirestore.Firestore, apiKey: string, runBudget?: { used: number, max: number }, parseFn?: Function }
  * }} params
- * @returns {Promise<object|null>}
+ * @returns {Promise<Array<object>>}
  */
-export async function buildPackageFromGmailMessageWithAiFallback({
+export async function buildPackagesFromGmailMessageWithAiFallback({
   gmailMessage,
   userId,
   existingTrackingNumbers,
   skipDelivered = false,
   ai
 }) {
-  const { subject, body, from } = extractSubjectAndBodyFromGmailMessage(gmailMessage);
-  const extraction = extractTrackingDetails(subject, body, from);
+  const { subject, body, from, html } = extractSubjectAndBodyFromGmailMessage(gmailMessage);
+  const allExtracted = extractAllTrackingDetails(subject, body, from, { html });
+  const verifiedPackages = allExtracted.filter((pkg) => pkg.trackingNumber && pkg.status === 'verified');
 
-  if (extraction.status === 'verified' || !ai) {
-    return buildPackageFromGmailMessage({ gmailMessage, userId, existingTrackingNumbers, skipDelivered });
+  // If verified packages exist or no AI supplied, return deterministic packages
+  if (verifiedPackages.length > 0 || !ai) {
+    return buildPackagesFromGmailMessage({ gmailMessage, userId, existingTrackingNumbers, skipDelivered });
   }
 
+  const extraction = extractTrackingDetails(subject, body, from, { html });
   const aiResolved = await resolveUnverifiedCandidateWithAi({
     db: ai.db,
     apiKey: ai.apiKey,
@@ -190,15 +244,15 @@ export async function buildPackageFromGmailMessageWithAiFallback({
   });
 
   if (!aiResolved) {
-    return buildPackageFromGmailMessage({ gmailMessage, userId, existingTrackingNumbers, skipDelivered });
+    return buildPackagesFromGmailMessage({ gmailMessage, userId, existingTrackingNumbers, skipDelivered });
   }
 
   const trackingNumber = aiResolved.trackingNumber.toUpperCase();
-  if (isDuplicateTrackingNumber(existingTrackingNumbers, trackingNumber)) return null;
-  if (skipDelivered && looksAlreadyDelivered(subject, body)) return null;
+  if (isDuplicateTrackingNumber(existingTrackingNumbers, trackingNumber)) return [];
+  if (skipDelivered && looksAlreadyDelivered(subject, body)) return [];
 
   const nowIso = new Date().toISOString();
-  return {
+  return [{
     id: `pkg-gmail-ai-${gmailMessage.id || Date.now()}`,
     userId,
     title: aiResolved.title || extraction.title,
@@ -208,10 +262,27 @@ export async function buildPackageFromGmailMessageWithAiFallback({
     source: 'gmail_sync_ai',
     confidence: aiResolved.confidence,
     notes: subject ? `From Gmail: ${subject.slice(0, 80)}` : '',
+    ...(extraction.lockerPin ? { lockerPin: extraction.lockerPin, pickupCode: extraction.lockerPin } : {}),
+    ...(extraction.pickupLocation ? { pickupLocation: extraction.pickupLocation } : {}),
+    ...(extraction.pickupHours ? { pickupHours: extraction.pickupHours } : {}),
+    ...(extraction.pickupPhone ? { pickupPhone: extraction.pickupPhone } : {}),
+    ...(extraction.isRedirected ? { isRedirected: extraction.isRedirected } : {}),
+    ...(extraction.originalPickupLocation ? { originalPickupLocation: extraction.originalPickupLocation } : {}),
+    ...(extraction.redirectReason ? { redirectReason: extraction.redirectReason } : {}),
     createdAt: nowIso,
     updatedAt: nowIso,
     isArchived: false
-  };
+  }];
+}
+
+/**
+ * Builds a single package from Gmail with AI fallback (backwards-compatible wrapper).
+ * @param {object} params
+ * @returns {Promise<object|null>}
+ */
+export async function buildPackageFromGmailMessageWithAiFallback(params) {
+  const pkgs = await buildPackagesFromGmailMessageWithAiFallback(params);
+  return pkgs.length > 0 ? pkgs[0] : null;
 }
 
 /**
@@ -225,14 +296,32 @@ export async function buildPackageFromGmailMessageWithAiFallback({
  * @returns {{ trackingNumber: string, status: string } | null}
  */
 export function buildStatusUpdateFromGmailMessage({ gmailMessage }) {
-  const { subject, body, from } = extractSubjectAndBodyFromGmailMessage(gmailMessage);
-  const { trackingNumber, status: detectionStatus } = extractTrackingDetails(subject, body, from);
+  const { subject, body, from, html } = extractSubjectAndBodyFromGmailMessage(gmailMessage);
+  const {
+    trackingNumber,
+    status: detectionStatus,
+    lockerPin,
+    pickupLocation,
+    pickupHours,
+    pickupPhone,
+    isRedirected,
+    originalPickupLocation,
+    redirectReason,
+    deliveryStatus
+  } = extractTrackingDetails(subject, body, from, { html });
 
   if (!trackingNumber || detectionStatus !== 'verified') return null;
 
   return {
     trackingNumber: trackingNumber.toUpperCase(),
-    status: inferDeliveryStatus(subject, body)
+    status: deliveryStatus || inferDeliveryStatus(subject, body),
+    ...(lockerPin ? { lockerPin, pickupCode: lockerPin } : {}),
+    ...(pickupLocation ? { pickupLocation } : {}),
+    ...(pickupHours ? { pickupHours } : {}),
+    ...(pickupPhone ? { pickupPhone } : {}),
+    ...(isRedirected ? { isRedirected } : {}),
+    ...(originalPickupLocation ? { originalPickupLocation } : {}),
+    ...(redirectReason ? { redirectReason } : {})
   };
 }
 
@@ -251,8 +340,8 @@ export function buildStatusUpdateFromGmailMessage({ gmailMessage }) {
  * @returns {{ store: string, status: string, title: string } | null}
  */
 export function buildOrderStatusUpdateFromGmailMessage({ gmailMessage }) {
-  const { subject, body, from } = extractSubjectAndBodyFromGmailMessage(gmailMessage);
-  const { trackingNumber, status: detectionStatus } = extractTrackingDetails(subject, body, from);
+  const { subject, body, from, html } = extractSubjectAndBodyFromGmailMessage(gmailMessage);
+  const { trackingNumber, status: detectionStatus } = extractTrackingDetails(subject, body, from, { html });
   if (trackingNumber && detectionStatus === 'verified') return null;
 
   return extractOrderStatusDetails(subject, body, from);

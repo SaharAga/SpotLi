@@ -79,7 +79,8 @@ describe('parseWithGemini', () => {
       pickupLocation: '',
       origin: '',
       notes: '',
-      confidence: 'medium'
+      confidence: 'medium',
+      isGroundedCandidate: true
     });
   });
 
@@ -140,5 +141,141 @@ describe('parseWithGemini', () => {
     const result = await parseWithGemini({ mode: 'text-fallback', text: 'x', candidates }, 'key');
     expect(result).toMatchObject({ trackingNumber: '', confidence: 'none' });
     expect(generateContentMock).not.toHaveBeenCalled();
+  });
+
+  describe('image mode OCR & two-stage grounding', () => {
+    it('returns empty result when imageBase64 is empty or whitespace', async () => {
+      const result = await parseWithGemini({ mode: 'image', imageBase64: '   ' }, 'key');
+      expect(result).toMatchObject({ trackingNumber: '', confidence: 'none' });
+      expect(generateContentMock).not.toHaveBeenCalled();
+    });
+
+    it('parses an image screenshot and grounds valid carrier tracking and pickup details', async () => {
+      generateContentMock.mockResolvedValue({
+        text: JSON.stringify({
+          transcribedText: 'Israel Post Notice: Your parcel RR000000005IL is ready for pickup at Dizengoff Center Post Office Tel Aviv. Locker Code: 9876. Hours: 08:00-19:00',
+          trackingNumber: 'RR000000005IL',
+          carrier: 'israel-post',
+          title: 'Israel Post Package',
+          pickupLocation: 'Dizengoff Center Post Office',
+          confidence: 'high'
+        })
+      });
+
+      const result = await parseWithGemini({
+        mode: 'image',
+        imageBase64: 'data:image/jpeg;base64,QUJDREVGR0g='
+      }, 'key');
+
+      expect(result).toMatchObject({
+        trackingNumber: 'RR000000005IL',
+        carrier: 'israel-post',
+        title: 'Israel Post Package',
+        confidence: 'high',
+        isGroundedCandidate: true
+      });
+      expect(result.pickupLocation).toBeTruthy();
+    });
+
+    it('rejects hallucinated tracking numbers that fail checksum policy in image OCR', async () => {
+      generateContentMock.mockResolvedValue({
+        text: JSON.stringify({
+          transcribedText: 'Your order was delivered with tracking number RR000000001IL to front door',
+          trackingNumber: 'RR000000001IL', // Check digit for 00000000 is 5, not 1 — fails UPU S10!
+          carrier: 'israel-post',
+          confidence: 'high'
+        })
+      });
+
+      const result = await parseWithGemini({
+        mode: 'image',
+        imageBase64: 'QUJD'
+      }, 'key');
+
+      expect(result.trackingNumber).toBe('');
+      expect(result.confidence).toBe('none');
+      expect(result.isGroundedCandidate).toBe(false);
+    });
+
+    it('rejects tracking numbers not grounded in transcribed image text', async () => {
+      generateContentMock.mockResolvedValue({
+        text: JSON.stringify({
+          transcribedText: 'Payment receipt for your online purchase. Thank you!',
+          trackingNumber: 'RR000000005IL', // Valid checksum, but absent from transcribedText!
+          carrier: 'israel-post',
+          confidence: 'high'
+        })
+      });
+
+      const result = await parseWithGemini({
+        mode: 'image',
+        imageBase64: 'QUJD'
+      }, 'key');
+
+      expect(result.trackingNumber).toBe('');
+      expect(result.confidence).toBe('none');
+      expect(result.isGroundedCandidate).toBe(false);
+    });
+
+    it('falls back to deterministic candidate extraction from transcribedText when model tracking is blank', async () => {
+      generateContentMock.mockResolvedValue({
+        text: JSON.stringify({
+          transcribedText: 'Delivery confirmation: 1Z999AA10123456784 was handed to courier',
+          trackingNumber: '',
+          carrier: 'other',
+          confidence: 'medium'
+        })
+      });
+
+      const result = await parseWithGemini({
+        mode: 'image',
+        imageBase64: 'QUJD'
+      }, 'key');
+
+      expect(result.trackingNumber).toBe('1Z999AA10123456784');
+      expect(result.carrier).toBe('ups');
+      expect(result.isGroundedCandidate).toBe(true);
+    });
+
+    it('normalizes OCR tracking numbers containing spaces and hyphens', async () => {
+      generateContentMock.mockResolvedValue({
+        text: JSON.stringify({
+          transcribedText: 'Package label: RR 000 000 005 IL delivered to locker',
+          trackingNumber: 'RR 000 000 005 IL',
+          carrier: 'israel-post',
+          title: 'Israel Post Package',
+          confidence: 'high'
+        })
+      });
+
+      const result = await parseWithGemini({
+        mode: 'image',
+        imageBase64: 'QUJD'
+      }, 'key');
+
+      expect(result.trackingNumber).toBe('RR000000005IL');
+      expect(result.carrier).toBe('israel-post');
+      expect(result.isGroundedCandidate).toBe(true);
+    });
+
+    it('rejects candidate numbers with no recognized carrier even if extracted from text', async () => {
+      generateContentMock.mockResolvedValue({
+        text: JSON.stringify({
+          transcribedText: 'Your invoice order number is INV-998877665544',
+          trackingNumber: '',
+          carrier: 'other',
+          confidence: 'medium'
+        })
+      });
+
+      const result = await parseWithGemini({
+        mode: 'image',
+        imageBase64: 'QUJD'
+      }, 'key');
+
+      expect(result.trackingNumber).toBe('');
+      expect(result.confidence).toBe('none');
+      expect(result.isGroundedCandidate).toBe(false);
+    });
   });
 });

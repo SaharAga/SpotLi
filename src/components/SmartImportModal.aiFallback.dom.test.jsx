@@ -216,4 +216,48 @@ describe('SmartImportModal — AI fallback (rendered)', () => {
       expect.objectContaining({ mode: 'image', candidates: [] })
     );
   });
+
+  it('enables Add button and applies grounded screenshot package with pickup metadata', async () => {
+    parseWithAi.mockResolvedValue({
+      success: true,
+      data: {
+        trackingNumber: 'RR000000005IL',
+        carrier: 'israel-post',
+        title: 'Israel Post Package',
+        pickupLocation: 'Dizengoff Center',
+        lockerPin: '1234',
+        pickupHours: '08:00-19:00',
+        origin: 'Israel',
+        notes: 'Ready for pickup',
+        confidence: 'high',
+        isGroundedCandidate: true
+      }
+    });
+
+    const user = userEvent.setup();
+    const onParsedResult = vi.fn();
+    const onClose = vi.fn();
+    renderWithLanguage(<SmartImportModal isOpen onClose={onClose} onParsedResult={onParsedResult} />);
+
+    const file = new File([new Uint8Array([1, 2, 3, 4])], 'label.jpg', { type: 'image/jpeg' });
+    const input = document.querySelector('input[type="file"]');
+    await user.upload(input, file);
+
+    expect(await screen.findByText('RR000000005IL')).toBeInTheDocument();
+    expect(screen.getByText('Dizengoff Center')).toBeInTheDocument();
+
+    const addButton = screen.getByRole('button', { name: /add this package to tracker/i });
+    expect(addButton).toBeEnabled();
+    await user.click(addButton);
+
+    expect(onParsedResult).toHaveBeenCalledWith(expect.objectContaining({
+      trackingNumber: 'RR000000005IL',
+      carrierId: 'israel-post',
+      title: 'Israel Post Package',
+      pickupLocation: 'Dizengoff Center',
+      pickupCode: '1234',
+      pickupHours: '08:00-19:00'
+    }));
+    expect(onClose).toHaveBeenCalled();
+  });
 });

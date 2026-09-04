@@ -102,15 +102,19 @@ export function extractOpeningHours(text) {
   if (!text || typeof text !== 'string') return '';
 
   const patterns = [
-    /(?:שעות\s*פתיחה|שעות\s*פעילות|שעות\s*מסירה|שעות\s*קבלת\s*קהל|זמני\s*פתיחה|שעות)[\s:-]+([^\r\n,;]+(?:,[^\r\n,;]+)?)/i,
-    /(?:opening\s*hours|business\s*hours|hours\s*of\s*operation|hours)[\s:-]+([^\r\n,;]+(?:,[^\r\n,;]+)?)/i,
-    /\b(24\/7(?:\s*\([^)]+\))?|תמיד\s*פתוח|פתוח\s*24\s*שעות)\b/i
+    /\b(24\/7(?:\s*\([^)]+\))?|תמיד\s*פתוח|פתוח\s*24\s*שעות)\b/i,
+    /(?:שעות\s*פתיחה|שעות\s*פעילות|שעות\s*מסירה|שעות\s*קבלת\s*קהל|זמני\s*פתיחה)[\s:-]+([^\r\n,;.]+(?:,[^\r\n,;.]+)?)/i,
+    /(?:opening\s*hours|business\s*hours|hours\s*of\s*operation)[\s:-]+([^\r\n,;.]+(?:,[^\r\n,;.]+)?)/i,
+    /\bhours[\s:-]+([^\r\n,;.]+(?:,[^\r\n,;.]+)?)/i
   ];
 
   for (const pattern of patterns) {
     const match = pattern.exec(text);
-    if (match && match[1]) {
-      const cleaned = sanitizeString(match[1].trim(), 200);
+    if (match) {
+      const raw = match[1] || match[0];
+      let cleaned = sanitizeString(raw.trim(), 200);
+      cleaned = cleaned.replace(/(?:\s*[-–—|/.]?\s*(?:טלפון|טל|נייד|phone|tel|קוד|איסוף|כתובת|בירורים|לינק|דואר|http|https).*)$/i, '');
+      cleaned = cleaned.replace(/^['":\-–—.\s]+|['":\-–—.\s]+$/g, '');
       if (cleaned && cleaned.length >= 4 && !/^(?:http|https|www)$/i.test(cleaned)) {
         return cleaned;
       }
