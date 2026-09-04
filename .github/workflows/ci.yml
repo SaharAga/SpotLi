@@ -84,6 +84,58 @@ jobs:
 
           echo "OK — no shipped-code changes in this PR."
 
+  # Most PRs touch no Cloud Functions code, yet the functions lint/test job
+  # (7m) and the functions deploy (11m) ran in full on every one of them —
+  # together the largest single block of wasted CI time in this pipeline.
+  # Same story for `firestore.rules`, whose deploy step costs ~7m and only
+  # matters when the file actually changed.
+  #
+  # Both outputs FAIL OPEN: any situation where a real diff cannot be
+  # computed (first push, force-push, shallow fetch, an unexpected event)
+  # reports `true` and runs everything. A detection bug must never silently
+  # skip a deploy — the failure mode of running too much is a slow pipeline,
+  # the failure mode of running too little is functions or rules silently
+  # not shipping.
+  detect-changes:
+    name: Detect Changed Areas
+    runs-on: ubuntu-latest
+    outputs:
+      functions: ${{ steps.check.outputs.functions }}
+      rules: ${{ steps.check.outputs.rules }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: check
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          run_everything() {
+            echo "$1 — running every job."
+            echo "functions=true" >> "$GITHUB_OUTPUT"
+            echo "rules=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          }
+
+          if [ "$EVENT" = "pull_request" ]; then
+            git fetch origin "$BASE_REF" --depth=1 || run_everything "Could not fetch $BASE_REF"
+            CHANGED=$(git diff --name-only "origin/$BASE_REF...HEAD") || run_everything "diff against $BASE_REF failed"
+          elif [ -n "$BEFORE_SHA" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ] && git cat-file -e "$BEFORE_SHA" 2>/dev/null; then
+            CHANGED=$(git diff --name-only "$BEFORE_SHA" HEAD) || run_everything "diff against $BEFORE_SHA failed"
+          else
+            run_everything "No usable before-SHA (first push or force-push)"
+          fi
+
+          echo "Changed files:"
+          echo "$CHANGED"
+
+          echo "functions=$(echo "$CHANGED" | grep -qE '^functions/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "rules=$(echo "$CHANGED" | grep -qE '^firestore\.rules$' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
   # A release commit (produced by `npm run release`) only ever touches
   # package.json, CHANGELOG.md, and .changes/ — it carries no code the PR
   # that preceded it didn't already carry, and that PR already ran the full
@@ -142,7 +194,21 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
+      # `cache: 'npm'` above only caches the download tarballs in ~/.npm —
+      # `npm ci` still wipes and relinks node_modules from scratch every run,
+      # which measured 124-423s per job across this pipeline against 2-110s of
+      # actual work. Caching node_modules itself skips that entirely on a hit.
+      # The key pins OS and Node major alongside the lockfile hash, so a
+      # runner or engine change can never restore a tree built for another.
+      - name: Cache node_modules
+        id: node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node22-${{ hashFiles('package-lock.json') }}
+
       - name: Install Dependencies
+        if: steps.node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Run Linter
@@ -165,7 +231,21 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
+      # `cache: 'npm'` above only caches the download tarballs in ~/.npm —
+      # `npm ci` still wipes and relinks node_modules from scratch every run,
+      # which measured 124-423s per job across this pipeline against 2-110s of
+      # actual work. Caching node_modules itself skips that entirely on a hit.
+      # The key pins OS and Node major alongside the lockfile hash, so a
+      # runner or engine change can never restore a tree built for another.
+      - name: Cache node_modules
+        id: node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node22-${{ hashFiles('package-lock.json') }}
+
       - name: Install Dependencies
+        if: steps.node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Run Test Suite
@@ -174,10 +254,11 @@ jobs:
   functions:
     name: Cloud Functions Lint & Tests
     runs-on: ubuntu-latest
-    needs: [detect-release-only-commit]
+    needs: [detect-release-only-commit, detect-changes]
     if: |
       always() &&
-      (needs.detect-release-only-commit.result == 'skipped' || needs.detect-release-only-commit.outputs.release_only != 'true')
+      (needs.detect-release-only-commit.result == 'skipped' || needs.detect-release-only-commit.outputs.release_only != 'true') &&
+      needs.detect-changes.outputs.functions == 'true'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -192,7 +273,17 @@ jobs:
       # --legacy-peer-deps works around an npm 10 arborist crash resolving
       # vitest's optional peer graph (unrelated to this project's own deps);
       # revisit once npm ships a fix.
+      # Same reasoning as the root jobs — see "Cache node_modules" there.
+      # functions/ install measured 422-423s against 7s of lint+test.
+      - name: Cache functions node_modules
+        id: functions-node-modules
+        uses: actions/cache@v4
+        with:
+          path: functions/node_modules
+          key: functions-node-modules-${{ runner.os }}-node22-${{ hashFiles('functions/package-lock.json') }}
+
       - name: Install Dependencies
+        if: steps.functions-node-modules.outputs.cache-hit != 'true'
         working-directory: functions
         run: npm ci --legacy-peer-deps
 
@@ -225,7 +316,21 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
+      # `cache: 'npm'` above only caches the download tarballs in ~/.npm —
+      # `npm ci` still wipes and relinks node_modules from scratch every run,
+      # which measured 124-423s per job across this pipeline against 2-110s of
+      # actual work. Caching node_modules itself skips that entirely on a hit.
+      # The key pins OS and Node major alongside the lockfile hash, so a
+      # runner or engine change can never restore a tree built for another.
+      - name: Cache node_modules
+        id: node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node22-${{ hashFiles('package-lock.json') }}
+
       - name: Install Dependencies
+        if: steps.node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
       # Public Firebase client identifiers, supplied as repository variables so
@@ -309,7 +414,7 @@ jobs:
   deploy-firebase:
     name: Deploy to Firebase Hosting (production)
     runs-on: ubuntu-latest
-    needs: [build, detect-release]
+    needs: [build, detect-release, detect-changes]
     # Skips cleanly (instead of failing CI) until FIREBASE_SERVICE_ACCOUNT_DELIVEREE is added as a repo secret.
     # always() + an explicit build-result check: GitHub's implicit success()
     # walks the whole transitive dependency chain, not just direct needs —
@@ -331,6 +436,22 @@ jobs:
           name: dist
           path: dist
 
+      # These two steps exist purely for speed. Without them each
+      # `npx --yes firebase-tools@14` below re-downloaded the entire
+      # toolchain on a cold cache — 451s for the hosting deploy and a further
+      # 448s for the rules deploy, in the same job.
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Cache firebase-tools
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm/_npx
+          key: npx-firebase-tools-14-${{ runner.os }}
+
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
@@ -346,22 +467,34 @@ jobs:
         with:
           credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DELIVEREE }}'
 
+      # Skipped when firestore.rules is unchanged. Hosting deploys never touch
+      # Firestore rules, so this step has to exist — but redeploying an
+      # identical file cost ~7.5 minutes on every single merge. Note staging
+      # and production share ONE Firebase project, so rules pushed by the
+      # staging deploy at merge time are already live by the time a release
+      # reaches production; there is no second environment to sync.
+      # .github/workflows/health-check.yml verifies daily that the deployed
+      # rules still match the repo, which is the backstop if this is ever
+      # skipped when it should not have been.
       - name: Deploy Firestore rules
+        if: needs.detect-changes.outputs.rules == 'true'
         run: npx --yes firebase-tools@14 deploy --only firestore:rules --project deliveree-app-2a938 --non-interactive
 
   deploy-functions:
     name: Deploy Cloud Functions
     runs-on: ubuntu-latest
-    needs: [functions, detect-release-only-commit]
+    needs: [functions, detect-release-only-commit, detect-changes]
     # Cloud Functions have no staging/production split (one live function
     # set per Firebase project, unlike Hosting's channels) — deploy on every
-    # ordinary merge to main, same trigger as deploy-staging below, so a
-    # functions/ fix goes live as soon as it merges rather than waiting on
-    # the next version-bump release.
+    # ordinary merge to main that TOUCHES functions/, so a functions/ fix goes
+    # live as soon as it merges rather than waiting on the next version-bump
+    # release. A merge that touches no functions/ file would redeploy byte
+    # identical code, so it is skipped (see detect-changes).
     if: |
       always() && needs.functions.result == 'success' &&
       github.event_name == 'push' && github.ref == 'refs/heads/main' &&
       needs.detect-release-only-commit.outputs.release_only != 'true' &&
+      needs.detect-changes.outputs.functions == 'true' &&
       vars.FIREBASE_HOSTING_ENABLED == 'true'
     steps:
       - name: Checkout Code
@@ -374,7 +507,17 @@ jobs:
           cache: 'npm'
           cache-dependency-path: functions/package-lock.json
 
+      # Same reasoning as the root jobs — see "Cache node_modules" there.
+      # functions/ install measured 422-423s against 7s of lint+test.
+      - name: Cache functions node_modules
+        id: functions-node-modules
+        uses: actions/cache@v4
+        with:
+          path: functions/node_modules
+          key: functions-node-modules-${{ runner.os }}-node22-${{ hashFiles('functions/package-lock.json') }}
+
       - name: Install Dependencies
+        if: steps.functions-node-modules.outputs.cache-hit != 'true'
         working-directory: functions
         run: npm ci --legacy-peer-deps
 
@@ -396,7 +539,7 @@ jobs:
   deploy-staging:
     name: Deploy to Firebase Hosting (staging)
     runs-on: ubuntu-latest
-    needs: [build, detect-release-only-commit]
+    needs: [build, detect-release-only-commit, detect-changes]
     # Deploys on every ordinary merge to main, for pre-release visibility —
     # EXCEPT on a release-only commit, which carries no code the preceding
     # merge didn't already carry and deploy to staging; redeploying the same
@@ -421,6 +564,22 @@ jobs:
           name: dist
           path: dist
 
+      # These two steps exist purely for speed. Without them each
+      # `npx --yes firebase-tools@14` below re-downloaded the entire
+      # toolchain on a cold cache — 451s for the hosting deploy and a further
+      # 448s for the rules deploy, in the same job.
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Cache firebase-tools
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm/_npx
+          key: npx-firebase-tools-14-${{ runner.os }}
+
       - name: Deploy to Firebase Hosting (staging channel)
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
@@ -434,6 +593,16 @@ jobs:
         with:
           credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_DELIVEREE }}'
 
+      # Skipped when firestore.rules is unchanged. Hosting deploys never touch
+      # Firestore rules, so this step has to exist — but redeploying an
+      # identical file cost ~7.5 minutes on every single merge. Note staging
+      # and production share ONE Firebase project, so rules pushed by the
+      # staging deploy at merge time are already live by the time a release
+      # reaches production; there is no second environment to sync.
+      # .github/workflows/health-check.yml verifies daily that the deployed
+      # rules still match the repo, which is the backstop if this is ever
+      # skipped when it should not have been.
       - name: Deploy Firestore rules
+        if: needs.detect-changes.outputs.rules == 'true'
         run: npx --yes firebase-tools@14 deploy --only firestore:rules --project deliveree-app-2a938 --non-interactive
 
