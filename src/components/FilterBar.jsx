@@ -66,7 +66,7 @@ export function FilterBar({
   // The three chips carry their own counts. Everything finer stays in the panel.
   const chips = [
     { id: 'all', label: t('chips.all'), count: tabCounts.all ?? 0 },
-    { id: 'active', label: t('chips.active'), count: tabCounts.active ?? 0 },
+    { id: 'transit', label: t('stats.inTransit'), count: tabCounts.transit ?? 0 },
     { id: 'customs', label: t('chips.customs'), count: tabCounts.customs ?? 0 },
     { id: 'delivered', label: t('chips.done'), count: tabCounts.delivered ?? 0 }
   ];
@@ -152,12 +152,10 @@ export function FilterBar({
 
       {filtersOpen && (
         <>
-          <div className="fixed inset-0 z-30" onClick={() => setFiltersOpen(false)} />
+          <div className="fixed inset-0 z-[65]" onClick={() => setFiltersOpen(false)} />
           <div
             ref={panelRef}
-            className={`absolute z-40 top-full mt-2 w-72 max-w-[calc(100vw-2rem)] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-4 space-y-3.5 ${
-              isRTL ? 'left-0' : 'right-0'
-            }`}
+            className="absolute z-[70] top-full mt-2 w-72 max-w-[calc(100vw-2rem)] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-4 space-y-3.5 end-0"
           >
             {onRefreshAll && (
               <button

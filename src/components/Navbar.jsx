@@ -237,7 +237,8 @@ export function Navbar({
               </h3>
               <button
                 onClick={() => setIsAddActionSheetOpen(false)}
-                className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white min-h-[48px] min-w-[48px] flex items-center justify-center"
+                className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer"
+                aria-label={language === 'he' ? 'סגור' : 'Close'}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -330,15 +331,19 @@ export function Navbar({
 
       {/* Mobile bottom tab bar. Lives here rather than in App because this
           component already owns the drawer and the add sheet the bar opens;
-          wiring it from App would mean lifting both into App state. */}
-      <BottomNav
-        activeTab={isAccountSheetOpen ? 'account' : (TAB_FOR_MODAL[activeModal] || 'status')}
-        onOpenStatus={switchTab(null)}
-        onOpenInsights={switchTab(MODAL_IDS.ANALYTICS)}
-        onOpenAdd={() => setIsAddActionSheetOpen(true)}
-        onOpenActivity={switchTab(MODAL_IDS.ACTIVITY)}
-        onOpenAccount={switchTab(null, () => setIsAccountSheetOpen(true))}
-      />
+          wiring it from App would mean lifting both into App state.
+          Hidden whenever a drill-down modal is open (detail, addEdit, smartImport, etc.)
+          or when the add action sheet is open, giving the sub-modal full-screen height. */}
+      {(!activeModal || activeModal === MODAL_IDS.ANALYTICS || activeModal === MODAL_IDS.ACTIVITY || activeModal === 'account' || isAccountSheetOpen) && !isAddActionSheetOpen && (
+        <BottomNav
+          activeTab={isAccountSheetOpen ? 'account' : (TAB_FOR_MODAL[activeModal] || 'status')}
+          onOpenStatus={switchTab(null)}
+          onOpenInsights={switchTab(MODAL_IDS.ANALYTICS)}
+          onOpenAdd={() => setIsAddActionSheetOpen(true)}
+          onOpenActivity={switchTab(MODAL_IDS.ACTIVITY)}
+          onOpenAccount={switchTab(null, () => setIsAccountSheetOpen(true))}
+        />
+      )}
     </>
   );
 }

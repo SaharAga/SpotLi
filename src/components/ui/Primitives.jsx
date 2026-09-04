@@ -309,7 +309,7 @@ export function SettingRow({ icon: Icon, label, value, hint, onClick, control, t
 /** The switch a SettingRow carries when it owns its value in place. */
 export function Toggle({ checked, onChange, disabled, label }) {
   return (
-    <label className="relative inline-flex items-center cursor-pointer shrink-0">
+    <label className="relative inline-flex items-center justify-center cursor-pointer shrink-0 min-h-[48px] min-w-[48px]">
       <input
         type="checkbox"
         checked={checked}

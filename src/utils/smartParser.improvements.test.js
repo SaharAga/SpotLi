@@ -2,10 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { parseSmartText, extractUrlsAndTrackings, extractTrackingCandidates } from './smartParser';
 import { detectCarrier, isPhoneNumber } from './carrierDetector';
 import { evaluateCandidateRules } from './candidateScorer';
+import { toLocalISODate } from './dateUtils';
 
 describe('Smart Import Detection & Date Fixes (#134, #135)', () => {
   it('extracts "today" delivery status and expectedDeliveryDate (#135)', () => {
-    const todayISO = new Date().toISOString().slice(0, 10);
+    const todayISO = toLocalISODate();
     const parsed = parseSmartText('החבילה תסופק היום עם שליח של בר הפצה');
 
     expect(parsed.status).toBe('out_for_delivery');

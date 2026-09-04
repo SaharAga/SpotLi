@@ -85,7 +85,7 @@ export function InstallPwaBanner() {
   return (
     <>
       <div 
-        className={`fixed bottom-[calc(6rem+env(safe-area-inset-bottom,0px))] lg:bottom-4 inset-x-4 md:start-auto md:end-4 md:w-96 z-40 bg-gradient-to-r from-blue-900/90 to-indigo-900/90 backdrop-blur-md border border-blue-500/30 rounded-2xl p-4 shadow-2xl shadow-blue-950/60 transition-all duration-300 animate-in fade-in slide-in-from-bottom-5 ${
+        className={`sticky top-16 z-30 mx-4 my-2 md:mx-auto md:max-w-xl bg-gradient-to-r from-blue-900/90 to-indigo-900/90 backdrop-blur-md border border-blue-500/30 rounded-2xl p-4 shadow-xl shadow-blue-950/40 transition-all duration-300 animate-in fade-in slide-in-from-top-2 ${
           isRTL ? 'text-right' : 'text-left'
         }`}
       >
