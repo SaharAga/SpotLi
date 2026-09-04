@@ -69,7 +69,7 @@ export function FilterBar({
   // behind one "Filters" button beside it, opening a small panel rather
   // than ever wrapping or horizontally scrolling the bar itself.
   return (
-    <div className="relative flex items-center gap-2 bg-slate-900 p-2.5 sm:p-3 rounded-2xl border border-slate-800 mb-6 shadow-sm">
+    <div data-testid="filter-bar" className="relative flex items-center gap-2 bg-slate-900 p-2.5 sm:p-3 rounded-2xl border border-slate-800 mb-6 shadow-sm">
       <div className="relative flex-1 min-w-0">
         <Search className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 ${isRTL ? 'right-3' : 'left-3'}`} />
         <input

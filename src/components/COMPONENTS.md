@@ -15,9 +15,17 @@ discards in-progress form state.
 
 ## Shell / always-mounted
 
-- **`Navbar`** — top bar: search, add/import/connect actions, language & theme toggles, opens
-  `SideNavDrawer` on mobile.
-- **`SideNavDrawer`** — mobile slide-out nav, mounted by `Navbar`.
+- **`Navbar`** — app chrome: the top bar plus the two nav surfaces it owns (`SideNavDrawer`,
+  `BottomNav`) and the add action sheet. Its hamburger and header "+" are `hidden lg:flex` —
+  on a phone both jobs belong to `BottomNav`. The header hairline and app mark read the
+  ambient `--chrome-*` tokens (see below).
+- **`BottomNav`** — mobile (`lg:hidden`) fixed tab bar: Status / Insights / **+** / Lockers /
+  Account, with the add FAB in the centre. Carries only destinations you return to; the other
+  nine drawer entries stay in `SideNavDrawer`, now opened from its Account tab. Plain flex row
+  with no physical direction classes, so RTL mirrors for free. Mounted by `Navbar` because
+  `Navbar` already owns the drawer and action sheet its tabs open.
+- **`SideNavDrawer`** — slide-out nav. Opened by the `Navbar` hamburger on desktop and by
+  `BottomNav`'s Account tab on mobile.
 - **`StatsCards`** — KPI row above the package list. Single-pass O(N) aggregation into 4 tiles
   (total, transit — collapses `in_transit`/`out_for_delivery`, attention — collapses
   `customs`/`exception`, delivered); finer-grained status still shows per-package elsewhere.

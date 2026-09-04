@@ -122,8 +122,18 @@ accidentally committed secrets (`scripts/pre_commit_secrets_check.js`). Don't by
 - This is a client-only PWA with no backend beyond Firebase/Cloud Functions — don't introduce
   ASVS-L2/L3-style backend-auth patterns unless a real backend is actually added.
 - Bilingual RTL(Hebrew)/LTR(English) UI: use CSS logical properties, not left/right-specific
-  ones, so layout mirrors correctly between the two.
-- Mobile touch targets must stay ≥ 48×48px.
+  ones, so layout mirrors correctly between the two. First-run language is detected from
+  `navigator.languages` (`detectSystemLanguage` in `LanguageContext.jsx`), mirroring how theme
+  honours `prefers-color-scheme`; an explicit toggle pins it. Tests must therefore pin a
+  language rather than relying on a default — use `renderWithLanguage`.
+- Mobile touch targets must stay ≥ 48×48px (`.min-h-touch`).
+- **Ambient chrome**: `deriveMood` (`src/utils/ambientMood.js`) turns the package list into one
+  of `calm | today | stuck`; `App` puts it on `data-mood` and the `[data-mood]` blocks in
+  `index.css` set `--chrome-line` / `--chrome-wash` / `--chrome-mark`. Exactly four surfaces
+  read those (header wash, header hairline, app mark, bottom-nav hairline). Keep it at four —
+  a fifth means it has stopped being ambient. Its counterpart rule: no infinite `animate-*`
+  loops in the always-on UI. Three were removed when this landed, and re-adding one puts a
+  second thing back in competition with the mood signal.
 - `functions/src/config.js` pins the Gemini model ID — it's reviewed periodically against
   Google's current model list, not left to silently rot when a model is retired.
 

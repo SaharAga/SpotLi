@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { screen, cleanup } from '@testing-library/react';
+import { screen, cleanup, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DashboardContent } from './App';
 import { renderWithLanguage } from './test-utils/renderWithProviders';
@@ -65,7 +65,10 @@ describe('App sortBy persistence (#133)', () => {
     localStorage.setItem(STORAGE_KEYS.SORT_BY, 'expected');
     renderWithLanguage(<DashboardContent />);
 
-    const filterButton = screen.getByRole('button', { name: /סטטוס|Status/i });
+    // Scoped to the filter bar: the bottom tab bar also has a "Status"
+    // destination, so an unscoped role query now matches two buttons.
+    const filterButton = within(screen.getByTestId('filter-bar'))
+      .getByRole('button', { name: /סטטוס|Status/i });
     await userEvent.click(filterButton);
 
     const sortSelects = screen.getAllByRole('combobox');
@@ -76,7 +79,10 @@ describe('App sortBy persistence (#133)', () => {
   it('persists updated sortBy preference to localStorage when changed', async () => {
     renderWithLanguage(<DashboardContent />);
 
-    const filterButton = screen.getByRole('button', { name: /סטטוס|Status/i });
+    // Scoped to the filter bar: the bottom tab bar also has a "Status"
+    // destination, so an unscoped role query now matches two buttons.
+    const filterButton = within(screen.getByTestId('filter-bar'))
+      .getByRole('button', { name: /סטטוס|Status/i });
     await userEvent.click(filterButton);
 
     const sortSelects = screen.getAllByRole('combobox');

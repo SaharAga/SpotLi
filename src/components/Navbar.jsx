@@ -6,6 +6,7 @@ import {
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { SideNavDrawer } from './SideNavDrawer';
+import { BottomNav } from './BottomNav';
 import { APP_VERSION } from '../constants/version';
 
 export function Navbar({
@@ -38,13 +39,16 @@ export function Navbar({
 
   return (
     <>
-    <header className="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-2xl transition-all duration-300 pt-[env(safe-area-inset-top,0px)]">
+    <header className="sticky top-0 z-40 w-full border-b border-[color:var(--chrome-line)] bg-slate-950/90 backdrop-blur-2xl transition-colors duration-500 pt-[env(safe-area-inset-top,0px)]">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2">
         {/* Leading edge: menu + brand together, the way Gmail/WhatsApp anchor their drawer trigger */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <button
             onClick={() => setIsSideDrawerOpen(true)}
-            className="shrink-0 p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+            /* Desktop only. On a phone the top-left corner is the worst
+               reach for a thumb, so the drawer is opened from the bottom
+               bar's Account tab instead. */
+            className="shrink-0 hidden lg:flex p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] items-center justify-center"
             aria-label="Open Navigation Menu"
             title={language === 'he' ? 'תפריט' : 'Menu'}
           >
@@ -53,8 +57,8 @@ export function Navbar({
 
           <div className="flex items-center gap-2.5 min-w-0">
           <div className="relative group shrink-0">
-            <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 opacity-70 blur-sm group-hover:opacity-100 transition duration-500 animate-pulse-subtle" />
-            <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-900 border border-slate-700/80 flex items-center justify-center text-blue-400 shadow-md">
+            <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 opacity-70 blur-sm group-hover:opacity-100 transition duration-500" />
+            <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-900 border border-slate-700/80 flex items-center justify-center text-[color:var(--chrome-mark)] transition-colors duration-500 shadow-md">
               <Package className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:scale-110" />
             </div>
           </div>
@@ -178,7 +182,7 @@ export function Navbar({
             /* Primary Mobile Smart '+' Action Trigger */
             <button
               onClick={() => setIsAddActionSheetOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-500/25 cursor-pointer min-h-[48px]"
+              className="hidden lg:flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-500/25 cursor-pointer min-h-[48px]"
               title={language === 'he' ? 'הוספת חבילה / הדבקה מהירה' : 'Add Shipment / Quick Paste'}
             >
               <Plus className="w-4 h-4 stroke-[3]" />
@@ -272,6 +276,17 @@ export function Navbar({
         onImportData={onImportData}
         onResetData={onResetData}
         onShowToast={onShowToast}
+      />
+
+      {/* Mobile bottom tab bar. Lives here rather than in App because this
+          component already owns the drawer and the add sheet the bar opens;
+          wiring it from App would mean lifting both into App state. */}
+      <BottomNav
+        onOpenStatus={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        onOpenInsights={onOpenAnalytics}
+        onOpenAdd={() => setIsAddActionSheetOpen(true)}
+        onOpenLockers={onOpenLockerMap}
+        onOpenAccount={() => setIsSideDrawerOpen(true)}
       />
     </>
   );

@@ -3,9 +3,13 @@ import { render } from '@testing-library/react';
 import { LanguageProvider } from '../context/LanguageContext';
 
 /**
- * Renders a component wrapped in LanguageProvider, forced to English so
- * assertions can match on stable translation strings instead of Hebrew
- * (the default language when no `deliveree_lang` is in localStorage).
+ * Renders a component wrapped in LanguageProvider, pinned to a language so
+ * assertions match stable translation strings.
+ *
+ * Pinning matters more than it used to: with no stored `deliveree_lang`,
+ * LanguageProvider now detects from `navigator.languages` rather than always
+ * falling back to Hebrew, so an unpinned test would assert against whatever
+ * locale the machine (or jsdom) happens to report.
  */
 export function renderWithLanguage(ui, { language = 'en' } = {}) {
   try {

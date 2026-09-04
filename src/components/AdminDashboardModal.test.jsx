@@ -58,6 +58,9 @@ vi.mock('../services/parseCorrectionService', async () => {
 
 describe('AdminDashboardModal Component Tests', () => {
   const renderDashboard = (props = {}) => {
+    // Pinned: this suite's assertions were written against the Hebrew UI, and
+    // LanguageProvider now detects from navigator instead of defaulting to it.
+    localStorage.setItem('deliveree_lang', 'he');
     return render(
       <AuthProvider>
         <LanguageProvider>

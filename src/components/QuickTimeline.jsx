@@ -31,8 +31,8 @@ export function QuickTimeline({ currentStatus }) {
             circleBg = 'bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-500/20';
           } else if (isCurrent) {
             circleBg = stage.id === 'delivered'
-              ? 'bg-emerald-500 border-emerald-400 text-white ring-4 ring-emerald-500/20 animate-pulse-subtle'
-              : 'bg-blue-500 border-blue-400 text-white ring-4 ring-blue-500/20 animate-pulse-subtle';
+              ? 'bg-emerald-500 border-emerald-400 text-white ring-4 ring-emerald-500/20'
+              : 'bg-blue-500 border-blue-400 text-white ring-4 ring-blue-500/20';
           }
 
           return (

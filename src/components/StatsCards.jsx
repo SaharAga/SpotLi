@@ -99,11 +99,12 @@ function StatsCardsImpl({ packages = [], activeFilter, onSelectFilter }) {
               <span className="text-xl sm:text-3xl font-semibold text-slate-100 tracking-tight [font-variant-numeric:tabular-nums]">
                 {item.count}
               </span>
+              {/* A static dot, not a pulsing one. The ambient mood chrome
+                  (index.css [data-mood]) now signals "something needs you"
+                  across the whole surface, so this tile no longer has to
+                  animate forever to be noticed. */}
               {item.id === 'customs' && item.count > 0 && (
-                <span className="flex h-2 w-2 sm:h-2.5 sm:w-2.5 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-amber-500"></span>
-                </span>
+                <span className="inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-amber-500" aria-hidden="true"></span>
               )}
             </div>
           </button>

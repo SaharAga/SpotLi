@@ -3,13 +3,53 @@ import { translations } from '../i18n/translations';
 
 const LanguageContext = createContext();
 
+/**
+ * First-run language, from the browser/OS rather than a hardcoded default.
+ *
+ * This used to be `localStorage.getItem(...) || 'he'`, which meant an English
+ * speaker's first visit was Hebrew RTL regardless of their system settings —
+ * inconsistent with ThemeContext, which has always honoured
+ * `prefers-color-scheme`.
+ *
+ * Unlike theme there is no stored `'system'` value that keeps tracking the OS:
+ * the stored preference stays a concrete 'he' | 'en'. Detection decides the
+ * FIRST run only, and any explicit toggle pins it from then on. That is the
+ * right trade for language — people change OS colour scheme on a daily
+ * schedule, but almost never change OS language mid-session, and silently
+ * flipping a reading direction under someone would be far more disruptive
+ * than flipping a palette.
+ *
+ * Matches Hebrew via the `he` primary subtag (plus the legacy `iw` code some
+ * platforms still emit), so `he`, `he-IL` and `iw-IL` all resolve to Hebrew.
+ */
+export function detectSystemLanguage() {
+  if (typeof navigator === 'undefined') return 'he';
+
+  const candidates = Array.isArray(navigator.languages) && navigator.languages.length > 0
+    ? navigator.languages
+    : [navigator.language];
+
+  for (const tag of candidates) {
+    if (typeof tag !== 'string') continue;
+    const primary = tag.toLowerCase().split('-')[0];
+    if (primary === 'he' || primary === 'iw') return 'he';
+    if (primary === 'en') return 'en';
+  }
+
+  // Neither Hebrew nor English: Hebrew stays the fallback — this is an
+  // Israel-first product, and its carrier coverage is Israeli.
+  return 'he';
+}
+
 export function LanguageProvider({ children }) {
   const [language, setLanguage] = useState(() => {
     try {
-      return localStorage.getItem('deliveree_lang') || 'he';
+      const stored = localStorage.getItem('deliveree_lang');
+      if (stored === 'he' || stored === 'en') return stored;
     } catch {
-      return 'he';
+      // Private mode — fall through to detection.
     }
+    return detectSystemLanguage();
   });
 
   const isRTL = language === 'he';
