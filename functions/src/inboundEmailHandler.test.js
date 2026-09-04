@@ -90,9 +90,37 @@ describe('inboundEmailHandler Unit Tests', () => {
   });
 
   describe('createInboundEmailHandler', () => {
+    const TEST_TOKEN = 'test-token-123';
+
+    it('rejects with 401 Unauthorized when webhookToken is missing or unset (fails closed)', async () => {
+      const handlerNoToken = createInboundEmailHandler({ db: null });
+      const req = {
+        method: 'POST',
+        query: { token: 'any-token' },
+        body: { to: 'usr_user123@in.deliveree.app' }
+      };
+      const res = {
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn()
+      };
+
+      await handlerNoToken(req, res);
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Unauthorized' });
+
+      const handlerEmptyToken = createInboundEmailHandler({ db: null, webhookToken: '' });
+      const resEmpty = {
+        status: vi.fn().mockReturnThis(),
+        json: vi.fn()
+      };
+      await handlerEmptyToken(req, resEmpty);
+      expect(resEmpty.status).toHaveBeenCalledWith(401);
+      expect(resEmpty.json).toHaveBeenCalledWith({ error: 'Unauthorized' });
+    });
+
     it('rejects non-POST requests with 405', async () => {
-      const handler = createInboundEmailHandler({ db: null });
-      const req = { method: 'GET' };
+      const handler = createInboundEmailHandler({ db: null, webhookToken: TEST_TOKEN });
+      const req = { method: 'GET', query: { token: TEST_TOKEN } };
       const res = {
         status: vi.fn().mockReturnThis(),
         json: vi.fn()
@@ -103,9 +131,10 @@ describe('inboundEmailHandler Unit Tests', () => {
     });
 
     it('rejects missing or invalid user recipient with 400', async () => {
-      const handler = createInboundEmailHandler({ db: null });
+      const handler = createInboundEmailHandler({ db: null, webhookToken: TEST_TOKEN });
       const req = {
         method: 'POST',
+        query: { token: TEST_TOKEN },
         body: { to: 'invalid@otherdomain.com', subject: 'Test', text: 'RR123456789IL' }
       };
       const res = {
@@ -118,9 +147,10 @@ describe('inboundEmailHandler Unit Tests', () => {
     });
 
     it('returns 200 with ok: false when no tracking number is present', async () => {
-      const handler = createInboundEmailHandler({ db: null });
+      const handler = createInboundEmailHandler({ db: null, webhookToken: TEST_TOKEN });
       const req = {
         method: 'POST',
+        query: { token: TEST_TOKEN },
         body: { to: 'usr_user123@in.deliveree.app', subject: 'Newsletter', text: 'No tracking here' }
       };
       const res = {
@@ -148,9 +178,10 @@ describe('inboundEmailHandler Unit Tests', () => {
         }))
       };
 
-      const handler = createInboundEmailHandler({ db: dbMock });
+      const handler = createInboundEmailHandler({ db: dbMock, webhookToken: TEST_TOKEN });
       const req = {
         method: 'POST',
+        query: { token: TEST_TOKEN },
         body: {
           to: 'usr_user123@in.deliveree.app',
           subject: 'Fwd: Your AliExpress order has shipped!',
@@ -181,12 +212,16 @@ describe('inboundEmailHandler Unit Tests', () => {
     it('acknowledges but does not persist a probable candidate', async () => {
       const set = vi.fn();
       const db = { collection: vi.fn(() => ({ doc: vi.fn(() => ({ collection: vi.fn(), set })) })) };
-      const handler = createInboundEmailHandler({ db });
+      const handler = createInboundEmailHandler({ db, webhookToken: TEST_TOKEN });
       const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
 
-      await handler({ method: 'POST', body: {
-        to: 'usr_user123@in.deliveree.app', subject: 'Update', text: '1Z999AA10123456784'
-      } }, res);
+      await handler({
+        method: 'POST',
+        query: { token: TEST_TOKEN },
+        body: {
+          to: 'usr_user123@in.deliveree.app', subject: 'Update', text: '1Z999AA10123456784'
+        }
+      }, res);
 
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ ok: false }));
@@ -237,9 +272,10 @@ describe('inboundEmailHandler Unit Tests', () => {
         })
       };
 
-      const handler = createInboundEmailHandler({ db: dbMock });
+      const handler = createInboundEmailHandler({ db: dbMock, webhookToken: TEST_TOKEN });
       const req = {
         method: 'POST',
+        query: { token: TEST_TOKEN },
         body: {
           to: 'usr_user123@in.deliveree.app',
           subject: 'AliExpress - Package LP00512345678901 is ready for pickup',
@@ -301,9 +337,10 @@ describe('inboundEmailHandler Unit Tests', () => {
         })
       };
 
-      const handler = createInboundEmailHandler({ db: dbMock });
+      const handler = createInboundEmailHandler({ db: dbMock, webhookToken: TEST_TOKEN });
       const req = {
         method: 'POST',
+        query: { token: TEST_TOKEN },
         body: {
           to: 'usr_user123@in.deliveree.app',
           subject: 'דואר ישראל: חבילתך הועברה לנקודת איסוף חלופית',
@@ -362,9 +399,10 @@ describe('inboundEmailHandler Unit Tests', () => {
         })
       };
 
-      const handler = createInboundEmailHandler({ db: dbMock });
+      const handler = createInboundEmailHandler({ db: dbMock, webhookToken: TEST_TOKEN });
       const req = {
         method: 'POST',
+        query: { token: TEST_TOKEN },
         body: {
           to: 'usr_user123@in.deliveree.app',
           subject: 'Your Amazon order has shipped in 2 packages',
