@@ -7,6 +7,152 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.25.0] - 2026-09-04
+
+### Added
+- Rebuild the Account tab as one list, and make the feedback rating optional.
+
+- Settings are merged into the Account tab instead of opening a "Settings"
+  screen that carried its own six-item rail — a menu inside a menu.
+- Every setting is the same 52px row (label, current value, chevron), built
+  from shared `SettingRow`/`Toggle` primitives. Choices open a picker rather
+  than embedding native selects, whose per-platform height and styling were
+  why the settings read as a different product.
+- Notifications, account deletion and profile each get their own page.
+- Back navigation is a single leading-edge arrow everywhere; the close X is
+  gone from inner pages, and `ModalHeader` no longer tries to show both.
+- Removed the `defaultCarrier` preference: it was written and sanitised but
+  never read by anything.
+- Feedback no longer pre-selects five stars or requires a rating. Unrated
+  reports omit the field entirely; `firestore.rules` accepts feedback without
+  a `rating` and still bounds it to 1..5 when present.
+
+- New Activity tab: one feed of everything that moved on your packages, newest
+first and grouped by day — the question you open a tracking app for between
+checks. It replaces Pickup Points in the bottom bar, which was backed by four
+fixed locations; pickup points are still under Account and on any package that
+has one.
+
+Tab destinations no longer carry a Close button on mobile, since the bar itself
+is the way out.
+
+- Added a mobile bottom tab bar (Status / Insights / + / Lockers / Account) and
+moved the drawer trigger off the top-left corner on phones, where it was the
+worst reach for a thumb; the hamburger and header "+" are now desktop-only.
+
+Added ambient state chrome: one derived value tints the header wash, the header
+hairline, the app mark and the bottom-nav hairline amber when something needs
+collecting today and rose when a package is held at customs or has stalled.
+Shipped alongside removing three infinite `animate-*` loops — the pinging
+attention dot, the out-for-delivery badge pulse, and the header logo glow —
+which carried the same signal a pixel at a time and never stopped competing.
+
+Language now follows the browser/OS on first run instead of always defaulting to
+Hebrew, matching how theme has always honoured `prefers-color-scheme`. An
+explicit toggle still pins the choice.
+
+Fixed the toast and PWA install banner pinning to the bottom-right in Hebrew as
+well as English, and raised `.min-h-touch` from 44px to the 48px the project's
+own accessibility spec mandates.
+
+- On a phone, every screen is now a real page rather than a card floating over
+the package list — full width, full height, no backdrop. Short confirmations
+like "delete this package?" stay as small dialogs, where taking over the whole
+screen would hide the very thing you are deciding about.
+
+The Account tab opens a proper account screen with grouped sections instead of
+the old thirteen-item side drawer.
+
+- Reworked the home screen. The four equal KPI tiles are now one focal number —
+whatever actually needs you — with the rest stepping down from it, so the screen
+leads somewhere instead of asking you to read all four. Search has its own
+full-width row rather than sharing one line with the filter, refresh and both
+view toggles, and the view toggles moved to the end of a second row.
+
+- Significantly improved email tracking and Smart Import accuracy: added full package lifecycle progression and deduplication, Schema.org/JSON-LD parsing with ESP redirect unwrapping (SendGrid, Klaviyo, AliExpress, Shein), parity extraction for Hebrew/English pickup locations and locker PINs, multi-package disaggregation per email, two-stage grounded screenshot OCR in Gemini, and automated push notifications on status and pickup location updates.
+
+- The bottom bar now stays on screen wherever you go, and the tab you are on is
+highlighted — so Insights, Lockers and Account read as places you navigated to
+rather than windows that opened on top of your packages. The bar is the way
+back, so the duplicate "Close" button on those screens is gone on mobile.
+
+- The bottom bar now behaves like real tabs: tapping one takes you to that
+screen instead of stacking another on top, and tapping Status returns you to
+your packages. The add sheet no longer sits under the bar, and the pickup
+points list is no longer squeezed to a single row on a phone.
+
+- Interface text now scales with your browser and OS text-size setting across the
+whole app. Every size was previously pinned in pixels, so raising your text size
+produced a half-scaled interface where labels, badges and metadata stayed tiny.
+
+Removed the animations that ran forever — a pulsing "closes soon" badge, pulsing
+open/closed dots, pinging progress markers, a throbbing locker-screen icon and
+the header logo glow. Each duplicated something already shown by colour, shape
+or text. Spinners that report work actually in progress are unchanged.
+
+The package detail view now fits a phone screen without its header overflowing.
+
+### Fixed
+- The settings screen now uses the same colours as the rest of the app. It had
+been built against its own parallel palette, so it read as a slightly different
+product — a different navy, different borders, a different muted grey.
+
+- The glow behind the app mark now follows the ambient state colour instead of
+staying a fixed indigo. In the "needs collecting" and "held at customs" states
+the fixed halo sat behind an amber or rose mark and overpowered it, so the
+header read as the wrong colour at a glance.
+
+- App Check now uses reCAPTCHA Enterprise instead of the classic v3 provider,
+which Firebase has deprecated and no longer accepts for new web registrations.
+Enforcement is still off; this only lets the client obtain tokens.
+
+- Added a regression test driving the real "mark delivered" -> auto-archive prompt -> confirm/decline path through the App, covering the class of bug fixed in #60 (part of #91).
+
+- Resolved open user feedback and tracker issues: persisted user sort order selection (#133), disambiguated offline from online failure toasts in feedback submissions (#132), fixed carrier dropdown bidi label scrambling in Hebrew RTL (#137), prevented mobile drawer snap-back and locked background scrolling (#136), suppressed phone number misclassifications and improved AliExpress/Cainiao URL and domestic tracking extraction (#134), extracted delivery dates and status cues during smart text ingestion (#135), deduplicated deliveryService.exportData into exportRawToJSON (#91), and clarified anonymous feedback retention during account deletion (#25).
+
+- Fixed the package row menu (the three-dots button) opening invisibly. It was
+being clipped by the card's own frame, then drawn underneath the install banner
+and the bottom bar. It now renders in full, and flips upward when there isn't
+room below instead of disappearing behind the tab bar.
+
+- The package detail screen now leads with where your package actually is. The
+progress stepper and key dates moved to the top, above pickup details, courier
+actions and the return window — you used to scroll past four blocks to reach
+the status. Nothing was removed; only the order changed.
+
+- The alpha feedback button is visible again — it had been sitting behind the
+bottom bar since the bar was added, so on a phone it could not be seen or
+tapped. The Insights screen also no longer shows a close button on mobile,
+matching the other tabs.
+
+- Fixed Gmail sync spamming a separate untracked package card for every
+follow-up email in an order's lifecycle (order confirmed, shipped, out for
+delivery, delivery issue, ...) when no carrier tracking number was found. A
+follow-up email for a store already represented by one of these order-status
+packages now updates that package's status instead of creating a duplicate.
+
+- Protected inbound email webhook against unauthenticated forging by requiring a shared `INBOUND_EMAIL_TOKEN` secret query parameter, resolving Strix security finding CWE-306.
+
+- Added a `?lang=he|en` URL override for the interface language, so a link can
+carry the language it should open in (useful for sharing a bug report in the
+language it happens in). It takes precedence over the stored preference for
+that view without rewriting it.
+
+- Dates now follow your local calendar rather than UTC. Israel is UTC+2/+3, so
+between midnight and 02:00/03:00 the app treated "today" as yesterday — a
+package added at 01:00 was dated a day early, delivery and return deadlines were
+off by one, and an SMS saying a parcel arrives "tomorrow" resolved to the wrong
+day. Analytics aggregation keys stay on UTC deliberately, so historical counts
+remain comparable.
+
+- The add-package and smart-import screens now use the same header, spacing and
+controls as the rest of the app, and their last two undersized buttons were
+brought up to the 48px minimum.
+
+- Every button, icon button and control in the app is now at least 48x48px, the
+size the project's accessibility spec has always required. The only remaining
+smaller target is an inline text link, which the standard exempts.
+
 ## [0.24.0] - 2026-09-02
 
 ### Added
