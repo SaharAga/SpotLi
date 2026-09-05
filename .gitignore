@@ -40,3 +40,10 @@ __pycache__/
 # Real user messages pulled for parser evaluation — never committed.
 .parser-corpus-real.json
 .parser-eval-baseline-real.json
+
+# Firebase service account keys — never commit. Used by scripts/triage_reports.mjs
+# and scripts/pull_training_corpus.mjs, which read them from an env var, not from
+# a path in the repo.
+serviceAccount*.json
+service-account*.json
+*-firebase-adminsdk-*.json
