@@ -184,3 +184,33 @@ This is an **agent-executable backlog** — every task here is something a squad
 * **Status**: `Done`
 * **Squad**: Squad A (`feedback_telemetry_specialist`, `ui_ux_specialist`)
 * **Summary**: 1-Click WhatsApp & SMS buttons in `PackageDetailModal` with pre-filled message templates (Door/Gate Code, Safe Place, Porch Drop, Proxy Pickup Authorization).
+
+### `TASK-26-SYNC`: Autonomous Multi-Agent Coordination Protocol & CLI Bridge
+* **Priority**: `P0`
+* **Status**: `Done`
+* **Squad**: Infrastructure & Protocols (`agent_sync_liaison`)
+* **Summary**: Built atomic lock-safe state machine CLI (`scripts/agent-sync-channel.mjs`, `scripts/agent-sync-start.mjs`, `scripts/agent-sync-stop.mjs`) backed by `docs/AGENT_SYNC_STATE.json` for autonomous turn-taking between Codex, Claude, and Antigravity with TTL guards, sequence checking, and timeout circuit breakers.
+
+### `TASK-27-DETECTION-V2`: Grounded Candidate Scorer & Parser Architecture v2
+* **Priority**: `P0`
+* **Status**: `Done`
+* **Squad**: Squad A (`detection_benchmark_specialist`, `delivery_pipeline_specialist`)
+* **Summary**: Implemented contextual tracking candidate scoring (`extractTrackingCandidates`) in `src/utils/trackingExtraction.js` and `smartParser.js`. Extracts all candidate tokens with carrier proximity scores, negative label penalties (verification OTP, bank 2FA, phone numbers, driver feedback links), and high-confidence ranking.
+
+### `TASK-28-CARRIER-MATRIX`: Carrier Matrix Expansion & Transliteration Parity
+* **Priority**: `P1`
+* **Status**: `Done`
+* **Squad**: Squad A (`delivery_pipeline_specialist`)
+* **Summary**: Expanded carrier specs to 24 carriers including Orian dashed tracking (`554621757-0`), Cargo Express / Amital (`ECSA\d{6,9}`), Exelot (`XLT\d{9}`), GetPackage short domain (`gpkg.to`), Tapuz mixed-case tokens, Israel Post route codes, and full DHL Hebrew phonetic variations (`די אץ אל`, `די אייץ' אל`, etc.). Synchronized `src/types/carrierSpecs.generated.json` and `functions/src/carrierSpecs.generated.json`.
+
+### `TASK-29-SYNTHETIC-BENCHMARK`: Synthetic Training Data Generator & Parser Benchmark Testbench
+* **Priority**: `P1`
+* **Status**: `Done`
+* **Squad**: Squad A (`detection_benchmark_specialist`, `qa_verifier`)
+* **Summary**: Implemented procedural synthetic data generator (`scripts/generate-synthetic-training-data.mjs`) generating positive delivery alerts, locker PIN isolation scenarios, mixed tracking URL messages, and negative non-delivery controls. Created 72-case Vitest benchmark (`src/utils/parserSyntheticBenchmark.test.js`) verifying >=98% precision and 0% false positives.
+
+### `TASK-30-REAL-SMS-TRIAGE`: Real Israeli Courier SMS Triage & Held-out Corpus Evaluation
+* **Priority**: `P0`
+* **Status**: `Done`
+* **Squad**: Squad A (`detection_benchmark_specialist`, `delivery_pipeline_specialist`)
+* **Summary**: Built interactive CLI message review tool (`scripts/review-carrier-messages.mjs`) for privacy-preserving PII redaction and triage of real SMS dumps. Expanded held-out evaluation corpus (`tests/fixtures/parserEvalCorpus.js`) to 77 canonical cases and achieved 100.0% precision, 100.0% recall, and 100.0% specificity in `npm run eval:parser`.

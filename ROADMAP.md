@@ -35,24 +35,35 @@ The authoritative end-state product vision and detailed Q&A specification is doc
 ### 🌊 Wave 1: Core Pickup, Navigation & Last-Mile UX (Sprint 6 — Active)
 *Objective: Eliminate everyday friction when retrieving packages from pickup points and lockers.*
 
-- [ ] **TASK-601: Universal OS Navigation Launcher** (Waze / Google Maps / Apple Maps / Moovit choice sheet + preferred app memory).
-- [ ] **TASK-602: Live Store Opening Hours** (Real-time "Open Now / Closes at XX:XX" badge + Shabbat eve / Israeli holiday alerts).
-- [ ] **TASK-603: Interactive Full-Screen Locker Mode** (Max brightness, high-contrast QR/Barcode + oversized PIN font).
-- [ ] **TASK-604: Smart Same-Location Bundling & Proximity Alerts** (Banner: *"2 other packages waiting here!"* + 1-tap *"Mark All as Collected"*).
-- [ ] **TASK-605: Pickup Location Redirect Detection** (Alert & auto-updating map/hours when courier redirects to alternate locker).
-- [ ] **TASK-606: Direct Shop Manager Call Button** (1-tap phone dialer on pickup card).
+- [x] **TASK-601: Universal OS Navigation Launcher** (Waze / Google Maps / Apple Maps / Moovit choice sheet + preferred app memory).
+- [x] **TASK-602: Live Store Opening Hours** (Real-time "Open Now / Closes at XX:XX" badge + Shabbat eve / Israeli holiday alerts).
+- [x] **TASK-603: Interactive Full-Screen Locker Mode** (Oversized high-contrast PIN keypad digits + screen wake lock + 1-tap collected + WhatsApp proxy).
+- [x] **TASK-604: Smart Same-Location Bundling & Proximity Alerts** (Banner: *"2 other packages waiting here!"* + 1-tap *"Mark All as Collected"*).
+- [x] **TASK-605: Pickup Location Redirect Detection** (Alert & auto-updating map/hours when courier redirects to alternate locker + original location note).
+- [x] **TASK-606: Direct Shop Manager Call Button** (1-tap phone dialer on pickup card).
 
 ---
 
 ### 🌊 Wave 2: Omni-Channel Ingestion & Candidate Intelligence (Sprint 7)
 *Objective: Zero manual tracking entry with 100% accurate, hallucination-free package capture.*
 
-- [ ] **TASK-701: Grounded Candidate Scorer & Production Verification (SYNC-7)** (Verified-only auto-creation + grounded Gemini selection).
+- [x] **TASK-701: Grounded Candidate Scorer & Israeli SMS Corpus Testbench** (`v0.25.0` — Grounded candidate extraction and ranking engine across 24 couriers, verified against 77-case held-out corpus and 72-case synthetic benchmark with 100% precision & recall. Tier 1 deterministic parsing + Cloud Gemini Tier 2 fallback replaces heavy on-device SLM architectures).
 - [ ] **TASK-702: Direct Push Notifications Engine** (Status changes, morning Out-for-Delivery digest, urgent RTS holding countdowns).
 - [ ] **TASK-703: Automatic Courier SMS Ingestion** (Background/native detection of tracking numbers and locker PINs).
 - [ ] **TASK-704: Multi-Email Ingestion Expansion** (Microsoft Outlook / Office 365, Apple iCloud Mail, generic IMAP/App-Password).
 - [ ] **TASK-705: Multi-Item Bundling View** (Consolidated shipments / AliExpress Combined Delivery display).
 - [ ] **TASK-706: Camera Barcode & Label Scanner** (Physical label OCR & locker barcode scanner).
+
+---
+
+### 🎨 Milestone: Pre-Alpha UI/UX Design System Polish & Human Factors Audit (Sprint 7.5)
+*Objective: Systematically audit and refine every screen, button, modal, card, and micro-interaction to deliver a world-class, premium user experience before public Alpha release.*
+
+- [ ] **TASK-751: Dashboard & List Ergonomics Overhaul** (Refined card hierarchy, subtle glassmorphism, fluid responsive grid, crisp store logos, and smooth swipe gestures).
+- [ ] **TASK-752: Modal & Interaction System Polish** (Consistent header actions, responsive bottom sheets on mobile, keyboard navigation, and streamlined Add/Edit forms).
+- [ ] **TASK-753: Full-Screen Locker Mode Aesthetic Polish** (Ultra-high contrast ambient night mode, refined typography for PIN digits, and clear action buttons).
+- [ ] **TASK-754: Micro-Interactions, Skeletons & Haptics** (Fluid spring transitions, shimmer skeleton loading states, haptic click feedback, and error states).
+- [ ] **TASK-755: Bilingual Hebrew RTL / English LTR Symmetry Audit** (Zero layout shift, 48px minimum touch targets, WCAG AAA contrast compliance, and font readability).
 
 ---
 
