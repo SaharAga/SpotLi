@@ -1,5 +1,5 @@
-import { httpsCallable } from 'firebase/functions';
 import { functionsInstance, auth } from './firebase';
+import { callFunction, isCallableTimeout } from './callableClient';
 import { redactPII } from '../utils/privacySanitizer';
 
 /**
@@ -52,15 +52,7 @@ export async function parseWithAi(payload) {
       ? { ...payload, text: redactPII(payload.text) }
       : payload;
 
-    const callable = httpsCallable(functionsInstance, 'parseWithAi');
-
-    const result = await Promise.race([
-      callable(outgoingPayload),
-      new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('ai-parse-timeout')), AI_PARSE_TIMEOUT_MS);
-      })
-    ]);
-
+    const result = await callFunction('parseWithAi', outgoingPayload, { timeoutMs: AI_PARSE_TIMEOUT_MS });
     return { success: true, data: result.data };
   } catch (err) {
     if (err?.code === 'functions/resource-exhausted') {
@@ -69,7 +61,7 @@ export async function parseWithAi(payload) {
     if (err?.code === 'functions/unauthenticated') {
       return { success: false, unavailable: true, error: 'Sign in to use AI-assisted parsing.' };
     }
-    if (err?.message === 'ai-parse-timeout') {
+    if (isCallableTimeout(err)) {
       console.warn('[aiParseService] parseWithAi timed out after', AI_PARSE_TIMEOUT_MS, 'ms');
       return { success: false, unavailable: true, error: 'AI parsing timed out. You can still enter details manually.' };
     }
