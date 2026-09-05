@@ -24,6 +24,8 @@ export const CARRIER_SPECS = [
   { id: 'bar-distribution', name: 'Bar Distribution', he: 'בר הפצה', prefixes: ['BAR', 'BD'], length: 9, type: 'prefix-digits', domain: 'barexpress.co.il' },
   { id: 'zigzag', name: 'ZigZag', he: 'זיגזג', prefixes: ['ZZ'], length: 9, type: 'prefix-digits', domain: 'zigzag.co.il' },
   { id: 'lionwheel', name: 'LionWheel', he: 'ליאון וויל', prefixes: ['LW'], length: 9, type: 'prefix-digits', domain: 'tracking.lionwheel.com' },
+  { id: 'cargo', name: 'Cargo Express', he: 'קרגו שליחויות', prefixes: ['CRG', 'ECSA'], length: 10, type: 'prefix-digits', domain: 'cargoexpress.co.il' },
+  { id: 'orian', name: 'Orian', he: 'אוריאן', prefixes: ['OR', 'ORN'], length: 10, type: 'orian', domain: 'disttracking.orian.com' },
 
   // Global & Cross-Border
   { id: 'cainiao', name: 'Cainiao', he: 'קאיניאו עליאקספרס', prefixes: ['LP', 'S0000', 'AE'], length: 16, type: 'cainiao' },
@@ -85,7 +87,7 @@ export function generateValidTrackingNumber(carrierSpec) {
 
   if (carrierSpec.type === 'prefix-digits') {
     const prefix = carrierSpec.prefixes[Math.floor(Math.random() * carrierSpec.prefixes.length)];
-    const remaining = prefix === 'HFD' ? 8 : (carrierSpec.length - prefix.length);
+    const remaining = prefix === 'HFD' ? 8 : (prefix === 'ECSA' ? 7 : (carrierSpec.length - prefix.length));
     const digits = Math.floor(Math.pow(10, remaining - 1) + Math.random() * (9 * Math.pow(10, remaining - 1))).toString();
     return `${prefix}${digits}`;
   }
@@ -129,7 +131,24 @@ export function generateValidTrackingNumber(carrierSpec) {
   }
 
   if (carrierSpec.type === 'usps') {
-    return `94001${Math.floor(10000000000000000 + Math.random() * 9000000000000000)}`;
+    const raw21 = `94001${Math.floor(1000000000000000 + Math.random() * 9000000000000000)}`;
+    const digits = raw21.split('').map(Number);
+    const weights = [3, 1];
+    let sum = 0;
+    for (let i = digits.length - 1, w = 0; i >= 0; i--, w++) {
+      sum += digits[i] * weights[w % 2];
+    }
+    const rem = sum % 10;
+    const check = (10 - rem) % 10;
+    return `${raw21}${check}`;
+  }
+
+  if (carrierSpec.type === 'orian') {
+    if (Math.random() > 0.5) {
+      return `${Math.floor(100000000 + Math.random() * 900000000)}-${Math.floor(Math.random() * 10)}`;
+    }
+    const prefix = carrierSpec.prefixes[Math.floor(Math.random() * carrierSpec.prefixes.length)];
+    return `${prefix}${Math.floor(10000000 + Math.random() * 90000000)}`;
   }
 
   return Math.floor(100000000000 + Math.random() * 900000000000).toString();

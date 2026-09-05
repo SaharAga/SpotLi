@@ -249,7 +249,8 @@ export const CARRIERS = {
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
       rule(/^CRG\d{7,12}$/i, { confidence: 'high', priority: 70 }),
-      rule(/^CARGO\d{6,10}$/i, { confidence: 'high', priority: 71 })
+      rule(/^CARGO\d{6,10}$/i, { confidence: 'high', priority: 71 }),
+      rule(/^ECSA\d{6,9}$/i, { confidence: 'high', priority: 72 })
     ],
     sample: 'CRG9104821',
     country: 'Israel'
@@ -302,7 +303,8 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://orian.com/track?num=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
-      rule(/^(OR|ORN)\d{8,12}$/i, { confidence: 'high', priority: 100 })
+      rule(/^(OR|ORN)\d{8,12}$/i, { confidence: 'high', priority: 100 }),
+      rule(/^\d{9}-\d$/i, { confidence: 'high', priority: 101 })
     ],
     sample: 'OR94820194',
     country: 'Israel'
