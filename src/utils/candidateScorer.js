@@ -235,7 +235,7 @@ export function detectFalsePositiveFlags(candidate, fullText = '', startIdx = -1
   const flags = [];
   const clean = candidate.trim().replace(/[\s-_]/g, '');
 
-  const hasTrackingPrefix = fullText && startIdx >= 0 && /(?:מספר|מס['׳`״]?|מעקב|דואר|משלוח|חבילה|חבילת|פריט|בוקסיט|צ['׳`״]יטה|באזר|תפוז|hfd|chita|epost|boxit|buzzr|tapuz|bar|waybill|awb|tracking)\s*[:#-]?\s*$/i.test(fullText.slice(Math.max(0, startIdx - 40), startIdx));
+  const hasTrackingPrefix = fullText && startIdx >= 0 && /(?:מספר|מס['׳`״’‘]?|מעקב|דואר|משלוח|חבילה|חבילת|פריט|בוקסיט|צ['׳`״’‘]יטה|באזר|תפוז|hfd|chita|epost|boxit|buzzr|tapuz|bar|waybill|awb|tracking)\s*[:#-]?\s*$/i.test(fullText.slice(Math.max(0, startIdx - 40), startIdx));
 
   // Phone number checks - ONLY applicable to pure numeric candidates
   if (/^\d+$/.test(clean)) {
@@ -248,7 +248,7 @@ export function detectFalsePositiveFlags(candidate, fullText = '', startIdx = -1
     // Preceded by phone/inquiry keyword (e.g. לבירורים: 02-8123456)
     if (fullText && startIdx >= 0) {
       const before = fullText.slice(Math.max(0, startIdx - 25), startIdx).toLowerCase();
-      if (/(?:לבירורים|טלפון|טל['׳`״]|ליצירת\s*קשר|phone|tel)\s*[:#-]+\s*$/i.test(before)) {
+      if (/(?:לבירורים|טלפון|טל['׳`״’‘]|ליצירת\s*קשר|phone|tel)\s*[:#-]+\s*$/i.test(before)) {
         flags.push('phone_number');
       }
     }
@@ -642,7 +642,7 @@ export function extractAndScoreCandidates(text) {
   }
 
   // 2. Scan for labeled tracking number spans (e.g. "מעקב: ABC1234567")
-  const labeledPattern = /(?:tracking\s*(?:number|id|code|no|#)?|מספר\s*מעקב|מס['׳`״]?\s*מעקב|קוד\s*מעקב|דבר\s*דואר(?:\s*שמספרו)?|פריט\s*דואר|חבילה\s*מספר|מספר\s*משלוח|(?:חבילת|משלוח)\s+(?:בוקסיט|צ['׳`״]יטה|באזר|תפוז|hfd|epost|דואר|boxit|buzzr|tapuz|bar|בר\s*הפצה|זיגזג|zigzag)(?:\s+(?:מס['׳`״]?|מספר))?|משלוח(?:\s+[A-Za-z0-9'״׳א-ת-]+)*\s*(?:מס['׳`״]?|מספר)|waybill|awb|waybill\s*(?:no|#|num)?|ברקוד(?:\s*משלוח)?)[\s:=#-]+([A-Za-z0-9_-]{6,35})/gi;
+  const labeledPattern = /(?:tracking\s*(?:number|id|code|no|#)?|מספר\s*מעקב|מס['׳`״’‘]?\s*מעקב|קוד\s*מעקב|דבר\s*דואר(?:\s*שמספרו)?|פריט\s*דואר|חבילה\s*מספר|מספר\s*משלוח|(?:חבילת|משלוח)\s+(?:בוקסיט|צ['׳`״’‘]יטה|באזר|תפוז|hfd|epost|דואר|boxit|buzzr|tapuz|bar|בר\s*הפצה|זיגזג|zigzag)(?:\s+(?:מס['׳`״’‘]?|מספר))?|משלוח(?:\s+[A-Za-z0-9'״׳א-ת-]+)*\s*(?:מס['׳`״’‘]?|מספר)|waybill|awb|waybill\s*(?:no|#|num)?|ברקוד(?:\s*משלוח)?)[\s:=#-]+([A-Za-z0-9_-]{6,35})/gi;
   let labeledMatch;
 
   while ((labeledMatch = labeledPattern.exec(normalizedText)) !== null) {
@@ -668,7 +668,7 @@ export function extractAndScoreCandidates(text) {
       const matchSpan = labeledMatch[0].toLowerCase();
       let phrasedCarrier = null;
       if (/בוקסיט|boxit/i.test(matchSpan)) phrasedCarrier = 'boxit';
-      else if (/צ['׳`״]יטה|chita/i.test(matchSpan)) phrasedCarrier = 'chita';
+      else if (/צ['׳`״’‘]יטה|chita/i.test(matchSpan)) phrasedCarrier = 'chita';
       else if (/באזר|buzzr/i.test(matchSpan)) phrasedCarrier = 'buzzr';
       else if (/תפוז|tapuz/i.test(matchSpan)) phrasedCarrier = 'tapuz';
       else if (/hfd|אי-?פוסט|epost/i.test(matchSpan)) phrasedCarrier = 'hfd';
@@ -714,7 +714,7 @@ export function extractAndScoreCandidates(text) {
   // checkout receipt carries the same "הזמנה מספר 8471293" wording and must
   // stay unrecognised, so the shipment state — not the label — is the gate.
   if (isShipmentInProgress(normalizedText)) {
-    const orderLabelPattern = /(?:הזמנה\s*(?:מספר|מס['׳`״]?)?|ההזמנה\s*שלך|מספר\s*הזמנה|order\s*(?:number|no|#)?)[\s:=#-]+([A-Za-z0-9_-]{5,35})/gi;
+    const orderLabelPattern = /(?:הזמנה\s*(?:מספר|מס['׳`״’‘]?)?|ההזמנה\s*שלך|מספר\s*הזמנה|order\s*(?:number|no|#)?)[\s:=#-]+([A-Za-z0-9_-]{5,35})/gi;
     let orderMatch;
 
     while ((orderMatch = orderLabelPattern.exec(normalizedText)) !== null) {
@@ -870,6 +870,18 @@ export function extractAndScoreCandidates(text) {
   }
 
   return results.sort((a, b) => {
+    // A number the message spells out next to a tracking label outranks a
+    // token lifted from a URL path, even when the URL scores higher for
+    // sitting on a carrier host. Courier links are frequently shorteners
+    // ("u.cheetahint.com/rvi7q91") whose path is a redirect key, not an
+    // identifier any tracking system will accept — while the number printed
+    // in the message is the one the recipient is being given.
+    const aStrongLabel = !a.fromUrlPath && (a.labelProximity ?? 0) >= 0.8 && a.score >= 0.5;
+    const bStrongLabel = !b.fromUrlPath && (b.labelProximity ?? 0) >= 0.8 && b.score >= 0.5;
+    if (aStrongLabel !== bStrongLabel && (a.fromUrlPath || b.fromUrlPath)) {
+      return aStrongLabel ? -1 : 1;
+    }
+
     if (b.score !== a.score) {
       return b.score - a.score;
     }

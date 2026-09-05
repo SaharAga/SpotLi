@@ -291,6 +291,43 @@ export const PARSER_EVAL_CORPUS = [
   },
 
   // ─────────────────────────────────────────────────────────────────────
+  // POSITIVES — real messages, anonymised.
+  //
+  // Structure, punctuation and carrier wording are preserved exactly as sent,
+  // because that is what the parser reads. Names, street addresses and phone
+  // numbers are replaced, and every tracking number is altered while keeping
+  // its format, so no case here identifies a person or a real delivery.
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    id: 'pos-real-ilp-mailbox',
+    group: 'real-world',
+    note: 'Israel Post מהיר לתיבה format (MA…N8) — matched no rule at all, and the carrier is never named',
+    rawText: 'לקוח יקר, משלוח MA002378449N8 מהשולח ישראכרט מהיר לתיבה יונח בתיבת המכתבים שלך במהלך הימים הקרובים.',
+    expected: { trackingNumber: 'MA002378449N8', carrier: 'israel-post' }
+  },
+  {
+    id: 'pos-real-zigzag-multilink',
+    group: 'real-world',
+    note: 'carrier identifiable only by host; three URLs, two base64 blobs and a WhatsApp number compete',
+    rawText: 'שלום לקוח יקר\nשליחות מטעם אליטה אופק && לכתובת רחוב הדוגמה 1 תל אביב שמספרה 9214846123 עברה לחברת המשלוחים למעקב אחרי ההזמנה - לינק למעקב - https://api.zig-zag.co.il/isufatzmi/#!/deliveryTracking?num=DFA8E4BF45FD9B61\n\nלאישור השארת חבילה ליד הדלת יש להכנס לקישור https://www.zig-zag.co.il/bythedoor?num=eyJpZCI6IjExMTExIiwibnVtIjoiMTAwMDAwMDAwMDAifQ==\n\nניתן לפנות אלינו בווצאפ https://wa.me/972500000000\nבברכה זיגזג',
+    expected: { trackingNumber: '9214846123', carrier: 'zigzag' }
+  },
+  {
+    id: 'pos-real-tapuz-return',
+    group: 'real-world',
+    note: 'a return pickup, carrier named only in the sign-off',
+    rawText: 'היי, שליח של Seestarz online מבקש לאסוף מרחוב הדוגמה 1 תל אביב פריט/ים חזרה. מספר משלוח 47927811. במידה ואינכם נמצאים בכתובת - ניתן להשאיר במיקום המוסכם ולעדכן את השליח שלכם. לוואטסאפ עם נציג https://wa.me/972500000000 אין צורך לחכות לשליח בכתובת. יום נעים, תפוז שליחויות',
+    expected: { trackingNumber: '47927811', carrier: 'tapuz' }
+  },
+  {
+    id: 'pos-real-chita-survey',
+    group: 'real-world',
+    note: "typographic apostrophe in צ’יטה, plus a shortlink whose path must not beat the number in the text",
+    rawText: 'היי, המשלוח 101300711 הגיע לד21, איך היה עם השליח? נשמח לשמוע! לדירוג קצר או פנייה לצוות שלנו – לחצו כאן: https://u.cheetahint.com/rvi7q91 תודה שבחרתם בצ’יטה שליחויות.',
+    expected: { trackingNumber: '101300711', carrier: 'chita' }
+  },
+
+  // ─────────────────────────────────────────────────────────────────────
   // NEGATIVES — no shipment in the message at all.
   // These are where precision dies. Correct output is NO tracking number.
   // ─────────────────────────────────────────────────────────────────────

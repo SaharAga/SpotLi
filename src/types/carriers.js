@@ -127,6 +127,11 @@ export const CARRIERS = {
       rule(/^[A-Z]{2}\d{9}IL$/i, { confidence: 'high', checksum: 'upu-s10', priority: 10 }),
       // Any other alphanumeric code ending in IL is still Israel Post, unchecksummed.
       rule(/^[A-Z0-9]{7,}IL$/i, { confidence: 'high', priority: 20 }),
+      // "מהיר לתיבה" (fast-to-mailbox) domestic items: two letters, nine
+      // digits, then an N-marker and a service digit — e.g. MA002378449N8.
+      // No country suffix and no check digit, so nothing above matched it and
+      // these were being dropped entirely.
+      rule(/^[A-Z]{2}\d{9}N\d$/i, { confidence: 'high', priority: 15 }),
       // Universal registered mail without a country suffix — ambiguous, hence medium.
       rule(/^[A-Z]{2}\d{8,9}$/i)
     ],

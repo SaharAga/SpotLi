@@ -395,7 +395,7 @@ const GENERIC_TRACKING_PARAMS = [
  * Known Hebrew courier phrasing signatures mapped to carrier IDs
  */
 const HEBREW_CARRIER_PHRASES = [
-  { carrierId: 'chita', patterns: [/מחברת\s*צ['׳`״]יטה/i, /מצ['׳`״]יטה/i, /חברת\s*צ['׳`״]יטה/i, /צ['׳`״]יטה\s*שליחויות/i, /שליחויות\s*צ['׳`״]יטה/i, /שליח\s*צ['׳`״]יטה/i, /צ['׳`״]יטה\s*שופס/i, /צ['׳`״]יטה/i, /chita/i] },
+  { carrierId: 'chita', patterns: [/מחברת\s*צ['׳`״’‘]יטה/i, /מצ['׳`״’‘]יטה/i, /חברת\s*צ['׳`״’‘]יטה/i, /צ['׳`״’‘]יטה\s*שליחויות/i, /שליחויות\s*צ['׳`״’‘]יטה/i, /שליח\s*צ['׳`״’‘]יטה/i, /צ['׳`״’‘]יטה\s*שופס/i, /צ['׳`״’‘]יטה/i, /chita/i] },
   { carrierId: 'israel-post', patterns: [/מדואר\s*ישראל/i, /דואר\s*ישראל/i, /מחברת\s*דואר\s*ישראל/i, /דבר\s*דואר/i, /חבילת\s*דואר/i, /סניף\s*הדואר/i, /סוכנות\s*(?:ה)?דואר/i, /מרכז\s*המסירה\s*בדואר/i, /יחידת\s*(?:ה)?דואר/i] },
   { carrierId: 'hfd', patterns: [/מחברת\s*HFD/i, /מ-?HFD/i, /אי-?פוסט/i, /HFD\s*שליחויות/i, /e-?post/i, /משלוח\s*HFD/i, /HFD/i] },
   { carrierId: 'boxit', patterns: [/מחברת\s*בוקסיט/i, /מ-?BoxIt/i, /בוקסיט/i, /boxit/i, /חבילת\s*בוקסיט/i] },
@@ -408,7 +408,7 @@ const HEBREW_CARRIER_PHRASES = [
   // Anchored to a distribution-company phrase or the carrier's own host, since
   // "cargo" is an ordinary English word and Flying Cargo is a separate carrier.
   { carrierId: 'cargo', patterns: [/קרגו\s*שליחויות/i, /cargo\s*express/i, /חברת\s*ה?הפצה\s*CARGO/i, /cargo-?ship/i] },
-  { carrierId: 'getpackage', patterns: [/גט\s*פקג['׳`״]/i, /getpackage/i] },
+  { carrierId: 'getpackage', patterns: [/גט\s*פקג['׳`״’‘]/i, /getpackage/i] },
   { carrierId: 'zigzag', patterns: [/זיגזג\s*שליחויות/i, /שליח\s*זיגזג/i, /זיגזג/i, /zigzag/i] },
   { carrierId: 'orian', patterns: [/אוריאן/i, /orian/i] },
   // Global carriers. Israeli users receive these notifications in English as
@@ -416,7 +416,7 @@ const HEBREW_CARRIER_PHRASES = [
   // (DHL 10, FedEx 12) have no corroboration at all.
   // The ambiguous three-letter brands are matched case-sensitively so that
   // "groups", "backups" and "ups and downs" don't register as a carrier.
-  { carrierId: 'dhl', patterns: [/\bdhl\b/i, /די\s*אייץ['׳`״]?\s*אל/i] },
+  { carrierId: 'dhl', patterns: [/\bdhl\b/i, /די\s*אייץ['׳`״’‘]?\s*אל/i] },
   { carrierId: 'fedex', patterns: [/\bfedex\b/i, /\bfed\s*ex\b/i, /פדאקס/i, /פדקס/i] },
   { carrierId: 'ups', patterns: [/\bUPS\b/, /יו\s*פי\s*אס/i] },
   { carrierId: 'usps', patterns: [/\bUSPS\b/i, /united\s*states\s*postal/i] },
@@ -840,7 +840,7 @@ export function extractTrackingCandidates(text) {
     }
   }
   
-  const labeledRegex = /(?:tracking(?:\s*number|\s*no|\s*code|\s*id|\s*#)?|מעקב(?:\s*משלוח|\s*הזמנה)?|מספר\s*מעקב|חבילה\s*מספר|מס['׳`״]\s*מעקב|קוד\s*מעקב|מספר\s*משלוח|משלוח\s*מספר|דבר\s*דואר(?:\s*שמספרו)?|חבילתך\s*יצאה(?:\s*במשלוח)?|חבילתך\s*במספר|החבילה\s*שלך\s*מחכה(?:\s*במספר)?|איסוף\s*חבילה(?:\s*מספר)?|קוד\s*חבילה|קוד\s*משלוח|ברקוד(?:\s*משלוח)?|שליח\s*בדרך(?:\s*משלוח)?|order\s*#|shipment\s*#|package\s*id|waybill|awb)[\s:=#-]+([A-Za-z0-9_-]{5,35})/gi;
+  const labeledRegex = /(?:tracking(?:\s*number|\s*no|\s*code|\s*id|\s*#)?|מעקב(?:\s*משלוח|\s*הזמנה)?|מספר\s*מעקב|חבילה\s*מספר|מס['׳`״’‘]\s*מעקב|קוד\s*מעקב|מספר\s*משלוח|משלוח\s*מספר|דבר\s*דואר(?:\s*שמספרו)?|חבילתך\s*יצאה(?:\s*במשלוח)?|חבילתך\s*במספר|החבילה\s*שלך\s*מחכה(?:\s*במספר)?|איסוף\s*חבילה(?:\s*מספר)?|קוד\s*חבילה|קוד\s*משלוח|ברקוד(?:\s*משלוח)?|שליח\s*בדרך(?:\s*משלוח)?|order\s*#|shipment\s*#|package\s*id|waybill|awb)[\s:=#-]+([A-Za-z0-9_-]{5,35})/gi;
   let match;
   while ((match = labeledRegex.exec(workingText)) !== null) {
     if (match[1]) {

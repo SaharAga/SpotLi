@@ -55,14 +55,14 @@ const carriersExport = {};
  * carry none, so treating them as carrier confirmation would confirm nothing.
  */
 const KNOWN_CARRIER_DOMAINS = {
-  'chita': ['chtr.co.il', 'chita.co.il', 'chita-il.com', 'chita-delivery.co.il'],
+  'chita': ['chtr.co.il', 'chita.co.il', 'chita-il.com', 'chita-delivery.co.il', 'cheetahint.com', 'u.cheetahint.com'],
   'hfd': ['epost.co.il', 'e-post.co.il', 'hfd.co.il', 'hfdi.co.il', 'my.hfd.co.il'],
   'boxit': ['boxit.co.il', 'box-it.co.il', 'my.boxit.co.il'],
   'buzzr': ['buzzr.co.il', 'link.buzzr.co.il'],
   'tapuz': ['tapuzdelivery.co.il', 'tapuz.co.il'],
   'bar-distribution': ['bardistribution.co.il', 'barexpress.co.il'],
   'lionwheel': ['tracking.lionwheel.com', 'lionwheel.com'],
-  'zigzag': ['zigzag.co.il', 'zigzag24.co.il'],
+  'zigzag': ['zigzag.co.il', 'zigzag24.co.il', 'zig-zag.co.il', 'api.zig-zag.co.il'],
   // Israel Post serves tracking from several hosts; only the mypost one was
   // derivable from the carrier definition.
   'israel-post': ['israelpost.co.il', 'mypost.israelpost.co.il', 'israelpost.gov.il'],

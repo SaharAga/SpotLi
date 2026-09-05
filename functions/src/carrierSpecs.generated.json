@@ -28,6 +28,13 @@
           "priority": 20
         },
         {
+          "source": "^[A-Z]{2}\\d{9}N\\d$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 15
+        },
+        {
           "source": "^[A-Z]{2}\\d{8,9}$",
           "flags": "i",
           "confidence": "medium",
@@ -43,10 +50,12 @@
       "website": "https://chita-il.com",
       "country": "Israel",
       "domains": [
+        "cheetahint.com",
         "chita-delivery.co.il",
         "chita-il.com",
         "chita.co.il",
-        "chtr.co.il"
+        "chtr.co.il",
+        "u.cheetahint.com"
       ],
       "patterns": [
         {
@@ -354,6 +363,8 @@
       "website": "https://zigzag24.co.il",
       "country": "Israel",
       "domains": [
+        "api.zig-zag.co.il",
+        "zig-zag.co.il",
         "zigzag.co.il",
         "zigzag24.co.il"
       ],
@@ -748,6 +759,14 @@
       "confidence": "high",
       "checksum": "upu-s10",
       "priority": 10
+    },
+    {
+      "carrierId": "israel-post",
+      "source": "^[A-Z]{2}\\d{9}N\\d$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 15
     },
     {
       "carrierId": "israel-post",
