@@ -84,6 +84,8 @@ flowchart LR
   failure. See §9.1.
 * Typecheck: `tsc --noEmit --strict`
 * 5-Tier Testbench: `npm test` (100% pass rate)
+* Detection Evaluation: `npm run eval:parser` (100% precision, recall & specificity across held-out corpus)
+* Synthetic Benchmark: `npm run benchmark:parser` (72 tests passing, $\ge 98\%$ precision, $0\%$ FP)
 * Anti-facade scan: Verify zero dummy assertions (`expect(true).toBe(true)`) or skipped tests (`it.skip`).
 * Production build: `npm run build` (zero build warnings or errors).
 
@@ -94,6 +96,8 @@ flowchart LR
 Domain specialists own and maintain invariants for specific subsystems:
 - **`auth_cloud_specialist`**: AuthContext, Firebase Auth state, Firestore security rules, Spark quota optimizations.
 - **`delivery_pipeline_specialist`**: Package lifecycle, Zod schema validation, carrier detection regexes, smartParser.
+- **`detection_benchmark_specialist`**: Carrier detection regexes, candidate ranking, precision/recall benchmarks, and synthetic test data generation.
+- **`agent_sync_liaison`**: Autonomous cross-agent coordination, turn-taking verification, sync channel CLI state transitions, and collaborative action board maintenance.
 - **`ui_ux_specialist`**: Layout, mobile touch targets ($\ge 48\text{px}$), Hebrew RTL / English LTR symmetry.
 - **`pwa_offline_specialist`**: Service worker, offline resilience, and cache synchronization.
 - **`feedback_telemetry_specialist`**: Feedback modal, Firestore feedback, Telegram bot relays.
@@ -125,16 +129,23 @@ No feature or change is approved if:
 ## 6. Custom Skill Discovery
 
 The specialized skills governing this workspace are located in `.agents/skills/`:
+* [`adversarial-penetration-testing`](.agents/skills/adversarial-penetration-testing/SKILL.md)
+* [`agent-sync`](.agents/skills/agent-sync/SKILL.md)
+* [`automated-code-review`](.agents/skills/automated-code-review/SKILL.md)
+* [`delivery-lifecycle-and-pickup-engine`](.agents/skills/delivery-lifecycle-and-pickup-engine/SKILL.md)
+* [`feedback-triage-and-action-items`](.agents/skills/feedback-triage-and-action-items/SKILL.md)
 * [`git-branch-and-pr-workflow`](.agents/skills/git-branch-and-pr-workflow/SKILL.md)
+* [`gmail-detection-auto-improvement`](.agents/skills/gmail-detection-auto-improvement/SKILL.md)
+* [`owasp-security-and-rate-limiting`](.agents/skills/owasp-security-and-rate-limiting/SKILL.md)
+* [`performance-and-chaos-stress`](.agents/skills/performance-and-chaos-stress/SKILL.md)
+* [`project-release-tracking`](.agents/skills/project-release-tracking/SKILL.md)
+* [`real-sms-triage-and-eval`](.agents/skills/real-sms-triage-and-eval/SKILL.md)
+* [`remote-notifications-and-chat`](.agents/skills/remote-notifications-and-chat/SKILL.md)
 * [`sdlc-orchestrator`](.agents/skills/sdlc-orchestrator/SKILL.md)
 * [`software-development-standards`](.agents/skills/software-development-standards/SKILL.md)
-* [`automated-code-review`](.agents/skills/automated-code-review/SKILL.md)
-* [`owasp-security-and-rate-limiting`](.agents/skills/owasp-security-and-rate-limiting/SKILL.md)
 * [`software-verification-and-qa`](.agents/skills/software-verification-and-qa/SKILL.md)
-* [`remote-notifications-and-chat`](.agents/skills/remote-notifications-and-chat/SKILL.md)
-* [`feedback-triage-and-action-items`](.agents/skills/feedback-triage-and-action-items/SKILL.md)
-* [`gmail-detection-auto-improvement`](.agents/skills/gmail-detection-auto-improvement/SKILL.md)
-* [`project-release-tracking`](.agents/skills/project-release-tracking/SKILL.md)
+* [`synthetic-dataset-and-benchmark`](.agents/skills/synthetic-dataset-and-benchmark/SKILL.md)
+* [`ui-ux-design-systems`](.agents/skills/ui-ux-design-systems/SKILL.md)
 
 ---
 

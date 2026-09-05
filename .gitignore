@@ -35,6 +35,7 @@ __pycache__/
 
 # Agent-to-Agent Local Sync
 .agent_sync/
+.agent-sync*
 .claude/
 
 # Real user messages pulled for parser evaluation — never committed.

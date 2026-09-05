@@ -11,6 +11,7 @@
     "build": "vite build",
     "lint": "oxlint",
     "test": "vitest run",
+    "benchmark:parser": "vitest run src/utils/syntheticBenchmark.test.js",
     "preview": "vite preview",
     "notify": "python3 scripts/notify.py",
     "telegram": "python3 scripts/telegram_bot.py",

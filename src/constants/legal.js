@@ -38,7 +38,7 @@ export const TERMS_CONTENT = {
       },
       {
         heading: 'Third-party carriers and locker pickup points',
-        body: 'Deliveree is NOT a shipping company, freight forwarder, postal operator, courier service, or delivery handler. Deliveree does not ship, transport, handle, store, or deliver packages. Deliveree merely queries public or authenticated carrier endpoints (including Israel Post, HFD, Cheetah, BoxIt, Cainiao, and 17Track) and parses courier messages to display tracking status and locker pickup information for your personal convenience. Carrier names, trademarks, and logos displayed in the app belong to their respective owners. Deliveree is not affiliated with, endorsed by, or operated by any carrier, and has zero control over carrier shipping schedules, physical deliveries, tracking accuracy, locker availability, or access code validity.'
+        body: 'Deliveree is NOT a shipping company, freight forwarder, postal operator, courier service, or delivery handler. Deliveree does not ship, transport, handle, store, or deliver packages. Deliveree queries supported carrier endpoints (currently Israel Post for live status updates), provides direct web portal tracking links for other domestic and international carriers (including Cheetah, HFD, BoxIt, Tapuz, Orian, Cainiao, and 17Track), and parses courier messages to display tracking status and locker pickup information for your personal convenience. Carrier names, trademarks, and logos displayed in the app belong to their respective owners. Deliveree is not affiliated with, endorsed by, or operated by any carrier, and has zero control over carrier shipping schedules, physical deliveries, tracking accuracy, locker availability, or access code validity.'
       },
       {
         heading: 'External navigation & courier messaging',
@@ -116,7 +116,7 @@ export const TERMS_CONTENT = {
       },
       {
         heading: 'ספקי שילוח חיצוניים ונקודות איסוף',
-        body: 'Deliveree אינה חברת שילוח, אינה סוכנות דואר, אינה חברת בלדרות ואינה מספקת שירותי הובלה או מסירה. Deliveree אינה משנעת, אינה מחזיקה ואינה מוסרת חבילות בפועל. האפליקציה משמשת ככלי אגרגציה אינפורמטיבי בלבד, הפונה למערכות ציבוריות של חברות שילוח (לרבות דואר ישראל, HFD, צ\'יטה, בוקסיט, קאיניאו ו-17Track) ומפענחת הודעות שילוח לטובת נוחות אישית. שמות החברות, סימני המסחר והלוגואים שייכים לבעליהם בלבד; Deliveree אינה שלוחה שלהם, אינה מופעלת על ידם ואין לה כל שליטה על לוחות הזמנים, הדיוק של נתוני המעקב, זמינות לוקרים או תקינות קודי איסוף.'
+        body: 'Deliveree אינה חברת שילוח, אינה סוכנות דואר, אינה חברת בלדרות ואינה מספקת שירותי הובלה או מסירה. Deliveree אינה משנעת, אינה מחזיקה ואינה מוסרת חבילות בפועל. האפליקציה משמשת ככלי אגרגציה אינפורמטיבי בלבד, הפונה למערכות מעקב נתמכות (כיום דואר ישראל לעדכוני סטטוס חיים), מייצרת קישורי גישה ישירים לפורטלי המעקב של ספקי שילוח נוספים בארץ ובעולם (לרבות צ\'יטה, HFD, בוקסיט, תפוז, אוריאן, קאיניאו ו-17Track), ומפענחת הודעות שילוח לטובת נוחות אישית. שמות החברות, סימני המסחר והלוגואים שייכים לבעליהם בלבד; Deliveree אינה שלוחה שלהם, אינה מופעלת על ידם ואין לה כל שליטה על לוחות הזמנים, הדיוק של נתוני המעקב, זמינות לוקרים או תקינות קודי איסוף.'
       },
       {
         heading: 'קישורי ניווט חיצוניים והתקשרות עם שליחים',
@@ -213,7 +213,7 @@ export const PRIVACY_CONTENT = {
       },
       {
         heading: 'Third-Party Data Sharing',
-        body: 'We never sell your data or use it for marketing or advertising. We share data only with infrastructure and service providers strictly required to deliver the app: (1) Google Cloud / Firebase: Cloud infrastructure, database, authentication, and hosting. (2) Shipping Carriers: When you refresh live tracking, your tracking number is queried directly against the carrier (Israel Post, HFD, Cheetah, BoxIt, Cainiao, or 17Track). Note that Cainiao and 17Track are operated from China / Hong Kong. (3) Google Gemini API: For AI-assisted parsing of pasted text or screenshots when triggered by you. (4) CloudMailin: Inbound email parsing processor. (5) External Navigation / Messaging: Clicking navigation (Waze, Google Maps) or WhatsApp links opens external third-party services that operate under their own independent privacy policies.'
+        body: 'We never sell your data or use it for marketing or advertising. We share data only with infrastructure and service providers strictly required to deliver the app: (1) Google Cloud / Firebase: Cloud infrastructure, database, authentication, and hosting. (2) Shipping Carriers: When you refresh live tracking, your tracking number is queried against supported carrier endpoints (currently Israel Post); for other domestic and international carriers, Deliveree generates direct outbound links to the carrier’s official tracking portal (such as Cainiao, 17Track, etc., which operate from China / Hong Kong) for you to view on their websites. (3) Google Gemini API: For AI-assisted parsing of pasted text or screenshots when triggered by you. (4) CloudMailin: Inbound email parsing processor. (5) External Navigation / Messaging: Clicking navigation (Waze, Google Maps) or WhatsApp links opens external third-party services that operate under their own independent privacy policies.'
       },
       {
         heading: 'AI-assisted import & Gemini Processing',
@@ -225,7 +225,7 @@ export const PRIVACY_CONTENT = {
       },
       {
         heading: 'Guest (Offline) Use',
-        body: 'When using Deliveree without signing in, all package data is stored exclusively on your device via localStorage and IndexedDB. Nothing is transmitted to or stored on our cloud servers, except when you explicitly refresh carrier tracking (which queries the carrier directly).'
+        body: 'When using Deliveree without signing in, all package data is stored exclusively on your device via browser localStorage and local application cache. Nothing is transmitted to or stored on our cloud servers, except when you explicitly refresh carrier tracking.'
       },
       {
         heading: 'Data Retention & Account Deletion',
@@ -237,7 +237,7 @@ export const PRIVACY_CONTENT = {
       },
       {
         heading: 'Cookies & Local Storage',
-        body: 'Deliveree does not use third-party tracking or advertising cookies. We use browser localStorage and IndexedDB exclusively for essential operational purposes: maintaining your offline state, caching package data, and saving your preferences.'
+        body: 'Deliveree does not use third-party tracking or advertising cookies. We use browser localStorage and session storage exclusively for essential operational purposes: maintaining your offline state, caching package data, and saving your preferences.'
       },
       {
         heading: 'Children\'s Privacy',
@@ -287,7 +287,7 @@ export const PRIVACY_CONTENT = {
       },
       {
         heading: 'שיתוף מידע עם צדדים שלישיים',
-        body: 'איננו מוכרים את המידע שלך ואיננו משתפים אותו למטרות שיווקיות. המידע מועבר אך ורק לספקי תשתית חיוניים: (1) Google Cloud / Firebase: שירותי ענן, אחסון, אימות ומסדי נתונים. (2) ספקי שילוח: בעת רענון מעקב חי, מספר המעקב נשלח ישירות לחברת השילוח הרלוונטית (דואר ישראל, HFD, צ\'יטה, בוקסיט, קאיניאו, 17Track). לתשומת לבך, קאיניאו ו-17Track מופעלות מסין/הונג קונג. (3) Google Gemini API: לעיבוד טקסט ותמונות בייבוא חכם. (4) CloudMailin: מעבד דוא"ל נכנס. (5) שירותי ניווט והודעות חיצוניים: לחיצה על קישורי ניווט (Waze, Maps) או WhatsApp מפעילה שירותי צד שלישי הפועלים תחת מדיניות הפרטיות שלהם בלבד.'
+        body: 'איננו מוכרים את המידע שלך ואיננו משתפים אותו למטרות שיווקיות. המידע מועבר אך ורק לספקי תשתית חיוניים: (1) Google Cloud / Firebase: שירותי ענן, אחסון, אימות ומסדי נתונים. (2) ספקי שילוח: בעת רענון מעקב חי, מספר המעקב נשלח למערכות ספקי שילוח נתמכים (כיום דואר ישראל); עבור ספקים אחרים בארץ ובעולם, Deliveree מפיקה קישורי מעקב ישירים לאתרי הספקים (כגון קאיניאו, 17Track וכו\', הפועלים מסין/הונג קונג) לצפייה יזומה על ידך בדפדפן. (3) Google Gemini API: לעיבוד טקסט ותמונות בייבוא חכם. (4) CloudMailin: מעבד דוא"ל נכנס. (5) שירותי ניווט והודעות חיצוניים: לחיצה על קישורי ניווט (Waze, Maps) או WhatsApp מפעילה שירותי צד שלישי הפועלים תחת מדיניות הפרטיות שלהם בלבד.'
       },
       {
         heading: 'ייבוא בעזרת AI ו-Google Gemini',
@@ -299,7 +299,7 @@ export const PRIVACY_CONTENT = {
       },
       {
         heading: 'שימוש כאורח (מקומי)',
-        body: 'בשימוש ללא חשבון, כל פרטי החבילות נשמרים מקומית במכשירך (localStorage ו-IndexedDB) ואינם מועברים לשרתינו, למעט פניות יזומות לבדיקת סטטוס מול מערכות חברות השילוח.'
+        body: 'בשימוש ללא חשבון, כל פרטי החבילות נשמרים מקומית במכשירך (ב-localStorage ובמטמון האפליקציה) ואינם מועברים לשרתינו, למעט פניות יזומות לבדיקת סטטוס מול מערכות חברות שילוח נתמכות.'
       },
       {
         heading: 'שמירת מידע ומחיקת חשבון',
@@ -311,7 +311,7 @@ export const PRIVACY_CONTENT = {
       },
       {
         heading: 'עוגיות ואחסון מקומי',
-        body: 'Deliveree אינה משתמשת בעוגיות מעקב או שיווק של צדדים שלישיים. אנו עושים שימוש ב-localStorage וב-IndexedDB לצורך תפעולו התקין של השירות, שמירת העדפותיך ומצב לא-מקוון בלבד.'
+        body: 'Deliveree אינה משתמשת בעוגיות מעקב או שיווק של צדדים שלישיים. אנו עושים שימוש ב-localStorage ובאחסון הפעלה (sessionStorage) לצורך תפעולו התקין של השירות, שמירת העדפותיך ומצב לא-מקוון בלבד.'
       },
       {
         heading: 'פרטיות קטינים',

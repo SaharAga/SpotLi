@@ -2,7 +2,7 @@
 
 Deliveree is a bilingual (Hebrew RTL / English LTR) Progressive Web App for
 tracking packages across Israeli couriers and global shipping carriers from a
-single dashboard. It works offline-first (IndexedDB + a sync queue), syncs
+single dashboard. It works offline-first (`localStorage` + an offline sync queue), syncs
 across devices for signed-in users via Firebase, and can ingest tracking
 numbers from pasted text, SMS, or the PWA share target.
 
@@ -10,6 +10,13 @@ numbers from pasted text, SMS, or the PWA share target.
 carrier is detected and displayed, but has no upstream data source yet — the
 app labels those packages "manual tracking" rather than inventing status
 updates for them. See `src/services/carrierApiProxy.js`.
+
+### Supported Carriers
+
+Deliveree provides out-of-the-box detection, status tracking, branded theme styling, and direct tracking portal links for 24 couriers:
+
+- **Domestic (Israel)**: Israel Post (`דואר ישראל`), Cheetah Delivery (`צ'יטה`), HFD (`הפצה ושליחויות`), BoxIt, Tapuz (`תפוז`), Cargo Express (`אמיטל / שילוח`), GetPackage (`גט פקג'`), Flying Cargo (`פליינג קרגו`), Orian (`אוריאן`), Bar Distribution (`בר הפצה`), LionWheel, Buzzr (`באזר`), Zigzag (`זיגזג`), Exelot (`אקסלוט`).
+- **Global & International**: AliExpress Cainiao, Shein, YunExpress, 4PX, DHL Express, FedEx, UPS, USPS, Royal Mail, Aramex, Yanwen.
 
 ## Prerequisites
 
@@ -42,6 +49,10 @@ can never ship silently pointed at the wrong project.
 | `npm run preview` | Serve the production build locally |
 | `npm test` | Run the Vitest suite |
 | `npm run lint` | Run oxlint |
+| `npm run benchmark:parser` | Run 72-case synthetic carrier detection benchmark |
+| `npm run eval:parser` | Evaluate parser against 77-case held-out Israeli courier SMS corpus |
+| `npm run review:messages` | Interactive CLI review tool for incoming courier SMS dumps |
+| `npm run generate:carrier-specs` | Re-generate client & Cloud Functions carrier detection specs |
 
 `npm run prepare` (runs automatically on `npm install`) points git at
 `.githooks/`, which includes a pre-commit scan for accidentally committed
@@ -89,8 +100,8 @@ npm test
 Vitest runs the full suite in a Node environment by default; component tests
 that need a DOM (`*.dom.test.jsx`) opt into jsdom per-file via a
 `/** @vitest-environment jsdom */` pragma, using `@testing-library/react`.
-Property-based tests (via `fast-check`) cover the smart-text parser, the
-privacy sanitizer, and the IndexedDB adapter.
+Property-based tests (via `fast-check`) cover the smart-text parser and the
+privacy sanitizer.
 
 ## Abuse protection (App Check)
 

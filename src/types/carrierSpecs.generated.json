@@ -204,7 +204,8 @@
       "domains": [
         "cargo-ship.co.il",
         "cargoexpress.co.il",
-        "cargoship.co.il"
+        "cargoship.co.il",
+        "cloud.amital.co.il"
       ],
       "patterns": [
         {
@@ -220,6 +221,13 @@
           "confidence": "high",
           "checksum": "not-applicable",
           "priority": 71
+        },
+        {
+          "source": "^ECSA\\d{6,9}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 72
         }
       ]
     },
@@ -231,7 +239,8 @@
       "country": "Israel",
       "domains": [
         "getpackage.co.il",
-        "getpackage.com"
+        "getpackage.com",
+        "gpkg.to"
       ],
       "patterns": [
         {
@@ -284,6 +293,7 @@
       "website": "https://orian.com",
       "country": "Israel",
       "domains": [
+        "disttracking.orian.com",
         "orian.com",
         "orianlogistics.com"
       ],
@@ -294,6 +304,13 @@
           "confidence": "high",
           "checksum": "not-applicable",
           "priority": 100
+        },
+        {
+          "source": "^\\d{9}-\\d$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 101
         }
       ]
     },
@@ -404,6 +421,27 @@
           "confidence": "high",
           "checksum": "not-applicable",
           "priority": 121
+        }
+      ]
+    },
+    "exelot": {
+      "id": "exelot",
+      "name": "Exelot",
+      "hebrewName": "אקסלוט (Exelot)",
+      "website": "https://exelot.com",
+      "country": "Israel / Cross-Border",
+      "domains": [
+        "app.exelot.com",
+        "exelot.com",
+        "tracking.exelot.com"
+      ],
+      "patterns": [
+        {
+          "source": "^XLT\\d{9}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 135
         }
       ]
     },
@@ -895,6 +933,14 @@
       "priority": 71
     },
     {
+      "carrierId": "cargo",
+      "source": "^ECSA\\d{6,9}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 72
+    },
+    {
       "carrierId": "getpackage",
       "source": "^GP[A-Z0-9]{8,12}$",
       "flags": "i",
@@ -925,6 +971,14 @@
       "confidence": "high",
       "checksum": "not-applicable",
       "priority": 100
+    },
+    {
+      "carrierId": "orian",
+      "source": "^\\d{9}-\\d$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 101
     },
     {
       "carrierId": "bar-distribution",
@@ -989,6 +1043,14 @@
       "confidence": "high",
       "checksum": "not-applicable",
       "priority": 130
+    },
+    {
+      "carrierId": "exelot",
+      "source": "^XLT\\d{9}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 135
     },
     {
       "carrierId": "cainiao",

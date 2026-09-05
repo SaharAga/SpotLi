@@ -54,3 +54,48 @@ This is the first thing to read and the last thing to write. If you're updating 
 4. **Update the Sync State header** to reflect the new state after your write.
 
 5. **Summarize for the user:** 3-5 sentences — what changed, what's now blocked on whom, and any explicit go/no-go decision you need from the human before proceeding (especially anything destructive: force-push, history rewrite, deleting data, revoking credentials).
+
+---
+
+## 6. Automated Channel CLI Tooling (`scripts/agent-sync-channel.mjs`)
+
+Deliveree includes an automated lock-safe CLI state machine for turn-taking across agents, backed by `docs/AGENT_SYNC_STATE.json`:
+
+```bash
+# Check current channel state
+node scripts/agent-sync-channel.mjs status
+
+# Acknowledge an outstanding turn addressed to you (e.g. Antigravity)
+node scripts/agent-sync-channel.mjs ack --by Antigravity
+
+# Send a new turn to another agent (e.g. to Claude)
+node scripts/agent-sync-channel.mjs send --from Antigravity --to Claude --entry SYNC-17 --summary "Carrier specs & transliterations updated"
+
+# Watch for incoming turns (reactive event loop, exits 0 on addressed message)
+node scripts/agent-sync-channel.mjs watch --recipient Antigravity --idle-timeout-seconds 3600
+
+# Emergency controls (by human/Sahar or circuit breaker)
+node scripts/agent-sync-channel.mjs pause --by Sahar --reason "Investigating CI failure"
+node scripts/agent-sync-channel.mjs resume --by Sahar
+node scripts/agent-sync-channel.mjs close --by Sahar --reason "Sprint 7 completed"
+```
+
+### Background Watcher Daemons
+
+To launch continuous background watchers for all or specific agents:
+
+```bash
+# Start background monitors for Claude and Antigravity
+node scripts/agent-sync-start.mjs --agent all --ttl-minutes 240 --max-turns 12
+
+# Stop running watchers cleanly
+node scripts/agent-sync-stop.mjs
+```
+
+### Invariant Turn-Taking Sequence
+1. **Receive**: Read `docs/AGENT_SYNC.md` and check `node scripts/agent-sync-channel.mjs status`.
+2. **Acknowledge**: Run `node scripts/agent-sync-channel.mjs ack --by <YourIdentity>`.
+3. **Execute & Verify**: Complete the requested work, run lint and tests.
+4. **Respond**: Append your entry to `docs/AGENT_SYNC.md` and update the Sync State header.
+5. **Dispatch**: Run `node scripts/agent-sync-channel.mjs send --from <YourIdentity> --to <Recipient> --entry SYNC-X --summary "..."`.
+6. **Cross-Worktree Mirroring**: When collaborating with another local worktree (e.g. Claude's tree), ensure git commits and `docs/AGENT_SYNC.md` changes are mirrored or pushed so both trees stay in lockstep.

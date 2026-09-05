@@ -21,6 +21,11 @@ const TRACKING_KEYWORDS = [
   'awb',
   'consignment',
   'shipment',
+  'משלוח',
+  'משלוחך',
+  'חבילה',
+  'חבילתך',
+  'פריט',
   'מספר מעקב',
   'מס מעקב',
   'מס׳ מעקב',
@@ -49,18 +54,29 @@ const TRACKING_KEYWORDS = [
   'זיגזג',
   'zigzag',
   'lionwheel',
-  'cainiao',
-  'aliexpress',
-  'עליאקספרס',
-  'yunexpress',
-  '4px',
-  'yanwen',
+  'אקסלוט',
+  'exelot',
+  'אוריאן',
+  'orian',
+  'קרגו',
+  'אי-קרגו',
+  'אי קרגו',
+  'cargo',
+  'די אץ אל',
+  'די אייץ אל',
+  'די.אייץ.אל',
   'dhl',
   'fedex',
   'פדאקס',
   'ups',
   'usps',
-  'aramex'
+  'aramex',
+  'cainiao',
+  'aliexpress',
+  'עליאקספרס',
+  'yunexpress',
+  '4px',
+  'yanwen'
 ];
 
 /**
@@ -302,7 +318,7 @@ export function detectFalsePositiveFlags(candidate, fullText = '', startIdx = -1
     const before = fullText.slice(Math.max(0, startIdx - 35), startIdx).toLowerCase();
     const isInsideUrl = /(?:https?:\/\/|www\.|\.co\.il|\.com|\/p\/|\/t\/|\/orders\/|\?num=|\?track=|\?code=|\?id=)/i.test(before);
 
-    if (!isInsideUrl && /(?:קוד\s*(?:אימות|סודי|איסוף|חד-?פעמי|פתיחה|לפתיחה|מסירה|סודי\s*לפתיחה|לפתיחת\s*תא)|verification\s*code|one-?time\s*password|otp|security\s*code|your\s*code\s*is)[^.\r\n]{0,25}$/i.test(before)) {
+    if (!isInsideUrl && /(?:קוד\s*(?:אימות|סודי|איסוף|חד-?פעמי|פתיחה|לפתיחה|מסירה|סודי\s*לפתיחה|לפתיחת\s*תא)|verification\s*code|one-?time\s*(?:password|code)|otp|security\s*code|your\s*(?:[a-zA-Z0-9_-]+\s*)?code\s*is|(?:whatsapp|google|telegram|apple|bank)\s*code)[^.\r\n]{0,35}$/i.test(before)) {
       if (!hasTrackingPrefix) {
         flags.push('otp_code');
       }
@@ -510,7 +526,7 @@ export function evaluateCandidateRules(candidateValue) {
     // is not distinctive: invoice numbers, customer numbers, parking fines and
     // URL path ids all have those shapes, and there are far more of them in a
     // user's SMS inbox than there are shipments.
-    distinctive: formatMatch && (/[A-Z]/i.test(candidateValue) || checksumResult === 'pass')
+    distinctive: formatMatch && (/[A-Z]/i.test(candidateValue) || /^\d{9}-\d$/.test(candidateValue) || checksumResult === 'pass')
   };
 }
 
@@ -583,6 +599,9 @@ export function extractAndScoreCandidates(text) {
           const end = start + val.length;
           if (cleanVal.length >= 5 && cleanVal.length <= 35 && !METADATA_WORDS.has(cleanVal) && !isFalsePositive(cleanVal, normalizedText, start, end)) {
             const ruleEval = evaluateCandidateRules(cleanVal);
+            if (!domainCarrier && !ruleEval.formatMatch) {
+              continue;
+            }
             const carriers = domainCarrier
               ? [domainCarrier, ...ruleEval.carrierCandidates.filter((c) => c !== domainCarrier)]
               : ruleEval.carrierCandidates;
@@ -805,10 +824,11 @@ export function extractAndScoreCandidates(text) {
         id: `cand_${candidatesMap.size + 1}`,
         value: cleanVal,
         carrierCandidates: ruleEval.carrierCandidates,
-        formatMatch: true,
+        formatMatch: ruleEval.formatMatch,
+        fromOrderLabel: true,
         // The label plus a stated shipment is the corroboration a bare digit
         // run needs; it is not resting on shape alone.
-        distinctive: true,
+        distinctive: ruleEval.distinctive,
         highestConfidence: ruleEval.highestConfidence === 'none' ? 'medium' : ruleEval.highestConfidence,
         priority: ruleEval.bestPriority,
         checksum: ruleEval.checksum,
@@ -883,7 +903,43 @@ export function extractAndScoreCandidates(text) {
     });
   }
 
-  // 3. Scan for regex tokens in plain text
+  // 3. Scan for dashed tracking candidate tokens in plain text (e.g. Orian 554621757-0)
+  const dashedTokenPattern = /\b(\d{9}-\d)\b/g;
+  let dashedTokenMatch;
+
+  while ((dashedTokenMatch = dashedTokenPattern.exec(normalizedText)) !== null) {
+    const rawVal = dashedTokenMatch[1];
+    const cleanVal = rawVal.trim().toUpperCase();
+
+    if (candidatesMap.has(cleanVal) || METADATA_WORDS.has(cleanVal)) continue;
+
+    const start = dashedTokenMatch.index;
+    const end = start + rawVal.length;
+
+    if (isFalsePositive(cleanVal, normalizedText, start, end)) continue;
+
+    const ruleEval = evaluateCandidateRules(cleanVal);
+    if (!ruleEval.formatMatch) continue;
+
+    const primaryCarrier = ruleEval.carrierCandidates[0] || 'other';
+
+    candidatesMap.set(cleanVal, {
+      id: `cand_${candidatesMap.size + 1}`,
+      value: cleanVal,
+      carrierCandidates: ruleEval.carrierCandidates,
+      formatMatch: ruleEval.formatMatch,
+      distinctive: ruleEval.distinctive,
+      highestConfidence: ruleEval.highestConfidence,
+      priority: ruleEval.bestPriority,
+      checksum: ruleEval.checksum,
+      urlDomainMatch: checkUrlDomainMatch(primaryCarrier, normalizedText),
+      labelProximity: calculateLabelProximity(normalizedText, start, end),
+      falsePositiveFlags: detectFalsePositiveFlags(cleanVal, normalizedText, start, end),
+      sourceSpan: { start, end }
+    });
+  }
+
+  // 4. Scan for regex tokens in plain text
   const tokenPattern = /\b([A-Za-z0-9]{6,35})\b/g;
   let tokenMatch;
 
@@ -895,6 +951,11 @@ export function extractAndScoreCandidates(text) {
 
     const start = tokenMatch.index;
     const end = start + rawVal.length;
+
+    // Do not fragment a dashed tracking number (e.g. 554621757-0)
+    if (/^\d{9}$/.test(cleanVal) && /^-\d\b/.test(normalizedText.slice(end, end + 3))) {
+      continue;
+    }
 
     if (isFalsePositive(cleanVal, normalizedText, start, end)) continue;
 
@@ -953,6 +1014,13 @@ export function extractAndScoreCandidates(text) {
       return aStrongLabel ? -1 : 1;
     }
 
+    // A carrier waybill matching a courier format strictly outranks a generic order number
+    const aIsCourier = a.formatMatch && a.score >= 0.35 && a.carrierCandidates.some((c) => c !== 'other');
+    const bIsCourier = b.formatMatch && b.score >= 0.35 && b.carrierCandidates.some((c) => c !== 'other');
+    if (aIsCourier !== bIsCourier && (a.fromOrderLabel || b.fromOrderLabel)) {
+      return aIsCourier ? -1 : 1;
+    }
+
     if (b.score !== a.score) {
       return b.score - a.score;
     }
@@ -983,6 +1051,7 @@ export function extractAndScoreCandidates(text) {
     urlDomainMatch: cand.urlDomainMatch,
     labelProximity: cand.labelProximity,
     falsePositiveFlags: cand.falsePositiveFlags,
-    sourceSpan: cand.sourceSpan
+    sourceSpan: cand.sourceSpan,
+    fromOrderLabel: cand.fromOrderLabel
   }));
 }

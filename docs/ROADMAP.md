@@ -47,7 +47,7 @@ The authoritative end-state product vision and detailed Q&A specification is doc
 ### 🌊 Wave 2: Omni-Channel Ingestion & Candidate Intelligence (Sprint 7)
 *Objective: Zero manual tracking entry with 100% accurate, hallucination-free package capture.*
 
-- [ ] **TASK-701: Grounded Candidate Scorer & Israeli SMS Corpus Testbench** (30+ canonical SMS/Email formats across Israel Post, HFD, Cheetah, BoxIt, Buzzr, Tapuz, AliExpress, DHL, FedEx with 100% extraction accuracy).
+- [x] **TASK-701: Grounded Candidate Scorer & Israeli SMS Corpus Testbench** (`v0.25.0` — Grounded candidate extraction and ranking engine across 24 couriers, verified against 77-case held-out corpus and 72-case synthetic benchmark with 100% precision & recall. Tier 1 deterministic parsing + Cloud Gemini Tier 2 fallback replaces heavy on-device SLM architectures).
 - [ ] **TASK-702: Direct Push Notifications Engine** (Status changes, morning Out-for-Delivery digest, urgent RTS holding countdowns).
 - [ ] **TASK-703: Automatic Courier SMS Ingestion** (Background/native detection of tracking numbers and locker PINs).
 - [ ] **TASK-704: Multi-Email Ingestion Expansion** (Microsoft Outlook / Office 365, Apple iCloud Mail, generic IMAP/App-Password).

@@ -237,6 +237,50 @@
       ],
       "model": "inherit",
       "temperature": 0.1
+    },
+    {
+      "name": "detection_benchmark_specialist",
+      "description": "Component Specialist subagent for carrier detection regexes, candidate ranking, precision/recall benchmarks, and synthetic test data generation. Owns smartParser, carrierDetector, generate-synthetic-training-data.mjs, parserEvalCorpus.js, and detection regression testbenches.",
+      "role": "Detection & Benchmark Subsystem Specialist",
+      "skills": [
+        "synthetic-dataset-and-benchmark",
+        "real-sms-triage-and-eval",
+        "delivery-lifecycle-and-pickup-engine",
+        "software-verification-and-qa"
+      ],
+      "allowed_tools": [
+        "view_file",
+        "replace_file_content",
+        "multi_replace_file_content",
+        "write_to_file",
+        "list_dir",
+        "grep_search",
+        "find_by_name",
+        "run_command"
+      ],
+      "model": "inherit",
+      "temperature": 0.1
+    },
+    {
+      "name": "agent_sync_liaison",
+      "description": "Autonomous Coordination Liaison subagent for cross-agent synchronization, turn-taking verification, sync channel CLI state transitions, and collaborative action board maintenance across Codex, Claude, and Antigravity.",
+      "role": "Agent Sync & Protocol Liaison",
+      "skills": [
+        "agent-sync",
+        "project-release-tracking"
+      ],
+      "allowed_tools": [
+        "view_file",
+        "replace_file_content",
+        "multi_replace_file_content",
+        "write_to_file",
+        "list_dir",
+        "grep_search",
+        "find_by_name",
+        "run_command"
+      ],
+      "model": "inherit",
+      "temperature": 0.0
     }
   ]
 }

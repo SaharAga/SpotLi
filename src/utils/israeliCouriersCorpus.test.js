@@ -175,6 +175,44 @@ describe('Israeli & International Courier Corpus Testbench (TASK-701)', () => {
       expect(result.candidateStatus).toBe('verified');
       expect(result.lockerPin).toBe('4421');
     });
+
+    it('parses Orian notification with dashed tracking format and tracking domain', () => {
+      const sms = 'שלום, חבילתך מ-Zara שמספרה 554621757-0 בדרך אליך עם שליח אוריין. מעקב: https://disttracking.orian.com/track/554621757-0';
+      const result = parseSmartText(sms);
+
+      expect(result.trackingNumber).toBe('554621757-0');
+      expect(result.carrier).toBe('orian');
+      expect(result.candidateStatus).toBe('verified');
+      expect(result.store).toBe('Zara');
+    });
+
+    it('parses E-Cargo (Amital) shipment notice with ECSA format', () => {
+      const sms = 'משלוח שמספרו ECSA0283348 מ-ASOS בדרך אליך. מעקב בכתובת: https://cloud.amital.co.il/track?num=ECSA0283348';
+      const result = parseSmartText(sms);
+
+      expect(result.trackingNumber).toBe('ECSA0283348');
+      expect(result.carrier).toBe('cargo');
+      expect(result.candidateStatus).toBe('verified');
+      expect(result.store).toBe('ASOS');
+    });
+
+    it('prefers carrier waybill over merchant order number when both are present', () => {
+      const sms = 'שליח די אץ אל (יוסי) בדרך אליך עם משלוח 8230216781 (הזמנה ORD-10222). שעת הגעה משוערת בין 13:00 ל-15:00.';
+      const result = parseSmartText(sms);
+
+      expect(result.trackingNumber).toBe('8230216781');
+      expect(result.carrier).toBe('dhl');
+      expect(result.status).toBe('out_for_delivery');
+    });
+
+    it('parses Exelot delivery notice with XLT format', () => {
+      const sms = 'שלום, חבילתך מאקסלוט שמספרה XLT124778035 הגיעה לנקודת איסוף. למעקב: https://exelot.com/tracking/?num=XLT124778035';
+      const result = parseSmartText(sms);
+
+      expect(result.trackingNumber).toBe('XLT124778035');
+      expect(result.carrier).toBe('exelot');
+      expect(result.candidateStatus).toBe('verified');
+    });
   });
 
   describe('AliExpress, Cainiao & Global Couriers', () => {
