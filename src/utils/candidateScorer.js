@@ -302,7 +302,7 @@ export function detectFalsePositiveFlags(candidate, fullText = '', startIdx = -1
     const before = fullText.slice(Math.max(0, startIdx - 35), startIdx).toLowerCase();
     const isInsideUrl = /(?:https?:\/\/|www\.|\.co\.il|\.com|\/p\/|\/t\/|\/orders\/|\?num=|\?track=|\?code=|\?id=)/i.test(before);
 
-    if (!isInsideUrl && /(?:קוד\s*(?:אימות|סודי|איסוף|חד-?פעמי|פתיחה|לפתיחה|מסירה|סודי\s*לפתיחה|לפתיחת\s*תא)|verification\s*code|one-?time\s*password|otp|security\s*code|your\s*code\s*is)[^.\r\n]{0,25}$/i.test(before)) {
+    if (!isInsideUrl && /(?:קוד\s*(?:אימות|סודי|איסוף|חד-?פעמי|פתיחה|לפתיחה|מסירה|סודי\s*לפתיחה|לפתיחת\s*תא)|verification\s*code|one-?time\s*(?:password|code)|otp|security\s*code|your\s*(?:[a-zA-Z0-9_-]+\s*)?code\s*is|(?:whatsapp|google|telegram|apple|bank)\s*code)[^.\r\n]{0,35}$/i.test(before)) {
       if (!hasTrackingPrefix) {
         flags.push('otp_code');
       }
@@ -583,6 +583,9 @@ export function extractAndScoreCandidates(text) {
           const end = start + val.length;
           if (cleanVal.length >= 5 && cleanVal.length <= 35 && !METADATA_WORDS.has(cleanVal) && !isFalsePositive(cleanVal, normalizedText, start, end)) {
             const ruleEval = evaluateCandidateRules(cleanVal);
+            if (!domainCarrier && !ruleEval.formatMatch) {
+              continue;
+            }
             const carriers = domainCarrier
               ? [domainCarrier, ...ruleEval.carrierCandidates.filter((c) => c !== domainCarrier)]
               : ruleEval.carrierCandidates;

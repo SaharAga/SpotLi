@@ -103,7 +103,11 @@ export function extractIdentifierFromShortUrl(urlString) {
     const formatted = raw.startsWith('http') ? raw : `https://${raw}`;
     const parsed = new URL(formatted);
 
-    // 1. Check query parameters
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+    const isShortOrCourier = SHORT_DOMAINS.some(domain => host === domain || host.endsWith(`.${domain}`)) ||
+      Object.keys(CARRIER_SHORT_DOMAINS).some(domain => host === domain || host.endsWith(`.${domain}`));
+
+    // 1. Check query parameters (valid for known carriers or short URLs)
     for (const param of SHORT_TRACKING_QUERY_PARAMS) {
       const val = parsed.searchParams.get(param);
       if (val && val.trim().length >= 4 && val.trim().length <= 40) {
@@ -112,7 +116,11 @@ export function extractIdentifierFromShortUrl(urlString) {
       }
     }
 
-    // 2. Check path segments (e.g. chtr.co.il/t/CH12345678 or chtr.co.il/12345678)
+    // 2. Check path segments ONLY for verified short-link or courier domains
+    if (!isShortOrCourier) {
+      return null;
+    }
+
     const segments = parsed.pathname.split('/').filter(Boolean);
     if (segments.length > 0) {
       const last = segments[segments.length - 1];
