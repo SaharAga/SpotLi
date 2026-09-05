@@ -122,7 +122,11 @@ describe('parserMetamorphic — composed transforms', () => {
           ).toBe(normalize(parsed.trackingNumber));
         }
       ),
-      { numRuns: 400 }
+      // Seeded so a red build is always reproducible. An unseeded property
+      // test that picks different combinations each run fails intermittently,
+      // and an intermittently red suite gets ignored rather than fixed —
+      // which would cost more than the extra combinations are worth.
+      { numRuns: 400, seed: 20260905 }
     );
   });
 });

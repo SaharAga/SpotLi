@@ -28,7 +28,7 @@
           "priority": 20
         },
         {
-          "source": "^[A-Z]{2}\\d{9}N\\d$",
+          "source": "^[A-Z]{2}\\d{9}[A-Z]\\d$",
           "flags": "i",
           "confidence": "high",
           "checksum": "not-applicable",
@@ -762,7 +762,7 @@
     },
     {
       "carrierId": "israel-post",
-      "source": "^[A-Z]{2}\\d{9}N\\d$",
+      "source": "^[A-Z]{2}\\d{9}[A-Z]\\d$",
       "flags": "i",
       "confidence": "high",
       "checksum": "not-applicable",

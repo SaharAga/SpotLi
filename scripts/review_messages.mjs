@@ -39,11 +39,15 @@ const args = process.argv.slice(2);
 const inputPath = args.find((a) => !a.startsWith('--'));
 const raw = args.includes('--raw');
 const showAll = args.includes('--all');
+// --sender=NAME narrows the review to one sender. A sender failing across the
+// board is one bug, so reading its messages together is how you find it.
+const senderFilter = args.find((a) => a.startsWith('--sender='))?.slice('--sender='.length) || null;
 
 if (!inputPath || !existsSync(inputPath)) {
   console.error('\n  Usage: npm run review:messages -- <path-to-export> [--raw] [--all]\n');
   console.error('  Android: install "SMS Backup & Restore", back up SMS to XML, pass that file.');
   console.error('  Or pass a plain text file with messages separated by blank lines.\n');
+  console.error('  --sender=NAME  narrow to one sender    --all  print every miss    --raw  skip redaction\n');
   process.exit(1);
 }
 
@@ -149,7 +153,9 @@ const COURIER_HINT = new RegExp([
 ].join('|'), 'i');
 
 const messages = await readMessages(inputPath);
-const candidates = messages.filter((m) => COURIER_HINT.test(m.body));
+const candidates = messages
+  .filter((m) => COURIER_HINT.test(m.body))
+  .filter((m) => !senderFilter || m.sender.toLowerCase().includes(senderFilter.toLowerCase()));
 
 const buckets = { verified: [], probable: [], uncertain: [], nothing: [] };
 const bySender = new Map();
@@ -177,7 +183,8 @@ for (const message of candidates) {
 
 const pct = (n, d) => (d === 0 ? '—' : `${((n / d) * 100).toFixed(0)}%`);
 
-console.log(`\n  ${messages.length} messages read · ${candidates.length} look delivery-related\n`);
+console.log(`\n  ${messages.length} messages read · ${candidates.length} look delivery-related`
+  + `${senderFilter ? ` · filtered to sender ~"${senderFilter}"` : ''}\n`);
 console.log(`    ${String(buckets.verified.length).padStart(4)}  verified   auto-filled without asking — spot-check a few`);
 console.log(`    ${String(buckets.probable.length).padStart(4)}  probable   pre-filled, user can correct`);
 console.log(`    ${String(buckets.uncertain.length).padStart(4)}  uncertain  sent to AI or the user`);
