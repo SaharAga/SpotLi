@@ -7,6 +7,111 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.26.0] - 2026-09-05
+
+### Added
+- Smart Import now confirms uncertain tracking numbers with the carrier before
+falling back to AI parsing. For Israel Post, asking whether a number resolves
+to a real shipment settles the ambiguity outright instead of guessing at it —
+and skips the AI call entirely when it succeeds.
+
+- Smart Import now reads Israel Post's full range of tracking formats. Domestic
+items (RU0126608087Z, MB0121596516Y), counter-issued items (YY00370128005) and
+inbound registered mail from any country (RE…SE, RT…HK, RS…NL) were previously
+unreadable — only codes ending in IL were recognised. On a real 19,000-message
+inbox this took Israel Post messages read confidently from 259 to 485.
+
+- Smart Import now reads the way couriers actually write. Messages phrased
+"חבילה מ<חנות> מספר 47911656" or "הזמנתך שמספרה AP35428006" — the shipment
+noun, the store, then the number — were previously missed entirely, as were
+Israel Post mailbox items whose code ends in any distributor letter. Measured
+against a real 19,000-message inbox, 131 more delivery messages are now read.
+
+- Smart Import now ignores tracking-number-shaped text in promotional and survey
+messages, recognises carriers by their regional and Israeli hosts (dhl.co.il,
+israelpost.co.il, aramex.co.il and others), and no longer treats a path
+segment on an unrelated website as a courier confirmation. When the AI
+fallback and the offline parser independently agree on a number, that
+agreement now counts.
+
+- Made Smart Import substantially more accurate at detecting tracking numbers.
+The parser no longer treats invoice numbers, parking fines, customer numbers
+and URL path ids as shipments, and it now reads tracking numbers that carriers
+print in spaced groups (UPS's `1Z 999 AA1 01 2345 6784`, Israel Post labels).
+Global carriers (DHL, FedEx, UPS, USPS, Aramex, Royal Mail, Cainiao) are now
+recognised by name in English notifications, not just Hebrew ones.
+
+### Fixed
+- Smart Import no longer spins forever when AI parsing cannot start. The call
+now gives up after 35 seconds and tells you to enter the details manually,
+instead of leaving a "trying AI parsing" spinner on screen indefinitely.
+
+- Fixed every screen that could hang forever waiting on a Cloud Function. Smart
+Import's "trying AI parsing" and the account screen's "Checking status…" both
+sat indefinitely in production because the call was never actually sent. All
+five callables now give up and report a failure instead of spinning.
+
+- Fixed a data-loss bug where cloud sync could delete packages off a signed-in
+user's device (#91).
+
+The Firestore listener queried with `orderBy("updatedAt", "desc")`. Firestore
+omits documents that lack the field an `orderBy` names, so any package stored
+without an `updatedAt` was simply absent from the snapshot — not deleted, just
+not returned. The reconcile then treated "absent from the snapshot" as "no
+longer exists" and dropped the local copy, and the listener persisted that
+result to localStorage, destroying the records.
+
+The query no longer orders server-side (ordering is presentation, and must
+never decide which records exist), and reconciling a snapshot can no longer
+shrink what is on disk: packages missing from a snapshot are kept and the
+near-miss is logged. Deletions continue to travel through tombstones. The
+`getPackages` path already had an equivalent guard; the listener, which is what
+actually runs during a session, did not.
+
+- Remediated comprehensive design, UI/UX, and accessibility issues: consolidated AccountModal and AccountSheet into a single responsive modal without nested portals or legacy tokens, moved PWA banner to a top banner, hid BottomNav and FAB during sub-modals, hid the floating feedback button when inside the feedback modal or sub-modals, unified StatsCards 4-column layout and FilterBar chips, and improved RTL mirroring and WCAG 2.2 touch targets.
+
+- Adds `npm run review:messages`, a local tool that runs your own SMS export
+through the parser and reports which delivery messages it fails to read,
+grouped by sender. Nothing is uploaded and output is PII-redacted by default.
+
+- Smart Import now reads messages that contain invisible formatting characters —
+the bidi marks Hebrew senders' phones insert around Latin tracking numbers,
+non-breaking spaces from HTML emails, and irregular spacing — which previously
+caused the tracking number to be missed entirely. Adds a robustness test suite
+that generates ~1,000 noisy variants of every known message.
+
+- Smart Import now recognises the order number as the tracking number when a
+courier uses one number for both — Tapuz among them — provided the message
+says the parcel has shipped. Checkout receipts and "we'll update when it
+ships" notices, which use near-identical wording, are still ignored.
+
+- Fixed three faults found in real courier messages: Hebrew carrier names
+written with a typographic apostrophe (צ’יטה) were not recognised, Israel
+Post's "מהיר לתיבה" mailbox format (MA…N8) matched nothing at all, and a
+shortlink in the message could outrank the tracking number printed beside it.
+Adds the cheetahint and zig-zag hosts.
+
+- Fixed four detection faults found in a real courier message: "מס מעקב"
+without an apostrophe was not recognised as a tracking label, WhatsApp contact
+links had their phone numbers read as tracking numbers, Cargo was not
+recognised by its bare brand name or its cargo-ship.co.il domain, and an
+opaque token from a tracking URL could outrank the tracking number the message
+actually shows you.
+
+- Hardened Cloud Functions endpoints with fail-closed webhook/push tokens, eliminated unmanaged root Firestore package writes, patched CSV injection leading-whitespace vectors, validated service worker notification click targets, updated LegalConsentGate to re-prompt on legal updates, and aligned Terms of Use and Privacy Policy with full capability disclosures and comprehensive limitation of liability.
+
+- Smart Import now reads Tapuz tracking links. Their notifications use a
+`tracking_number` parameter on tapuzdelivery.com and issue short mixed-case
+codes, none of which were recognised — and the code's capitalisation is now
+preserved, since upper-casing it produces a number their tracking page does
+not accept.
+
+- Smart Import no longer guesses a carrier from how many digits a tracking number
+has. An Israeli courier's job number was being filed under DHL or FedEx purely
+because it was ten or twelve digits long; when nothing in the message names a
+carrier, the package is now saved with the carrier left unknown. Also reads
+numbers labelled "שליחות", which Bar Group and others use.
+
 ## [0.25.0] - 2026-09-04
 
 ### Added
