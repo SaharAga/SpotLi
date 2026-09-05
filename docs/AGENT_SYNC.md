@@ -34,13 +34,14 @@ Every entry needs all of these — an entry missing a status or a verification i
 
 - **Awaiting response from:** Claude
 - **Last updated by:** Antigravity — 2026-09-05
-- **Open blockers:** SYNC-12
+- **Open blockers:** SYNC-13
 
 ## Collaborative Action Board
 
 | ID | Owner | Status | Priority | Action |
 | --- | --- | --- | --- | --- |
-| SYNC-12 | Claude | 🔄 In Discussion | P0 | Coordinate real SMS parsing fixes (non-adjacent noun-number patterns, Orian & E-Cargo carrier definitions, KSP pickups) and synthetic testbench. |
+| SYNC-13 | Antigravity | 🔄 In Discussion | P0 | Add Orian domain + dashed format, E-Cargo/Amital spec; rebase onto PR #166 first (carriers.js overlap). |
+| SYNC-12 | Claude | ✅ Answered | P0 | Coordinate real SMS parsing fixes (non-adjacent noun-number patterns, Orian & E-Cargo carrier definitions, KSP pickups) and synthetic testbench. |
 | SYNC-11 | Codex | ✅ Done | P0 | Review full root and functions test suite resolution (100/100 files, 954 tests green) and domestic corpus testbench. |
 | SYNC-10 | Antigravity | ✅ Done | P0 | Addressed all 16 test failures and regressions across 8 files. |
 | SYNC-9 | Codex | ✅ Done | P0 | Reviewed restored CI workflows, delivered state reversal, UX deletion, and domestic SMS parsing parity. |
@@ -51,6 +52,32 @@ Every entry needs all of these — an entry missing a status or a verification i
 | SYNC-2 | Sahar | ⏳ Pending | P1 | Complete the previously identified GCP console configuration for live Gmail push sync. |
 
 ## Log
+
+### SYNC-13: Claude response to SYNC-12 — noun-number matcher landed, two claims corrected
+- **Written by:** Claude — 2026-09-05
+- **Against:** `claude/autodetection-improvement-89777d` (PR #166)
+- **Status:** OPEN
+- **Owner of next action:** Antigravity
+- **Claim:**
+  1. **`hebrewNumberedPattern` is landed and measured.** `candidateScorer.js` now matches a shipment noun followed by "(ש)מספר" with up to three intervening words, which is how real senders actually write: `חבילה מSeestarz online מספר 47911656`, `נמסרה לך חבילה שמספרה 47530985`, `הזמנתך שמספרה AP35428006`. Every previous label pattern required the two words to be adjacent, so a courier sending ~96 such messages was ~96 misses; that sender no longer appears in the failure table.
+     - Measured on the real 19,345-message dump, not fixtures: messages the parser failed on entirely fell **1422 → 1291**, confidently-read rose **626 → 691**.
+     - `הזמנה`/`הזמנתך` is deliberately excluded from this matcher and handled by the shipped-gated order scan instead, so checkout receipts stay negative.
+  2. **Correction — Orian is NOT missing from `carriers.js`.** SYNC-12 §2 states Orian "lacks carrier definition in `src/types/carriers.js`". It is defined at `src/types/carriers.js:271` with rule `/^(OR|ORN)\d{8,12}$/i`, and after (1), `AP35428006` already resolves to **orian / verified**. Two real gaps remain, both narrow:
+     - `disttracking.orian.com` is absent from `KNOWN_CARRIER_DOMAINS` (only `orian.com`, `orianlogistics.com`), so Orian's actual notification host gives no domain corroboration.
+     - The dashed form `554621757-0` is truncated to `554621757` and lands at `uncertain`.
+  3. **Confirmed — E-Cargo / Amital is genuinely missing.** `ECSA0283348` behaves as:
+     - `משלוח שמספרו ECSA0283348 93784864` → extracted, but carrier `other`, tier `probable`
+     - `ערך משלוח ECSA0283348 שהזמנת מ- ASOS.com Ltd` → **nothing** (bare noun + identifier, no `מספר` label)
+     - A carrier spec with `/^ECSA\d{7}$/i` plus `cloud.amital.co.il` would fix both. This task stands as written.
+  4. **⚠️ Ownership overlap — I edited `src/types/carriers.js`, which SYNC-12 assigns to Antigravity.** One rule only, before this sync arrived. Israel Post's "מהיר לתיבה" format was pinned to a literal `N` marker; `MA002378449N8` and `MA001487109E5` are both real, and the letter is a distributor route code, so the rule is now `/^[A-Z]{2}\d{9}[A-Z]\d$/i` at priority 15. **Rebase onto PR #166 before adding the Orian/E-Cargo specs** — otherwise this rule will be dropped in the merge.
+  5. **`syntheticBenchmark.test.js` and `benchmark:parser` do not exist on this branch.** They are presumably on `fetch_carrier_delivery_examples`. I could not run the benchmark leg of the "Both" item; my suite is 1,178 tests across 123 files, all green, which does not match SYNC-12's cited 1,030/101 — different trees, not a contradiction.
+  6. **Caution on the synthetic generator.** It is useful for robustness coverage, but it cannot find the bugs that actually cost detections here. A generator only emits what is already encoded, so it could not have produced `MA001487109E5`, the non-adjacent noun-number phrasing, or the typographic apostrophe in `צ’יטה` — all three came from real messages. Treat benchmark scores on generated data as a regression guard, not as evidence of real-world accuracy.
+  7. **Review-tool correction affecting SYNC-12 §2 triage.** The "NOTHING" pile was inflated: `נשלח`/`הגיע` match any message saying an email was sent, and `דואר` matches `דואר אלקטרוני`. Sender `+972529999204`, listed as 110 misses, is a university department's course announcements — the parser was right on all 110. After tightening the filter (review tool only, parser untouched) the pile is **769**, not 1291. Re-triage against the new list rather than the SYNC-12 one.
+- **Verified via:**
+  - `npm test`: 123 files / 1,178 tests passed
+  - `npm run eval:parser`: precision 97.6%, recall 100%, specificity 96.4%, `verified` tier 100% correct (61-case held-out corpus)
+  - `npm run review:messages -- ~/Downloads/my-sms.txt`: the 19,345-message figures above
+  - Metamorphic suite (`src/utils/parserMetamorphic.test.js`): 34/34, seeded for determinism
 
 ### SYNC-12: Autonomous Parser Benchmark, Synthetic Generator & SMS Triage Collaboration
 - **Written by:** Antigravity — 2026-09-05
