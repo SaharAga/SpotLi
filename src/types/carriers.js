@@ -134,8 +134,30 @@ export const CARRIERS = {
       // value. No country suffix and no check digit, so nothing else matched
       // these and they were dropped entirely.
       rule(/^[A-Z]{2}\d{9}[A-Z]\d$/i, { confidence: 'high', priority: 15 }),
+      // Israel Post's domestic identifiers: two letters, ten digits, one
+      // trailing letter — RU0126608087Z, UZ0626073436Y, MB0121596516Y,
+      // RR0126918893X, MA1646098403F. They carry no country suffix and no
+      // check digit, so none of the rules above matched and every one of these
+      // messages produced nothing at all.
+      rule(/^[A-Z]{2}\d{10}[A-Z]$/i, { confidence: 'high', priority: 12 }),
+      // Counter-issued items ("תודה שאספת את דבר הדואר YY00370128005").
+      rule(/^YY\d{11}$/i, { confidence: 'high', priority: 12 }),
       // Universal registered mail without a country suffix — ambiguous, hence medium.
-      rule(/^[A-Z]{2}\d{8,9}$/i)
+      rule(/^[A-Z]{2}\d{8,9}$/i),
+      // UPU S10 from any origin country. Inbound mail from Belgium, Sweden,
+      // Hong Kong or the Netherlands (RG…BE, RE…SE, RT…HK, RS…NL) is delivered
+      // here by Israel Post and tracked through its own itemtrace, but only
+      // …IL matched, so a genuine registered item with a verifying check digit
+      // was dropped purely for having the wrong suffix.
+      //
+      // Left unprioritised on purpose: the generic tier sorts after every
+      // explicit rule, so GB still resolves to Royal Mail and US to USPS and
+      // this only catches what no carrier claims. It also carries no checksum
+      // — `evaluateCandidateRules` takes the first checksum any matching rule
+      // offers, so attaching upu-s10 here made unrelated formats that merely
+      // share the shape (Yanwen's UB…YP) report a *failing* check digit and
+      // lose a confidence tier.
+      rule(/^[A-Z]{2}\d{9}[A-Z]{2}$/i)
     ],
     sample: 'RS948219481IL',
     country: 'Israel'

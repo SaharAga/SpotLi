@@ -35,7 +35,28 @@
           "priority": 15
         },
         {
+          "source": "^[A-Z]{2}\\d{10}[A-Z]$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 12
+        },
+        {
+          "source": "^YY\\d{11}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 12
+        },
+        {
           "source": "^[A-Z]{2}\\d{8,9}$",
+          "flags": "i",
+          "confidence": "medium",
+          "checksum": "not-applicable",
+          "priority": 1000
+        },
+        {
+          "source": "^[A-Z]{2}\\d{9}[A-Z]{2}$",
           "flags": "i",
           "confidence": "medium",
           "checksum": "not-applicable",
@@ -762,6 +783,22 @@
     },
     {
       "carrierId": "israel-post",
+      "source": "^[A-Z]{2}\\d{10}[A-Z]$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 12
+    },
+    {
+      "carrierId": "israel-post",
+      "source": "^YY\\d{11}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 12
+    },
+    {
+      "carrierId": "israel-post",
       "source": "^[A-Z]{2}\\d{9}[A-Z]\\d$",
       "flags": "i",
       "confidence": "high",
@@ -1163,6 +1200,14 @@
     {
       "carrierId": "israel-post",
       "source": "^[A-Z]{2}\\d{8,9}$",
+      "flags": "i",
+      "confidence": "medium",
+      "checksum": "not-applicable",
+      "priority": 1000
+    },
+    {
+      "carrierId": "israel-post",
+      "source": "^[A-Z]{2}\\d{9}[A-Z]{2}$",
       "flags": "i",
       "confidence": "medium",
       "checksum": "not-applicable",
