@@ -68,6 +68,10 @@ function neutralizeFormula(str) {
   if (str.length > 0 && CSV_FORMULA_TRIGGERS.includes(str[0])) {
     return `'${str}`;
   }
+  const trimmed = str.trimStart();
+  if (trimmed.length > 0 && CSV_FORMULA_TRIGGERS.includes(trimmed[0])) {
+    return `'${str}`;
+  }
   return str;
 }
 

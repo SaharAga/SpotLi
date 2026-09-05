@@ -30,6 +30,12 @@ describe('emailSyncService Unit Tests', () => {
     it('strips non-alphanumeric characters from uid', () => {
       expect(getIngestionEmailAddress({ uid: 'user-abc_123!@#' })).toBe('233b362d7b331adfde6e+usr_userabc123@cloudmailin.net');
     });
+
+    it('preserves full 28-character Firebase Auth UID without truncation', () => {
+      const fullUid = 'abcdefghijklmnopqrstuvwxyz12';
+      expect(fullUid.length).toBe(28);
+      expect(getIngestionEmailAddress({ uid: fullUid })).toBe(`233b362d7b331adfde6e+usr_${fullUid}@cloudmailin.net`);
+    });
   });
 
   describe('getConnectedServices & setConnectedService', () => {

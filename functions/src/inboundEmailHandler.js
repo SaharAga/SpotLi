@@ -11,6 +11,7 @@
  * see gmailPushHandler.js — and never sends mail to this webhook.
  */
 
+import crypto from 'node:crypto';
 import {
   sanitizeEmailHtml,
   extractTrackingDetails,
@@ -20,6 +21,19 @@ import {
 } from './trackingExtraction.js';
 
 export { sanitizeEmailHtml, extractTrackingDetails, extractAllTrackingDetails, inferDeliveryStatus, shouldAdvanceStatus };
+
+/**
+ * Constant-time comparison of two tokens using SHA-256 hashes to prevent timing attacks.
+ * @param {string} a
+ * @param {string} b
+ * @returns {boolean}
+ */
+export function safeCompareTokens(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string' || !a || !b) return false;
+  const hashA = crypto.createHash('sha256').update(a).digest();
+  const hashB = crypto.createHash('sha256').update(b).digest();
+  return crypto.timingSafeEqual(hashA, hashB);
+}
 
 /**
  * Extracts userId from the recipient email address.
@@ -63,10 +77,15 @@ export function createInboundEmailHandler({ db, webhookToken }) {
       return;
     }
 
-    // Authenticate the webhook with a shared secret before any document
-    // mutation, mirroring gmailPushNotification's `?token=` query-param check.
-    // Fails closed: deny access whenever secret is not configured or does not match.
-    if (!webhookToken || req.query?.token !== webhookToken) {
+    // Enforce webhook secret token verification: fail closed
+    const providedToken =
+      req.query?.token ||
+      req.headers?.['x-webhook-token'] ||
+      (typeof req.headers?.authorization === 'string' && req.headers.authorization.startsWith('Bearer ')
+        ? req.headers.authorization.slice(7).trim()
+        : null);
+
+    if (!webhookToken || !providedToken || !safeCompareTokens(providedToken, webhookToken)) {
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
@@ -171,10 +190,6 @@ export function createInboundEmailHandler({ db, webhookToken }) {
             // eslint-disable-next-line no-await-in-loop
             await userPkgRef.set(patch, { merge: true });
 
-            const rootPkgRef = db.collection('packages').doc(existingDocId);
-            // eslint-disable-next-line no-await-in-loop
-            await rootPkgRef.set(patch, { merge: true });
-
             results.push({
               ok: true,
               packageId: existingDocId,
@@ -216,10 +231,6 @@ export function createInboundEmailHandler({ db, webhookToken }) {
           const userPkgRef = userPackagesRef.doc(packageId);
           // eslint-disable-next-line no-await-in-loop
           await userPkgRef.set(newPackage);
-
-          const rootPkgRef = db.collection('packages').doc(packageId);
-          // eslint-disable-next-line no-await-in-loop
-          await rootPkgRef.set(newPackage);
         }
 
         results.push({

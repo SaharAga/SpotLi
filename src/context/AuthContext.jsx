@@ -558,6 +558,10 @@ export function AuthProvider({ children }) {
       ...cleanUser,
       updatedAt: new Date().toISOString()
     };
+    if (!cleanUser.legalAcceptedVersion) {
+      delete profileData.legalAcceptedVersion;
+      delete profileData.legalAcceptedAt;
+    }
 
     // Non-blocking firestore sync with timeout to guarantee ultra-fast registration
     withTimeout(setDoc(doc(db, 'users', firebaseUser.uid), profileData, { merge: true }), 1500);
@@ -574,13 +578,19 @@ export function AuthProvider({ children }) {
 
     // Check if user returned from mobile or desktop redirect flow
     getRedirectResult(auth)
-      .then((res) => {
+      .then(async (res) => {
         if (!isMountedRef.current) return;
         if (res?.user) {
           isExplicitLogoutRef.current = false;
-          const cleanUser = buildCleanUserProfile(res.user);
-          setUser(cleanUser);
-          syncProfileToFirestore(res.user);
+          let cleanUser = buildCleanUserProfile(res.user);
+          if (cleanUser && cleanUser.legalAcceptedVersion !== LEGAL_VERSION) {
+            const stored = await withTimeout(fetchStoredLegalConsent(res.user.uid), 1500);
+            if (stored && isMountedRef.current) {
+              cleanUser = { ...cleanUser, ...stored };
+            }
+          }
+          if (isMountedRef.current) setUser(cleanUser);
+          syncProfileToFirestore(res.user, null, cleanUser);
           migrateGuestDataToUser(res.user.uid);
           setLoading(false);
         }
@@ -596,7 +606,7 @@ export function AuthProvider({ children }) {
       if (firebaseUser) {
         isExplicitLogoutRef.current = false;
         let cleanUser = buildCleanUserProfile(firebaseUser);
-        if (cleanUser && !cleanUser.legalAcceptedVersion) {
+        if (cleanUser && cleanUser.legalAcceptedVersion !== LEGAL_VERSION) {
           const stored = await withTimeout(fetchStoredLegalConsent(firebaseUser.uid), 1500);
           if (stored && isMountedRef.current) {
             cleanUser = { ...cleanUser, ...stored };
@@ -646,7 +656,7 @@ export function AuthProvider({ children }) {
       if (!isMountedRef.current) return null;
       if (result?.user && !isExplicitLogoutRef.current) {
         let cleanUser = buildCleanUserProfile(result.user);
-        if (cleanUser && !cleanUser.legalAcceptedVersion) {
+        if (cleanUser && cleanUser.legalAcceptedVersion !== LEGAL_VERSION) {
           const stored = await withTimeout(fetchStoredLegalConsent(result.user.uid), 1500);
           if (stored && isMountedRef.current) {
             cleanUser = { ...cleanUser, ...stored };
@@ -705,9 +715,15 @@ export function AuthProvider({ children }) {
       const result = await signInWithEmailAndPassword(auth, email, password);
       if (!isMountedRef.current) return null;
       if (result?.user && !isExplicitLogoutRef.current) {
-        const cleanUser = buildCleanUserProfile(result.user);
-        setUser(cleanUser);
-        syncProfileToFirestore(result.user);
+        let cleanUser = buildCleanUserProfile(result.user);
+        if (cleanUser && cleanUser.legalAcceptedVersion !== LEGAL_VERSION) {
+          const stored = await withTimeout(fetchStoredLegalConsent(result.user.uid), 1500);
+          if (stored && isMountedRef.current) {
+            cleanUser = { ...cleanUser, ...stored };
+          }
+        }
+        if (isMountedRef.current) setUser(cleanUser);
+        syncProfileToFirestore(result.user, null, cleanUser);
         migrateGuestDataToUser(result.user.uid);
       }
       triggerCloudSync();

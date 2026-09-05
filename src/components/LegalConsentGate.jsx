@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 const LegalDocumentModal = React.lazy(() => import('./LegalDocumentModal').then(module => ({ default: module.LegalDocumentModal })));
 import { Modal } from './Modal';
+import { LEGAL_VERSION } from '../constants/legalVersion';
 
 /**
  * Blocking, non-dismissable overlay shown to any signed-in user whose stored
@@ -24,7 +25,7 @@ export function LegalConsentGate({ onShowToast }) {
   const [openDoc, setOpenDoc] = useState(null); // 'terms' | 'privacy' | null
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const needsConsent = !!(user && !user.legalAcceptedVersion);
+  const needsConsent = !!(user && user.legalAcceptedVersion !== LEGAL_VERSION);
   if (!needsConsent) return null;
 
   const handleContinue = async () => {

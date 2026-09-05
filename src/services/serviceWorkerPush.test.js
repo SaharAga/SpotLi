@@ -132,4 +132,62 @@ describe('Service Worker Web Push and Click Handler', () => {
     expect(navigateMock).toHaveBeenCalledWith('/?packageId=pkg-999');
     expect(focusMock).toHaveBeenCalled();
   });
+
+  it('rejects external untrusted URLs in notification data to prevent open redirect', async () => {
+    const closeMock = vi.fn();
+    let promiseCaptured;
+    const waitUntilMock = vi.fn((p) => { promiseCaptured = p; });
+
+    const focusMock = vi.fn().mockResolvedValue(undefined);
+    const navigateMock = vi.fn().mockResolvedValue(undefined);
+    mockClients.matchAll.mockResolvedValue([
+      { url: 'https://deliveree.app/', focus: focusMock, navigate: navigateMock }
+    ]);
+
+    const event = {
+      action: 'view',
+      notification: {
+        close: closeMock,
+        data: { url: 'https://malicious-phishing.com/steal-creds' }
+      },
+      waitUntil: waitUntilMock
+    };
+
+    listeners.notificationclick(event);
+    await promiseCaptured;
+
+    // Must NOT navigate to external malicious domain
+    expect(navigateMock).not.toHaveBeenCalledWith('https://malicious-phishing.com/steal-creds');
+    expect(focusMock).toHaveBeenCalled();
+  });
+
+  it('rejects backslash protocol-relative open redirect vectors like /\\evil.com and /\\\\evil.com', async () => {
+    for (const evilVector of ['/\\evil.com', '/\\\\evil.com', '//evil.com']) {
+      const closeMock = vi.fn();
+      let promiseCaptured;
+      const waitUntilMock = vi.fn((p) => { promiseCaptured = p; });
+
+      const focusMock = vi.fn().mockResolvedValue(undefined);
+      const navigateMock = vi.fn().mockResolvedValue(undefined);
+      mockClients.matchAll.mockResolvedValue([
+        { url: 'https://deliveree.app/', focus: focusMock, navigate: navigateMock }
+      ]);
+
+      const event = {
+        action: 'view',
+        notification: {
+          close: closeMock,
+          data: { url: evilVector }
+        },
+        waitUntil: waitUntilMock
+      };
+
+      listeners.notificationclick(event);
+      await promiseCaptured;
+
+      expect(navigateMock).not.toHaveBeenCalledWith(evilVector);
+      expect(navigateMock).not.toHaveBeenCalledWith(expect.stringContaining('evil.com'));
+      expect(focusMock).toHaveBeenCalled();
+    }
+  });
 });

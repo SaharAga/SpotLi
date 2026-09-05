@@ -186,9 +186,7 @@ export async function runBackfillForUser({ db, uid, refreshToken, clientSecret, 
     const batch = db.batch();
     for (const pkg of packagesToSave) {
       const userPkgRef = db.collection('users').doc(uid).collection('packages').doc(pkg.id);
-      const globalPkgRef = db.collection('packages').doc(pkg.id);
       batch.set(userPkgRef, pkg);
-      batch.set(globalPkgRef, pkg);
     }
     for (const { docId, patch } of orderStatusUpdates) {
       batch.set(db.collection('users').doc(uid).collection('packages').doc(docId), patch, { merge: true });
