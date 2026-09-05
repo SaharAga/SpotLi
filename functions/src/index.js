@@ -43,14 +43,31 @@ if (getApps().length === 0) {
  * pasted text, or for a screenshot the client can't read at all. See
  * README.md "AI-assisted import" for the full design and cost guards.
  *
- * enforceAppCheck rejects requests that don't come from the real app build;
- * requiring sign-in (checked inside the handler) rules out anonymous
- * scripted abuse. Both are cheap, high-leverage guards against runaway
- * cost — see also the per-user/global daily caps in guards.js.
+ * Requiring sign-in (checked inside the handler) rules out anonymous scripted
+ * abuse, and the per-user/global daily caps in guards.js are the actual spend
+ * ceiling. App Check would add proof the caller is the genuine app build; it
+ * is currently off, for the reason recorded on the option below.
  */
 export const parseWithAi = onCall(
   {
-    enforceAppCheck: true,
+    // App Check is disabled here, deliberately and temporarily.
+    //
+    // The reCAPTCHA Enterprise provider never mints a token in production:
+    // grecaptcha.enterprise.execute() does not resolve, so no assessment is
+    // ever created (zero in 90 days across both keys) and no request ever
+    // reached this function. With enforcement on and no token obtainable, it
+    // rejects every call — AI text parsing and screenshot parsing both dead.
+    //
+    // The guards that actually carry the abuse case are unaffected:
+    // assertAuthenticated (sign-in required), the per-user and global daily
+    // call caps in guards.js (the real spend ceiling), and the payload size
+    // limits. App Check adds proof the caller is the genuine app build, which
+    // is worth having but not worth keeping the feature offline for.
+    //
+    // Restore to true only after App Check is re-registered AND its metrics
+    // show assessments arriving. Enforcing before observing is what caused
+    // this outage — see README "Abuse protection".
+    enforceAppCheck: false,
     secrets: [geminiApiKey],
     // Structured extraction on a single message or image is fast; this
     // leaves headroom without letting a stuck call run indefinitely.
