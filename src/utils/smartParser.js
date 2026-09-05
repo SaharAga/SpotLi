@@ -973,6 +973,37 @@ export function extractDatesAndStatus(text) {
  * @param {string} rawText 
  * @returns {object} Partial package data extracted from text
  */
+/**
+ * Strips characters that carry no meaning but change every string comparison.
+ *
+ * Hebrew messages containing Latin tracking numbers are full of bidi control
+ * marks — a sender's client inserts them around the Latin run so it displays
+ * correctly right-to-left. They are invisible, the user cannot remove them,
+ * and they sit exactly where the parser looks for a word boundary. The same
+ * goes for non-breaking spaces out of HTML email bodies and zero-width joiners
+ * from emoji-capable clients.
+ *
+ * Normalising once here, rather than defending against them in each pattern,
+ * means every extraction path benefits and no future rule has to remember.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+export function normalizeMessageText(text) {
+  if (!text || typeof text !== 'string') return '';
+
+  return text
+    // Bidi controls and zero-width characters: invisible, and never part of
+    // an identifier.
+    .replace(/[\u200B-\u200F\u061C\u2066-\u2069\uFEFF]/g, '')
+    // Every other Unicode space behaves as a separator but fails /\s/-adjacent
+    // assumptions and exact-match comparisons.
+    .replace(/[\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]/g, ' ')
+    // Runs of horizontal whitespace collapse; newlines are meaningful for
+    // pickup-location and address extraction, so they survive.
+    .replace(/[ \t]{2,}/g, ' ');
+}
+
 export function parseSmartText(rawText) {
   if (!rawText || typeof rawText !== 'string') {
     return {
@@ -994,7 +1025,7 @@ export function parseSmartText(rawText) {
     };
   }
 
-  const cleanText = sanitizeString(rawText, 5000);
+  const cleanText = normalizeMessageText(sanitizeString(rawText, 5000));
   // `extractAndScoreCandidates` is the single extraction path. The older
   // `extractTrackingCandidates` produced a parallel, unscored candidate set
   // whose result was already unused here; calling it only invited the two

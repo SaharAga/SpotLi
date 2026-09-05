@@ -123,7 +123,12 @@ export function isPromotionalContext(fullText) {
  * order that was merely received does not, and the message says which.
  */
 const SHIPPED_MARKERS = [
-  /יצא(?:ה|ו)?\s*(?:למשלוח|לדרך|מהמחסן)/, /נשלח(?:ה|ו)?/, /בדרך\s*אלי(?:ך|כם)/,
+  /יצא(?:ה|ו)?\s*(?:למשלוח|לדרך|מהמחסן)/,
+  // "נשלח" alone is not a shipment — an email signature reading
+  // "נשלח מהאייפון שלי" turned a flight booking into a package. The verb only
+  // counts when it is directed at a recipient or an address.
+  /נשלח(?:ה|ו)?\s+(?:אלי(?:ך|כם)?|לכתובת|בדואר|עם\s+שליח|מהמחסן)/,
+  /בדרך\s*אלי(?:ך|כם)/,
   /נמסר(?:ה|ו)?/, /אצל\s*השליח/, /עם\s*השליח/, /הועבר(?:ה|ו)?\s*לשליח/,
   /ממתינ(?:ה|ות)\s*לאיסוף/, /מחכה\s*לך/, /הגיע(?:ה|ו)?\s*ל/,
   /\bshipped\b/i, /\bdispatched\b/i, /\bout\s+for\s+delivery\b/i,
