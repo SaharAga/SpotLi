@@ -999,9 +999,14 @@ export function normalizeMessageText(text) {
     // Every other Unicode space behaves as a separator but fails /\s/-adjacent
     // assumptions and exact-match comparisons.
     .replace(/[\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]/g, ' ')
+    // A tab is a separator that no sender means anything by, but it is not a
+    // space to any pattern that looks for one — an identifier printed in
+    // groups ("rs 7361 0294 1 il") stops being re-joinable the moment its
+    // separators are tabs.
+    .replace(/\t/g, ' ')
     // Runs of horizontal whitespace collapse; newlines are meaningful for
     // pickup-location and address extraction, so they survive.
-    .replace(/[ \t]{2,}/g, ' ');
+    .replace(/ {2,}/g, ' ');
 }
 
 export function parseSmartText(rawText) {

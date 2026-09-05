@@ -495,8 +495,8 @@
     "isValidChecksum": false
   },
   "XX123456789XX": {
-    "carrierId": "other",
-    "confidence": "none",
+    "carrierId": "israel-post",
+    "confidence": "medium",
     "isValidChecksum": null
   },
   "AB12345678IL": {
@@ -1790,8 +1790,8 @@
     "isValidChecksum": null
   },
   "AA123456789XX": {
-    "carrierId": "other",
-    "confidence": "none",
+    "carrierId": "israel-post",
+    "confidence": "medium",
     "isValidChecksum": null
   },
   "AA1234567890": {
@@ -1930,8 +1930,8 @@
     "isValidChecksum": null
   },
   "CH123456789XX": {
-    "carrierId": "other",
-    "confidence": "none",
+    "carrierId": "israel-post",
+    "confidence": "medium",
     "isValidChecksum": null
   },
   "CH1234567890": {
@@ -2070,8 +2070,8 @@
     "isValidChecksum": null
   },
   "CT123456789XX": {
-    "carrierId": "other",
-    "confidence": "none",
+    "carrierId": "israel-post",
+    "confidence": "medium",
     "isValidChecksum": null
   },
   "CT1234567890": {
@@ -2210,8 +2210,8 @@
     "isValidChecksum": null
   },
   "EP123456789XX": {
-    "carrierId": "other",
-    "confidence": "none",
+    "carrierId": "israel-post",
+    "confidence": "medium",
     "isValidChecksum": null
   },
   "EP1234567890": {
@@ -2490,8 +2490,8 @@
     "isValidChecksum": null
   },
   "OR123456789XX": {
-    "carrierId": "other",
-    "confidence": "none",
+    "carrierId": "israel-post",
+    "confidence": "medium",
     "isValidChecksum": null
   },
   "OR1234567890": {
@@ -2630,8 +2630,8 @@
     "isValidChecksum": null
   },
   "ZZ123456789XX": {
-    "carrierId": "other",
-    "confidence": "none",
+    "carrierId": "israel-post",
+    "confidence": "medium",
     "isValidChecksum": null
   },
   "ZZ1234567890": {
@@ -2770,8 +2770,8 @@
     "isValidChecksum": null
   },
   "YT123456789XX": {
-    "carrierId": "other",
-    "confidence": "none",
+    "carrierId": "israel-post",
+    "confidence": "medium",
     "isValidChecksum": null
   },
   "YT1234567890": {
@@ -3050,8 +3050,8 @@
     "isValidChecksum": null
   },
   "CN123456789XX": {
-    "carrierId": "other",
-    "confidence": "none",
+    "carrierId": "israel-post",
+    "confidence": "medium",
     "isValidChecksum": null
   },
   "CN1234567890": {
@@ -3330,8 +3330,8 @@
     "isValidChecksum": null
   },
   "BX123456789XX": {
-    "carrierId": "other",
-    "confidence": "none",
+    "carrierId": "israel-post",
+    "confidence": "medium",
     "isValidChecksum": null
   },
   "BX1234567890": {
@@ -3470,8 +3470,8 @@
     "isValidChecksum": null
   },
   "FC123456789XX": {
-    "carrierId": "other",
-    "confidence": "none",
+    "carrierId": "israel-post",
+    "confidence": "medium",
     "isValidChecksum": null
   },
   "FC1234567890": {
@@ -3610,8 +3610,8 @@
     "isValidChecksum": null
   },
   "UY123456789XX": {
-    "carrierId": "other",
-    "confidence": "none",
+    "carrierId": "israel-post",
+    "confidence": "medium",
     "isValidChecksum": null
   },
   "UY1234567890": {
@@ -3745,8 +3745,8 @@
     "isValidChecksum": false
   },
   "VR123456789XX": {
-    "carrierId": "other",
-    "confidence": "none",
+    "carrierId": "israel-post",
+    "confidence": "medium",
     "isValidChecksum": null
   },
   "VR1234567890": {
@@ -3880,8 +3880,8 @@
     "isValidChecksum": null
   },
   "RS123456789XX": {
-    "carrierId": "other",
-    "confidence": "none",
+    "carrierId": "israel-post",
+    "confidence": "medium",
     "isValidChecksum": null
   },
   "RS1234567890": {

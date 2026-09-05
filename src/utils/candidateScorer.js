@@ -713,13 +713,68 @@ export function extractAndScoreCandidates(text) {
     });
   }
 
+  // 2b. Hebrew shipment nouns followed by "(ש)מספר", with words in between.
+  //
+  // Real senders rarely write "חבילה מספר" adjacently. They write
+  // "חבילה מSeestarz online מספר 47911656", "נמסרה לך חבילה שמספרה 47530985",
+  // "משלוח שמספרו ECSA0283348" — the noun, then the store or a few words, then
+  // the number. The fixed two-word patterns above matched none of these, which
+  // accounted for the largest single block of missed real messages.
+  //
+  // "הזמנה"/"הזמנתך" is deliberately absent: an order number is only a
+  // tracking number once the parcel has shipped, which the gated scan below
+  // handles.
+  const hebrewNumberedPattern = /(?:חבילה|חבילת|חבילתך|משלוח|משלוחך|פריט|שליחות)(?:\s+[^\s:=#-]{1,20}){0,3}\s+(?:ש?מספר(?:ה|ו)?|מס['׳`״’‘]?)\s*[:=#-]?\s*([A-Za-z0-9_-]{5,35})/gi;
+  let hebrewNumberedMatch;
+
+  while ((hebrewNumberedMatch = hebrewNumberedPattern.exec(normalizedText)) !== null) {
+    const rawVal = hebrewNumberedMatch[1];
+    const cleanVal = rawVal.trim().toUpperCase();
+
+    if (candidatesMap.has(cleanVal) || METADATA_WORDS.has(cleanVal)) continue;
+
+    const start = hebrewNumberedMatch.index + hebrewNumberedMatch[0].lastIndexOf(rawVal);
+    const end = start + rawVal.length;
+    if (isFalsePositive(cleanVal, normalizedText, start, end)) continue;
+
+    const ruleEval = evaluateCandidateRules(cleanVal);
+    const primaryCarrier = ruleEval.carrierCandidates[0] || 'other';
+
+    candidatesMap.set(cleanVal, {
+      id: `cand_${candidatesMap.size + 1}`,
+      value: cleanVal,
+      carrierCandidates: ruleEval.carrierCandidates,
+      formatMatch: true,
+      distinctive: true,
+      highestConfidence: ruleEval.highestConfidence === 'none' ? 'medium' : ruleEval.highestConfidence,
+      priority: ruleEval.bestPriority,
+      checksum: ruleEval.checksum,
+      urlDomainMatch: checkUrlDomainMatch(primaryCarrier, normalizedText)
+        || messageHasCarrierDomain(normalizedText),
+      labelProximity: 1.0,
+      falsePositiveFlags: [],
+      sourceSpan: { start, end }
+    });
+  }
+
   // 3a. Order numbers that double as tracking numbers.
   //
   // Only scanned when the message says the parcel has already shipped. A
   // checkout receipt carries the same "הזמנה מספר 8471293" wording and must
   // stay unrecognised, so the shipment state — not the label — is the gate.
   if (isShipmentInProgress(normalizedText)) {
-    const orderLabelPattern = /(?:הזמנה\s*(?:מספר|מס['׳`״’‘]?)?|ההזמנה\s*שלך|מספר\s*הזמנה|order\s*(?:number|no|#)?)[\s:=#-]+([A-Za-z0-9_-]{5,35})/gi;
+    // Two shapes, and the order matters. Either the label word is present and
+    // words may sit between it and the noun ("הזמנתך שמספרה AP35428006"), or
+    // the number follows the noun directly ("order 8471293"). Allowing
+    // intervening words *without* requiring the label word lets the pattern
+    // stride past the number and capture the next word instead — "order
+    // 8471293 has shipped" yielded "SHIPPED".
+    const ORDER_NOUN = "(?:הזמנה|הזמנתך|ההזמנה\\s*שלך|מספר\\s*הזמנה|order)";
+    const ORDER_LABEL = "(?:ש?מספר(?:ה|ו)?|מס['׳`״’‘]?|number|no|#)";
+    const orderLabelPattern = new RegExp(
+      `(?:${ORDER_NOUN}(?:\\s+[^\\s:=#-]{1,20}){0,3}\\s*${ORDER_LABEL}|${ORDER_NOUN})[\\s:=#-]+([A-Za-z0-9_-]{5,35})`,
+      'gi'
+    );
     let orderMatch;
 
     while ((orderMatch = orderLabelPattern.exec(normalizedText)) !== null) {

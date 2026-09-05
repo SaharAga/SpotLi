@@ -327,6 +327,47 @@ export const PARSER_EVAL_CORPUS = [
     expected: { trackingNumber: '101300711', carrier: 'chita' }
   },
 
+  {
+    id: 'pos-real-ilp-domestic-letter',
+    group: 'real-world',
+    note: 'two letters, ten digits, one trailing letter — matched no rule, so every message like it produced nothing',
+    rawText: 'שלום, דוור עתיד להגיע לביתך בימים הקרובים על מנת למסור את משלוח RU0126608199Z מהלקוח Amazon. תודה דואר ישראל.',
+    expected: { trackingNumber: 'RU0126608199Z', carrier: 'israel-post' }
+  },
+  {
+    id: 'pos-real-ilp-registered',
+    group: 'real-world',
+    rawText: 'שלום, דואר רשום RR0126918911X מרשות האוכלוסין התקבל בדואר ישראל ובדרכו אליך. לשירותך, דואר ישראל.',
+    expected: { trackingNumber: 'RR0126918911X', carrier: 'israel-post' }
+  },
+  {
+    id: 'pos-real-ilp-counter-item',
+    group: 'real-world',
+    note: 'counter-issued YY item, eleven digits',
+    rawText: 'לקוח יקר, תודה שאספת את דבר הדואר YY00370128099 בדואר ישראל.',
+    expected: { trackingNumber: 'YY00370128099', carrier: 'israel-post' }
+  },
+  {
+    id: 'pos-real-ilp-foreign-s10',
+    group: 'real-world',
+    note: 'inbound S10 from Sweden — a valid registered item dropped purely for not ending in IL',
+    rawText: 'לקוח יקר, תודה שאספת את דבר הדואר RE477128799SE בדואר ישראל.',
+    expected: { trackingNumber: 'RE477128799SE', carrier: 'israel-post' }
+  },
+  {
+    id: 'neg-real-ilp-portal-otp',
+    group: 'negative-otp',
+    note: 'Israel Post sends login OTPs from the same sender as real shipment notices',
+    rawText: 'קוד האימות הוא 946770 לשירות כניסה לפורטל MYPOST, דואר ישראל. (WfvxU7SGIO9)',
+    expected: { trackingNumber: null, carrier: null }
+  },
+  {
+    id: 'neg-real-ilp-appointment-cancelled',
+    group: 'negative-admin',
+    rawText: 'לקוח/ה יקר/ה, בוטל התור בסוכנות פארק אפק בתאריך 28/01/25 בשעה 10:25 על ידי הלקוח. דואר ישראל.',
+    expected: { trackingNumber: null, carrier: null }
+  },
+
   // ─────────────────────────────────────────────────────────────────────
   // NEGATIVES — no shipment in the message at all.
   // These are where precision dies. Correct output is NO tracking number.
