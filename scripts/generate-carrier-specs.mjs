@@ -41,15 +41,48 @@ function normalizeChecksum(checksum) {
 
 const carriersExport = {};
 
+/**
+ * Hosts that appear in real courier notifications but aren't derivable from a
+ * carrier's `website` / `getTrackingUrl`.
+ *
+ * A recognised host is the strongest evidence the parser has short of a check
+ * digit: it is the one signal that says "this number came from the carrier
+ * itself". Every host missing here costs precision on messages that had a
+ * perfectly good confirmation sitting in the link.
+ *
+ * Deliberately excluded: aggregator hosts (17track, parcelsapp) and generic
+ * URL shorteners (bit.ly, tinyurl). They carry any carrier's numbers and some
+ * carry none, so treating them as carrier confirmation would confirm nothing.
+ */
 const KNOWN_CARRIER_DOMAINS = {
-  'chita': ['chtr.co.il', 'chita.co.il', 'chita-il.com', 'chita-delivery.co.il'],
-  'hfd': ['epost.co.il', 'e-post.co.il', 'hfd.co.il'],
-  'boxit': ['boxit.co.il'],
+  'chita': ['chtr.co.il', 'chita.co.il', 'chita-il.com', 'chita-delivery.co.il', 'cheetahint.com', 'u.cheetahint.com'],
+  'hfd': ['epost.co.il', 'e-post.co.il', 'hfd.co.il', 'hfdi.co.il', 'my.hfd.co.il'],
+  'boxit': ['boxit.co.il', 'box-it.co.il', 'my.boxit.co.il'],
   'buzzr': ['buzzr.co.il', 'link.buzzr.co.il'],
   'tapuz': ['tapuzdelivery.co.il', 'tapuz.co.il'],
   'bar-distribution': ['bardistribution.co.il', 'barexpress.co.il'],
-  'lionwheel': ['tracking.lionwheel.com'],
-  'zigzag': ['zigzag.co.il']
+  'lionwheel': ['tracking.lionwheel.com', 'lionwheel.com'],
+  'zigzag': ['zigzag.co.il', 'zigzag24.co.il', 'zig-zag.co.il', 'api.zig-zag.co.il'],
+  // Israel Post serves tracking from several hosts; only the mypost one was
+  // derivable from the carrier definition.
+  'israel-post': ['israelpost.co.il', 'mypost.israelpost.co.il', 'israelpost.gov.il'],
+  'getpackage': ['getpackage.com', 'getpackage.co.il'],
+  'orian': ['orian.com', 'orianlogistics.com'],
+  'flying-cargo': ['flying-cargo.com', 'flyingcargo.co.il'],
+  'cargo': ['cargoexpress.co.il', 'cargo-ship.co.il', 'cargoship.co.il'],
+  // Global carriers reach Israeli users through their regional hosts as often
+  // as their .com ones.
+  'dhl': ['dhl.com', 'dhl.co.il', 'dhlexpress.com', 'mydhl.express.dhl'],
+  'fedex': ['fedex.com', 'fedex.co.il'],
+  'ups': ['ups.com', 'wwwapps.ups.com'],
+  'usps': ['usps.com', 'tools.usps.com'],
+  'royal-mail': ['royalmail.com', 'royalmail.co.uk'],
+  'aramex': ['aramex.com', 'aramex.co.il'],
+  'cainiao': ['cainiao.com', 'global.cainiao.com', 'gj.cainiao.com'],
+  'yunexpress': ['yunexpress.com', 'yuntrack.com'],
+  '4px': ['4px.com', 'express.4px.com'],
+  'yanwen': ['yw56.com.cn', 'yanwen.com'],
+  'shein': ['shein.com', 'sheinlink.com']
 };
 
 for (const [id, carrier] of Object.entries(CARRIERS)) {

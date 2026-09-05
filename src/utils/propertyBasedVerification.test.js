@@ -142,13 +142,29 @@ describe('High-Assurance Property-Based Verification (fast-check)', () => {
   describe('Completeness Property for Smart Parsing', () => {
     // Known valid tracking number formats across carriers
     const validTrackingGenerators = [
-      fc.constantFrom(...Object.values(GOLD_STANDARD_CARRIER_SAMPLES)),
+      // Only the self-identifying samples belong in the unlabeled property;
+      // the all-digit ones are covered by the labeled property below.
+      fc.constantFrom(...Object.values(GOLD_STANDARD_CARRIER_SAMPLES).filter((v) => /[A-Z]/i.test(v))),
       fc.stringMatching(/^[A-Z]{2}\d{9}IL$/),
       fc.stringMatching(/^1Z[0-9A-Z]{16}$/),
       fc.stringMatching(/^LP\d{14}$/),
-      fc.stringMatching(/^YT\d{16}$/),
-      fc.stringMatching(/^[1-9]\d{9}$/)
+      fc.stringMatching(/^YT\d{16}$/)
     ];
+
+    /**
+     * Bare digit runs are handled separately from the generators above.
+     *
+     * A ten-digit number is not self-identifying: an invoice number, a customer
+     * number, a parking fine and a DHL waybill are all ten digits, and a user's
+     * inbox holds far more of the former. The parser therefore requires a
+     * tracking label beside a bare digit run before treating it as a shipment,
+     * so completeness for these holds *given a label* — asserting it without
+     * one would be asserting the false-positive behaviour itself.
+     */
+    const bareDigitTracking = fc.oneof(
+      fc.stringMatching(/^[1-9]\d{9}$/),
+      fc.constantFrom(...Object.values(GOLD_STANDARD_CARRIER_SAMPLES).filter((v) => /^\d+$/.test(v)))
+    );
 
     it('Completeness: tracking number t is reliably extracted from noise + t + noise', () => {
       // Noise containing Hebrew and English phrases, spaces, and punctuation
@@ -168,6 +184,35 @@ describe('High-Assurance Property-Based Verification (fast-check)', () => {
           expect(parsed.trackingNumber).toBe(trackingNum);
         }),
         { numRuns: 300 }
+      );
+    });
+
+    it('Completeness: a labeled bare digit run is reliably extracted', () => {
+      const noiseArbitrary = fc.stringMatching(/^[a-zA-Z0-9 א-ת,.:;!?-]{0,50}$/);
+
+      fc.assert(
+        fc.property(noiseArbitrary, bareDigitTracking, (noisePrefix, trackingNum) => {
+          const embeddedText = `${noisePrefix} tracking number: ${trackingNum}`;
+          expect(parseSmartText(embeddedText).trackingNumber).toBe(trackingNum);
+        }),
+        { numRuns: 200 }
+      );
+    });
+
+    it('Soundness: an unlabeled bare digit run is never auto-filled', () => {
+      // The counterpart property. Without a label the parser may still surface
+      // the number as a low-confidence suggestion, but it must never reach
+      // `verified` — the tier Smart Import fills in without asking the user.
+      const noiseArbitrary = fc.stringMatching(/^[a-zA-Z0-9 א-ת,.:;!?-]{0,50}$/);
+
+      fc.assert(
+        fc.property(noiseArbitrary, bareDigitTracking, noiseArbitrary, (prefix, digits, suffix) => {
+          const parsed = parseSmartText(`${prefix} ${digits} ${suffix}`);
+          if (parsed.trackingNumber === digits) {
+            expect(parsed.candidateStatus).not.toBe('verified');
+          }
+        }),
+        { numRuns: 200 }
       );
     });
   });

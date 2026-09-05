@@ -84,3 +84,20 @@ describe('parseWithAi when Firebase is not configured', () => {
     expect(callableMock).not.toHaveBeenCalled();
   });
 });
+
+describe('parseWithAi — timeout', () => {
+  it('gives up rather than leaving the caller waiting forever', async () => {
+    vi.useFakeTimers();
+
+    // A callable that never settles — what App Check being unable to mint a
+    // token looks like from here: the request is never sent, and nothing
+    // server-side ever times it out.
+    callableMock.mockImplementation(() => new Promise(() => {}));
+
+    const pending = parseWithAi({ mode: 'text-fallback', text: 'hello' });
+    await vi.advanceTimersByTimeAsync(36000);
+
+    await expect(pending).resolves.toMatchObject({ success: false, unavailable: true });
+    vi.useRealTimers();
+  });
+});

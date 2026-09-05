@@ -395,7 +395,7 @@ const GENERIC_TRACKING_PARAMS = [
  * Known Hebrew courier phrasing signatures mapped to carrier IDs
  */
 const HEBREW_CARRIER_PHRASES = [
-  { carrierId: 'chita', patterns: [/מחברת\s*צ['׳`״]יטה/i, /מצ['׳`״]יטה/i, /חברת\s*צ['׳`״]יטה/i, /צ['׳`״]יטה\s*שליחויות/i, /שליחויות\s*צ['׳`״]יטה/i, /שליח\s*צ['׳`״]יטה/i, /צ['׳`״]יטה\s*שופס/i, /צ['׳`״]יטה/i, /chita/i] },
+  { carrierId: 'chita', patterns: [/מחברת\s*צ['׳`״’‘]יטה/i, /מצ['׳`״’‘]יטה/i, /חברת\s*צ['׳`״’‘]יטה/i, /צ['׳`״’‘]יטה\s*שליחויות/i, /שליחויות\s*צ['׳`״’‘]יטה/i, /שליח\s*צ['׳`״’‘]יטה/i, /צ['׳`״’‘]יטה\s*שופס/i, /צ['׳`״’‘]יטה/i, /chita/i] },
   { carrierId: 'israel-post', patterns: [/מדואר\s*ישראל/i, /דואר\s*ישראל/i, /מחברת\s*דואר\s*ישראל/i, /דבר\s*דואר/i, /חבילת\s*דואר/i, /סניף\s*הדואר/i, /סוכנות\s*(?:ה)?דואר/i, /מרכז\s*המסירה\s*בדואר/i, /יחידת\s*(?:ה)?דואר/i] },
   { carrierId: 'hfd', patterns: [/מחברת\s*HFD/i, /מ-?HFD/i, /אי-?פוסט/i, /HFD\s*שליחויות/i, /e-?post/i, /משלוח\s*HFD/i, /HFD/i] },
   { carrierId: 'boxit', patterns: [/מחברת\s*בוקסיט/i, /מ-?BoxIt/i, /בוקסיט/i, /boxit/i, /חבילת\s*בוקסיט/i] },
@@ -404,10 +404,27 @@ const HEBREW_CARRIER_PHRASES = [
   { carrierId: 'bar-distribution', patterns: [/בר\s*הפצה/i, /מחברת\s*בר\s*הפצה/i, /מבר\s*הפצה/i, /חברת\s*בר\s*הפצה/i, /bar\s*distribution/i, /barexpress/i] },
   { carrierId: 'lionwheel', patterns: [/ליאון\s*וויל/i, /מליאון\s*וויל/i, /lionwheel/i] },
   { carrierId: 'flying-cargo', patterns: [/פליינג\s*קרגו/i, /flying\s*cargo/i, /פדאקס\s*ישראל/i] },
-  { carrierId: 'cargo', patterns: [/קרגו\s*שליחויות/i, /cargo\s*express/i] },
-  { carrierId: 'getpackage', patterns: [/גט\s*פקג['׳`״]/i, /getpackage/i] },
+  // "חברת ההפצה CARGO" — the brand appears bare, so the bare form must match.
+  // Anchored to a distribution-company phrase or the carrier's own host, since
+  // "cargo" is an ordinary English word and Flying Cargo is a separate carrier.
+  { carrierId: 'cargo', patterns: [/קרגו\s*שליחויות/i, /cargo\s*express/i, /חברת\s*ה?הפצה\s*CARGO/i, /cargo-?ship/i] },
+  { carrierId: 'getpackage', patterns: [/גט\s*פקג['׳`״’‘]/i, /getpackage/i] },
   { carrierId: 'zigzag', patterns: [/זיגזג\s*שליחויות/i, /שליח\s*זיגזג/i, /זיגזג/i, /zigzag/i] },
-  { carrierId: 'orian', patterns: [/אוריאן/i, /orian/i] }
+  { carrierId: 'orian', patterns: [/אוריאן/i, /orian/i] },
+  // Global carriers. Israeli users receive these notifications in English as
+  // often as in Hebrew, and without a brand phrase their bare-digit waybills
+  // (DHL 10, FedEx 12) have no corroboration at all.
+  // The ambiguous three-letter brands are matched case-sensitively so that
+  // "groups", "backups" and "ups and downs" don't register as a carrier.
+  { carrierId: 'dhl', patterns: [/\bdhl\b/i, /די\s*אייץ['׳`״’‘]?\s*אל/i] },
+  { carrierId: 'fedex', patterns: [/\bfedex\b/i, /\bfed\s*ex\b/i, /פדאקס/i, /פדקס/i] },
+  { carrierId: 'ups', patterns: [/\bUPS\b/, /יו\s*פי\s*אס/i] },
+  { carrierId: 'usps', patterns: [/\bUSPS\b/i, /united\s*states\s*postal/i] },
+  { carrierId: 'aramex', patterns: [/\baramex\b/i, /ארامקס/i, /ארמקס/i] },
+  { carrierId: 'royal-mail', patterns: [/\broyal\s*mail\b/i] },
+  { carrierId: 'cainiao', patterns: [/\bcainiao\b/i, /קאיניאו/i] },
+  { carrierId: 'yunexpress', patterns: [/\byun\s*express\b/i] },
+  { carrierId: '4px', patterns: [/\b4px\b/i] }
 ];
 
 const REDIRECT_PARAM_NAMES = new Set([
@@ -823,7 +840,7 @@ export function extractTrackingCandidates(text) {
     }
   }
   
-  const labeledRegex = /(?:tracking(?:\s*number|\s*no|\s*code|\s*id|\s*#)?|מעקב(?:\s*משלוח|\s*הזמנה)?|מספר\s*מעקב|חבילה\s*מספר|מס['׳`״]\s*מעקב|קוד\s*מעקב|מספר\s*משלוח|משלוח\s*מספר|דבר\s*דואר(?:\s*שמספרו)?|חבילתך\s*יצאה(?:\s*במשלוח)?|חבילתך\s*במספר|החבילה\s*שלך\s*מחכה(?:\s*במספר)?|איסוף\s*חבילה(?:\s*מספר)?|קוד\s*חבילה|קוד\s*משלוח|ברקוד(?:\s*משלוח)?|שליח\s*בדרך(?:\s*משלוח)?|order\s*#|shipment\s*#|package\s*id|waybill|awb)[\s:=#-]+([A-Za-z0-9_-]{5,35})/gi;
+  const labeledRegex = /(?:tracking(?:\s*number|\s*no|\s*code|\s*id|\s*#)?|מעקב(?:\s*משלוח|\s*הזמנה)?|מספר\s*מעקב|חבילה\s*מספר|מס['׳`״’‘]\s*מעקב|קוד\s*מעקב|מספר\s*משלוח|משלוח\s*מספר|דבר\s*דואר(?:\s*שמספרו)?|חבילתך\s*יצאה(?:\s*במשלוח)?|חבילתך\s*במספר|החבילה\s*שלך\s*מחכה(?:\s*במספר)?|איסוף\s*חבילה(?:\s*מספר)?|קוד\s*חבילה|קוד\s*משלוח|ברקוד(?:\s*משלוח)?|שליח\s*בדרך(?:\s*משלוח)?|order\s*#|shipment\s*#|package\s*id|waybill|awb)[\s:=#-]+([A-Za-z0-9_-]{5,35})/gi;
   let match;
   while ((match = labeledRegex.exec(workingText)) !== null) {
     if (match[1]) {
@@ -956,6 +973,37 @@ export function extractDatesAndStatus(text) {
  * @param {string} rawText 
  * @returns {object} Partial package data extracted from text
  */
+/**
+ * Strips characters that carry no meaning but change every string comparison.
+ *
+ * Hebrew messages containing Latin tracking numbers are full of bidi control
+ * marks — a sender's client inserts them around the Latin run so it displays
+ * correctly right-to-left. They are invisible, the user cannot remove them,
+ * and they sit exactly where the parser looks for a word boundary. The same
+ * goes for non-breaking spaces out of HTML email bodies and zero-width joiners
+ * from emoji-capable clients.
+ *
+ * Normalising once here, rather than defending against them in each pattern,
+ * means every extraction path benefits and no future rule has to remember.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+export function normalizeMessageText(text) {
+  if (!text || typeof text !== 'string') return '';
+
+  return text
+    // Bidi controls and zero-width characters: invisible, and never part of
+    // an identifier.
+    .replace(/[\u200B-\u200F\u061C\u2066-\u2069\uFEFF]/g, '')
+    // Every other Unicode space behaves as a separator but fails /\s/-adjacent
+    // assumptions and exact-match comparisons.
+    .replace(/[\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]/g, ' ')
+    // Runs of horizontal whitespace collapse; newlines are meaningful for
+    // pickup-location and address extraction, so they survive.
+    .replace(/[ \t]{2,}/g, ' ');
+}
+
 export function parseSmartText(rawText) {
   if (!rawText || typeof rawText !== 'string') {
     return {
@@ -977,8 +1025,11 @@ export function parseSmartText(rawText) {
     };
   }
 
-  const cleanText = sanitizeString(rawText, 5000);
-  const candidates = extractTrackingCandidates(cleanText);
+  const cleanText = normalizeMessageText(sanitizeString(rawText, 5000));
+  // `extractAndScoreCandidates` is the single extraction path. The older
+  // `extractTrackingCandidates` produced a parallel, unscored candidate set
+  // whose result was already unused here; calling it only invited the two
+  // lists to drift apart. It survives as an exported helper for its own tests.
   const scoredCandidates = extractAndScoreCandidates(cleanText).map((candidate) => ({
     ...candidate,
     status: classifyConfidenceTier(candidate.score, candidate)
@@ -994,7 +1045,6 @@ export function parseSmartText(rawText) {
 
   let bestTracking = '';
   let bestCarrier = phraseCarrier || 'other';
-  let bestConfidence = phraseCarrier ? 'medium' : 'none';
 
   const urlCarrier = urlExtracted.find((u) => u.carrierHint && u.carrierHint !== 'other')?.carrierHint;
 
@@ -1011,7 +1061,6 @@ export function parseSmartText(rawText) {
           ? urlCarrier
           : (detected.carrierId !== 'other' ? detected.carrierId : 'other');
     bestCarrier = topCarrier;
-    bestConfidence = top.highestConfidence || 'high';
   } else {
     // 2. URL extracted tracking codes and carrier hints fallback
     for (const item of urlExtracted) {
@@ -1021,7 +1070,6 @@ export function parseSmartText(rawText) {
         if (effectiveCarrier && effectiveCarrier !== 'other') {
           bestTracking = item.trackingNumber;
           bestCarrier = effectiveCarrier;
-          bestConfidence = 'high';
           break;
         } else if (!bestTracking) {
           bestTracking = item.trackingNumber;
@@ -1100,8 +1148,22 @@ export function parseSmartText(rawText) {
     || scoredCandidates[0]
     || null;
   let candidateStatus = selectedCandidate?.status || (lockerPin && phraseCarrier ? 'verified' : (bestTracking ? 'uncertain' : 'none'));
-  if (bestTracking && (phraseCarrier || urlCarrier) && bestCarrier !== 'other' && candidateStatus !== 'none') {
+
+  // A carrier brand in the text says *which* carrier, not that the number
+  // beside it is a shipment id — courier ads, delivery surveys and "we'll text
+  // you when it ships" all name a carrier with no shipment behind them. So a
+  // brand match corroborates a candidate that already has its own support, and
+  // promotes it one step; it can no longer lift `uncertain` straight to the
+  // tier Smart Import auto-fills from.
+  if (bestTracking && (phraseCarrier || urlCarrier) && bestCarrier !== 'other' && candidateStatus === 'probable') {
     candidateStatus = 'verified';
+  }
+
+  // `none` means the evidence says this is not a tracking number. Publishing it
+  // in `trackingNumber` anyway is how a parking fine or an invoice number ends
+  // up saved as a package that will never update.
+  if (candidateStatus === 'none') {
+    bestTracking = '';
   }
 
   const allPackages = [];

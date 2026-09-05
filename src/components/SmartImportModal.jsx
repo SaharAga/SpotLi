@@ -9,6 +9,7 @@ import { findPackageByTrackingNumber } from '../services/deliveryService';
 import { useLanguage } from '../context/LanguageContext';
 import { ModalHeader } from './ui/Primitives';
 import { parseWithAi } from '../services/aiParseService';
+import { findConfirmedCandidate } from '../services/candidateVerificationService';
 import { compressImageFile, extractImageFromPaste, ACCEPTED_IMAGE_TYPES } from '../utils/imageCompressor';
 import { submitFeedback } from '../services/feedbackService';
 import { Modal } from './Modal';
@@ -164,8 +165,30 @@ export function SmartImportModal({
       return;
     }
 
+    // Before paying for a language model, ask the carrier. For carriers with a
+    // live integration, "does this number resolve to a real shipment?" is
+    // ground truth — it settles exactly the ambiguity the AI would be guessing
+    // at, and it settles it correctly. Most Israeli courier formats carry no
+    // check digit, so this is the only confirmation available for them.
     setIsAiParsing(true);
     try {
+      const confirmed = await findConfirmedCandidate(
+        regexResult?.candidates || [],
+        regexResult?.carrier && regexResult.carrier !== 'other' ? regexResult.carrier : null
+      );
+
+      if (confirmed) {
+        setParsed({
+          ...regexResult,
+          trackingNumber: confirmed.trackingNumber,
+          carrier: confirmed.carrier,
+          candidateStatus: 'verified'
+        });
+        setParseSource('regex');
+        setAiConfidence(null);
+        return;
+      }
+
       const aiResponse = await parseWithAi({
         mode: 'text-fallback',
         text,
@@ -174,16 +197,29 @@ export function SmartImportModal({
         candidates: regexResult?.candidates || []
       });
       if (aiResponse?.success && aiResponse.data?.trackingNumber && aiResponse.data.confidence !== 'none') {
+        // Grounding asks a narrower question than auto-fill does: did the
+        // deterministic parser independently see this same string as a plausible
+        // tracking number? A `probable` candidate answers yes. Requiring
+        // `verified` here meant the common Israeli-courier case — a real ID with
+        // no check digit and no carrier URL — could never be grounded, so the
+        // AI's agreement with the parser was discarded exactly where the two
+        // corroborating each other is worth the most.
         const isGroundedCandidate = (regexResult?.candidates || [])
           .some((candidate) => (
-            candidate.value === aiResponse.data.trackingNumber && candidate.status === 'verified'
+            candidate.value === aiResponse.data.trackingNumber
+            && (candidate.status === 'verified' || candidate.status === 'probable')
           ));
         setParsed(mapAiResultToParsed(aiResponse.data, isGroundedCandidate));
         setParseSource('ai');
         setAiConfidence(aiResponse.data.confidence);
       } else {
-        // AI found nothing either (or is unavailable) — fallback to deterministic result if available
-        setParsed(regexResult?.candidateStatus === 'verified' ? regexResult : null);
+        // AI found nothing either, or is unavailable. Fall back to the
+        // deterministic result, including a `probable` one: with no second
+        // opinion coming, the user is better served by a pre-filled form they
+        // can correct than by an empty one. `uncertain` and `none` are still
+        // withheld — those are the tiers that invent tracking numbers.
+        const fallbackTier = regexResult?.candidateStatus;
+        setParsed(fallbackTier === 'verified' || fallbackTier === 'probable' ? regexResult : null);
         setParseSource('regex');
         setAiConfidence(null);
       }
