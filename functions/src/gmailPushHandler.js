@@ -25,6 +25,7 @@ import {
   shouldAdvanceStatus
 } from './gmailPackageSync.js';
 import { logUsageEvent } from './analyticsEvents.js';
+import { safeCompareTokens } from './inboundEmailHandler.js';
 
 /**
  * @param {{ db: FirebaseFirestore.Firestore, clientSecret: string, pushToken: string, geminiApiKey?: string }} deps
@@ -36,7 +37,7 @@ export function createGmailPushHandler({ db, clientSecret, pushToken, geminiApiK
       return;
     }
 
-    if (pushToken && req.query.token !== pushToken) {
+    if (!pushToken || !req.query?.token || !safeCompareTokens(req.query.token, pushToken)) {
       res.status(401).send('Unauthorized');
       return;
     }
@@ -183,7 +184,6 @@ export async function syncHistoryForConnection({ db, connection, clientSecret, n
       }
 
       await db.collection('users').doc(uid).collection('packages').doc(docId).set(patch, { merge: true });
-      await db.collection('packages').doc(docId).set(patch, { merge: true });
       existingPackagesMap.set(statusUpdate.trackingNumber, { ...existingData, ...patch });
       updated += 1;
       continue;
@@ -201,7 +201,6 @@ export async function syncHistoryForConnection({ db, connection, clientSecret, n
         patch.status = orderStatusUpdate.status;
       }
       await db.collection('users').doc(uid).collection('packages').doc(existing.id).set(patch, { merge: true });
-      await db.collection('packages').doc(existing.id).set(patch, { merge: true });
       storeToOrderStatusDocId.set(orderStatusUpdate.store.toUpperCase(), { ...existing, ...patch });
       updated += 1;
       continue;
@@ -217,7 +216,6 @@ export async function syncHistoryForConnection({ db, connection, clientSecret, n
 
     for (const pkg of pkgs) {
       await db.collection('users').doc(uid).collection('packages').doc(pkg.id).set(pkg);
-      await db.collection('packages').doc(pkg.id).set(pkg);
       if (pkg.trackingNumber) {
         existingTrackingNumbers.add(pkg.trackingNumber.toUpperCase());
         trackingNumberToDocId.set(pkg.trackingNumber.toUpperCase(), pkg.id);

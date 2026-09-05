@@ -352,6 +352,15 @@ describe('CSV formula injection (#54)', () => {
     expect(escapeCSVCell('\r=1')).toBe('"\'\r=1"');
   });
 
+  it('neutralises formula triggers even when preceded by whitespace', () => {
+    expect(escapeCSVCell('   =HYPERLINK("http://attacker/","click")')).toBe(
+      '"\'   =HYPERLINK(""http://attacker/"",""click"")"'
+    );
+    expect(escapeCSVCell('  +1+1')).toBe('"\'  +1+1"');
+    expect(escapeCSVCell(' \t -2+3')).toBe('"\' \t -2+3"');
+    expect(escapeCSVCell('   @SUM(A1)')).toBe('"\'   @SUM(A1)"');
+  });
+
   it('leaves benign values untouched', () => {
     expect(escapeCSVCell('Widget')).toBe('"Widget"');
     expect(escapeCSVCell('דואר ישראל')).toBe('"דואר ישראל"');

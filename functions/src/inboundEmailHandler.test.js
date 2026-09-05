@@ -201,7 +201,7 @@ describe('inboundEmailHandler Unit Tests', () => {
         trackingNumber: 'LP00512345678901',
         carrier: 'cainiao'
       }));
-      expect(docSetMock).toHaveBeenCalledTimes(2);
+      expect(docSetMock).toHaveBeenCalledTimes(1);
       const [savedDoc] = docSetMock.mock.calls[0];
       expect(savedDoc.userId).toBe('user123');
       expect(savedDoc.trackingNumber).toBe('LP00512345678901');
@@ -424,8 +424,8 @@ describe('inboundEmailHandler Unit Tests', () => {
           expect.objectContaining({ trackingNumber: 'RR000000005IL', carrier: 'israel-post' })
         ])
       }));
-      // 2 packages * 2 writes each (user collection + root collection) = 4 doc set calls
-      expect(docSetMock).toHaveBeenCalledTimes(4);
+      // 2 packages * 1 write each (user scoped packages collection only) = 2 doc set calls
+      expect(docSetMock).toHaveBeenCalledTimes(2);
     });
 
     it('rejects with 401 Unauthorized when webhookToken is configured and query token is missing or mismatched', async () => {
@@ -479,6 +479,79 @@ describe('inboundEmailHandler Unit Tests', () => {
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ ok: false, message: expect.stringContaining('No verified tracking') }));
     });
 
+    describe('webhookToken authentication', () => {
+      const secret = 'super-secret-token-12345';
+
+      it('rejects request with 401 when webhookToken is configured and no token is provided', async () => {
+        const handler = createInboundEmailHandler({ db: null, webhookToken: secret });
+        const req = {
+          method: 'POST',
+          headers: {},
+          query: {},
+          body: { to: 'usr_user123@in.deliveree.app', subject: 'Test', text: 'RR123456789IL' }
+        };
+        const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+
+        await handler(req, res);
+        expect(res.status).toHaveBeenCalledWith(401);
+      });
+
+      it('rejects request with 401 when invalid token is provided', async () => {
+        const handler = createInboundEmailHandler({ db: null, webhookToken: secret });
+        const req = {
+          method: 'POST',
+          headers: { 'x-webhook-token': 'wrong-token' },
+          query: {},
+          body: { to: 'usr_user123@in.deliveree.app', subject: 'Test', text: 'RR123456789IL' }
+        };
+        const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+
+        await handler(req, res);
+        expect(res.status).toHaveBeenCalledWith(401);
+      });
+
+      it('authenticates successfully via query param ?token=', async () => {
+        const handler = createInboundEmailHandler({ db: null, webhookToken: secret });
+        const req = {
+          method: 'POST',
+          headers: {},
+          query: { token: secret },
+          body: { to: 'usr_user123@in.deliveree.app', subject: 'Order', text: 'Your Israeli tracking is RR123456789IL' }
+        };
+        const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+
+        await handler(req, res);
+        expect(res.status).toHaveBeenCalledWith(200);
+      });
+
+      it('authenticates successfully via x-webhook-token header', async () => {
+        const handler = createInboundEmailHandler({ db: null, webhookToken: secret });
+        const req = {
+          method: 'POST',
+          headers: { 'x-webhook-token': secret },
+          query: {},
+          body: { to: 'usr_user123@in.deliveree.app', subject: 'Order', text: 'Your Israeli tracking is RR123456789IL' }
+        };
+        const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+
+        await handler(req, res);
+        expect(res.status).toHaveBeenCalledWith(200);
+      });
+
+      it('authenticates successfully via Authorization: Bearer <token>', async () => {
+        const handler = createInboundEmailHandler({ db: null, webhookToken: secret });
+        const req = {
+          method: 'POST',
+          headers: { authorization: `Bearer ${secret}` },
+          query: {},
+          body: { to: 'usr_user123@in.deliveree.app', subject: 'Order', text: 'Your Israeli tracking is RR123456789IL' }
+        };
+        const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+
+        await handler(req, res);
+        expect(res.status).toHaveBeenCalledWith(200);
+      });
+    });
   });
 });
 

@@ -73,11 +73,28 @@ self.addEventListener('notificationclick', (event) => {
     return;
   }
 
-  const targetUrl = (event.notification.data && event.notification.data.url)
-    ? event.notification.data.url
-    : (event.notification.data && event.notification.data.packageId
-        ? `/?packageId=${encodeURIComponent(event.notification.data.packageId)}`
-        : '/');
+  let targetUrl = '/';
+  try {
+    const rawUrl = (event.notification.data && event.notification.data.url)
+      ? event.notification.data.url
+      : (event.notification.data && event.notification.data.packageId
+          ? `/?packageId=${encodeURIComponent(event.notification.data.packageId)}`
+          : '/');
+
+    if (typeof rawUrl === 'string') {
+      const baseOrigin = (self.location && self.location.origin) ? self.location.origin : 'https://deliveree.app';
+      const parsed = new URL(rawUrl, baseOrigin);
+      const expectedOrigin = (self.location && self.location.origin) || baseOrigin;
+      if (parsed.origin === expectedOrigin && (parsed.protocol === 'https:' || parsed.protocol === 'http:')) {
+        const safePath = parsed.pathname + parsed.search + parsed.hash;
+        if (safePath.startsWith('/') && !safePath.startsWith('//') && !safePath.startsWith('/\\')) {
+          targetUrl = safePath;
+        }
+      }
+    }
+  } catch {
+    targetUrl = '/';
+  }
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {

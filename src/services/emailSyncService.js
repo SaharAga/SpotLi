@@ -15,7 +15,7 @@ export function getIngestionEmailAddress(user) {
   if (!user || !user.uid) {
     return `${LIVE_INBOUND_INBOX_ID}@${LIVE_INBOUND_EMAIL_DOMAIN}`;
   }
-  const cleanUid = String(user.uid).replace(/[^a-zA-Z0-9]/g, '').slice(0, 16);
+  const cleanUid = String(user.uid).replace(/[^a-zA-Z0-9]/g, '');
   return `${LIVE_INBOUND_INBOX_ID}+usr_${cleanUid}@${LIVE_INBOUND_EMAIL_DOMAIN}`;
 }
 
