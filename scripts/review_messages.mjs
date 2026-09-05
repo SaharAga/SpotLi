@@ -143,13 +143,20 @@ async function readMessages(path) {
  * costs you a few seconds of skimming; recall costs you the finding.
  */
 const COURIER_HINT = new RegExp([
-  'משלוח', 'חבילה', 'חבילת', 'מעקב', 'שליח', 'נמסר', 'לאיסוף', 'איסוף', 'לוקר',
-  'דואר', 'הזמנה', 'נשלח', 'הגיע', 'מסירה', 'הפצה',
+  // Shipment nouns and delivery verbs. "דואר" needs the negative lookahead
+  // because "דואר אלקטרוני" is simply email, and "נשלח"/"הגיע" are absent on
+  // purpose: a university writing "נשלח אליכם מייל" is not a courier, and one
+  // sender's course announcements alone put 110 non-deliveries in the pile.
+  'משלוח', 'חבילה', 'חבילת', 'חבילתך', 'מעקב', 'שליח', 'נמסרה?', 'לאיסוף',
+  'איסוף', 'לוקר', 'דואר(?!\\s*אלקטרוני)', 'הפצה', 'שילוח', 'ברקוד',
   'tracking', 'delivery', 'deliver', 'parcel', 'shipment', 'shipped', 'courier',
-  'pickup', 'package', 'dispatch',
-  'צ.יטה', 'בוקסיט', 'תפוז', 'זיגזג', 'באזר', 'קרגו', 'אוריאן',
-  'chita', 'boxit', 'tapuz', 'zigzag', 'zig-zag', 'buzzr', 'cargo', 'hfd', 'epost',
-  'dhl', 'fedex', 'ups', 'usps', 'aramex', 'cainiao', 'aliexpress', 'shein'
+  'pickup', 'package', 'dispatch', 'waybill', 'awb',
+  // Carrier and marketplace names.
+  'צ.יטה', 'בוקסיט', 'תפוז', 'זיגזג', 'באזר', 'קרגו', 'אוריאן', 'בר הפצה',
+  'chita', 'boxit', 'tapuz', 'zigzag', 'zig-zag', 'buzzr', 'cargo', 'hfd',
+  'epost', 'orian', 'lionwheel', 'cheetah',
+  'dhl', 'fedex', 'ups', 'usps', 'aramex', 'cainiao', 'aliexpress', 'shein',
+  'yunexpress', '4px', 'yanwen'
 ].join('|'), 'i');
 
 const messages = await readMessages(inputPath);
