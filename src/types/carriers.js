@@ -381,6 +381,23 @@ export const CARRIERS = {
     sample: 'ZZ9482019',
     country: 'Israel'
   },
+  'exelot': {
+    id: 'exelot',
+    name: 'Exelot',
+    hebrewName: 'אקסלוט (Exelot)',
+    color: 'from-blue-700 to-indigo-800',
+    badgeBg: 'bg-indigo-600/10 border-indigo-600/30 text-indigo-300',
+    accentColor: '#4338ca',
+    logoText: 'Exelot',
+    website: 'https://exelot.com',
+    getTrackingUrl: (trackNum) => `https://exelot.com/tracking/?num=${encodeURIComponent(trackNum)}`,
+    fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
+    patterns: [
+      rule(/^XLT\d{9}$/i, { confidence: 'high', priority: 135 })
+    ],
+    sample: 'XLT124778035',
+    country: 'Israel / Cross-Border'
+  },
   'cainiao': {
     id: 'cainiao',
     name: 'AliExpress / Cainiao',

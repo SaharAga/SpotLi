@@ -26,15 +26,16 @@ export const CARRIER_SPECS = [
   { id: 'lionwheel', name: 'LionWheel', he: 'ליאון וויל', prefixes: ['LW'], length: 9, type: 'prefix-digits', domain: 'tracking.lionwheel.com' },
   { id: 'cargo', name: 'Cargo Express', he: 'קרגו שליחויות', prefixes: ['CRG', 'ECSA'], length: 10, type: 'prefix-digits', domain: 'cargoexpress.co.il' },
   { id: 'orian', name: 'Orian', he: 'אוריאן', prefixes: ['OR', 'ORN'], length: 10, type: 'orian', domain: 'disttracking.orian.com' },
+  { id: 'exelot', name: 'Exelot', he: 'אקסלוט', prefixes: ['XLT'], length: 12, type: 'prefix-digits', domain: 'exelot.com' },
 
   // Global & Cross-Border
   { id: 'cainiao', name: 'Cainiao', he: 'קאיניאו עליאקספרס', prefixes: ['LP', 'S0000', 'AE'], length: 16, type: 'cainiao' },
   { id: 'yunexpress', name: 'YunExpress', he: 'יון אקספרס', prefixes: ['YT'], length: 18, type: 'yunexpress' },
   { id: 'shein', name: 'SHEIN', he: 'שיין', prefixes: ['GSH'], length: 13, type: 'shein' },
   { id: 'ups', name: 'UPS', he: 'יו פי אס', prefixes: ['1Z'], length: 18, type: 'ups' },
-  { id: 'dhl', name: 'DHL Express', he: 'די אייץ\' אל', length: 10, type: 'dhl' },
-  { id: 'fedex', name: 'FedEx', he: 'פדאקס', length: 12, type: 'fedex' },
-  { id: 'usps', name: 'USPS', he: 'דואר ארה"ב', length: 22, type: 'usps' }
+  { id: 'dhl', name: 'DHL Express', he: 'די אייץ\' אל', length: 10, type: 'dhl', domain: 'dhl.com' },
+  { id: 'fedex', name: 'FedEx', he: 'פדאקס', length: 12, type: 'fedex', domain: 'fedex.com' },
+  { id: 'usps', name: 'USPS', he: 'דואר ארה"ב', length: 22, type: 'usps', domain: 'tools.usps.com' }
 ];
 
 export const MERCHANTS = [
@@ -194,8 +195,9 @@ export function buildSyntheticSample(opts = {}) {
       hasPin: true,
       hasLocation: true,
       template: (c, m, l, t, pin, phone, _ord) => {
-        let text = `שלום, חבילתך מ-${m.he} שמספרה ${t} הגיעה ללוקר ${l.nameHe}. קוד לאיסוף: ${pin}.`;
-        if (c.domain) text += ` למעקב: https://${c.domain}/t/${t}`;
+        let text = `שלום, חבילתך מ-${m.he} עם ${c.he} שמספרה ${t} הגיעה ללוקר ${l.nameHe}. קוד לאיסוף: ${pin}.`;
+        const domain = c.domain || (c.id === 'fedex' ? 'fedex.com' : c.id === 'dhl' ? 'dhl.com' : c.id === 'usps' ? 'tools.usps.com' : null);
+        if (domain) text += ` למעקב: https://${domain}/t/${t}`;
         if (phone) text += ` לבירורים: ${phone}.`;
         return text;
       }

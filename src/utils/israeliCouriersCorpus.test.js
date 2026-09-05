@@ -204,6 +204,15 @@ describe('Israeli & International Courier Corpus Testbench (TASK-701)', () => {
       expect(result.carrier).toBe('dhl');
       expect(result.status).toBe('out_for_delivery');
     });
+
+    it('parses Exelot delivery notice with XLT format', () => {
+      const sms = 'שלום, חבילתך מאקסלוט שמספרה XLT124778035 הגיעה לנקודת איסוף. למעקב: https://exelot.com/tracking/?num=XLT124778035';
+      const result = parseSmartText(sms);
+
+      expect(result.trackingNumber).toBe('XLT124778035');
+      expect(result.carrier).toBe('exelot');
+      expect(result.candidateStatus).toBe('verified');
+    });
   });
 
   describe('AliExpress, Cainiao & Global Couriers', () => {

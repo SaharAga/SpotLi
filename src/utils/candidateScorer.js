@@ -54,6 +54,8 @@ const TRACKING_KEYWORDS = [
   'זיגזג',
   'zigzag',
   'lionwheel',
+  'אקסלוט',
+  'exelot',
   'אוריאן',
   'orian',
   'קרגו',

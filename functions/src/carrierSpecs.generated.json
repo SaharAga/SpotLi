@@ -239,7 +239,8 @@
       "country": "Israel",
       "domains": [
         "getpackage.co.il",
-        "getpackage.com"
+        "getpackage.com",
+        "gpkg.to"
       ],
       "patterns": [
         {
@@ -420,6 +421,27 @@
           "confidence": "high",
           "checksum": "not-applicable",
           "priority": 121
+        }
+      ]
+    },
+    "exelot": {
+      "id": "exelot",
+      "name": "Exelot",
+      "hebrewName": "אקסלוט (Exelot)",
+      "website": "https://exelot.com",
+      "country": "Israel / Cross-Border",
+      "domains": [
+        "app.exelot.com",
+        "exelot.com",
+        "tracking.exelot.com"
+      ],
+      "patterns": [
+        {
+          "source": "^XLT\\d{9}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 135
         }
       ]
     },
@@ -1021,6 +1043,14 @@
       "confidence": "high",
       "checksum": "not-applicable",
       "priority": 130
+    },
+    {
+      "carrierId": "exelot",
+      "source": "^XLT\\d{9}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 135
     },
     {
       "carrierId": "cainiao",

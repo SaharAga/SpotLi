@@ -419,12 +419,13 @@ const HEBREW_CARRIER_PHRASES = [
   { carrierId: 'getpackage', patterns: [/גט\s*פקג['׳`״’‘]/i, /getpackage/i] },
   { carrierId: 'zigzag', patterns: [/זיגזג\s*שליחויות/i, /שליח\s*זיגזג/i, /זיגזג/i, /zigzag/i] },
   { carrierId: 'orian', patterns: [/אוריאן/i, /orian/i] },
+  { carrierId: 'exelot', patterns: [/אקסלוט/i, /exelot/i] },
   // Global carriers. Israeli users receive these notifications in English as
   // often as in Hebrew, and without a brand phrase their bare-digit waybills
   // (DHL 10, FedEx 12) have no corroboration at all.
   // The ambiguous three-letter brands are matched case-sensitively so that
   // "groups", "backups" and "ups and downs" don't register as a carrier.
-  { carrierId: 'dhl', patterns: [/\bdhl\b/i, /די\s*אייץ['׳`״’‘]?\s*אל/i] },
+  { carrierId: 'dhl', patterns: [/\bdhl\b/i, /די\s*(?:איי?ט?ש|איי?ץ|אץ)['׳`״’‘]?\s*אל/i] },
   { carrierId: 'fedex', patterns: [/\bfedex\b/i, /\bfed\s*ex\b/i, /פדאקס/i, /פדקס/i] },
   { carrierId: 'ups', patterns: [/\bUPS\b/, /יו\s*פי\s*אס/i] },
   { carrierId: 'usps', patterns: [/\bUSPS\b/i, /united\s*states\s*postal/i] },
@@ -886,7 +887,7 @@ export function extractTrackingCandidates(text) {
     else if (/^S\d{10,20}$/i.test(cleaned)) candidates.add(cleaned.toUpperCase());
     else if (/^4PX\d{10,}/i.test(cleaned)) candidates.add(cleaned.toUpperCase());
     else if (/^YT\d{16,18}$/i.test(cleaned)) candidates.add(cleaned.toUpperCase());
-    else if (/^(CH|CT|CHT|CHTR|HFD|EP|BOX|BX|TPZ|YDM|TAPUZ|CRG|CARGO|GP|GET|FC|OR|ORN|BAR|BD|ZZ|ZIG|LW|LION|BZR|BUZZR|BZ)\d{6,14}$/i.test(cleaned)) candidates.add(cleaned.toUpperCase());
+    else if (/^(CH|CT|CHT|CHTR|HFD|EP|BOX|BX|TPZ|YDM|TAPUZ|CRG|CARGO|GP|GET|FC|OR|ORN|BAR|BD|ZZ|ZIG|LW|LION|BZR|BUZZR|BZ|XLT)\d{6,14}$/i.test(cleaned)) candidates.add(cleaned.toUpperCase());
     else if (/^\d{8,22}$/.test(cleaned) && (cleaned.length === 8 || cleaned.length === 9 || cleaned.length === 10 || cleaned.length === 12 || cleaned.length === 14 || cleaned.length === 15 || cleaned.length === 16 || cleaned.length === 18 || cleaned.length === 20 || cleaned.length === 22)) candidates.add(cleaned);
   }
 

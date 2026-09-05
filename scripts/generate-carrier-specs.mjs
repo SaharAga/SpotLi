@@ -66,7 +66,8 @@ const KNOWN_CARRIER_DOMAINS = {
   // Israel Post serves tracking from several hosts; only the mypost one was
   // derivable from the carrier definition.
   'israel-post': ['israelpost.co.il', 'mypost.israelpost.co.il', 'israelpost.gov.il'],
-  'getpackage': ['getpackage.com', 'getpackage.co.il'],
+  'getpackage': ['getpackage.com', 'getpackage.co.il', 'gpkg.to'],
+  'exelot': ['exelot.com', 'tracking.exelot.com', 'app.exelot.com'],
   'orian': ['orian.com', 'orianlogistics.com', 'disttracking.orian.com'],
   'flying-cargo': ['flying-cargo.com', 'flyingcargo.co.il'],
   'cargo': ['cargoexpress.co.il', 'cargo-ship.co.il', 'cargoship.co.il', 'cloud.amital.co.il'],
