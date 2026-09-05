@@ -25,7 +25,7 @@ beforeEach(() => {
   mockStore = {};
 });
 
-const VALID_STATUSES = ['ordered', 'shipped', 'in_transit', 'customs', 'out_for_delivery', 'delivered', 'exception', 'archived'];
+const VALID_STATUSES = ['ordered', 'shipped', 'in_transit', 'customs', 'out_for_delivery', 'delivered', 'exception', 'returned_to_sender', 'archived'];
 const VALID_CARRIERS = CARRIER_LIST.map((c) => c.id);
 
 // Fast-check generator for arbitrary valid package objects

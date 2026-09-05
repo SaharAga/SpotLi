@@ -16,6 +16,7 @@ export type DeliveryStageId =
   | 'out_for_delivery'
   | 'delivered'
   | 'exception'
+  | 'returned_to_sender'
   | 'archived';
 
 /**

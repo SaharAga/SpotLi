@@ -33,14 +33,15 @@ function getStorageKey(userId) {
  * State machine transition matrix governing allowed package status transitions.
  */
 export const TRANSITION_MATRIX = Object.freeze({
-  ordered: ['ordered', 'shipped', 'in_transit', 'delivered', 'exception', 'archived'],
-  shipped: ['shipped', 'in_transit', 'customs', 'out_for_delivery', 'delivered', 'exception', 'archived'],
-  in_transit: ['in_transit', 'customs', 'out_for_delivery', 'delivered', 'exception', 'archived'],
-  customs: ['customs', 'in_transit', 'out_for_delivery', 'delivered', 'exception', 'archived'],
-  out_for_delivery: ['out_for_delivery', 'delivered', 'in_transit', 'exception', 'archived'],
-  delivered: ['delivered', 'out_for_delivery', 'in_transit', 'ordered', 'shipped', 'customs', 'exception', 'archived'],
-  exception: ['exception', 'in_transit', 'out_for_delivery', 'delivered', 'archived'],
-  archived: ['archived', 'ordered', 'shipped', 'in_transit', 'customs', 'out_for_delivery', 'delivered', 'exception']
+  ordered: ['ordered', 'shipped', 'in_transit', 'delivered', 'exception', 'returned_to_sender', 'archived'],
+  shipped: ['shipped', 'in_transit', 'customs', 'out_for_delivery', 'delivered', 'exception', 'returned_to_sender', 'archived'],
+  in_transit: ['in_transit', 'customs', 'out_for_delivery', 'delivered', 'exception', 'returned_to_sender', 'archived'],
+  customs: ['customs', 'in_transit', 'out_for_delivery', 'delivered', 'exception', 'returned_to_sender', 'archived'],
+  out_for_delivery: ['out_for_delivery', 'delivered', 'in_transit', 'exception', 'returned_to_sender', 'archived'],
+  delivered: ['delivered', 'out_for_delivery', 'in_transit', 'ordered', 'shipped', 'customs', 'exception', 'returned_to_sender', 'archived'],
+  exception: ['exception', 'in_transit', 'out_for_delivery', 'delivered', 'returned_to_sender', 'archived'],
+  returned_to_sender: ['returned_to_sender', 'in_transit', 'delivered', 'exception', 'archived'],
+  archived: ['archived', 'ordered', 'shipped', 'in_transit', 'customs', 'out_for_delivery', 'delivered', 'exception', 'returned_to_sender']
 });
 
 /**

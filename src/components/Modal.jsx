@@ -239,7 +239,7 @@ export function Modal({
     )
   );
 
-  const panelClasses = twMerge(clsx('relative outline-none', className));
+  const panelClasses = twMerge(clsx('relative outline-none animate-modal-pop', className));
 
   // `data-modal-*` are hooks for the mobile full-screen rules in index.css.
   // They exist because every caller passes its own max-w/rounded/my-* classes,

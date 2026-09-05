@@ -480,21 +480,23 @@ describe('Delivery Service and Storage Persistence', () => {
       expect(canTransition('archived', 'archived')).toBe(true);
     });
 
-    it('allows transitioning to exception and archive from any active stage', () => {
+    it('allows transitioning to exception, returned_to_sender, and archive from any active stage', () => {
       const stages = ['ordered', 'shipped', 'in_transit', 'customs', 'out_for_delivery'];
       for (const st of stages) {
         expect(canTransition(st, 'exception')).toBe(true);
+        expect(canTransition(st, 'returned_to_sender')).toBe(true);
         expect(canTransition(st, 'archived')).toBe(true);
       }
     });
 
-    it('allows transitions from delivered state back to active states and archive', () => {
+    it('allows transitions from delivered state back to active states, returned_to_sender, and archive', () => {
       expect(canTransition('delivered', 'ordered')).toBe(true);
       expect(canTransition('delivered', 'shipped')).toBe(true);
       expect(canTransition('delivered', 'in_transit')).toBe(true);
       expect(canTransition('delivered', 'customs')).toBe(true);
       expect(canTransition('delivered', 'out_for_delivery')).toBe(true);
       expect(canTransition('delivered', 'exception')).toBe(true);
+      expect(canTransition('delivered', 'returned_to_sender')).toBe(true);
       expect(canTransition('delivered', 'archived')).toBe(true);
     });
 
@@ -504,6 +506,13 @@ describe('Delivery Service and Storage Persistence', () => {
         expect(canTransition(stage, 'delivered')).toBe(true);
         expect(canTransition(stage, 'archived')).toBe(true);
       }
+    });
+
+    it('allows returned_to_sender transitions', () => {
+      expect(canTransition('returned_to_sender', 'returned_to_sender')).toBe(true);
+      expect(canTransition('returned_to_sender', 'archived')).toBe(true);
+      expect(canTransition('returned_to_sender', 'in_transit')).toBe(true);
+      expect(canTransition('returned_to_sender', 'delivered')).toBe(true);
     });
 
     it('normalizes tracking numbers and finds packages cleanly', () => {

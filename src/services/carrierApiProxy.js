@@ -24,6 +24,15 @@ const FETCH_TIMEOUT_MS = 4500;
  * Stage Mapping Dictionary to VALID_STATUSES
  */
 const STATUS_KEYWORDS = {
+  returned_to_sender: [
+    'returned to sender', 'return to sender', 'returned', 'הוחזר לשולח',
+    'מוחזר לשולח', 'לא נאסף והוחזר', 'הוחזרה לשולח', 'חזרה לשולח',
+    'נשלח בחזרה לשולח', 'נשלחה בחזרה לשולח'
+  ],
+  exception: [
+    'exception', 'delivery failed', 'undeliverable', 'address issue',
+    'חריגת מסירה', 'מסירה נכשלה', 'כתובת שגויה', 'חריגה במשלוח'
+  ],
   delivered: [
     'delivered', 'מסירה בוצעה', 'נמסר ליעדו', 'החבילה נמסרה', 'נמסר בהצלחה',
     'חבילה נמסרה לנמען', 'נאסף מהלוקר', 'הלקוח אסף את החבילה'

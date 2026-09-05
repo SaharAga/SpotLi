@@ -4,7 +4,7 @@ import confetti from 'canvas-confetti';
 import { getCarrier } from '../types/carriers';
 import { detectStore } from '../utils/storeDetector';
 import { copyToClipboard } from '../utils/clipboard';
-import { STAGES, CATEGORIES } from '../types/stages';
+import { STAGES, CATEGORIES, getStatusMeta } from '../types/stages';
 import { useLanguage } from '../context/LanguageContext';
 import { Button, ModalFooter, Pill, Title } from './ui/Primitives';
 import { formatDate, formatDateTime, getDaysRemaining } from '../utils/dateUtils';
@@ -60,8 +60,10 @@ export function PackageDetailModal({
   const carrier = getCarrier(pkg.carrier);
   const store = detectStore(pkg);
   const currentStageIndex = STAGES.findIndex(s => s.id === pkg.status);
-  const effectiveIndex = currentStageIndex === -1 ? 0 : currentStageIndex;
+  const isLinearStage = currentStageIndex !== -1;
+  const effectiveIndex = isLinearStage ? currentStageIndex : 0;
   const currentStage = STAGES[effectiveIndex];
+  const stageMeta = getStatusMeta(pkg.status);
   const category = CATEGORIES.find(c => c.id === pkg.category) || CATEGORIES[CATEGORIES.length - 1];
   const daysInfo = getDaysRemaining(pkg.expectedDeliveryDate, language);
   const pickupCountdown = getPickupCountdown(pkg.pickupDeadline);
@@ -109,7 +111,7 @@ export function PackageDetailModal({
   };
 
   const handleAdvanceStage = () => {
-    if (effectiveIndex < STAGES.length - 1) {
+    if (isLinearStage && effectiveIndex < STAGES.length - 1) {
       const nextStage = STAGES[effectiveIndex + 1];
 
       if (!canTransition(pkg.status, nextStage.id)) {
@@ -355,10 +357,16 @@ export function PackageDetailModal({
           <div className="p-4 rounded-2xl bg-slate-950/40 border border-slate-800/80 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h3 className="text-sm font-bold text-slate-300 flex items-center gap-2">
-                <Truck className="w-4 h-4 text-blue-400" />
+                {pkg.status === 'returned_to_sender' ? (
+                  <RotateCcw className="w-4 h-4 text-orange-400" />
+                ) : pkg.status === 'exception' ? (
+                  <AlertCircle className="w-4 h-4 text-rose-400" />
+                ) : (
+                  <Truck className="w-4 h-4 text-blue-400" />
+                )}
                 <span>{t('detailModal.currentStage')}:</span>
-                <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${currentStage.badgeClass}`}>
-                  {language === 'he' ? currentStage.hebrewLabel : currentStage.label}
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${stageMeta.badgeClass}`}>
+                  {language === 'he' ? stageMeta.hebrewLabel : stageMeta.label}
                 </span>
               </h3>
 
@@ -373,10 +381,8 @@ export function PackageDetailModal({
                   {(TRANSITION_MATRIX[pkg.status] || [pkg.status])
                     .filter((statusKey) => pkg.status !== 'delivered' || statusKey === 'delivered' || statusKey === 'archived')
                     .map((statusKey) => {
-                    const stageObj = STAGES.find(s => s.id === statusKey);
-                    const label = stageObj
-                      ? (language === 'he' ? stageObj.hebrewLabel : stageObj.label)
-                      : statusKey;
+                    const stageObj = getStatusMeta(statusKey);
+                    const label = language === 'he' ? stageObj.hebrewLabel : stageObj.label;
                     return (
                       <option key={statusKey} value={statusKey}>
                         {label}
@@ -396,7 +402,7 @@ export function PackageDetailModal({
                   </button>
                 )}
 
-                {effectiveIndex < STAGES.length - 1 && canTransition(pkg.status, STAGES[effectiveIndex + 1]?.id) && (
+                {isLinearStage && effectiveIndex < STAGES.length - 1 && canTransition(pkg.status, STAGES[effectiveIndex + 1]?.id) && (
                   <button
                     onClick={handleAdvanceStage}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold transition-all shadow-md min-h-[48px]"

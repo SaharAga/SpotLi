@@ -4,7 +4,10 @@ import {
   TAB_IDS,
   ARCHIVED_TAB,
   getTabPredicate,
-  STAGES
+  STAGES,
+  STATUS_DEFINITIONS,
+  getStatusMeta,
+  SELECTABLE_STATUSES
 } from './stages';
 
 // The bucketing rules used to be written out three times — an if-chain in
@@ -26,7 +29,8 @@ const ALL_STATUSES = [
   'customs',
   'out_for_delivery',
   'delivered',
-  'exception'
+  'exception',
+  'returned_to_sender'
 ];
 
 describe('TAB_PREDICATES', () => {
@@ -54,6 +58,8 @@ describe('TAB_PREDICATES', () => {
     expect(STAGES.some((s) => s.id === 'exception')).toBe(false);
     expect(TAB_PREDICATES.customs(pkg('exception'))).toBe(true);
     expect(TAB_PREDICATES.active(pkg('exception'))).toBe(true);
+    expect(TAB_PREDICATES.customs(pkg('returned_to_sender'))).toBe(true);
+    expect(TAB_PREDICATES.active(pkg('returned_to_sender'))).toBe(true);
   });
 
   it.each(ALL_STATUSES)('puts %s in the all bucket', (status) => {
@@ -66,7 +72,7 @@ describe('TAB_PREDICATES', () => {
     }
   });
 
-  it('transit excludes delivered, customs and exception', () => {
+  it('transit excludes delivered, customs, exception and returned_to_sender', () => {
     const expected = {
       ordered: true,
       shipped: true,
@@ -74,7 +80,8 @@ describe('TAB_PREDICATES', () => {
       customs: false,
       out_for_delivery: true,
       delivered: false,
-      exception: false
+      exception: false,
+      returned_to_sender: false
     };
     for (const status of ALL_STATUSES) {
       expect(TAB_PREDICATES.transit(pkg(status))).toBe(expected[status]);
@@ -89,7 +96,8 @@ describe('TAB_PREDICATES', () => {
       customs: false,
       out_for_delivery: false,
       delivered: false,
-      exception: false
+      exception: false,
+      returned_to_sender: false
     };
     for (const status of ALL_STATUSES) {
       expect(TAB_PREDICATES.in_transit(pkg(status))).toBe(expected[status]);
@@ -101,7 +109,7 @@ describe('TAB_PREDICATES', () => {
       expect(TAB_PREDICATES.out_for_delivery(pkg(status))).toBe(status === 'out_for_delivery');
       expect(TAB_PREDICATES.delivered(pkg(status))).toBe(status === 'delivered');
       expect(TAB_PREDICATES.customs(pkg(status))).toBe(
-        status === 'customs' || status === 'exception'
+        status === 'customs' || status === 'exception' || status === 'returned_to_sender'
       );
     }
   });
@@ -152,3 +160,61 @@ describe('getTabPredicate', () => {
     expect(getTabPredicate(ARCHIVED_TAB)).toBeNull();
   });
 });
+
+describe('getStatusMeta', () => {
+  it('returns exact metadata for returned_to_sender', () => {
+    const meta = getStatusMeta('returned_to_sender');
+    expect(meta.id).toBe('returned_to_sender');
+    expect(meta.label).toBe('Returned to Sender');
+    expect(meta.hebrewLabel).toBe('הוחזר לשולח');
+    expect(meta.color).toBe('orange');
+    expect(meta.badgeClass).toContain('text-orange-400');
+  });
+
+  it('returns exact metadata for exception', () => {
+    const meta = getStatusMeta('exception');
+    expect(meta.id).toBe('exception');
+    expect(meta.label).toBe('Delivery Exception');
+    expect(meta.hebrewLabel).toBe('חריגה / עיכוב');
+    expect(meta.color).toBe('rose');
+  });
+
+  it('returns linear stage metadata correctly', () => {
+    for (const stage of STAGES) {
+      const meta = getStatusMeta(stage.id);
+      expect(meta.id).toBe(stage.id);
+      expect(meta.label).toBe(stage.label);
+    }
+  });
+
+  it('safely falls back to ordered for unknown or prototype keys', () => {
+    expect(getStatusMeta('unknown_xyz').id).toBe('ordered');
+    expect(getStatusMeta('constructor').id).toBe('ordered');
+    expect(getStatusMeta(null).id).toBe('ordered');
+    expect(getStatusMeta(undefined).id).toBe('ordered');
+  });
+});
+
+describe('SELECTABLE_STATUSES', () => {
+  it('contains linear stages plus returned_to_sender and exception', () => {
+    const ids = SELECTABLE_STATUSES.map((s) => s.id);
+    expect(ids).toContain('returned_to_sender');
+    expect(ids).toContain('exception');
+    expect(ids).toContain('ordered');
+    expect(ids).toContain('delivered');
+  });
+});
+
+describe('STATUS_DEFINITIONS', () => {
+  it('defines all valid statuses with non-empty label, hebrewLabel and color', () => {
+    for (const status of ALL_STATUSES) {
+      const def = STATUS_DEFINITIONS[status];
+      expect(def).toBeDefined();
+      expect(def.id).toBe(status);
+      expect(typeof def.label).toBe('string');
+      expect(typeof def.hebrewLabel).toBe('string');
+      expect(typeof def.color).toBe('string');
+    }
+  });
+});
+

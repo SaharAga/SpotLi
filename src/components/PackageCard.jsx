@@ -8,7 +8,7 @@ import confetti from 'canvas-confetti';
 import { getCarrier } from '../types/carriers';
 import { detectStore } from '../utils/storeDetector';
 import { copyToClipboard } from '../utils/clipboard';
-import { STAGES } from '../types/stages';
+import { STAGES, getStatusMeta } from '../types/stages';
 import { useLanguage } from '../context/LanguageContext';
 import { formatDate, getDaysRemaining } from '../utils/dateUtils';
 import { getPickupCountdown, getReturnCountdown } from '../utils/deadlineUtils';
@@ -59,6 +59,8 @@ function PackageCardImpl({
 
   const trackingUrl = carrier.getTrackingUrl(pkg.trackingNumber);
 
+  const SWIPE_THRESHOLD = 60;
+
   const handleTouchStart = (e) => {
     touchStartXRef.current = e.touches[0].clientX;
     touchStartYRef.current = e.touches[0].clientY;
@@ -75,16 +77,21 @@ function PackageCardImpl({
       return;
     }
 
-    if (Math.abs(deltaX) > 15) {
+    if (Math.abs(deltaX) > 10) {
       setIsSwiping(true);
-      // Dampen swipe drag distance
-      const boundedOffset = Math.max(-120, Math.min(120, deltaX));
+      // Dampen swipe drag distance slightly beyond threshold
+      const sign = Math.sign(deltaX);
+      const absVal = Math.abs(deltaX);
+      const bounded = absVal <= SWIPE_THRESHOLD
+        ? absVal
+        : SWIPE_THRESHOLD + (absVal - SWIPE_THRESHOLD) * 0.45;
+      const boundedOffset = Math.max(-140, Math.min(140, sign * bounded));
       setSwipeOffset(boundedOffset);
 
-      if (Math.abs(boundedOffset) >= 50 && !hapticTriggeredRef.current) {
-        triggerHapticFeedback(18);
+      if (Math.abs(boundedOffset) >= SWIPE_THRESHOLD && !hapticTriggeredRef.current) {
+        triggerHapticFeedback(20);
         hapticTriggeredRef.current = true;
-      } else if (Math.abs(boundedOffset) < 50) {
+      } else if (Math.abs(boundedOffset) < SWIPE_THRESHOLD && hapticTriggeredRef.current) {
         hapticTriggeredRef.current = false;
       }
     }
@@ -93,11 +100,11 @@ function PackageCardImpl({
   const handleTouchEnd = () => {
     if (!isSwiping) return;
 
-    if (swipeOffset >= 50) {
+    if (swipeOffset >= SWIPE_THRESHOLD) {
       // Swiped Right -> Toggle Archive
       onToggleArchive(pkg.id);
       triggerHapticFeedback([10, 50, 20]);
-    } else if (swipeOffset <= -50) {
+    } else if (swipeOffset <= -SWIPE_THRESHOLD) {
       // Swiped Left -> Delete
       onDelete(pkg.id);
       triggerHapticFeedback([20, 40, 30]);
@@ -105,6 +112,7 @@ function PackageCardImpl({
 
     setSwipeOffset(0);
     setIsSwiping(false);
+    hapticTriggeredRef.current = false;
   };
 
   const handleCopy = async (e) => {
@@ -166,7 +174,7 @@ function PackageCardImpl({
   };
 
   const itemTitle = (language === 'he' && pkg.titleHe) ? pkg.titleHe : pkg.title;
-  const stage = STAGES.find(s => s.id === pkg.status) || STAGES[0];
+  const stage = getStatusMeta(pkg.status);
 
   return (
     <div
@@ -188,28 +196,78 @@ function PackageCardImpl({
         containIntrinsicSize: '140px'
       }}
     >
-      {/* Swipe Action Background Indicator */}
-      {isSwiping && (
-        <div className="absolute inset-0 overflow-hidden flex items-center justify-between px-6 rounded-2xl transition-colors">
-          <div className={`flex items-center gap-2 font-bold text-xs ${swipeOffset > 40 ? 'text-amber-400 opacity-100' : 'opacity-0'}`}>
-            <Archive className="w-5 h-5" />
-            <span>{pkg.isArchived ? t('card.unarchive') : t('card.archive')}</span>
+      {/* Swipe Action Background Track (Email-box style revealed actions) */}
+      {(isSwiping || swipeOffset !== 0) && (
+        <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none flex items-center justify-between">
+          {/* Left Track: Archive / Unarchive */}
+          <div
+            className={`h-full flex items-center gap-2.5 px-4 sm:px-6 transition-colors duration-150 ${
+              swipeOffset > 0
+                ? (swipeOffset >= SWIPE_THRESHOLD
+                    ? (pkg.isArchived ? 'bg-emerald-600/35' : 'bg-amber-600/35')
+                    : (pkg.isArchived ? 'bg-emerald-500/15' : 'bg-amber-500/15'))
+                : 'opacity-0'
+            }`}
+            style={{
+              width: swipeOffset > 0 ? `${Math.max(swipeOffset + 12, 0)}px` : '0px'
+            }}
+          >
+            <div
+              className={`flex items-center gap-2 font-bold text-xs transition-transform duration-150 ${
+                pkg.isArchived ? 'text-emerald-300' : 'text-amber-300'
+              }`}
+              style={{
+                transform: `scale(${swipeOffset >= SWIPE_THRESHOLD ? 1.08 : Math.max(0.85, Math.min(1, swipeOffset / SWIPE_THRESHOLD))})`,
+                opacity: Math.min(1, Math.max(0.4, swipeOffset / 35))
+              }}
+            >
+              <Archive className={`w-5 h-5 shrink-0 transition-transform ${swipeOffset >= SWIPE_THRESHOLD ? 'rotate-[-8deg]' : ''}`} />
+              <span className="whitespace-nowrap font-bold">
+                {swipeOffset >= SWIPE_THRESHOLD
+                  ? (pkg.isArchived ? t('card.releaseToUnarchive') : t('card.releaseToArchive'))
+                  : (pkg.isArchived ? t('card.unarchive') : t('card.archive'))}
+              </span>
+            </div>
           </div>
-          <div className={`flex items-center gap-2 font-bold text-xs ${swipeOffset < -40 ? 'text-rose-400 opacity-100' : 'opacity-0'}`}>
-            <span>{t('card.delete')}</span>
-            <Trash2 className="w-5 h-5" />
+
+          {/* Right Track: Delete */}
+          <div
+            className={`h-full ms-auto flex items-center justify-end gap-2.5 px-4 sm:px-6 transition-colors duration-150 ${
+              swipeOffset < 0
+                ? (-swipeOffset >= SWIPE_THRESHOLD ? 'bg-rose-600/35' : 'bg-rose-500/15')
+                : 'opacity-0'
+            }`}
+            style={{
+              width: swipeOffset < 0 ? `${Math.max(-swipeOffset + 12, 0)}px` : '0px'
+            }}
+          >
+            <div
+              className="flex items-center gap-2 font-bold text-xs text-rose-300 transition-transform duration-150"
+              style={{
+                transform: `scale(${-swipeOffset >= SWIPE_THRESHOLD ? 1.08 : Math.max(0.85, Math.min(1, -swipeOffset / SWIPE_THRESHOLD))})`,
+                opacity: Math.min(1, Math.max(0.4, -swipeOffset / 35))
+              }}
+            >
+              <span className="whitespace-nowrap font-bold">
+                {-swipeOffset >= SWIPE_THRESHOLD ? t('card.releaseToDelete') : t('card.delete')}
+              </span>
+              <Trash2 className={`w-5 h-5 shrink-0 transition-transform ${-swipeOffset >= SWIPE_THRESHOLD ? 'rotate-[8deg]' : ''}`} />
+            </div>
           </div>
         </div>
       )}
 
       <div
-        onClick={() => onOpenDetails(pkg)}
+        onClick={() => {
+          if (Math.abs(swipeOffset) > 5) return;
+          onOpenDetails(pkg);
+        }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         style={{
           transform: swipeOffset ? `translateX(${swipeOffset}px)` : 'none',
-          transition: isSwiping ? 'none' : 'transform 0.25s ease-out'
+          transition: isSwiping ? 'none' : 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)'
         }}
         className={`group relative bg-slate-900 hover:bg-slate-800 border rounded-2xl p-4 transition-all duration-200 cursor-pointer flex flex-col gap-3 shadow-sm hover:shadow-md ${
           pkg.isPinned ? 'border-blue-500/40 ring-1 ring-blue-500/20' : 'border-slate-800 hover:border-slate-700'
@@ -218,7 +276,13 @@ function PackageCardImpl({
         {/* Row 1: leading icon, title + tracking/carrier meta, status pill */}
         <div className="flex items-start gap-3">
           <div className={`relative p-2 rounded-xl shrink-0 ${stage.badgeClass.split(' ').filter(c => c.startsWith('bg-') || c.startsWith('text-')).join(' ')}`}>
-            <Package className="w-4 h-4" />
+            {pkg.status === 'returned_to_sender' ? (
+              <RotateCcw className="w-4 h-4" />
+            ) : pkg.status === 'exception' ? (
+              <AlertTriangle className="w-4 h-4" />
+            ) : (
+              <Package className="w-4 h-4" />
+            )}
             {pkg.isPinned && (
               <Pin
                 className="absolute -top-1 -end-1 w-3 h-3 fill-blue-400 text-blue-400"
