@@ -282,6 +282,14 @@ export const PARSER_EVAL_CORPUS = [
     expected: { trackingNumber: '8471293', carrier: 'tapuz' }
   },
 
+  {
+    id: 'pos-real-cargo-wa-link',
+    group: 'hard-positive',
+    note: 'from a real user correction: labeled number must beat both the URL path token and the WhatsApp phone number',
+    rawText: 'שלום, הזמנתך מ-Cotton Club לשדרות בן גוריון 23 ראש העין, נקלטה בחברת ההפצה CARGO ותימסר אליך בימים הקרובים. מס מעקב 68709580, למעקב אחר המשלוח: https://www.cargo-ship.co.il/cs/cs-client/delivery-status/VJ452WCTHFEI לבירורים נוספים בוואטסאפ https://wa.me/972504328304',
+    expected: { trackingNumber: '68709580', carrier: 'cargo' }
+  },
+
   // ─────────────────────────────────────────────────────────────────────
   // NEGATIVES — no shipment in the message at all.
   // These are where precision dies. Correct output is NO tracking number.

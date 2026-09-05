@@ -278,6 +278,17 @@ export function detectFalsePositiveFlags(candidate, fullText = '', startIdx = -1
     }
   }
 
+  // A number inside a contact link is a phone number, whatever its shape.
+  // Courier messages routinely end with a WhatsApp or tel: link for enquiries,
+  // and an Israeli mobile in international form (972504328304) is twelve
+  // digits — the same length as a FedEx waybill.
+  if (fullText && startIdx >= 0) {
+    const before = fullText.slice(Math.max(0, startIdx - 30), startIdx);
+    if (/(?:wa\.me\/|whatsapp\.com\/send\?phone=|tel:|callto:|sms:)\+?$/i.test(before)) {
+      flags.push('phone_number');
+    }
+  }
+
   // OTP Verification check (4-8 digits immediately next to security/verification keywords)
   if (/^\d{4,8}$/.test(clean) && fullText && startIdx >= 0) {
     const before = fullText.slice(Math.max(0, startIdx - 35), startIdx).toLowerCase();
@@ -306,6 +317,24 @@ export function checkUrlDomainMatch(carrierId, fullText) {
 
   const textLower = fullText.toLowerCase();
   return carrierInfo.domains.some((domain) => textLower.includes(domain.toLowerCase()));
+}
+
+/**
+ * Whether the message links to any recognised carrier at all.
+ *
+ * Weaker than `checkUrlDomainMatch`, which asks about one specific carrier.
+ * This asks only "did a courier send this?", which is what corroborates a
+ * labeled number whose own format matches no carrier rule.
+ *
+ * @param {string} fullText
+ * @returns {boolean}
+ */
+export function messageHasCarrierDomain(fullText) {
+  if (!fullText) return false;
+  const textLower = fullText.toLowerCase();
+  return Object.values(carrierSpecs.carriers || {})
+    .some((carrier) => Array.isArray(carrier.domains)
+      && carrier.domains.some((domain) => textLower.includes(domain.toLowerCase())));
 }
 
 /**
@@ -595,6 +624,7 @@ export function extractAndScoreCandidates(text) {
               priority: ruleEval.bestPriority,
               checksum: ruleEval.checksum,
               urlDomainMatch: Boolean(domainCarrier),
+              fromUrlPath: true,
               // On a carrier host, being in the tracking path *is* the label.
               // Anywhere else the segment is just a path id — every site has
               // them — so it has to earn proximity from the surrounding text
@@ -612,7 +642,7 @@ export function extractAndScoreCandidates(text) {
   }
 
   // 2. Scan for labeled tracking number spans (e.g. "מעקב: ABC1234567")
-  const labeledPattern = /(?:tracking\s*(?:number|id|code|no|#)?|מספר\s*מעקב|מס['׳`״]\s*מעקב|קוד\s*מעקב|דבר\s*דואר(?:\s*שמספרו)?|פריט\s*דואר|חבילה\s*מספר|מספר\s*משלוח|(?:חבילת|משלוח)\s+(?:בוקסיט|צ['׳`״]יטה|באזר|תפוז|hfd|epost|דואר|boxit|buzzr|tapuz|bar|בר\s*הפצה|זיגזג|zigzag)(?:\s+(?:מס['׳`״]?|מספר))?|משלוח(?:\s+[A-Za-z0-9'״׳א-ת-]+)*\s*(?:מס['׳`״]?|מספר)|waybill|awb|waybill\s*(?:no|#|num)?|ברקוד(?:\s*משלוח)?)[\s:=#-]+([A-Za-z0-9_-]{6,35})/gi;
+  const labeledPattern = /(?:tracking\s*(?:number|id|code|no|#)?|מספר\s*מעקב|מס['׳`״]?\s*מעקב|קוד\s*מעקב|דבר\s*דואר(?:\s*שמספרו)?|פריט\s*דואר|חבילה\s*מספר|מספר\s*משלוח|(?:חבילת|משלוח)\s+(?:בוקסיט|צ['׳`״]יטה|באזר|תפוז|hfd|epost|דואר|boxit|buzzr|tapuz|bar|בר\s*הפצה|זיגזג|zigzag)(?:\s+(?:מס['׳`״]?|מספר))?|משלוח(?:\s+[A-Za-z0-9'״׳א-ת-]+)*\s*(?:מס['׳`״]?|מספר)|waybill|awb|waybill\s*(?:no|#|num)?|ברקוד(?:\s*משלוח)?)[\s:=#-]+([A-Za-z0-9_-]{6,35})/gi;
   let labeledMatch;
 
   while ((labeledMatch = labeledPattern.exec(normalizedText)) !== null) {
@@ -665,7 +695,13 @@ export function extractAndScoreCandidates(text) {
       highestConfidence: highestConf,
       priority: pri,
       checksum: ruleEval.checksum,
-      urlDomainMatch: checkUrlDomainMatch(primaryCarrier, normalizedText),
+      // The carrier link in the message corroborates the labeled number too —
+      // "מס מעקב 68709580" alongside a cargo-ship.co.il tracking link is the
+      // carrier stating its own reference. Without this, only the opaque token
+      // inside the URL got domain credit, and it outranked the very number the
+      // message presents to the reader as the tracking number.
+      urlDomainMatch: checkUrlDomainMatch(primaryCarrier, normalizedText)
+        || messageHasCarrierDomain(normalizedText),
       labelProximity: 1.0, // Directly extracted from labeled pattern
       falsePositiveFlags: detectFalsePositiveFlags(cleanVal, normalizedText, start, end),
       sourceSpan: { start, end }
@@ -841,6 +877,13 @@ export function extractAndScoreCandidates(text) {
     const bPri = b.priority ?? 999;
     if (aPri !== bPri) {
       return aPri - bPri;
+    }
+    // On an otherwise even score, prefer the number written out in the message
+    // over a token lifted from a URL path. The former is what the sender is
+    // presenting as the tracking number and what other systems will accept;
+    // the latter is often an opaque per-session link id.
+    if (Boolean(a.fromUrlPath) !== Boolean(b.fromUrlPath)) {
+      return a.fromUrlPath ? 1 : -1;
     }
     return (b.labelProximity || 0) - (a.labelProximity || 0);
   }).map((cand) => ({

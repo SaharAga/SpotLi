@@ -69,7 +69,7 @@ const KNOWN_CARRIER_DOMAINS = {
   'getpackage': ['getpackage.com', 'getpackage.co.il'],
   'orian': ['orian.com', 'orianlogistics.com'],
   'flying-cargo': ['flying-cargo.com', 'flyingcargo.co.il'],
-  'cargo': ['cargoexpress.co.il'],
+  'cargo': ['cargoexpress.co.il', 'cargo-ship.co.il', 'cargoship.co.il'],
   // Global carriers reach Israeli users through their regional hosts as often
   // as their .com ones.
   'dhl': ['dhl.com', 'dhl.co.il', 'dhlexpress.com', 'mydhl.express.dhl'],

@@ -171,7 +171,9 @@
       "website": "https://cargoexpress.co.il",
       "country": "Israel",
       "domains": [
-        "cargoexpress.co.il"
+        "cargo-ship.co.il",
+        "cargoexpress.co.il",
+        "cargoship.co.il"
       ],
       "patterns": [
         {

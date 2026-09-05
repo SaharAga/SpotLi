@@ -404,7 +404,10 @@ const HEBREW_CARRIER_PHRASES = [
   { carrierId: 'bar-distribution', patterns: [/בר\s*הפצה/i, /מחברת\s*בר\s*הפצה/i, /מבר\s*הפצה/i, /חברת\s*בר\s*הפצה/i, /bar\s*distribution/i, /barexpress/i] },
   { carrierId: 'lionwheel', patterns: [/ליאון\s*וויל/i, /מליאון\s*וויל/i, /lionwheel/i] },
   { carrierId: 'flying-cargo', patterns: [/פליינג\s*קרגו/i, /flying\s*cargo/i, /פדאקס\s*ישראל/i] },
-  { carrierId: 'cargo', patterns: [/קרגו\s*שליחויות/i, /cargo\s*express/i] },
+  // "חברת ההפצה CARGO" — the brand appears bare, so the bare form must match.
+  // Anchored to a distribution-company phrase or the carrier's own host, since
+  // "cargo" is an ordinary English word and Flying Cargo is a separate carrier.
+  { carrierId: 'cargo', patterns: [/קרגו\s*שליחויות/i, /cargo\s*express/i, /חברת\s*ה?הפצה\s*CARGO/i, /cargo-?ship/i] },
   { carrierId: 'getpackage', patterns: [/גט\s*פקג['׳`״]/i, /getpackage/i] },
   { carrierId: 'zigzag', patterns: [/זיגזג\s*שליחויות/i, /שליח\s*זיגזג/i, /זיגזג/i, /zigzag/i] },
   { carrierId: 'orian', patterns: [/אוריאן/i, /orian/i] },
