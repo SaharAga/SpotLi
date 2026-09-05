@@ -6,6 +6,12 @@ import { validateUPUS10Mod11, validateMod10 } from './carrierDetector.js';
  */
 const TRACKING_KEYWORDS = [
   'tracking',
+  'package',
+  'parcel',
+  'מעקב',
+  'חבילה',
+  'חבילתך',
+  'משלוח',
   'tracking number',
   'track number',
   'waybill',
@@ -241,7 +247,15 @@ export function computeCandidateScore(candidate) {
 
   // 1. Format match & rule confidence
   if (candidate.formatMatch) {
-    score += candidate.highestConfidence === 'high' ? 0.65 : 0.35;
+    if (candidate.distinctive === false) {
+      // Shape-only match (a bare digit run). Alone this is barely evidence at
+      // all — but an explicit label directly before it ("מעקב: 3019284756")
+      // corroborates the shape, so the match earns its normal medium-confidence
+      // credit. Unlabeled, it must wait for a carrier domain or a check digit.
+      score += (candidate.labelProximity ?? 0) >= 0.8 ? 0.35 : 0.20;
+    } else {
+      score += candidate.highestConfidence === 'high' ? 0.65 : 0.35;
+    }
   } else if (candidate.labelProximity >= 0.8) {
     // Explicitly labeled tracking candidate (e.g. "Tracking ID: XYZ")
     score += 0.50;
@@ -299,6 +313,22 @@ export function classifyConfidenceTier(score, candidate) {
     return 'verified';
   }
 
+  // `verified` is the tier Smart Import auto-fills without asking, so a
+  // shape-only match never reaches it on score alone — it needs a carrier
+  // domain or a passing check digit to confirm the number is really a shipment.
+  // An explicit label immediately before the number ("מעקב: 3019284756",
+  // "Your package 749201849281") is the corroboration a shape-only match
+  // needs — it is a statement that this number identifies a shipment. Brand
+  // presence alone is not: courier ads and delivery surveys name a carrier
+  // too, but put no tracking label anywhere near their digits.
+  const shapeOnly = candidate?.formatMatch
+    && candidate?.distinctive === false
+    && (candidate?.labelProximity ?? 0) < 0.8;
+
+  if (shapeOnly && !candidate?.urlDomainMatch && candidate?.checksum !== 'pass') {
+    return score >= 0.60 ? 'probable' : (score >= 0.30 ? 'uncertain' : 'none');
+  }
+
   // Verified requires score >= 0.80 (format match + keyword proximity or official domain)
   if (score >= 0.80 && candidate?.formatMatch && candidate?.checksum !== 'fail') {
     return 'verified';
@@ -319,7 +349,7 @@ export function classifyConfidenceTier(score, candidate) {
 /**
  * Evaluates candidate token against all compiled carrier rules.
  * @param {string} candidateValue
- * @returns {{ formatMatch: boolean, carrierCandidates: string[], highestConfidence: 'high'|'medium'|'none', checksum: 'pass'|'fail'|'not-applicable' }}
+ * @returns {{ formatMatch: boolean, carrierCandidates: string[], highestConfidence: 'high'|'medium'|'none', checksum: 'pass'|'fail'|'not-applicable', distinctive: boolean }}
  */
 export function evaluateCandidateRules(candidateValue) {
   if (FALSE_POSITIVE_PATTERNS.phone_number.test(candidateValue) || FALSE_POSITIVE_PATTERNS.phone_number.test(candidateValue.trim().replace(/[\s-_]/g, ''))) {
@@ -328,7 +358,8 @@ export function evaluateCandidateRules(candidateValue) {
       carrierCandidates: ['other'],
       highestConfidence: 'none',
       checksum: 'not-applicable',
-      bestPriority: 999
+      bestPriority: 999,
+      distinctive: false
     };
   }
 
@@ -356,12 +387,21 @@ export function evaluateCandidateRules(candidateValue) {
     }
   }
 
+  const formatMatch = matchingCarriers.length > 0;
+
   return {
-    formatMatch: matchingCarriers.length > 0,
-    carrierCandidates: matchingCarriers.length > 0 ? matchingCarriers : ['other'],
+    formatMatch,
+    carrierCandidates: formatMatch ? matchingCarriers : ['other'],
     highestConfidence: highestConf,
     checksum: checksumResult,
-    bestPriority
+    bestPriority,
+    // A match is *distinctive* when the value itself identifies a carrier: it
+    // carries a carrier prefix/suffix (RS…IL, 1Z…, CH…, 4PX…) or its check
+    // digit verifies. A match on shape alone — "nine digits", "twelve digits" —
+    // is not distinctive: invoice numbers, customer numbers, parking fines and
+    // URL path ids all have those shapes, and there are far more of them in a
+    // user's SMS inbox than there are shipments.
+    distinctive: formatMatch && (/[A-Z]/i.test(candidateValue) || checksumResult === 'pass')
   };
 }
 
@@ -433,11 +473,17 @@ export function extractAndScoreCandidates(text) {
               id: `cand_${candidatesMap.size + 1}`,
               value: cleanVal,
               carrierCandidates: carriers,
-              formatMatch: true,
-              highestConfidence: 'high',
+              // A value sitting in a `?tracking=` parameter is strong evidence
+              // even off a carrier domain, but it is not a *format* match unless
+              // it actually matches a carrier rule.
+              formatMatch: ruleEval.formatMatch || Boolean(domainCarrier),
+              distinctive: ruleEval.distinctive || Boolean(domainCarrier),
+              highestConfidence: domainCarrier ? 'high' : (ruleEval.highestConfidence === 'none' ? 'medium' : ruleEval.highestConfidence),
               priority: ruleEval.bestPriority,
               checksum: ruleEval.checksum,
-              urlDomainMatch: true,
+              // Only a recognised carrier host counts as a domain match. Any
+              // site can have a `?id=` parameter.
+              urlDomainMatch: Boolean(domainCarrier),
               labelProximity: 1.0,
               falsePositiveFlags: [],
               sourceSpan: { start: urlMatch.index, end: urlMatch.index + fullUrl.length }
@@ -452,8 +498,18 @@ export function extractAndScoreCandidates(text) {
           const cleanVal = seg.trim().replace(/[.,;:!?]+$/, '').toUpperCase();
           const start = urlMatch.index + fullUrl.indexOf(seg);
           const end = start + seg.length;
-          if (/^[A-Za-z0-9_-]{5,35}$/.test(cleanVal) && !METADATA_WORDS.has(cleanVal) && !isFalsePositive(cleanVal, normalizedText, start, end)) {
-            const ruleEval = evaluateCandidateRules(cleanVal);
+          // A path segment with no digit at all is a word, not an identifier
+          // ("/article/", "/checkout/"). Every real tracking format contains
+          // digits, so this costs no recall.
+          const hasDigit = /\d/.test(cleanVal);
+
+          // Unlike a `?tracking=` parameter, a bare path segment carries no
+          // statement that it *is* a tracking number. Off a carrier domain it
+          // must earn its place by matching a carrier format.
+          const ruleEval = hasDigit ? evaluateCandidateRules(cleanVal) : null;
+          const segmentIsCredible = hasDigit && (Boolean(domainCarrier) || ruleEval.formatMatch);
+
+          if (segmentIsCredible && /^[A-Za-z0-9_-]{5,35}$/.test(cleanVal) && !METADATA_WORDS.has(cleanVal) && !isFalsePositive(cleanVal, normalizedText, start, end)) {
             const carriers = domainCarrier
               ? [domainCarrier, ...ruleEval.carrierCandidates.filter((c) => c !== domainCarrier)]
               : ruleEval.carrierCandidates;
@@ -461,11 +517,12 @@ export function extractAndScoreCandidates(text) {
               id: `cand_${candidatesMap.size + 1}`,
               value: cleanVal,
               carrierCandidates: carriers,
-              formatMatch: true,
-              highestConfidence: 'high',
+              formatMatch: ruleEval.formatMatch || Boolean(domainCarrier),
+              distinctive: ruleEval.distinctive || Boolean(domainCarrier),
+              highestConfidence: domainCarrier ? 'high' : ruleEval.highestConfidence,
               priority: ruleEval.bestPriority,
               checksum: ruleEval.checksum,
-              urlDomainMatch: true,
+              urlDomainMatch: Boolean(domainCarrier),
               labelProximity: 1.0,
               falsePositiveFlags: [],
               sourceSpan: { start: urlMatch.index, end: urlMatch.index + fullUrl.length }
@@ -526,12 +583,78 @@ export function extractAndScoreCandidates(text) {
       value: cleanVal,
       carrierCandidates: carriers,
       formatMatch,
+      // An explicit "מספר מעקב:" label is itself carrier-independent evidence
+      // that the value is a shipment id, so a labeled hit is never shape-only.
+      distinctive: true,
       highestConfidence: highestConf,
       priority: pri,
       checksum: ruleEval.checksum,
       urlDomainMatch: checkUrlDomainMatch(primaryCarrier, normalizedText),
       labelProximity: 1.0, // Directly extracted from labeled pattern
       falsePositiveFlags: detectFalsePositiveFlags(cleanVal, normalizedText, start, end),
+      sourceSpan: { start, end }
+    });
+  }
+
+  // 3b. Re-join tracking numbers printed in groups.
+  //
+  // Carriers space their own identifiers for readability — UPS writes
+  // "1Z 999 AA1 01 2345 6784" in its shipment emails, and Israel Post labels
+  // read "RS 7361 0294 1 IL". Word tokenization shreds these into fragments
+  // that match nothing, so the number is simply never found.
+  //
+  // A joined form is only kept when it matches a carrier rule *distinctively*
+  // (carrier prefix/suffix, or a verifying check digit). That condition is what
+  // makes this safe: arbitrary neighbouring numbers in a message — a date next
+  // to a price, a street number next to a floor — cannot accidentally join into
+  // a valid identifier, so this adds recall without costing precision.
+  const groupedPattern = /\b[A-Za-z0-9]{1,6}(?:[ -][A-Za-z0-9]{1,6}){2,9}\b/g;
+  let groupedMatch;
+
+  while ((groupedMatch = groupedPattern.exec(normalizedText)) !== null) {
+    // The run is greedy, so it also swallows the ordinary words that follow
+    // ("… 2345 6784 is out for delivery"). Test contiguous sub-runs, longest
+    // first, and keep the first that forms a distinctive identifier.
+    const tokens = groupedMatch[0].split(/[ -]/).filter(Boolean);
+    let found = null;
+
+    outer:
+    for (let from = 0; from < tokens.length - 2 && !found; from += 1) {
+      for (let to = tokens.length; to > from + 2; to -= 1) {
+        const joined = tokens.slice(from, to).join('').toUpperCase();
+        if (joined.length < 8 || joined.length > 35) continue;
+        if (candidatesMap.has(joined)) continue;
+
+        const evaluated = evaluateCandidateRules(joined);
+        if (evaluated.formatMatch && evaluated.distinctive) {
+          const offset = groupedMatch[0].indexOf(tokens[from]);
+          found = { joined, ruleEval: evaluated, offset };
+          break outer;
+        }
+      }
+    }
+
+    if (!found) continue;
+
+    const { joined, ruleEval } = found;
+    const start = groupedMatch.index + found.offset;
+    const end = groupedMatch.index + groupedMatch[0].length;
+    if (isFalsePositive(joined, normalizedText, start, end)) continue;
+
+    const primaryCarrier = ruleEval.carrierCandidates[0] || 'other';
+
+    candidatesMap.set(joined, {
+      id: `cand_${candidatesMap.size + 1}`,
+      value: joined,
+      carrierCandidates: ruleEval.carrierCandidates,
+      formatMatch: true,
+      distinctive: true,
+      highestConfidence: ruleEval.highestConfidence,
+      priority: ruleEval.bestPriority,
+      checksum: ruleEval.checksum,
+      urlDomainMatch: checkUrlDomainMatch(primaryCarrier, normalizedText),
+      labelProximity: calculateLabelProximity(normalizedText, start, end),
+      falsePositiveFlags: detectFalsePositiveFlags(joined, normalizedText, start, end),
       sourceSpan: { start, end }
     });
   }
@@ -561,6 +684,7 @@ export function extractAndScoreCandidates(text) {
       value: cleanVal,
       carrierCandidates: ruleEval.carrierCandidates,
       formatMatch: ruleEval.formatMatch,
+      distinctive: ruleEval.distinctive,
       highestConfidence: ruleEval.highestConfidence,
       priority: ruleEval.bestPriority,
       checksum: ruleEval.checksum,
@@ -594,6 +718,7 @@ export function extractAndScoreCandidates(text) {
     value: cand.value,
     carrierCandidates: cand.carrierCandidates,
     formatMatch: cand.formatMatch,
+    distinctive: cand.distinctive,
     score: cand.score,
     highestConfidence: cand.highestConfidence,
     priority: cand.priority,

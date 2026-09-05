@@ -407,7 +407,21 @@ const HEBREW_CARRIER_PHRASES = [
   { carrierId: 'cargo', patterns: [/קרגו\s*שליחויות/i, /cargo\s*express/i] },
   { carrierId: 'getpackage', patterns: [/גט\s*פקג['׳`״]/i, /getpackage/i] },
   { carrierId: 'zigzag', patterns: [/זיגזג\s*שליחויות/i, /שליח\s*זיגזג/i, /זיגזג/i, /zigzag/i] },
-  { carrierId: 'orian', patterns: [/אוריאן/i, /orian/i] }
+  { carrierId: 'orian', patterns: [/אוריאן/i, /orian/i] },
+  // Global carriers. Israeli users receive these notifications in English as
+  // often as in Hebrew, and without a brand phrase their bare-digit waybills
+  // (DHL 10, FedEx 12) have no corroboration at all.
+  // The ambiguous three-letter brands are matched case-sensitively so that
+  // "groups", "backups" and "ups and downs" don't register as a carrier.
+  { carrierId: 'dhl', patterns: [/\bdhl\b/i, /די\s*אייץ['׳`״]?\s*אל/i] },
+  { carrierId: 'fedex', patterns: [/\bfedex\b/i, /\bfed\s*ex\b/i, /פדאקס/i, /פדקס/i] },
+  { carrierId: 'ups', patterns: [/\bUPS\b/, /יו\s*פי\s*אס/i] },
+  { carrierId: 'usps', patterns: [/\bUSPS\b/i, /united\s*states\s*postal/i] },
+  { carrierId: 'aramex', patterns: [/\baramex\b/i, /ארامקס/i, /ארמקס/i] },
+  { carrierId: 'royal-mail', patterns: [/\broyal\s*mail\b/i] },
+  { carrierId: 'cainiao', patterns: [/\bcainiao\b/i, /קאיניאו/i] },
+  { carrierId: 'yunexpress', patterns: [/\byun\s*express\b/i] },
+  { carrierId: '4px', patterns: [/\b4px\b/i] }
 ];
 
 const REDIRECT_PARAM_NAMES = new Set([
@@ -1100,8 +1114,22 @@ export function parseSmartText(rawText) {
     || scoredCandidates[0]
     || null;
   let candidateStatus = selectedCandidate?.status || (lockerPin && phraseCarrier ? 'verified' : (bestTracking ? 'uncertain' : 'none'));
-  if (bestTracking && (phraseCarrier || urlCarrier) && bestCarrier !== 'other' && candidateStatus !== 'none') {
+
+  // A carrier brand in the text says *which* carrier, not that the number
+  // beside it is a shipment id — courier ads, delivery surveys and "we'll text
+  // you when it ships" all name a carrier with no shipment behind them. So a
+  // brand match corroborates a candidate that already has its own support, and
+  // promotes it one step; it can no longer lift `uncertain` straight to the
+  // tier Smart Import auto-fills from.
+  if (bestTracking && (phraseCarrier || urlCarrier) && bestCarrier !== 'other' && candidateStatus === 'probable') {
     candidateStatus = 'verified';
+  }
+
+  // `none` means the evidence says this is not a tracking number. Publishing it
+  // in `trackingNumber` anyway is how a parking fine or an invoice number ends
+  // up saved as a package that will never update.
+  if (candidateStatus === 'none') {
+    bestTracking = '';
   }
 
   const allPackages = [];

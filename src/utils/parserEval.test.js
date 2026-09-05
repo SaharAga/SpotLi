@@ -11,10 +11,10 @@ import { PARSER_EVAL_CORPUS, POSITIVE_CASES, NEGATIVE_CASES } from '../tests/fix
  * prints the current numbers and the per-case failures behind them.
  */
 const THRESHOLDS = {
-  precision: 0.80,
-  recall: 0.90,
-  specificity: 0.75,
-  carrierAccuracy: 0.90
+  precision: 0.88,
+  recall: 0.97,
+  specificity: 0.86,
+  carrierAccuracy: 0.95
 };
 
 describe('parserEval — scoring primitives', () => {
