@@ -992,7 +992,10 @@ export function parseSmartText(rawText) {
   }
 
   const cleanText = sanitizeString(rawText, 5000);
-  const candidates = extractTrackingCandidates(cleanText);
+  // `extractAndScoreCandidates` is the single extraction path. The older
+  // `extractTrackingCandidates` produced a parallel, unscored candidate set
+  // whose result was already unused here; calling it only invited the two
+  // lists to drift apart. It survives as an exported helper for its own tests.
   const scoredCandidates = extractAndScoreCandidates(cleanText).map((candidate) => ({
     ...candidate,
     status: classifyConfidenceTier(candidate.score, candidate)
@@ -1008,7 +1011,6 @@ export function parseSmartText(rawText) {
 
   let bestTracking = '';
   let bestCarrier = phraseCarrier || 'other';
-  let bestConfidence = phraseCarrier ? 'medium' : 'none';
 
   const urlCarrier = urlExtracted.find((u) => u.carrierHint && u.carrierHint !== 'other')?.carrierHint;
 
@@ -1025,7 +1027,6 @@ export function parseSmartText(rawText) {
           ? urlCarrier
           : (detected.carrierId !== 'other' ? detected.carrierId : 'other');
     bestCarrier = topCarrier;
-    bestConfidence = top.highestConfidence || 'high';
   } else {
     // 2. URL extracted tracking codes and carrier hints fallback
     for (const item of urlExtracted) {
@@ -1035,7 +1036,6 @@ export function parseSmartText(rawText) {
         if (effectiveCarrier && effectiveCarrier !== 'other') {
           bestTracking = item.trackingNumber;
           bestCarrier = effectiveCarrier;
-          bestConfidence = 'high';
           break;
         } else if (!bestTracking) {
           bestTracking = item.trackingNumber;

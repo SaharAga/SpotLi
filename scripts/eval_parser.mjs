@@ -18,7 +18,9 @@ import { dirname, join } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '..');
-const BASELINE_PATH = join(repoRoot, '.parser-eval-baseline.json');
+const BASELINE_PATH = join(repoRoot, process.argv.includes('--real')
+  ? '.parser-eval-baseline-real.json'
+  : '.parser-eval-baseline.json');
 
 // The app sources rely on Vite resolution (extensionless imports, JSON imports),
 // so they are loaded through a throwaway Vite server rather than plain node ESM.
@@ -36,7 +38,29 @@ const { evaluateCorpus } = await vite.ssrLoadModule('/src/utils/parserEval.js');
 await vite.close();
 
 const args = new Set(process.argv.slice(2));
-const report = evaluateCorpus(PARSER_EVAL_CORPUS, parseSmartText);
+
+// `--real` scores the corpus pulled from actual user corrections
+// (npm run corpus:pull) instead of the synthetic one. That file is gitignored,
+// so this mode only works on a machine that has pulled it.
+const REAL_CORPUS_PATH = join(repoRoot, '.parser-corpus-real.json');
+let corpus = PARSER_EVAL_CORPUS;
+
+if (args.has('--real')) {
+  if (!existsSync(REAL_CORPUS_PATH)) {
+    console.error('\n  No real corpus found. Pull one first:\n');
+    console.error('    FIREBASE_SERVICE_ACCOUNT_JSON="$(cat serviceAccount.json)" npm run corpus:pull\n');
+    process.exit(1);
+  }
+  const real = JSON.parse(readFileSync(REAL_CORPUS_PATH, 'utf8'));
+  if (!real.cases?.length) {
+    console.error('\n  The pulled corpus is empty — no labeled corrections yet.\n');
+    process.exit(1);
+  }
+  corpus = real.cases;
+  console.log(`\n  Using REAL corpus: ${real.cases.length} cases pulled ${real.pulledAt?.slice(0, 10)}`);
+}
+
+const report = evaluateCorpus(corpus, parseSmartText);
 const { summary, groups, calibration, failures } = report;
 
 if (args.has('--json')) {
