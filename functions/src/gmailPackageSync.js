@@ -163,26 +163,26 @@ export function buildPackagesFromGmailMessage({
     return packages;
   }
 
-  // No verifiable carrier tracking number — fall back to order status record
-  const orderStatus = extractOrderStatusDetails(subject, body, from);
-  if (!orderStatus) return [];
-  if (skipDelivered && looksAlreadyDelivered(subject, body)) return [];
-
-  return [{
-    id: `pkg-gmail-order-${gmailMessage.id || Date.now()}`,
-    userId,
-    title: orderStatus.title,
-    trackingNumber: '',
-    carrier: 'other',
-    status: orderStatus.status,
-    source: 'gmail_sync_order_status',
-    confidence: 'sender_reported',
-    store: orderStatus.store,
-    notes: `${orderStatus.store} order — from your order confirmation email, no carrier tracking number`,
-    createdAt: nowIso,
-    updatedAt: nowIso,
-    isArchived: false
-  }];
+  // No verifiable carrier tracking number, so no package.
+  //
+  // This used to create an "order status" record instead: a card with an empty
+  // trackingNumber, carrier "other", and a note explaining there was nothing to
+  // track. The intent was to surface that an order exists before it ships.
+  //
+  // In practice it cannot. Nothing links such a record to the real shipment
+  // when tracking finally arrives — the only matching that exists pairs an
+  // order-status email with another order-status record from the same store —
+  // so the user is shown a card naming a store, with no tracking number, no
+  // carrier and no way to tell which of their orders it refers to. Labelling it
+  // honestly does not help: an accurate description of an unusable card is
+  // still an unusable card, and it renders with the same six-stage tracker and
+  // "Advance to Next Stage" control as a real parcel.
+  //
+  // Follow-up emails still update an order-status record that already exists
+  // (see gmailPushHandler), so records already in a user's data keep working.
+  // New ones are no longer created; the shipping email that carries a real
+  // tracking number creates the package, as it does for every other sender.
+  return [];
 }
 
 /**
@@ -326,14 +326,20 @@ export function buildStatusUpdateFromGmailMessage({ gmailMessage }) {
 }
 
 /**
- * Same idea as `buildStatusUpdateFromGmailMessage`, but for the no-tracking-
- * number "order status" fallback (see `extractOrderStatusDetails`): a
- * follow-up email for a store the user already has an order-status package
- * from (e.g. "order confirmed" → "shipped" → "out for delivery" → "delivery
- * issue") is a status update to that one package, not a brand-new untracked
- * card per email. Returns null when the message has a verified carrier
- * tracking number (that path is handled by `buildStatusUpdateFromGmailMessage`
- * / `buildPackageFromGmailMessage` instead) or matches no known store +
+ * Same idea as `buildStatusUpdateFromGmailMessage`, but for order-status
+ * records: a follow-up email for a store the user already has one from
+ * ("order confirmed" → "shipped" → "out for delivery") updates that record
+ * rather than adding another card.
+ *
+ * New order-status records are no longer created — nothing could link one to
+ * the shipment whose tracking number arrived later, so it could only ever be
+ * a card the user was unable to act on or identify. This path remains for
+ * records already in a user's data, so their follow-up emails keep updating
+ * the record they belong to instead of being ignored.
+ *
+ * Returns null when the message has a verified carrier tracking number (that
+ * path is handled by `buildStatusUpdateFromGmailMessage` /
+ * `buildPackageFromGmailMessage` instead) or matches no known store +
  * lifecycle phrase at all.
  *
  * @param {{ gmailMessage: object }} params

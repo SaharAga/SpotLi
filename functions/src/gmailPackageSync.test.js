@@ -140,7 +140,7 @@ describe('buildPackageFromGmailMessage', () => {
     expect(pkg).toBeNull();
   });
 
-  it('falls back to an order-status package when there is a known store and lifecycle phrase but no carrier tracking number', () => {
+  it('creates nothing when a known store ships but gives no carrier tracking number', () => {
     const msg = makeGmailMessage({
       id: 'ali-msg-1',
       subject: 'Your order has shipped',
@@ -154,13 +154,12 @@ describe('buildPackageFromGmailMessage', () => {
       existingTrackingNumbers: new Set()
     });
 
-    expect(pkg).not.toBeNull();
-    expect(pkg.id).toBe('pkg-gmail-order-ali-msg-1');
-    expect(pkg.trackingNumber).toBe('');
-    expect(pkg.source).toBe('gmail_sync_order_status');
-    expect(pkg.confidence).toBe('sender_reported');
-    expect(pkg.status).toBe('in_transit');
-    expect(pkg.store).toBe('AliExpress');
+    // This used to produce an order-status card: no tracking number, carrier
+    // "other", and nothing tying it to the shipment whose tracking number
+    // arrives later. The user is shown a store name and a six-stage tracker
+    // they cannot act on or match to any of their orders. The shipping email
+    // that carries a real tracking number creates the package instead.
+    expect(pkg).toBeNull();
   });
 
   it('still returns null for an order-confirmation email with no known store and no tracking number', () => {
