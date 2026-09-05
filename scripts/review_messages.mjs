@@ -47,7 +47,8 @@ if (!inputPath || !existsSync(inputPath)) {
   console.error('\n  Usage: npm run review:messages -- <path-to-export> [--raw] [--all]\n');
   console.error('  Android: install "SMS Backup & Restore", back up SMS to XML, pass that file.');
   console.error('  Or pass a plain text file with messages separated by blank lines.\n');
-  console.error('  --sender=NAME  narrow to one sender    --all  print every miss    --raw  skip redaction\n');
+  console.error('  --sender=NAME  narrow to one sender    --all  print every miss    --raw  skip redaction');
+  console.error('  --include-food  count restaurant and grocery delivery too (out of scope by default)\n');
   process.exit(1);
 }
 
@@ -159,9 +160,34 @@ const COURIER_HINT = new RegExp([
   'yunexpress', '4px', 'yanwen'
 ].join('|'), 'i');
 
+/**
+ * Food and grocery delivery — out of scope for this app.
+ *
+ * Deliveree tracks parcels. A restaurant order arrives within the hour, has no
+ * carrier and no tracking number worth following, and the user is already
+ * watching it in the vendor's own app. These messages are correct negatives,
+ * so counting them as parser failures buries the real ones: they were three of
+ * the top ten "failing" senders while none of them ever produced a false
+ * package.
+ *
+ * This is a scope decision, not a detection claim — `--include-food` puts them
+ * back if that scope ever changes.
+ */
+const FOOD_DELIVERY = new RegExp([
+  'wolt', 'shufersal', 'שופרסל', 'japanika', 'יאפאניקה', 'ג.פניקה',
+  'domino', 'דומינו', 'pizza', 'פיצה', 'סושי', 'sushi', 'burger', 'בורגר',
+  'mcdonald', 'מקדונלד', 'kfc', 'cofix', 'קופיקס', 'cibus', 'סיבוס',
+  '10bis', 'tenbis', 'תן ביס', 'yango\\s*deli', 'getir', 'גטיר',
+  'רמי לוי', 'יוחננוף', 'ויקטורי', 'טיב טעם', 'am:?pm', 'מסעדה', 'תפריט',
+  'ארוחה', 'המנה שלך', 'הזמנת האוכל'
+].join('|'), 'i');
+
+const includeFood = args.includes('--include-food');
+
 const messages = await readMessages(inputPath);
 const candidates = messages
   .filter((m) => COURIER_HINT.test(m.body))
+  .filter((m) => includeFood || !(FOOD_DELIVERY.test(m.sender) || FOOD_DELIVERY.test(m.body)))
   .filter((m) => !senderFilter || m.sender.toLowerCase().includes(senderFilter.toLowerCase()));
 
 const buckets = { verified: [], probable: [], uncertain: [], nothing: [] };
@@ -190,7 +216,8 @@ for (const message of candidates) {
 
 const pct = (n, d) => (d === 0 ? '—' : `${((n / d) * 100).toFixed(0)}%`);
 
-console.log(`\n  ${messages.length} messages read · ${candidates.length} look delivery-related`
+console.log(`\n  ${messages.length} messages read · ${candidates.length} look parcel-related`
+  + `${includeFood ? ' · including food delivery' : ''}`
   + `${senderFilter ? ` · filtered to sender ~"${senderFilter}"` : ''}\n`);
 console.log(`    ${String(buckets.verified.length).padStart(4)}  verified   auto-filled without asking — spot-check a few`);
 console.log(`    ${String(buckets.probable.length).padStart(4)}  probable   pre-filled, user can correct`);
