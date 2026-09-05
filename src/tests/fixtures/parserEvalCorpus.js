@@ -382,6 +382,14 @@ export const PARSER_EVAL_CORPUS = [
     expected: { trackingNumber: null, carrier: null }
   },
 
+  {
+    id: 'pos-real-bargroup-unknown-carrier',
+    group: 'real-world',
+    note: 'labelled by שליחות, but nothing in the message says which carrier — must not be guessed from digit count',
+    rawText: 'לקוח/ה יקר/ה, שליח דיווח ביצוע שליחות 7920079311 מדלתא. לפרטים ומשוב על השליח: https://octu.io/p8x0TX',
+    expected: { trackingNumber: '7920079311', carrier: 'other' }
+  },
+
   // ─────────────────────────────────────────────────────────────────────
   // NEGATIVES — no shipment in the message at all.
   // These are where precision dies. Correct output is NO tracking number.

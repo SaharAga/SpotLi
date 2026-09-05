@@ -182,12 +182,23 @@ const FOOD_DELIVERY = new RegExp([
   'ארוחה', 'המנה שלך', 'הזמנת האוכל'
 ].join('|'), 'i');
 
+/**
+ * Mobile data plans, which Hebrew calls a "חבילה" — the same word as a parcel.
+ *
+ * Matched on the phrase rather than the sender on purpose: a telecom really can
+ * ship a SIM card, and excluding Pelephone outright would hide that. "חבילת
+ * גלישה" and "נפח גלישה" are unambiguous, and two such senders alone put ~31
+ * non-deliveries in the pile.
+ */
+const DATA_PLAN = /חביל(?:ה|ת|ות)\s*(?:ה)?גלישה|נפח\s*(?:ה)?גלישה|מחזור\s*החיוב|יחידות\s*MB/i;
+
 const includeFood = args.includes('--include-food');
 
 const messages = await readMessages(inputPath);
 const candidates = messages
   .filter((m) => COURIER_HINT.test(m.body))
   .filter((m) => includeFood || !(FOOD_DELIVERY.test(m.sender) || FOOD_DELIVERY.test(m.body)))
+  .filter((m) => !DATA_PLAN.test(m.body))
   .filter((m) => !senderFilter || m.sender.toLowerCase().includes(senderFilter.toLowerCase()));
 
 const buckets = { verified: [], probable: [], uncertain: [], nothing: [] };

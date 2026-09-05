@@ -9,6 +9,9 @@ const TRACKING_KEYWORDS = [
   'package',
   'parcel',
   'מעקב',
+  // "שליחות" is the job a courier performs, and Bar Group and others label the
+  // number with it directly: "שליח דיווח ביצוע שליחות 7920079333".
+  'שליחות',
   'חבילה',
   'חבילתך',
   'משלוח',

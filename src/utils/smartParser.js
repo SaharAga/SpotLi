@@ -1065,7 +1065,19 @@ export function parseSmartText(rawText) {
         : (urlCarrier && urlCarrier !== 'other')
           ? urlCarrier
           : (detected.carrierId !== 'other' ? detected.carrierId : 'other');
-    bestCarrier = topCarrier;
+    // A bare digit run tells you nothing about which carrier issued it. Ten
+    // digits matches DHL and twelve matches FedEx, so "שליחות 7920079333" —
+    // an Israeli courier's own job number — was being labelled DHL purely on
+    // length. Without a carrier phrase, a carrier host or a passing check
+    // digit, the honest answer is that the carrier is unknown: the package is
+    // still saved and still tracked manually, but it is not filed under a
+    // carrier it never touched.
+    const carrierIsGuessedFromShape = top.distinctive === false
+      && !phraseCarrier
+      && !urlCarrier
+      && top.checksum !== 'pass';
+
+    bestCarrier = carrierIsGuessedFromShape ? 'other' : topCarrier;
   } else {
     // 2. URL extracted tracking codes and carrier hints fallback
     for (const item of urlExtracted) {
