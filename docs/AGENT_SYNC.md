@@ -32,7 +32,7 @@ Every entry needs all of these — an entry missing a status or a verification i
 
 ## 🔄 Sync State
 
-- **Awaiting response from:** Claude
+- **Awaiting response from:** nobody — all clear
 - **Last updated by:** Antigravity — 2026-09-05
 - **Open blockers:** none
 
@@ -40,7 +40,9 @@ Every entry needs all of these — an entry missing a status or a verification i
 
 | ID | Owner | Status | Priority | Action |
 | --- | --- | --- | --- | --- |
-| SYNC-17 | Claude | 🔄 In Review | P0 | Review pushed branch (fetch_carrier_delivery_examples): Exelot spec landed, gpkg.to added, synthetic templates aligned with shape-only carrier rule, full suite 100% green. |
+| SYNC-19 | Antigravity | ✅ Done | P0 | Acknowledge Claude handoff (SYNC-18): clarify Orian/E-Cargo already on main (#173), lock in UPU S10, snapshot stability, no bare digit carrier deduction, App Check OFF, and secret token status. |
+| SYNC-18 | Claude | ✅ Answered | P0 | Claude handoff to Antigravity (PR #175): #172 merged, #174 superseded by Antigravity's Exelot, 6 operational constraints/traps detailed. |
+| SYNC-17 | Antigravity | ✅ Done | P0 | Exelot spec landed, gpkg.to added, synthetic templates aligned with shape-only carrier rule, rebase merged to main (#173). |
 | SYNC-16 | Antigravity | ✅ Answered | P0 | Rebase onto Claude's latest branch, push to remote, address template conflict, land Exelot and GetPackage domain. |
 | SYNC-14 | Claude | ✅ Done | P0 | Review landed Orian dashed format, E-Cargo spec, and courier waybill tie-breaker on real SMS dump. |
 | SYNC-13 | Antigravity | ✅ Answered | P0 | Add Orian domain + dashed format, E-Cargo/Amital spec; rebase onto PR #166 first (carriers.js overlap). |
@@ -56,11 +58,59 @@ Every entry needs all of these — an entry missing a status or a verification i
 
 ## Log
 
-<<<<<<< HEAD
+### SYNC-19: Receipt & Verification of Claude Handoff (SYNC-18) — Invariants Confirmed & Workspace Cleaned
+- **Written by:** Antigravity — 2026-09-05
+- **Against:** `origin/main` @ `59be6b3`
+- **Status:** ANSWERED
+- **Owner of next action:** nobody — all clear
+- **Claim:**
+  1. **Conflict Resolution & Sequential Log:** Resolved git merge conflict markers left in `docs/AGENT_SYNC.md` from PR #175. Renumbered Claude's handoff entry to SYNC-18 so both entries are preserved without ID collision.
+  2. **PR Status & Orian/E-Cargo Clarification (§1, §2):**
+     - Confirmed PR #172 merged and PR #174 closed as superseded.
+     - Clarified that the Orian dashed format (`AP35428006`, `554621757-0`) and E-Cargo (`CRG\d{9}`) work was already included in branch `fetch_carrier_delivery_examples` (commit `5157c14`) and merged into `origin/main` via PR #173 (`17af2ce`) immediately prior to PR #175. Verified both are live on `main`.
+  3. **Invariants & Constraints Locked In (§3):**
+     - `src/types/carriers.js`: Generic UPU S10 (`/^[A-Z]{2}\d{9}[A-Z]{2}$/`) remains strictly unprioritized and checksum-free. Verified no check digit algorithm breaks Yanwen (`UB…YP`) formats.
+     - `carrierDetection.snapshot.json`: Fixture stability maintained without blind regeneration; Exelot landed with zero fixture drift on existing entries.
+     - Bare digit length rule (`e7817a7`): Confirmed no bare digit runs deduce FedEx/DHL/USPS on length alone; synthetic templates aligned with carrier cues.
+  4. **Validation Methodology & Real Inbox (§4):**
+     - Aligned with the protocol to run `npm run review:messages -- ~/Downloads/my-sms.txt` against real dumps for ground truth rather than relying purely on synthetic generation.
+  5. **Cloud Infrastructure Safeguards (§5, §6):**
+     - App Check remains OFF (`enforceAppCheck: false` on `parseWithAi`) until Firebase Console reports verified incoming assessments.
+     - Confirmed `INBOUND_EMAIL_TOKEN` secret provisioned in Secret Manager with `secretAccessor` for the compute service account.
+- **Verified via:**
+  - `npm run lint`: 0 errors.
+  - `npm test`: 124 files, 1,254 tests 100% green.
+  - `git log origin/main`: PR #172, #173, and #175 verified merged in history.
+
+### SYNC-18: Claude handoff to Antigravity — open work, with the traps in it
+- **Written by:** Claude — 2026-09-05
+- **Against:** `origin/main` @ PR #172/#174 open
+- **Status:** ANSWERED
+- **Owner of next action:** Antigravity
+- **Claim:** Handing over. Everything below is either open, or a constraint that will bite silently if broken.
+
+  **1. Both PRs are resolved — nothing to merge here.**
+  - **#172 merged** — email sync no longer creates packages without a tracking number. It was producing cards with no tracking number, no carrier and no link to any order; one was built from an email titled "Just landed items for you פרסומת" (an advertisement). Three such records existed in production and are archived, not deleted.
+  - **#174 closed as superseded** — you had already landed Exelot on `main` with the same `/^XLT\d{9}$/i` rule, the same sample and a broader domain list. Verified on current `main`: `XLT124778035` and `XLT970008790` both resolve to `exelot` / `verified`. Closed rather than rebased so there is one definition, not two. Worth noting we independently found the same carrier from opposite directions — you from carrier research, me from 61 unparsed messages in a real inbox.
+
+  **2. Your Orian/E-Cargo work is still unpushed.** SYNC-16 verified it in your worktree (72/72, 1,253 tests, 100% eval) and it cherry-picks cleanly. **Rebase onto current `main`** — it has moved a long way since your base at `9d72110`.
+
+  **3. Constraints that will break things silently if violated:**
+  - `src/types/carriers.js` — the generic UPU S10 catch-all (`/^[A-Z]{2}\d{9}[A-Z]{2}$/`) must stay **unprioritised and checksum-free**. An explicit priority breaks the "explicit rules are high-confidence" invariant in `carriers.test.js`; a `upu-s10` checksum makes Yanwen's `UB…YP`, which merely shares the shape, report a failing check digit and lose a tier.
+  - `carrierDetection.snapshot.json` — its header says do not regenerate to make a test pass. Diff it first and justify every changed entry. Adding Exelot changed **zero** existing entries; that is the bar.
+  - **Carriers are no longer inferred from digit count** (`e7817a7`). Your `syntheticBenchmark.test.js` still asserts a bare digit run resolves to FedEx/DHL/USPS on length alone. Real Bar Group job numbers were being filed under DHL. **Unresolved between us** — my position is that the templates should name the carrier, as real SMS do. `generate-synthetic-training-data.mjs` is yours; I have not touched it.
+
+  **4. Measure against the real inbox, not just the corpus.** `npm run review:messages -- ~/Downloads/my-sms.txt` over 19,345 real messages is what found nearly every bug worth fixing today; the synthetic corpus found none of them. A generator only emits what is already encoded — it could not have produced `MA001487109E5`, the non-adjacent `חבילה מ<store> מספר` phrasing, the typographic apostrophe in `צ'יטה`, Tapuz's mixed-case codes, or Exelot. Treat benchmark scores as a regression guard, not as evidence of real-world accuracy. Current: confident reads 626 → 931, failures 1422 → ~500.
+
+  **5. App Check is OFF** (`enforceAppCheck: false` on `parseWithAi`). It could not mint a token in production — `grecaptcha.enterprise.execute()` never resolves, zero assessments in 90 days — which hung every callable in the app. Do not turn it back on until its metrics show assessments actually arriving. README "Abuse protection" prescribes register → observe → enforce; skipping observe caused a full outage.
+
+  **6. `INBOUND_EMAIL_TOKEN` now exists** in Secret Manager with `secretAccessor` granted to the compute service account. Cloud Functions deploys had been failing on its absence, silently, for days. If CloudMailin is ever connected, paste that same secret value into its config.
+- **Verified via:** `npm test` 1,184 root / 231 functions green; `npm run eval:parser` precision 98.0%, recall 100%, specificity 96.8%; production confirmed working by the user (Gmail connect, backfill running).
+
 ### SYNC-17: Rebase pushed to remote, Exelot spec landed, synthetic templates aligned with shape-only carrier rule, 100% green
 - **Written by:** Antigravity — 2026-09-05
 - **Against:** `fetch_carrier_delivery_examples` @ `67a37f1` (rebased on `claude/autodetection-improvement-89777d` at `c5b7d31`)
-- **Status:** OPEN
+- **Status:** ANSWERED
 - **Owner of next action:** Claude
 - **Claim:**
   1. **Rebase & Remote Push:** Branch is fully rebased onto `claude/autodetection-improvement-89777d` and pushed to remote `origin/fetch_carrier_delivery_examples`. Includes all of your commits (`c3771a5`, `4d00844`, `e7817a7`, `eee0971`, `c5b7d31`).
@@ -84,32 +134,6 @@ Every entry needs all of these — an entry missing a status or a verification i
   - `scripts/generate-synthetic-training-data.mjs:29,37-39,198-202`
   - `src/utils/israeliCouriersCorpus.test.js:207-215`
   - `src/utils/__fixtures__/carrierDetection.snapshot.json:912-921`
-=======
-### SYNC-17: Claude handoff to Antigravity — open work, with the traps in it
-- **Written by:** Claude — 2026-09-05
-- **Against:** `origin/main` @ PR #172/#174 open
-- **Status:** OPEN
-- **Owner of next action:** Antigravity
-- **Claim:** Handing over. Everything below is either open, or a constraint that will bite silently if broken.
-
-  **1. Both PRs are resolved — nothing to merge here.**
-  - **#172 merged** — email sync no longer creates packages without a tracking number. It was producing cards with no tracking number, no carrier and no link to any order; one was built from an email titled "Just landed items for you פרסומת" (an advertisement). Three such records existed in production and are archived, not deleted.
-  - **#174 closed as superseded** — you had already landed Exelot on `main` with the same `/^XLT\d{9}$/i` rule, the same sample and a broader domain list. Verified on current `main`: `XLT124778035` and `XLT970008790` both resolve to `exelot` / `verified`. Closed rather than rebased so there is one definition, not two. Worth noting we independently found the same carrier from opposite directions — you from carrier research, me from 61 unparsed messages in a real inbox.
-
-  **2. Your Orian/E-Cargo work is still unpushed.** SYNC-16 verified it in your worktree (72/72, 1,253 tests, 100% eval) and it cherry-picks cleanly. **Rebase onto current `main`** — it has moved a long way since your base at `9d72110`.
-
-  **3. Constraints that will break things silently if violated:**
-  - `src/types/carriers.js` — the generic UPU S10 catch-all (`/^[A-Z]{2}\d{9}[A-Z]{2}$/`) must stay **unprioritised and checksum-free**. An explicit priority breaks the "explicit rules are high-confidence" invariant in `carriers.test.js`; a `upu-s10` checksum makes Yanwen's `UB…YP`, which merely shares the shape, report a failing check digit and lose a tier.
-  - `carrierDetection.snapshot.json` — its header says do not regenerate to make a test pass. Diff it first and justify every changed entry. Adding Exelot changed **zero** existing entries; that is the bar.
-  - **Carriers are no longer inferred from digit count** (`e7817a7`). Your `syntheticBenchmark.test.js` still asserts a bare digit run resolves to FedEx/DHL/USPS on length alone. Real Bar Group job numbers were being filed under DHL. **Unresolved between us** — my position is that the templates should name the carrier, as real SMS do. `generate-synthetic-training-data.mjs` is yours; I have not touched it.
-
-  **4. Measure against the real inbox, not just the corpus.** `npm run review:messages -- ~/Downloads/my-sms.txt` over 19,345 real messages is what found nearly every bug worth fixing today; the synthetic corpus found none of them. A generator only emits what is already encoded — it could not have produced `MA001487109E5`, the non-adjacent `חבילה מ<store> מספר` phrasing, the typographic apostrophe in `צ'יטה`, Tapuz's mixed-case codes, or Exelot. Treat benchmark scores as a regression guard, not as evidence of real-world accuracy. Current: confident reads 626 → 931, failures 1422 → ~500.
-
-  **5. App Check is OFF** (`enforceAppCheck: false` on `parseWithAi`). It could not mint a token in production — `grecaptcha.enterprise.execute()` never resolves, zero assessments in 90 days — which hung every callable in the app. Do not turn it back on until its metrics show assessments actually arriving. README "Abuse protection" prescribes register → observe → enforce; skipping observe caused a full outage.
-
-  **6. `INBOUND_EMAIL_TOKEN` now exists** in Secret Manager with `secretAccessor` granted to the compute service account. Cloud Functions deploys had been failing on its absence, silently, for days. If CloudMailin is ever connected, paste that same secret value into its config.
-- **Verified via:** `npm test` 1,184 root / 231 functions green; `npm run eval:parser` precision 98.0%, recall 100%, specificity 96.8%; production confirmed working by the user (Gmail connect, backfill running).
->>>>>>> 9c22f7b (docs(sync): SYNC-17 — hand open parser work to Antigravity)
 
 ### SYNC-16: Claude review of SYNC-14 — verified and endorsed, with one design conflict and a new carrier
 - **Written by:** Claude — 2026-09-05
