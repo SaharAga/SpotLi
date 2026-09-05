@@ -6,7 +6,8 @@ import {
   checkUrlDomainMatch,
   computeCandidateScore,
   classifyConfidenceTier,
-  extractAndScoreCandidates
+  extractAndScoreCandidates,
+  isShipmentInProgress
 } from './candidateScorer.js';
 
 describe('candidateScorer Unit Tests', () => {
@@ -96,5 +97,28 @@ describe('candidateScorer Unit Tests', () => {
         expect(cand.score).toBeLessThan(0.65);
       }
     });
+  });
+});
+
+describe('isShipmentInProgress — order numbers used as tracking numbers', () => {
+  it('recognises a parcel that has already left', () => {
+    expect(isShipmentInProgress('הזמנה מספר 8471293 יצאה למשלוח')).toBe(true);
+    expect(isShipmentInProgress('החבילה בדרך אליך עם השליח')).toBe(true);
+    expect(isShipmentInProgress('Your order has shipped and is on its way')).toBe(true);
+    expect(isShipmentInProgress('Package is out for delivery')).toBe(true);
+  });
+
+  it('does not treat a promised future shipment as a shipment', () => {
+    // "we'll update when it ships" contains a shipping verb while stating the
+    // opposite — this is the case that makes the veto list necessary.
+    expect(isShipmentInProgress('הזמנה התקבלה ותטופל תוך 2 ימי עסקים. נעדכן כשהמשלוח יצא.')).toBe(false);
+    expect(isShipmentInProgress("Thanks for your order! We'll email a tracking number as soon as it ships.")).toBe(false);
+    expect(isShipmentInProgress('התשלום התקבל. המוצר יסופק תוך 3-5 ימי עסקים.')).toBe(false);
+  });
+
+  it('is false for text with no shipment language at all', () => {
+    expect(isShipmentInProgress('קוד האימות שלך הוא 483920')).toBe(false);
+    expect(isShipmentInProgress('')).toBe(false);
+    expect(isShipmentInProgress(null)).toBe(false);
   });
 });

@@ -1,18 +1,18 @@
 {
-  "savedAt": "2026-09-05T10:40:54.852Z",
+  "savedAt": "2026-09-05T13:38:41.309Z",
   "summary": {
-    "total": 60,
-    "positives": 32,
+    "total": 63,
+    "positives": 35,
     "negatives": 28,
-    "truePositives": 32,
+    "truePositives": 35,
     "wrongOnPositives": 0,
     "missed": 0,
     "falsePositives": 1,
     "trueNegatives": 27,
-    "precision": 0.9696969696969697,
+    "precision": 0.9722222222222222,
     "recall": 1,
-    "f1": 0.9846153846153847,
-    "carrierAccuracy": 0.96875,
+    "f1": 0.9859154929577464,
+    "carrierAccuracy": 0.9714285714285714,
     "specificity": 0.9642857142857143
   },
   "groups": [
@@ -44,6 +44,12 @@
       "group": "hard-positive",
       "total": 7,
       "correct": 7,
+      "accuracy": 1
+    },
+    {
+      "group": "order-as-tracking",
+      "total": 3,
+      "correct": 3,
       "accuracy": 1
     },
     {
@@ -98,8 +104,8 @@
   "calibration": [
     {
       "status": "verified",
-      "n": 32,
-      "correct": 32,
+      "n": 35,
+      "correct": 35,
       "accuracy": 1
     },
     {

@@ -255,6 +255,34 @@ export const PARSER_EVAL_CORPUS = [
   },
 
   // ─────────────────────────────────────────────────────────────────────
+  // POSITIVES — the order number IS the tracking number.
+  //
+  // Added after a real-world report: Tapuz and others hand the customer one
+  // number that serves as both. These are not tuned-to-a-regex cases — they
+  // cover a slice of the input distribution the corpus was missing entirely,
+  // and they are the counterpart to the `negative-order` cases below, which
+  // use near-identical wording for parcels that have NOT shipped.
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    id: 'pos-order-as-tracking-tapuz',
+    group: 'order-as-tracking',
+    rawText: 'תפוז שליחויות: הזמנה מספר 8471293 יצאה למשלוח. נגיע אליך מחר בין 10:00-14:00.',
+    expected: { trackingNumber: '8471293', carrier: 'tapuz' }
+  },
+  {
+    id: 'pos-order-as-tracking-courier-en',
+    group: 'order-as-tracking',
+    rawText: 'Your order 8471293 has shipped with Tapuz and is on its way.',
+    expected: { trackingNumber: '8471293', carrier: 'tapuz' }
+  },
+  {
+    id: 'pos-order-as-tracking-with-url',
+    group: 'order-as-tracking',
+    rawText: 'תפוז שליחויות: הזמנה 8471293 יצאה. מעקב: https://tapuzdelivery.co.il/tracking?num=8471293',
+    expected: { trackingNumber: '8471293', carrier: 'tapuz' }
+  },
+
+  // ─────────────────────────────────────────────────────────────────────
   // NEGATIVES — no shipment in the message at all.
   // These are where precision dies. Correct output is NO tracking number.
   // ─────────────────────────────────────────────────────────────────────

@@ -113,6 +113,49 @@ export function isPromotionalContext(fullText) {
 }
 
 /**
+ * Several Israeli couriers — Tapuz among them — hand the customer the order
+ * number and use it as the tracking number too. "הזמנה מספר 8471293" is then a
+ * real shipment id, even though the identical wording in a checkout receipt is
+ * not.
+ *
+ * The word "order" cannot separate the two. What separates them is whether the
+ * parcel has actually left: an order that shipped has a tracking number, an
+ * order that was merely received does not, and the message says which.
+ */
+const SHIPPED_MARKERS = [
+  /יצא(?:ה|ו)?\s*(?:למשלוח|לדרך|מהמחסן)/, /נשלח(?:ה|ו)?/, /בדרך\s*אלי(?:ך|כם)/,
+  /נמסר(?:ה|ו)?/, /אצל\s*השליח/, /עם\s*השליח/, /הועבר(?:ה|ו)?\s*לשליח/,
+  /ממתינ(?:ה|ות)\s*לאיסוף/, /מחכה\s*לך/, /הגיע(?:ה|ו)?\s*ל/,
+  /\bshipped\b/i, /\bdispatched\b/i, /\bout\s+for\s+delivery\b/i,
+  /\bon\s+its\s+way\b/i, /\bin\s+transit\b/i, /\bready\s+for\s+(?:pickup|collection)\b/i,
+  /\bhas\s+been\s+delivered\b/i, /\barrived\b/i
+];
+
+/**
+ * Wordings that promise a future shipment. These veto the markers above,
+ * because "נעדכן כשהמשלוח יצא" ("we'll update when it ships") contains a
+ * shipping verb while stating the opposite of a shipment.
+ */
+const NOT_YET_SHIPPED_MARKERS = [
+  /כש(?:ה)?משלוח/, /התקבלה\s*ותטופל/, /נקלט(?:ה|ו)?/, /בהכנה/, /תטופל/,
+  /יסופק/, /ימי\s*עסקים/,
+  /\bwill\s+(?:be\s+)?ship/i, /\bas\s+soon\s+as\s+it\s+ships\b/i,
+  /\bonce\s+it\s+ships\b/i, /\bbeing\s+prepared\b/i, /\bprocessing\b/i,
+  /\bbusiness\s+days\b/i
+];
+
+/**
+ * Whether the message states the parcel is already on its way.
+ * @param {string} fullText
+ * @returns {boolean}
+ */
+export function isShipmentInProgress(fullText) {
+  if (!fullText || typeof fullText !== 'string') return false;
+  if (NOT_YET_SHIPPED_MARKERS.some((marker) => marker.test(fullText))) return false;
+  return SHIPPED_MARKERS.some((marker) => marker.test(fullText));
+}
+
+/**
  * Validates check digit according to algorithm.
  * @param {string} value
  * @param {string} checksumAlgorithm
@@ -627,6 +670,47 @@ export function extractAndScoreCandidates(text) {
       falsePositiveFlags: detectFalsePositiveFlags(cleanVal, normalizedText, start, end),
       sourceSpan: { start, end }
     });
+  }
+
+  // 3a. Order numbers that double as tracking numbers.
+  //
+  // Only scanned when the message says the parcel has already shipped. A
+  // checkout receipt carries the same "הזמנה מספר 8471293" wording and must
+  // stay unrecognised, so the shipment state — not the label — is the gate.
+  if (isShipmentInProgress(normalizedText)) {
+    const orderLabelPattern = /(?:הזמנה\s*(?:מספר|מס['׳`״]?)?|ההזמנה\s*שלך|מספר\s*הזמנה|order\s*(?:number|no|#)?)[\s:=#-]+([A-Za-z0-9_-]{5,35})/gi;
+    let orderMatch;
+
+    while ((orderMatch = orderLabelPattern.exec(normalizedText)) !== null) {
+      const rawVal = orderMatch[1];
+      const cleanVal = rawVal.trim().toUpperCase();
+
+      if (candidatesMap.has(cleanVal) || METADATA_WORDS.has(cleanVal)) continue;
+
+      const start = orderMatch.index + orderMatch[0].indexOf(rawVal);
+      const end = start + rawVal.length;
+      if (isFalsePositive(cleanVal, normalizedText, start, end)) continue;
+
+      const ruleEval = evaluateCandidateRules(cleanVal);
+      const primaryCarrier = ruleEval.carrierCandidates[0] || 'other';
+
+      candidatesMap.set(cleanVal, {
+        id: `cand_${candidatesMap.size + 1}`,
+        value: cleanVal,
+        carrierCandidates: ruleEval.carrierCandidates,
+        formatMatch: true,
+        // The label plus a stated shipment is the corroboration a bare digit
+        // run needs; it is not resting on shape alone.
+        distinctive: true,
+        highestConfidence: ruleEval.highestConfidence === 'none' ? 'medium' : ruleEval.highestConfidence,
+        priority: ruleEval.bestPriority,
+        checksum: ruleEval.checksum,
+        urlDomainMatch: checkUrlDomainMatch(primaryCarrier, normalizedText),
+        labelProximity: 1.0,
+        falsePositiveFlags: [],
+        sourceSpan: { start, end }
+      });
+    }
   }
 
   // 3b. Re-join tracking numbers printed in groups.
