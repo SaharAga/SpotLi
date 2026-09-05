@@ -47,3 +47,6 @@ __pycache__/
 serviceAccount*.json
 service-account*.json
 *-firebase-adminsdk-*.json
+
+# Local review of your own messages — never committed.
+.message-review.json
