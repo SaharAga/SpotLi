@@ -24,6 +24,17 @@ import { redactPII } from '../utils/privacySanitizer';
  *   error?: string
  * }>}
  */
+/**
+ * How long the client waits before giving up on the callable.
+ *
+ * The function itself is capped at 30s server-side, so anything past this is
+ * the request never having been sent — most often App Check unable to mint a
+ * token, which leaves `httpsCallable` awaiting the token rather than failing.
+ * Without a client-side bound that state is indistinguishable from a slow
+ * parse, and the user watches a spinner indefinitely.
+ */
+export const AI_PARSE_TIMEOUT_MS = 35000;
+
 export async function parseWithAi(payload) {
   if (!functionsInstance || !auth?.currentUser) {
     return { success: false, unavailable: true, error: 'AI parsing is not available right now.' };
@@ -42,7 +53,14 @@ export async function parseWithAi(payload) {
       : payload;
 
     const callable = httpsCallable(functionsInstance, 'parseWithAi');
-    const result = await callable(outgoingPayload);
+
+    const result = await Promise.race([
+      callable(outgoingPayload),
+      new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('ai-parse-timeout')), AI_PARSE_TIMEOUT_MS);
+      })
+    ]);
+
     return { success: true, data: result.data };
   } catch (err) {
     if (err?.code === 'functions/resource-exhausted') {
@@ -50,6 +68,10 @@ export async function parseWithAi(payload) {
     }
     if (err?.code === 'functions/unauthenticated') {
       return { success: false, unavailable: true, error: 'Sign in to use AI-assisted parsing.' };
+    }
+    if (err?.message === 'ai-parse-timeout') {
+      console.warn('[aiParseService] parseWithAi timed out after', AI_PARSE_TIMEOUT_MS, 'ms');
+      return { success: false, unavailable: true, error: 'AI parsing timed out. You can still enter details manually.' };
     }
     console.warn('[aiParseService] parseWithAi failed:', err);
     return { success: false, error: err?.message || 'AI parsing failed.' };
