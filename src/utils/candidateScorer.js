@@ -564,10 +564,18 @@ export function extractAndScoreCandidates(text) {
       }
 
       // Query parameters
-      for (const param of ['num', 'track', 'tracking', 'id', 'itemcode', 'item', 'barcode', 'b', 't', 'code', 'order', 'c', 'tracknum', 'tradeId', 'orderId', 'outPackageId', 'trade_no', 'mailNo', 'mailNoList']) {
+      for (const param of ['num', 'track', 'tracking', 'tracking_number', 'trackingNumber', 'tracking_no', 'trackingno', 'id', 'itemcode', 'item', 'barcode', 'b', 't', 'code', 'order', 'c', 'tracknum', 'tradeId', 'orderId', 'outPackageId', 'trade_no', 'mailNo', 'mailNoList']) {
         const val = parsed.searchParams.get(param);
         if (val) {
-          const cleanVal = val.trim().replace(/[.,;:!?]+$/, '').toUpperCase();
+          // Case is preserved when the carrier's own link uses mixed case.
+          // Tapuz issues six-character codes like `jCWLR0` and `6k06SZ`;
+          // upper-casing those produces a string its tracking page does not
+          // recognise, so the number would look right and resolve to nothing.
+          // Everything else still normalises, since carriers that write in one
+          // case are matched case-insensitively anyway.
+          const trimmedVal = val.trim().replace(/[.,;:!?]+$/, '');
+          const isMixedCase = /[a-z]/.test(trimmedVal) && /[A-Z]/.test(trimmedVal);
+          const cleanVal = isMixedCase ? trimmedVal : trimmedVal.toUpperCase();
           const start = urlMatch.index + fullUrl.indexOf(val);
           const end = start + val.length;
           if (cleanVal.length >= 5 && cleanVal.length <= 35 && !METADATA_WORDS.has(cleanVal) && !isFalsePositive(cleanVal, normalizedText, start, end)) {

@@ -1,19 +1,19 @@
 {
-  "savedAt": "2026-09-05T15:33:59.522Z",
+  "savedAt": "2026-09-05T15:44:59.571Z",
   "summary": {
-    "total": 74,
-    "positives": 44,
-    "negatives": 30,
-    "truePositives": 44,
+    "total": 76,
+    "positives": 45,
+    "negatives": 31,
+    "truePositives": 45,
     "wrongOnPositives": 0,
     "missed": 0,
     "falsePositives": 1,
-    "trueNegatives": 29,
-    "precision": 0.9777777777777777,
+    "trueNegatives": 30,
+    "precision": 0.9782608695652174,
     "recall": 1,
-    "f1": 0.9887640449438202,
-    "carrierAccuracy": 0.9772727272727273,
-    "specificity": 0.9666666666666667
+    "f1": 0.989010989010989,
+    "carrierAccuracy": 0.9777777777777777,
+    "specificity": 0.967741935483871
   },
   "groups": [
     {
@@ -54,14 +54,14 @@
     },
     {
       "group": "real-world",
-      "total": 8,
-      "correct": 8,
+      "total": 9,
+      "correct": 9,
       "accuracy": 1
     },
     {
       "group": "negative-otp",
-      "total": 6,
-      "correct": 6,
+      "total": 7,
+      "correct": 7,
       "accuracy": 1
     },
     {
@@ -110,8 +110,8 @@
   "calibration": [
     {
       "status": "verified",
-      "n": 44,
-      "correct": 44,
+      "n": 45,
+      "correct": 45,
       "accuracy": 1
     },
     {
