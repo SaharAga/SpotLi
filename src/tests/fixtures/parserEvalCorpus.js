@@ -368,6 +368,28 @@ export const PARSER_EVAL_CORPUS = [
     expected: { trackingNumber: null, carrier: null }
   },
 
+  {
+    id: 'pos-real-tapuz-mixed-case-url',
+    group: 'real-world',
+    note: 'six-character mixed-case code in a tracking_number param — upper-casing it would resolve to nothing',
+    rawText: 'היי, שליח של H&M Israel מבקש למסור חבילה היום. למעקב וזמן אספקה משוער https://tapuzdelivery.com/tn?tracking_number=jCWLR0&uid=3c08ff8d-91bc-492d-9e25-be33a128199a אין צורך לחכות לשליח בכתובת.',
+    expected: { trackingNumber: 'jCWLR0', carrier: 'tapuz' }
+  },
+  {
+    id: 'neg-real-tapuz-verification-code',
+    group: 'negative-otp',
+    rawText: 'delivery verification code: 4821',
+    expected: { trackingNumber: null, carrier: null }
+  },
+
+  {
+    id: 'pos-real-bargroup-unknown-carrier',
+    group: 'real-world',
+    note: 'labelled by שליחות, but nothing in the message says which carrier — must not be guessed from digit count',
+    rawText: 'לקוח/ה יקר/ה, שליח דיווח ביצוע שליחות 7920079311 מדלתא. לפרטים ומשוב על השליח: https://octu.io/p8x0TX',
+    expected: { trackingNumber: '7920079311', carrier: 'other' }
+  },
+
   // ─────────────────────────────────────────────────────────────────────
   // NEGATIVES — no shipment in the message at all.
   // These are where precision dies. Correct output is NO tracking number.

@@ -59,7 +59,7 @@ const KNOWN_CARRIER_DOMAINS = {
   'hfd': ['epost.co.il', 'e-post.co.il', 'hfd.co.il', 'hfdi.co.il', 'my.hfd.co.il'],
   'boxit': ['boxit.co.il', 'box-it.co.il', 'my.boxit.co.il'],
   'buzzr': ['buzzr.co.il', 'link.buzzr.co.il'],
-  'tapuz': ['tapuzdelivery.co.il', 'tapuz.co.il'],
+  'tapuz': ['tapuzdelivery.co.il', 'tapuzdelivery.com', 'tapuz.co.il'],
   'bar-distribution': ['bardistribution.co.il', 'barexpress.co.il'],
   'lionwheel': ['tracking.lionwheel.com', 'lionwheel.com'],
   'zigzag': ['zigzag.co.il', 'zigzag24.co.il', 'zig-zag.co.il', 'api.zig-zag.co.il'],
