@@ -9,8 +9,11 @@
  * knowledge gaps — a carrier format or a wording nobody encoded — and no
  * amount of generated data reveals those. Real messages do.
  *
- * Input: the XML from "SMS Backup & Restore" (Android), or a plain text file
- * with messages separated by blank lines.
+ * Input, any of:
+ *   - output of `adb shell content query --uri content://sms/inbox
+ *     --projection address:body` (no app to install; see README of this file)
+ *   - the XML from "SMS Backup & Restore" (Android)
+ *   - a plain text file with messages separated by blank lines
  *
  * ── Privacy ───────────────────────────────────────────────────────────────
  *
@@ -73,8 +76,35 @@ async function readMessages(path) {
   const rl = createInterface({ input: createReadStream(path, 'utf8'), crlfDelay: Infinity });
 
   let textBuffer = [];
+  // adb's `content query` prints one "Row: N key=value, key=value" per record,
+  // but a body containing newlines spills across lines — so a row continues
+  // until the next "Row:" marker rather than until end of line.
+  let adbRow = null;
+  const flushAdbRow = () => {
+    if (!adbRow) return;
+    const body = adbRow.body.trim();
+    if (body && body !== 'NULL') messages.push({ sender: adbRow.sender, body });
+    adbRow = null;
+  };
 
   for await (const line of rl) {
+    const adbMatch = line.match(/^Row: \d+ (.*)$/);
+    if (adbMatch || adbRow !== null) {
+      if (adbMatch) {
+        flushAdbRow();
+        const fields = adbMatch[1];
+        const senderMatch = fields.match(/(?:^|,\s*)address=(.*?)(?:,\s*body=|$)/s);
+        const bodyMatch = fields.match(/(?:^|,\s*)body=([\s\S]*)$/);
+        adbRow = {
+          sender: senderMatch ? senderMatch[1].trim() : '(unknown)',
+          body: bodyMatch ? bodyMatch[1] : ''
+        };
+      } else {
+        adbRow.body += `\n${line}`;
+      }
+      continue;
+    }
+
     if (isXml) {
       // One <sms .../> per line in this export format.
       const bodyMatch = line.match(/\sbody="([^"]*)"/);
@@ -96,6 +126,7 @@ async function readMessages(path) {
     }
   }
 
+  flushAdbRow();
   if (textBuffer.length) messages.push({ sender: '(unknown)', body: textBuffer.join('\n') });
   return messages;
 }
