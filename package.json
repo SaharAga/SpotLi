@@ -23,7 +23,8 @@
     "detection:insights": "node scripts/detection_insights.mjs fetch all",
     "sync:start": "node scripts/agent-sync-start.mjs",
     "sync:stop": "node scripts/agent-sync-stop.mjs",
-    "sync:status": "node scripts/agent-sync-channel.mjs status"
+    "sync:status": "node scripts/agent-sync-channel.mjs status",
+    "eval:parser": "node scripts/eval_parser.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",

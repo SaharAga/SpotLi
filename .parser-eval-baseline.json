@@ -1,0 +1,112 @@
+{
+  "savedAt": "2026-09-05T09:58:42.858Z",
+  "summary": {
+    "total": 60,
+    "positives": 32,
+    "negatives": 28,
+    "truePositives": 30,
+    "wrongOnPositives": 0,
+    "missed": 2,
+    "falsePositives": 6,
+    "trueNegatives": 22,
+    "precision": 0.8333333333333334,
+    "recall": 0.9375,
+    "f1": 0.8823529411764706,
+    "carrierAccuracy": 0.9333333333333333,
+    "specificity": 0.7857142857142857
+  },
+  "groups": [
+    {
+      "group": "negative-admin",
+      "total": 3,
+      "correct": 1,
+      "accuracy": 0.3333333333333333
+    },
+    {
+      "group": "negative-marketing",
+      "total": 5,
+      "correct": 3,
+      "accuracy": 0.6
+    },
+    {
+      "group": "negative-financial",
+      "total": 3,
+      "correct": 2,
+      "accuracy": 0.6666666666666666
+    },
+    {
+      "group": "negative-technical",
+      "total": 4,
+      "correct": 3,
+      "accuracy": 0.75
+    },
+    {
+      "group": "israel-post",
+      "total": 6,
+      "correct": 5,
+      "accuracy": 0.8333333333333334
+    },
+    {
+      "group": "global",
+      "total": 9,
+      "correct": 8,
+      "accuracy": 0.8888888888888888
+    },
+    {
+      "group": "israeli-courier",
+      "total": 10,
+      "correct": 10,
+      "accuracy": 1
+    },
+    {
+      "group": "hard-positive",
+      "total": 7,
+      "correct": 7,
+      "accuracy": 1
+    },
+    {
+      "group": "negative-otp",
+      "total": 5,
+      "correct": 5,
+      "accuracy": 1
+    },
+    {
+      "group": "negative-order",
+      "total": 3,
+      "correct": 3,
+      "accuracy": 1
+    },
+    {
+      "group": "negative-phone",
+      "total": 2,
+      "correct": 2,
+      "accuracy": 1
+    },
+    {
+      "group": "negative-identity",
+      "total": 2,
+      "correct": 2,
+      "accuracy": 1
+    },
+    {
+      "group": "negative-travel",
+      "total": 1,
+      "correct": 1,
+      "accuracy": 1
+    }
+  ],
+  "calibration": [
+    {
+      "status": "verified",
+      "n": 31,
+      "correct": 29,
+      "accuracy": 0.9354838709677419
+    },
+    {
+      "status": "uncertain",
+      "n": 5,
+      "correct": 1,
+      "accuracy": 0.2
+    }
+  ]
+}
