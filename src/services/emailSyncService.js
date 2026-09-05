@@ -1,5 +1,6 @@
 import { auth, isFirebaseConfigured, functionsInstance } from './firebase';
 import { STORAGE_KEYS } from '../constants/storageKeys';
+import { callFunction } from './callableClient';
 
 const EMAIL_INTEGRATIONS_STORAGE_KEY = STORAGE_KEYS.EMAIL_INTEGRATIONS;
 
@@ -159,9 +160,7 @@ export function addConnectedAccount(account) {
 export async function revokeGmailConnection() {
   if (!isFirebaseConfigured || !auth?.currentUser || !functionsInstance) return;
   try {
-    const { httpsCallable } = await import('firebase/functions');
-    const disconnect = httpsCallable(functionsInstance, 'gmailDisconnect');
-    await disconnect();
+    await callFunction('gmailDisconnect', undefined, { timeoutMs: 20000 });
   } catch (err) {
     console.warn('[EmailSyncService] gmailDisconnect call failed:', err);
   }
@@ -265,14 +264,13 @@ export async function connectGmail() {
   }
 
   try {
-    const { httpsCallable } = await import('firebase/functions');
-    const start = httpsCallable(functionsInstance, 'gmailOAuthStart');
+
     // Tells the server which origin (production vs. the staging Hosting
     // channel) sent the user here, so the post-consent redirect lands back
     // on the same one instead of always defaulting to production — see
     // gmailOAuthCallback.js's validateReturnOrigin.
     const origin = typeof window !== 'undefined' ? window.location.origin : undefined;
-    const res = await start({ origin });
+    const res = await callFunction('gmailOAuthStart', { origin }, { timeoutMs: 20000 });
     const url = res?.data?.url;
     if (!url) {
       return { ok: false, error: 'Failed to start Gmail connection' };
@@ -308,9 +306,10 @@ export async function getGmailConnectionStatus() {
   // waits on Auth SDK readiness, so it's the more reliable check; a truly
   // signed-out caller still fails cleanly below via 'unauthenticated'.
   try {
-    const { httpsCallable } = await import('firebase/functions');
-    const status = httpsCallable(functionsInstance, 'gmailConnectionStatus');
-    const res = await status();
+    // A status lookup is a single document read. Bounding it well below the
+    // shared default keeps a broken App Check from parking the account screen
+    // on "Checking status…" for half a minute before it gives up.
+    const res = await callFunction('gmailConnectionStatus', undefined, { timeoutMs: 12000 });
     return res?.data || { connected: false };
   } catch (err) {
     console.warn('[EmailSyncService] getGmailConnectionStatus error:', err);
@@ -328,9 +327,7 @@ export async function getGmailConnectionStatus() {
 export async function triggerGmailBackfill() {
   if (!functionsInstance) return { ok: false, error: 'Firebase is not configured' };
   try {
-    const { httpsCallable } = await import('firebase/functions');
-    const backfill = httpsCallable(functionsInstance, 'gmailBackfill');
-    const res = await backfill();
+    const res = await callFunction('gmailBackfill');
     return { ok: true, ...res.data };
   } catch (err) {
     console.warn('[EmailSyncService] triggerGmailBackfill error:', err);
