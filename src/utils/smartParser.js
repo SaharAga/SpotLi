@@ -411,6 +411,7 @@ const HEBREW_CARRIER_PHRASES = [
   { carrierId: 'getpackage', patterns: [/גט\s*פקג['׳`״’‘]/i, /getpackage/i] },
   { carrierId: 'zigzag', patterns: [/זיגזג\s*שליחויות/i, /שליח\s*זיגזג/i, /זיגזג/i, /zigzag/i] },
   { carrierId: 'orian', patterns: [/אוריאן/i, /orian/i] },
+  { carrierId: 'exelot', patterns: [/\bexelot\b/i, /אקסלוט/i] },
   // Global carriers. Israeli users receive these notifications in English as
   // often as in Hebrew, and without a brand phrase their bare-digit waybills
   // (DHL 10, FedEx 12) have no corroboration at all.

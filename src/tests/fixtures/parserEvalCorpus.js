@@ -390,6 +390,20 @@ export const PARSER_EVAL_CORPUS = [
     expected: { trackingNumber: '7920079311', carrier: 'other' }
   },
 
+  {
+    id: 'pos-real-exelot-pickup',
+    group: 'real-world',
+    note: 'Exelot runs the overseas leg; the notification comes from the domestic courier and never names Exelot',
+    rawText: 'תזכורת לאיסוף המשלוח: שלום, משלוח * XLT124778011 * מחברת חול הגיע לחנות וממתין לכם בנקודת האיסוף ראש העין. הקוד לאיסוף המשלוח 3641',
+    expected: { trackingNumber: 'XLT124778011', carrier: 'exelot' }
+  },
+  {
+    id: 'pos-real-exelot-named',
+    group: 'real-world',
+    rawText: 'שלום, משלוח XLT981109011 Exelot ממתין בחנות: הפרלמנט, דהומיי 3 ירושלים. קוד לאיסוף 203550',
+    expected: { trackingNumber: 'XLT981109011', carrier: 'exelot' }
+  },
+
   // ─────────────────────────────────────────────────────────────────────
   // NEGATIVES — no shipment in the message at all.
   // These are where precision dies. Correct output is NO tracking number.

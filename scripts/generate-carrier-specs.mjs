@@ -62,7 +62,8 @@ const KNOWN_CARRIER_DOMAINS = {
   'tapuz': ['tapuzdelivery.co.il', 'tapuzdelivery.com', 'tapuz.co.il'],
   'bar-distribution': ['bardistribution.co.il', 'barexpress.co.il'],
   'lionwheel': ['tracking.lionwheel.com', 'lionwheel.com'],
-  'zigzag': ['zigzag.co.il', 'zigzag24.co.il', 'zig-zag.co.il', 'api.zig-zag.co.il'],
+  'zigzag': ['zigzag.co.il', 'zigzag24.co.il', 'zig-zag.co.il', 'api.zig-zag.co.il', 'n.buzzr.biz'],
+  'exelot': ['exelot.com', 'track.exelot.com'],
   // Israel Post serves tracking from several hosts; only the mypost one was
   // derivable from the carrier definition.
   'israel-post': ['israelpost.co.il', 'mypost.israelpost.co.il', 'israelpost.gov.il'],

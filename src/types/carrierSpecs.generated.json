@@ -378,6 +378,26 @@
         }
       ]
     },
+    "exelot": {
+      "id": "exelot",
+      "name": "Exelot",
+      "hebrewName": "אקסלוט",
+      "website": "https://exelot.com",
+      "country": "Israel",
+      "domains": [
+        "exelot.com",
+        "track.exelot.com"
+      ],
+      "patterns": [
+        {
+          "source": "^XLT\\d{9}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 118
+        }
+      ]
+    },
     "zigzag": {
       "id": "zigzag",
       "name": "ZigZag Express",
@@ -386,6 +406,7 @@
       "country": "Israel",
       "domains": [
         "api.zig-zag.co.il",
+        "n.buzzr.biz",
         "zig-zag.co.il",
         "zigzag.co.il",
         "zigzag24.co.il"
@@ -949,6 +970,14 @@
       "confidence": "high",
       "checksum": "not-applicable",
       "priority": 116
+    },
+    {
+      "carrierId": "exelot",
+      "source": "^XLT\\d{9}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 118
     },
     {
       "carrierId": "zigzag",

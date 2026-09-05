@@ -361,6 +361,30 @@ export const CARRIERS = {
     sample: 'BZR84920194',
     country: 'Israel'
   },
+  // Exelot runs the international leg for overseas retailers into Israel and
+  // hands off to a domestic courier for the last mile. Its notifications
+  // therefore arrive from whoever does that delivery — ZigZag/Buzzr in the
+  // messages seen so far, describing the parcel as "מחברת חול" (from an
+  // overseas company) — while the number stays Exelot's. It is filed under
+  // Exelot because that is whose system recognises the number; the pickup
+  // point named in the message is the domestic courier's.
+  'exelot': {
+    id: 'exelot',
+    name: 'Exelot',
+    hebrewName: 'אקסלוט',
+    color: 'from-sky-600 to-blue-800',
+    badgeBg: 'bg-sky-500/10 border-sky-500/30 text-sky-400',
+    accentColor: '#0284c7',
+    logoText: 'Exelot',
+    website: 'https://exelot.com',
+    getTrackingUrl: (trackNum) => `https://track.exelot.com/?trackingNumber=${encodeURIComponent(trackNum)}`,
+    fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
+    patterns: [
+      rule(/^XLT\d{9}$/i, { confidence: 'high', priority: 118 })
+    ],
+    sample: 'XLT124778035',
+    country: 'Israel'
+  },
   'zigzag': {
     id: 'zigzag',
     name: 'ZigZag Express',

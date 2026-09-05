@@ -1,18 +1,18 @@
 {
-  "savedAt": "2026-09-05T15:48:41.551Z",
+  "savedAt": "2026-09-05T17:18:28.040Z",
   "summary": {
-    "total": 77,
-    "positives": 46,
+    "total": 79,
+    "positives": 48,
     "negatives": 31,
-    "truePositives": 46,
+    "truePositives": 48,
     "wrongOnPositives": 0,
     "missed": 0,
     "falsePositives": 1,
     "trueNegatives": 30,
-    "precision": 0.9787234042553191,
+    "precision": 0.9795918367346939,
     "recall": 1,
-    "f1": 0.989247311827957,
-    "carrierAccuracy": 0.9782608695652174,
+    "f1": 0.9896907216494846,
+    "carrierAccuracy": 0.9791666666666666,
     "specificity": 0.967741935483871
   },
   "groups": [
@@ -54,8 +54,8 @@
     },
     {
       "group": "real-world",
-      "total": 10,
-      "correct": 10,
+      "total": 12,
+      "correct": 12,
       "accuracy": 1
     },
     {
@@ -110,8 +110,8 @@
   "calibration": [
     {
       "status": "verified",
-      "n": 45,
-      "correct": 45,
+      "n": 47,
+      "correct": 47,
       "accuracy": 1
     },
     {
