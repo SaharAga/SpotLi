@@ -85,6 +85,34 @@ const FALSE_POSITIVE_PATTERNS = {
 };
 
 /**
+ * Markers of a promotional or survey message rather than a shipment notice.
+ *
+ * Couriers market to their own customers — a Cheetah ad and a Cheetah delivery
+ * notice both say "צ'יטה", so brand presence cannot separate them, and both
+ * contain numbers. What separates them is intent: a promotion sells or asks,
+ * a shipment notice reports. These markers only ever *suppress* a candidate
+ * that has no tracking label, no carrier host and no valid check digit, so a
+ * genuine delivery notice that happens to mention a discount is unaffected.
+ */
+const PROMOTIONAL_MARKERS = [
+  /מבצע/, /הנחה/, /קופון/, /בתוקף\s*עד/, /קנו\s*עכשיו/, /הצטרפו/, /להסרה/,
+  /דרגו\s*אותנו/, /סקר/, /שביעות\s*רצון/, /איך\s*היה\s*השירות/, /נשמח\s*למשוב/,
+  /\bcoupon\b/i, /\bpromo\b/i, /\bdiscount\b/i, /\b\d{1,2}%\s*off\b/i,
+  /\bsale\b/i, /\bunsubscribe\b/i, /\bsurvey\b/i, /\brate\s+(?:us|your)\b/i,
+  /\bshop\s+now\b/i, /\blimited\s+time\b/i
+];
+
+/**
+ * True when the surrounding message reads as marketing or a survey.
+ * @param {string} fullText
+ * @returns {boolean}
+ */
+export function isPromotionalContext(fullText) {
+  if (!fullText || typeof fullText !== 'string') return false;
+  return PROMOTIONAL_MARKERS.some((marker) => marker.test(fullText));
+}
+
+/**
  * Validates check digit according to algorithm.
  * @param {string} value
  * @param {string} checksumAlgorithm
@@ -280,6 +308,7 @@ export function computeCandidateScore(candidate) {
 
   // 5. False positive penalties
   const penalties = {
+    promotional_context: 0.85,
     otp_code: 0.85,
     phone_number: 0.85,
     date_or_price: 0.85,
@@ -523,7 +552,11 @@ export function extractAndScoreCandidates(text) {
               priority: ruleEval.bestPriority,
               checksum: ruleEval.checksum,
               urlDomainMatch: Boolean(domainCarrier),
-              labelProximity: 1.0,
+              // On a carrier host, being in the tracking path *is* the label.
+              // Anywhere else the segment is just a path id — every site has
+              // them — so it has to earn proximity from the surrounding text
+              // like any other token.
+              labelProximity: domainCarrier ? 1.0 : calculateLabelProximity(normalizedText, start, end),
               falsePositiveFlags: [],
               sourceSpan: { start: urlMatch.index, end: urlMatch.index + fullUrl.length }
             });
@@ -696,8 +729,21 @@ export function extractAndScoreCandidates(text) {
   }
 
   // Compute scores and sort candidates
+  const promotional = isPromotionalContext(normalizedText);
   const results = [];
   for (const candidate of candidatesMap.values()) {
+    // Applied here rather than in detectFalsePositiveFlags because it is a
+    // property of the whole message, and because the exemptions below need the
+    // candidate's corroboration, which is only complete at this point.
+    if (
+      promotional
+      && !candidate.urlDomainMatch
+      && candidate.checksum !== 'pass'
+      && (candidate.labelProximity ?? 0) < 0.8
+    ) {
+      candidate.falsePositiveFlags = [...(candidate.falsePositiveFlags || []), 'promotional_context'];
+    }
+
     candidate.score = computeCandidateScore(candidate);
     candidate.status = classifyConfidenceTier(candidate.score, candidate);
     results.push(candidate);

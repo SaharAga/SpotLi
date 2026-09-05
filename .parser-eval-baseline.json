@@ -1,5 +1,5 @@
 {
-  "savedAt": "2026-09-05T10:08:56.025Z",
+  "savedAt": "2026-09-05T10:40:54.852Z",
   "summary": {
     "total": 60,
     "positives": 32,
@@ -7,26 +7,20 @@
     "truePositives": 32,
     "wrongOnPositives": 0,
     "missed": 0,
-    "falsePositives": 3,
-    "trueNegatives": 25,
-    "precision": 0.9142857142857143,
+    "falsePositives": 1,
+    "trueNegatives": 27,
+    "precision": 0.9696969696969697,
     "recall": 1,
-    "f1": 0.955223880597015,
+    "f1": 0.9846153846153847,
     "carrierAccuracy": 0.96875,
-    "specificity": 0.8928571428571429
+    "specificity": 0.9642857142857143
   },
   "groups": [
     {
       "group": "negative-marketing",
       "total": 5,
-      "correct": 3,
-      "accuracy": 0.6
-    },
-    {
-      "group": "negative-technical",
-      "total": 4,
-      "correct": 3,
-      "accuracy": 0.75
+      "correct": 4,
+      "accuracy": 0.8
     },
     {
       "group": "israel-post",
@@ -93,6 +87,12 @@
       "total": 1,
       "correct": 1,
       "accuracy": 1
+    },
+    {
+      "group": "negative-technical",
+      "total": 4,
+      "correct": 4,
+      "accuracy": 1
     }
   ],
   "calibration": [
@@ -103,14 +103,8 @@
       "accuracy": 1
     },
     {
-      "status": "probable",
-      "n": 1,
-      "correct": 0,
-      "accuracy": 0
-    },
-    {
       "status": "uncertain",
-      "n": 2,
+      "n": 1,
       "correct": 0,
       "accuracy": 0
     }

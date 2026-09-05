@@ -174,16 +174,29 @@ export function SmartImportModal({
         candidates: regexResult?.candidates || []
       });
       if (aiResponse?.success && aiResponse.data?.trackingNumber && aiResponse.data.confidence !== 'none') {
+        // Grounding asks a narrower question than auto-fill does: did the
+        // deterministic parser independently see this same string as a plausible
+        // tracking number? A `probable` candidate answers yes. Requiring
+        // `verified` here meant the common Israeli-courier case — a real ID with
+        // no check digit and no carrier URL — could never be grounded, so the
+        // AI's agreement with the parser was discarded exactly where the two
+        // corroborating each other is worth the most.
         const isGroundedCandidate = (regexResult?.candidates || [])
           .some((candidate) => (
-            candidate.value === aiResponse.data.trackingNumber && candidate.status === 'verified'
+            candidate.value === aiResponse.data.trackingNumber
+            && (candidate.status === 'verified' || candidate.status === 'probable')
           ));
         setParsed(mapAiResultToParsed(aiResponse.data, isGroundedCandidate));
         setParseSource('ai');
         setAiConfidence(aiResponse.data.confidence);
       } else {
-        // AI found nothing either (or is unavailable) — fallback to deterministic result if available
-        setParsed(regexResult?.candidateStatus === 'verified' ? regexResult : null);
+        // AI found nothing either, or is unavailable. Fall back to the
+        // deterministic result, including a `probable` one: with no second
+        // opinion coming, the user is better served by a pre-filled form they
+        // can correct than by an empty one. `uncertain` and `none` are still
+        // withheld — those are the tiers that invent tracking numbers.
+        const fallbackTier = regexResult?.candidateStatus;
+        setParsed(fallbackTier === 'verified' || fallbackTier === 'probable' ? regexResult : null);
         setParseSource('regex');
         setAiConfidence(null);
       }

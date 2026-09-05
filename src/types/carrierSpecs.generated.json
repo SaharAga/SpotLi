@@ -8,6 +8,8 @@
       "website": "https://mypost.israelpost.co.il",
       "country": "Israel",
       "domains": [
+        "israelpost.co.il",
+        "israelpost.gov.il",
         "mypost.israelpost.co.il"
       ],
       "patterns": [
@@ -79,7 +81,9 @@
       "domains": [
         "e-post.co.il",
         "epost.co.il",
-        "hfd.co.il"
+        "hfd.co.il",
+        "hfdi.co.il",
+        "my.hfd.co.il"
       ],
       "patterns": [
         {
@@ -112,7 +116,9 @@
       "website": "https://boxit.co.il",
       "country": "Israel",
       "domains": [
-        "boxit.co.il"
+        "box-it.co.il",
+        "boxit.co.il",
+        "my.boxit.co.il"
       ],
       "patterns": [
         {
@@ -191,6 +197,7 @@
       "website": "https://getpackage.com",
       "country": "Israel",
       "domains": [
+        "getpackage.co.il",
         "getpackage.com"
       ],
       "patterns": [
@@ -217,7 +224,8 @@
       "website": "https://www.flying-cargo.com",
       "country": "Israel",
       "domains": [
-        "flying-cargo.com"
+        "flying-cargo.com",
+        "flyingcargo.co.il"
       ],
       "patterns": [
         {
@@ -243,7 +251,8 @@
       "website": "https://orian.com",
       "country": "Israel",
       "domains": [
-        "orian.com"
+        "orian.com",
+        "orianlogistics.com"
       ],
       "patterns": [
         {
@@ -370,6 +379,8 @@
       "website": "https://global.cainiao.com",
       "country": "China",
       "domains": [
+        "cainiao.com",
+        "gj.cainiao.com",
         "global.cainiao.com"
       ],
       "patterns": [
@@ -431,7 +442,8 @@
       "website": "https://www.shein.com",
       "country": "Global",
       "domains": [
-        "shein.com"
+        "shein.com",
+        "sheinlink.com"
       ],
       "patterns": [
         {
@@ -470,6 +482,7 @@
       "website": "https://express.4px.com",
       "country": "China / Global",
       "domains": [
+        "4px.com",
         "express.4px.com",
         "t.17track.net"
       ],
@@ -497,7 +510,10 @@
       "website": "https://www.dhl.com",
       "country": "Germany / Global",
       "domains": [
-        "dhl.com"
+        "dhl.co.il",
+        "dhl.com",
+        "dhlexpress.com",
+        "mydhl.express.dhl"
       ],
       "patterns": [
         {
@@ -530,6 +546,7 @@
       "website": "https://www.fedex.com",
       "country": "USA / Global",
       "domains": [
+        "fedex.co.il",
         "fedex.com"
       ],
       "patterns": [
@@ -570,7 +587,8 @@
       "website": "https://www.ups.com",
       "country": "USA / Global",
       "domains": [
-        "ups.com"
+        "ups.com",
+        "wwwapps.ups.com"
       ],
       "patterns": [
         {
@@ -630,6 +648,7 @@
       "website": "https://www.royalmail.com",
       "country": "United Kingdom",
       "domains": [
+        "royalmail.co.uk",
         "royalmail.com"
       ],
       "patterns": [
@@ -649,6 +668,7 @@
       "website": "https://www.aramex.com",
       "country": "Middle East / Global",
       "domains": [
+        "aramex.co.il",
         "aramex.com"
       ],
       "patterns": [
@@ -683,6 +703,7 @@
       "country": "China",
       "domains": [
         "t.17track.net",
+        "yanwen.com",
         "yw56.com.cn"
       ],
       "patterns": [
