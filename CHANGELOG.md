@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.27.0] - 2026-09-07
+
+### Added
+- Enhanced package card swipe interactions with iOS Mail/Gmail-style dynamic color tracks for live visual feedback when swiping to archive or delete. Added the `returned_to_sender` package lifecycle status across models, validation rules, carrier extraction, and UI badges. Smoothly modernized modal, banner, and bottom-sheet transitions with hardware-accelerated animations and spring easings.
+
+### Fixed
+- Fixed `returned_to_sender` packages failing to sync to the cloud. The status was
+added to the client's `VALID_STATUSES` but not to the `validStatuses` allowlist in
+`firestore.rules`, which is the actual enforcement — so a package that reached that
+status was stored locally and then rejected by Firestore, silently dropping it from
+cloud sync for signed-in users. Added a contract test that fails whenever the two
+lists drift apart.
+
+- Fixed automatic push notifications never arriving. Three independent faults
+each broke the chain on their own: `AccountModal` passed `user?.uid` to every
+push call, but the auth profile exposes the Firebase uid as `id`, so
+subscriptions were never persisted server-side; `subscribeToPush` was only
+reachable from the "enable notifications" button, which is hidden once
+permission is granted, so an already-permitted device could never register;
+and the service worker read `packageId` only from `data.data`, while the Cloud
+Functions send it at the top level, giving every notification the same tag so
+each one replaced the last. Push preferences now reflect a genuinely reachable
+subscription rather than permission alone, and the notification settings show
+which stage of the chain — server key, browser subscription, server
+registration — is actually failing.
+
 ## [0.26.1] - 2026-09-05
 
 ### Fixed
