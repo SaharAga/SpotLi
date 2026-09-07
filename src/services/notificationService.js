@@ -54,6 +54,11 @@ export const STATUS_NOTIFICATION_INFO = {
     he: 'עיכוב או חריגה במשלוח',
     en: 'Delivery Exception / Delay'
   },
+  returned_to_sender: {
+    emoji: '↩️',
+    he: 'החבילה הוחזרה לשולח',
+    en: 'Package Returned to Sender'
+  },
   archived: {
     emoji: '📁',
     he: 'הועבר לארכיון',

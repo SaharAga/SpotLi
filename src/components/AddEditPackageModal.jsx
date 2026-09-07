@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Sparkles, Package, AlertTriangle, ExternalLink, MapPin, Key, ShoppingBag, Wand2 } from 'lucide-react';
 import { CARRIER_LIST, getCarrier } from '../types/carriers.js';
-import { STAGES, CATEGORIES } from '../types/stages.js';
+import { STAGES, CATEGORIES, SELECTABLE_STATUSES, getStatusMeta } from '../types/stages.js';
 import { toLocalISODate } from '../utils/dateUtils';
 import { findPackageByTrackingNumber } from '../services/deliveryService.js';
 import { detectCarrier } from '../utils/carrierDetector.js';
@@ -325,8 +325,8 @@ export function AddEditPackageModal({
       checkpoints: editPackage?.checkpoints || [
         {
           id: `cp-${Date.now()}`,
-          title: STAGES.find(s => s.id === status)?.label || 'Order Registered',
-          titleHe: STAGES.find(s => s.id === status)?.hebrewLabel || 'המשלוח נקלט במערכת',
+          title: getStatusMeta(status)?.label || 'Order Registered',
+          titleHe: getStatusMeta(status)?.hebrewLabel || 'המשלוח נקלט במערכת',
           location: origin.trim() || 'Origin Logistics Hub',
           description: 'Package registered into Deliveree tracker',
           descriptionHe: 'החבילה נוספה למעקב במערכת',
@@ -578,7 +578,7 @@ export function AddEditPackageModal({
             {t('modal.status')}
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {STAGES.map((s) => (
+            {SELECTABLE_STATUSES.map((s) => (
               <button
                 type="button"
                 key={s.id}

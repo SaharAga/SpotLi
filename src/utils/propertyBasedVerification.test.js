@@ -21,7 +21,7 @@ if (typeof globalThis.localStorage === 'undefined' || !globalThis.localStorage.s
   };
 }
 
-const VALID_STATUSES = ['ordered', 'shipped', 'in_transit', 'out_for_delivery', 'delivered', 'exception', 'customs'];
+const VALID_STATUSES = ['ordered', 'shipped', 'in_transit', 'out_for_delivery', 'delivered', 'exception', 'customs', 'returned_to_sender'];
 const VALID_CARRIERS = CARRIER_LIST.map(c => c.id);
 
 describe('High-Assurance Property-Based Verification (fast-check)', () => {

@@ -20,6 +20,7 @@ export const VALID_STATUSES = /** @type {const} */ ([
   'out_for_delivery',
   'delivered',
   'exception',
+  'returned_to_sender',
   'archived'
 ]);
 

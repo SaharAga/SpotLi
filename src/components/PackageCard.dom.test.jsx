@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { PackageCard } from './PackageCard';
 import { LanguageProvider } from '../context/LanguageContext';
@@ -96,4 +96,84 @@ describe('PackageCard Component', () => {
     expect(screen.getByText('Dizengoff Center BoxIt #142')).toBeInTheDocument();
     expect(screen.getByText('+1 here')).toBeInTheDocument();
   });
+
+  it('renders returned_to_sender status badge and RotateCcw icon', () => {
+    const returnPkg = {
+      ...basePkg,
+      status: 'returned_to_sender'
+    };
+
+    renderWithLanguage(
+      <PackageCard
+        pkg={returnPkg}
+        onOpenDetails={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Returned to Sender')).toBeInTheDocument();
+  });
+
+  it('triggers onToggleArchive on swipe right past threshold', () => {
+    const onToggleArchive = vi.fn();
+    const { container } = renderWithLanguage(
+      <PackageCard
+        pkg={basePkg}
+        onOpenDetails={vi.fn()}
+        onToggleArchive={onToggleArchive}
+      />
+    );
+
+    const swipeTarget = container.querySelector('[style*="translateX"]') || container.querySelector('.group');
+    expect(swipeTarget).toBeInTheDocument();
+
+    fireEvent.touchStart(swipeTarget, { touches: [{ clientX: 50, clientY: 100 }] });
+    fireEvent.touchMove(swipeTarget, { touches: [{ clientX: 150, clientY: 100 }] });
+    fireEvent.touchEnd(swipeTarget);
+
+    expect(onToggleArchive).toHaveBeenCalledWith('pkg-1');
+  });
+
+  it('triggers onDelete on swipe left past threshold', () => {
+    const onDelete = vi.fn();
+    const { container } = renderWithLanguage(
+      <PackageCard
+        pkg={basePkg}
+        onOpenDetails={vi.fn()}
+        onDelete={onDelete}
+      />
+    );
+
+    const swipeTarget = container.querySelector('[style*="translateX"]') || container.querySelector('.group');
+    expect(swipeTarget).toBeInTheDocument();
+
+    fireEvent.touchStart(swipeTarget, { touches: [{ clientX: 200, clientY: 100 }] });
+    fireEvent.touchMove(swipeTarget, { touches: [{ clientX: 80, clientY: 100 }] });
+    fireEvent.touchEnd(swipeTarget);
+
+    expect(onDelete).toHaveBeenCalledWith('pkg-1');
+  });
+
+  it('does not trigger archive or delete if swipe is released before threshold', () => {
+    const onToggleArchive = vi.fn();
+    const onDelete = vi.fn();
+    const { container } = renderWithLanguage(
+      <PackageCard
+        pkg={basePkg}
+        onOpenDetails={vi.fn()}
+        onToggleArchive={onToggleArchive}
+        onDelete={onDelete}
+      />
+    );
+
+    const swipeTarget = container.querySelector('[style*="translateX"]') || container.querySelector('.group');
+
+    // Minor swipe of 30px (threshold is 60px)
+    fireEvent.touchStart(swipeTarget, { touches: [{ clientX: 100, clientY: 100 }] });
+    fireEvent.touchMove(swipeTarget, { touches: [{ clientX: 130, clientY: 100 }] });
+    fireEvent.touchEnd(swipeTarget);
+
+    expect(onToggleArchive).not.toHaveBeenCalled();
+    expect(onDelete).not.toHaveBeenCalled();
+  });
 });
+

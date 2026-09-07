@@ -136,7 +136,7 @@ export function InstallPwaBanner() {
       {/* Installation Instruction Modal */}
       {showIOSGuide && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className={`bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl text-slate-100 ${isRTL ? 'text-right' : 'text-left'}`}>
+          <div className={`bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl text-slate-100 animate-modal-pop ${isRTL ? 'text-right' : 'text-left'}`}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-white flex items-center gap-2">
                 <Smartphone className="w-5 h-5 text-blue-400" />

@@ -80,6 +80,128 @@ export const CATEGORIES = [
 ];
 
 // ---------------------------------------------------------------------------
+// All status definitions & metadata
+//
+// Covers both the linear pipeline (STAGES) and non-linear or terminal statuses
+// (exception, returned_to_sender, archived). Ensures UI badges and status
+// selectors never silently fall back to STAGES[0] ('ordered').
+export const STATUS_DEFINITIONS = Object.freeze({
+  ordered: {
+    id: 'ordered',
+    key: 'ordered',
+    label: 'Order Placed',
+    hebrewLabel: 'הזמנה בוצעה',
+    desc: 'Merchant received order and is preparing the package',
+    hebrewDesc: 'ההזמנה התקבלה על ידי המוכר ונארזת למשלוח',
+    color: 'slate',
+    badgeClass: 'bg-slate-500/10 text-slate-400 border-slate-500/30'
+  },
+  shipped: {
+    id: 'shipped',
+    key: 'shipped',
+    label: 'Shipped',
+    hebrewLabel: 'נשלח מהמוכר',
+    desc: 'Package handed over to carrier at origin sorting center',
+    hebrewDesc: 'החבילה נמסרה לחברת השילוח במרכז המיון במדינת המוצא',
+    color: 'blue',
+    badgeClass: 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+  },
+  in_transit: {
+    id: 'in_transit',
+    key: 'in_transit',
+    label: 'In Transit',
+    hebrewLabel: 'בדרך / בטיסה',
+    desc: 'Package is travelling internationally or moving between distribution hubs',
+    hebrewDesc: 'החבילה בטיסה בינלאומית או במעבר בין מרכזי הפצה',
+    color: 'cyan',
+    badgeClass: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
+  },
+  customs: {
+    id: 'customs',
+    key: 'customs',
+    label: 'Customs Clearance',
+    hebrewLabel: 'בדיקת מכס',
+    desc: 'Arrived in destination country and undergoing import inspection',
+    hebrewDesc: 'החבילה נחתה בישראל ונמצאת בבדיקת מכס / שחרור מהיר',
+    color: 'purple',
+    badgeClass: 'bg-purple-500/10 text-purple-400 border-purple-500/30'
+  },
+  out_for_delivery: {
+    id: 'out_for_delivery',
+    key: 'out_for_delivery',
+    label: 'Out for Delivery / Pickup',
+    hebrewLabel: 'נמסר לחלוקה / איסוף',
+    desc: 'With local courier or awaiting pickup at local branch/locker',
+    hebrewDesc: 'נמסר לשליח או ממתין לאיסוף בנקודת מסירה / לוקר / סניף דואר',
+    color: 'amber',
+    badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+  },
+  delivered: {
+    id: 'delivered',
+    key: 'delivered',
+    label: 'Delivered',
+    hebrewLabel: 'נמסר ליעד',
+    desc: 'Package successfully delivered or collected',
+    hebrewDesc: 'החבילה נמסרה בהצלחה לידי הלקוח',
+    color: 'emerald',
+    badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+  },
+  exception: {
+    id: 'exception',
+    key: 'exception',
+    label: 'Delivery Exception',
+    hebrewLabel: 'חריגה / עיכוב',
+    desc: 'Delivery issue, address problem, or delivery exception reported',
+    hebrewDesc: 'בעיה או עיכוב במסירת המשלוח על ידי חברת השילוח',
+    color: 'rose',
+    badgeClass: 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+  },
+  returned_to_sender: {
+    id: 'returned_to_sender',
+    key: 'returned_to_sender',
+    label: 'Returned to Sender',
+    hebrewLabel: 'הוחזר לשולח',
+    desc: 'Package was returned or is being returned to the sender',
+    hebrewDesc: 'החבילה הוחזרה לשולח או שלא נאספה בזמן מהנקודה',
+    color: 'orange',
+    badgeClass: 'bg-orange-500/10 text-orange-400 border-orange-500/30'
+  },
+  archived: {
+    id: 'archived',
+    key: 'archived',
+    label: 'Archived',
+    hebrewLabel: 'בארכיון',
+    desc: 'Package has been archived',
+    hebrewDesc: 'החבילה הועברה לארכיון',
+    color: 'slate',
+    badgeClass: 'bg-slate-800/40 text-slate-400 border-slate-700/40'
+  }
+});
+
+/**
+ * Returns metadata for any valid status. Falls back to ordered.
+ * Safe against Object.prototype properties.
+ *
+ * @param {string|null|undefined} statusId
+ * @returns {typeof STATUS_DEFINITIONS[keyof typeof STATUS_DEFINITIONS]}
+ */
+export function getStatusMeta(statusId) {
+  if (statusId && Object.prototype.hasOwnProperty.call(STATUS_DEFINITIONS, statusId)) {
+    return STATUS_DEFINITIONS[statusId];
+  }
+  return STATUS_DEFINITIONS.ordered;
+}
+
+/**
+ * Statuses available for user selection in add/edit flows.
+ */
+export const SELECTABLE_STATUSES = [
+  ...STAGES,
+  STATUS_DEFINITIONS.returned_to_sender,
+  STATUS_DEFINITIONS.exception
+];
+
+// ---------------------------------------------------------------------------
 // Tab / bucket predicates
 //
 // The same "which bucket does this status belong to" rules used to be written
@@ -98,12 +220,18 @@ export const TAB_PREDICATES = {
   all: () => true,
   active: (pkg) => pkg.status !== 'delivered',
   transit: (pkg) =>
-    pkg.status !== 'delivered' && pkg.status !== 'customs' && pkg.status !== 'exception',
+    pkg.status !== 'delivered' &&
+    pkg.status !== 'customs' &&
+    pkg.status !== 'exception' &&
+    pkg.status !== 'returned_to_sender',
   in_transit: (pkg) =>
     pkg.status === 'in_transit' || pkg.status === 'shipped' || pkg.status === 'ordered',
   out_for_delivery: (pkg) => pkg.status === 'out_for_delivery',
   delivered: (pkg) => pkg.status === 'delivered',
-  customs: (pkg) => pkg.status === 'customs' || pkg.status === 'exception'
+  customs: (pkg) =>
+    pkg.status === 'customs' ||
+    pkg.status === 'exception' ||
+    pkg.status === 'returned_to_sender'
 };
 
 export const TAB_IDS = Object.keys(TAB_PREDICATES);
