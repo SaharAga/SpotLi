@@ -4,7 +4,7 @@
 
 | Attribute | Value |
 | :--- | :--- |
-| **Version** | `v0.25.0` |
+| **Version** | `v0.26.1` |
 | **Release Date** | 2026-09-05 |
 | **Release Channel** | `alpha` |
 | **Firebase Schema Version** | `1.0.0` |

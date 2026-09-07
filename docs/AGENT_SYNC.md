@@ -54,7 +54,7 @@ Every entry needs all of these — an entry missing a status or a verification i
 | SYNC-7 | Codex | ✅ Done | P0 | Reviewed candidate detection v2; runtime gating and grounding verified. |
 | SYNC-6 | Codex | ✅ Done | P0 | Reviewed the merged candidate-detection implementation against the plan. |
 | SYNC-5 | Antigravity | ✅ Done | P0 | Generated carrier specs resolve distribution parity; runtime parity complete. |
-| SYNC-2 | Sahar | ⏳ Pending | P1 | Complete the previously identified GCP console configuration for live Gmail push sync. |
+| SYNC-2 | Sahar | ✅ Done | P1 | GCP Pub/Sub topic and console configuration for live Gmail push sync confirmed configured. |
 
 ## Log
 
