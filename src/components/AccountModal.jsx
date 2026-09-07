@@ -117,12 +117,54 @@ export function AccountModal({
     }
   }, [isOpen, initialTab]);
 
+  const [pushDiagnostics, setPushDiagnostics] = useState(null);
+
+  // AuthContext's user profile exposes the Firebase uid as `id` (see
+  // buildCleanUserProfile) — there is no `uid` field on it. Every push call
+  // here read `user?.uid` and so passed `undefined`, which made
+  // `subscribeToPush` skip its `if (uid)` server-persist branch entirely:
+  // clicking "enable notifications" while signed in created a browser
+  // subscription that was never written to `pushSubscriptions/{uid}/tokens`,
+  // leaving nothing for any Cloud Function to send to. `user?.uid` is kept as
+  // a fallback in case a raw Firebase user object is ever passed in.
+  const userUid = user?.id || user?.uid || null;
+
   useEffect(() => {
     if (inline || isOpen) {
       setNotificationPrefs(notificationService.getPreferences());
       setPermissionStatus(notificationService.getNotificationPermission());
     }
   }, [inline, isOpen]);
+
+  // Opening notification settings is a second chance to repair a device whose
+  // subscription was never persisted (or was dropped by the browser), for the
+  // case where the user was already signed in when AuthContext's sign-in
+  // effect ran. `ensurePushSubscription` never prompts, and the diagnostics
+  // read is what makes a silent failure visible instead of leaving the user
+  // with a green checkmark and no notifications.
+  useEffect(() => {
+    if (!(inline || isOpen)) return;
+    if (notificationService.getNotificationPermission() !== 'granted') {
+      setPushDiagnostics(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        await notificationService.ensurePushSubscription(userUid);
+        const diag = await notificationService.getPushDiagnostics(userUid);
+        if (!cancelled) {
+          setPushDiagnostics(diag);
+          setNotificationPrefs(notificationService.getPreferences());
+        }
+      } catch (err) {
+        console.warn('[AccountModal] Push diagnostics failed:', err?.message);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [inline, isOpen, userUid]);
 
   const go = (fn) => () => {
     if (typeof fn === 'function') fn();
@@ -140,7 +182,7 @@ export function AccountModal({
     const { ok, preferences } = notificationService.savePreferencesWithStatus({ [key]: value });
     setNotificationPrefs(preferences);
     if (key === 'pushEnabled' && value === false) {
-      notificationService.unsubscribeFromPush(user?.uid);
+      notificationService.unsubscribeFromPush(userUid);
     }
     if (!onShowToast) return;
     if (ok) {
@@ -156,11 +198,26 @@ export function AccountModal({
   };
 
   const handleRequestPushPermission = async () => {
-    const perm = await notificationService.requestNotificationPermission(user?.uid);
+    const perm = await notificationService.requestNotificationPermission(userUid);
     setPermissionStatus(perm);
     setNotificationPrefs(notificationService.getPreferences());
     if (perm === 'granted') {
-      if (onShowToast) onShowToast(language === 'he' ? 'הרשאת התראות הופעלה בהצלחה!' : 'Notification permission granted!', 'success');
+      const diag = await notificationService.getPushDiagnostics(userUid);
+      setPushDiagnostics(diag);
+      // Granting permission is not the same as being reachable. Say which one
+      // actually happened rather than reporting success for both.
+      if (onShowToast) {
+        if (diag.serverRegistered || (!userUid && diag.browserSubscription)) {
+          onShowToast(language === 'he' ? 'הרשאת התראות הופעלה בהצלחה!' : 'Notification permission granted!', 'success');
+        } else {
+          onShowToast(
+            language === 'he'
+              ? 'ההרשאה ניתנה, אך רישום ההתראות לא הושלם — ראה פרטים בהגדרות'
+              : 'Permission granted, but push registration did not complete — see details below',
+            'error'
+          );
+        }
+      }
     } else if (perm === 'denied') {
       if (onShowToast) onShowToast(language === 'he' ? 'הרשאת התראות נדחתה בדפדפן' : 'Notification permission denied', 'error');
     }
@@ -348,6 +405,44 @@ export function AccountModal({
               <Sparkles className="w-3 h-3 text-blue-400" />
               <span>{language === 'he' ? 'שלח התראת בדיקה' : 'Send Test Notification'}</span>
             </button>
+          </div>
+        )}
+
+        {permissionStatus === 'granted' && pushDiagnostics && (
+          <div className="pt-2 border-t border-slate-800 space-y-1.5">
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              {language === 'he'
+                ? 'התראת הבדיקה מוצגת מקומית ואינה בודקת את שרשרת ה-Web Push. השלבים הבאים כן:'
+                : 'The test notification is shown locally and does not exercise the Web Push chain. These stages do:'}
+            </p>
+            {[
+              {
+                ok: pushDiagnostics.vapidConfigured,
+                he: 'מפתח שרת ההתראות מוגדר',
+                en: 'Push server key configured'
+              },
+              {
+                ok: pushDiagnostics.browserSubscription,
+                he: 'מנוי התראות קיים בדפדפן',
+                en: 'Browser subscription present'
+              },
+              {
+                ok: pushDiagnostics.serverRegistered,
+                he: userUid ? 'המנוי נרשם בשרת' : 'נדרשת התחברות לרישום בשרת',
+                en: userUid ? 'Subscription registered on server' : 'Sign in to register on server'
+              }
+            ].map((row) => (
+              <div key={row.en} className="flex items-center gap-2 text-[11px]">
+                {row.ok ? (
+                  <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />
+                )}
+                <span className={row.ok ? 'text-slate-400' : 'text-amber-400 font-semibold'}>
+                  {language === 'he' ? row.he : row.en}
+                </span>
+              </div>
+            ))}
           </div>
         )}
       </div>

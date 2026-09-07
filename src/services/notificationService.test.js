@@ -114,16 +114,43 @@ describe('notificationService', () => {
       expect(notificationService.getNotificationPermission()).toBe('granted');
     });
 
-    it('requests permission and saves preference if granted', async () => {
+    it('requests permission but does not claim push is enabled without a usable subscription', async () => {
       const requestMock = vi.fn().mockResolvedValue('granted');
       globalThis.Notification = {
         permission: 'default',
         requestPermission: requestMock
       };
+      // No serviceWorker: permission is granted, but no subscription can exist.
+      vi.stubGlobal('navigator', {});
 
       const result = await notificationService.requestNotificationPermission();
       expect(result).toBe('granted');
       expect(requestMock).toHaveBeenCalled();
+      // The whole point: a granted permission with no reachable subscription
+      // must not present itself as "notifications are on".
+      expect(notificationService.getPreferences().pushEnabled).toBe(false);
+    });
+
+    it('marks push enabled for a guest once a browser subscription exists', async () => {
+      globalThis.Notification = {
+        permission: 'default',
+        requestPermission: vi.fn().mockResolvedValue('granted')
+      };
+      vi.stubGlobal('navigator', {
+        serviceWorker: {
+          ready: Promise.resolve({
+            pushManager: {
+              getSubscription: vi.fn().mockResolvedValue(null),
+              subscribe: vi.fn().mockResolvedValue({ endpoint: 'https://fcm.googleapis.com/fcm/send/guest' })
+            }
+          })
+        }
+      });
+      // requestNotificationPermission reads the VAPID key from the build env;
+      // without it PushManager.subscribe() cannot be called at all.
+      vi.stubEnv('VITE_VAPID_PUBLIC_KEY', 'BMx_mock_vapid_key');
+
+      await notificationService.requestNotificationPermission();
       expect(notificationService.getPreferences().pushEnabled).toBe(true);
     });
 
@@ -155,8 +182,12 @@ describe('notificationService', () => {
         }
       });
 
-      const sub = await notificationService.subscribeToPush('BMx_mock_vapid_key');
-      expect(sub).toEqual(mockPushSubscription);
+      const result = await notificationService.subscribeToPush('BMx_mock_vapid_key');
+      expect(result.subscription).toEqual(mockPushSubscription);
+      expect(result.subscribed).toBe(true);
+      // No uid, so there is no server side to have registered with.
+      expect(result.serverRegistered).toBe(false);
+      expect(result.reason).toBe('signed-out');
       expect(subscribeMock).toHaveBeenCalled();
       expect(localStorage.getItem(PUSH_SUBSCRIPTION_KEY)).toContain('fcm.googleapis.com');
     });
@@ -447,9 +478,90 @@ describe('server-side push subscription persistence', () => {
       }
     });
 
-    const sub = await notificationService.subscribeToPush('BMx_mock_vapid_key', 'user1');
-    expect(sub).toEqual(mockPushSubscription);
+    const result = await notificationService.subscribeToPush('BMx_mock_vapid_key', 'user1');
+    expect(result.subscription).toEqual(mockPushSubscription);
+    expect(result.subscribed).toBe(true);
+    expect(result.serverRegistered).toBe(true);
     expect(firestoreMocks.setDoc).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports serverRegistered false when the subscription write fails', async () => {
+    const mockPushSubscription = {
+      endpoint: 'https://fcm.googleapis.com/fcm/send/fail',
+      toJSON: () => ({ endpoint: 'https://fcm.googleapis.com/fcm/send/fail', keys: {} })
+    };
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        ready: Promise.resolve({
+          pushManager: {
+            getSubscription: vi.fn().mockResolvedValue(null),
+            subscribe: vi.fn().mockResolvedValue(mockPushSubscription)
+          }
+        })
+      }
+    });
+    firestoreMocks.setDoc.mockRejectedValueOnce(new Error('permission-denied'));
+
+    const result = await notificationService.subscribeToPush('BMx_mock_vapid_key', 'user1');
+    // A browser subscription exists but nothing server-side can reach it —
+    // these two must not be conflated, which is what `subscribeToPush`
+    // returning a bare subscription previously made impossible to tell.
+    expect(result.subscribed).toBe(true);
+    expect(result.serverRegistered).toBe(false);
+    expect(result.reason).toBe('server-write-failed');
+  });
+
+  it('reports a missing VAPID key rather than silently not subscribing', async () => {
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        ready: Promise.resolve({
+          pushManager: {
+            getSubscription: vi.fn().mockResolvedValue(null),
+            subscribe: vi.fn()
+          }
+        })
+      }
+    });
+
+    const result = await notificationService.subscribeToPush(undefined, 'user1');
+    expect(result.subscribed).toBe(false);
+    expect(result.reason).toBe('no-vapid-key');
+  });
+
+  it('ensurePushSubscription is a no-op and never prompts when permission is not granted', async () => {
+    globalThis.Notification = { permission: 'default', requestPermission: vi.fn() };
+    const result = await notificationService.ensurePushSubscription('user1');
+    expect(result.reason).toBe('permission-not-granted');
+    expect(globalThis.Notification.requestPermission).not.toHaveBeenCalled();
+    expect(firestoreMocks.setDoc).not.toHaveBeenCalled();
+  });
+
+  it('ensurePushSubscription re-registers an already-permitted device server-side', async () => {
+    // The regression this exists for: permission was granted on an earlier
+    // visit, so AccountModal never shows the "enable" button again and the
+    // only former caller of subscribeToPush was unreachable — leaving
+    // pushSubscriptions/{uid}/tokens permanently empty.
+    globalThis.Notification = { permission: 'granted', requestPermission: vi.fn() };
+    vi.stubEnv('VITE_VAPID_PUBLIC_KEY', 'BMx_mock_vapid_key');
+    const mockPushSubscription = {
+      endpoint: 'https://fcm.googleapis.com/fcm/send/existing',
+      toJSON: () => ({ endpoint: 'https://fcm.googleapis.com/fcm/send/existing', keys: {} })
+    };
+    vi.stubGlobal('navigator', {
+      serviceWorker: {
+        ready: Promise.resolve({
+          pushManager: {
+            getSubscription: vi.fn().mockResolvedValue(mockPushSubscription),
+            subscribe: vi.fn()
+          }
+        })
+      }
+    });
+
+    const result = await notificationService.ensurePushSubscription('user1');
+    expect(result.serverRegistered).toBe(true);
+    expect(firestoreMocks.setDoc).toHaveBeenCalledTimes(1);
+    expect(notificationService.getPreferences().pushEnabled).toBe(true);
   });
 
   it('subscribeToPush does not attempt server persistence without a uid', async () => {
