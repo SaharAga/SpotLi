@@ -89,7 +89,7 @@ working reference; `scripts/triage_reports.mjs` is the credentialed path.
    issue body — but stop there.
 6. **One summary-only PR per run, once step 5 is done.** After filing/updating issues for every
    item, open a single draft PR containing *only* a findings-summary document (e.g. a dated file
-   under `.agents/backlog/`, or an update to `FEEDBACK_ACTION_ITEMS.md`) — grouped by category
+   under `.agents/backlog/`, or an update to `.agents/backlog/FEEDBACK_ACTION_ITEMS.md`) — grouped by category
    (Critical bugs / High-priority fixes / Feature requests / UX improvements), top items with
    frequency/impact, and links to the issues filed in step 5. The PR diff must never touch
    application code (`src/`, `functions/`, `firestore.rules`) or any other file outside that
