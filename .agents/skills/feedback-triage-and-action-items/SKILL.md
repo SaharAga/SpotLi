@@ -87,11 +87,20 @@ working reference; `scripts/triage_reports.mjs` is the credentialed path.
    (`crash`/`bug`/`feature`, `p0`/`p1`/`p2` per the classification in section 1). If a fix looks
    small and clearly scoped, describe the concrete proposed fix (file, function, approach) in the
    issue body — but stop there.
-6. **Never open a PR from this run.** No branch, no push, no `create_pull_request` call. A human
-   (or an explicit follow-up request from Sahar) decides whether the proposed fix gets implemented
-   — anonymous, unauthenticated input must never be able to cause a code change on its own. This is
-   a deliberate policy decision, not a missing feature; revisit only if Sahar explicitly asks for
-   auto-opened PRs.
+6. **One summary-only PR per run, once step 5 is done.** After filing/updating issues for every
+   item, open a single draft PR containing *only* a findings-summary document (e.g. a dated file
+   under `.agents/backlog/`, or an update to `.agents/backlog/FEEDBACK_ACTION_ITEMS.md`) — grouped by category
+   (Critical bugs / High-priority fixes / Feature requests / UX improvements), top items with
+   frequency/impact, and links to the issues filed in step 5. The PR diff must never touch
+   application code (`src/`, `functions/`, `firestore.rules`) or any other file outside that
+   summary document — anonymous, unauthenticated input must never be able to cause a code change
+   on its own; a proposed code fix still only ever gets *described* in the issue from step 5, never
+   implemented here. Post a report comment on the PR: patterns observed, which issues affect the
+   most users, and the top 3 recommendations to tackle next. Sahar reviews (with an agent) and
+   merges or closes the PR manually — this authorization is explicit and scoped to summary-only
+   PRs from this run; expanding it to code-fix PRs is a separate decision and requires Sahar to
+   ask for that explicitly. If there is nothing new to report (see step 1), skip the PR and say so
+   in the run summary instead of opening an empty one.
 7. `node scripts/triage_reports.mjs mark-triaged <feedback|crashReports> <docId> [issueUrl]` for
    every item processed this run — including ones skipped as praise/too-vague, so they are not
    re-evaluated indefinitely (their `mark-triaged` call can simply omit the issue URL).
