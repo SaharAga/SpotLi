@@ -209,9 +209,14 @@ export const notificationService = {
     try {
       const permission = await root.Notification.requestPermission();
       if (permission === 'granted') {
-        notificationService.savePreferences({ pushEnabled: true });
-        // Attempt to subscribe to push manager if service worker is active
-        await notificationService.subscribeToPush(import.meta.env.VITE_VAPID_PUBLIC_KEY, uid);
+        // `pushEnabled: true` is only written once a subscription actually
+        // exists AND (when signed in) has been persisted server-side. Setting
+        // it on permission alone produced the failure this whole path exists
+        // to prevent: a green "notifications are on" state in front of an
+        // empty `pushSubscriptions/{uid}/tokens`, where every Cloud Function
+        // send resolves to `{ sent: 0 }` and nothing is ever delivered.
+        const result = await notificationService.subscribeToPush(import.meta.env.VITE_VAPID_PUBLIC_KEY, uid);
+        notificationService.savePreferences({ pushEnabled: result.serverRegistered || (!uid && result.subscribed) });
       } else if (permission === 'denied') {
         notificationService.savePreferences({ pushEnabled: false });
       }
@@ -229,24 +234,39 @@ export const notificationService = {
    * Without that second step this only ever wrote to localStorage, which no
    * server-side code can read; a subscription nobody can reach is not a
    * subscription.
+   *
+   * Returns a status object rather than the bare subscription because the two
+   * halves fail independently and the caller has to be able to tell them
+   * apart: a browser subscription that was never persisted server-side looks
+   * identical to a working one from the device's point of view, and is
+   * useless. `reason` names the first step that failed, for the diagnostics
+   * panel in AccountModal.
+   *
    * @param {string} [vapidPublicKey]
    * @param {string} [uid] signed-in user's uid, to persist the subscription for
-   * @returns {Promise<PushSubscription|null>}
+   * @returns {Promise<PushSubscriptionStatus>}
    */
   subscribeToPush: async (vapidPublicKey, uid) => {
     const root = typeof window !== 'undefined' ? window : globalThis;
-    if (!root || !('serviceWorker' in root.navigator)) {
-      return null;
+    if (!root || !root.navigator || !('serviceWorker' in root.navigator)) {
+      return { subscribed: false, serverRegistered: false, subscription: null, reason: 'unsupported' };
     }
 
     try {
       const registration = await root.navigator.serviceWorker.ready;
       if (!registration || !registration.pushManager) {
-        return null;
+        return { subscribed: false, serverRegistered: false, subscription: null, reason: 'no-push-manager' };
       }
 
       let subscription = await registration.pushManager.getSubscription();
-      if (!subscription && vapidPublicKey) {
+      if (!subscription) {
+        if (!vapidPublicKey) {
+          // No VAPID public key in the build means PushManager.subscribe()
+          // cannot be called at all, so no amount of granted permission will
+          // ever produce a deliverable subscription. Surfaced rather than
+          // swallowed: this is a deployment/config fault, not a user one.
+          return { subscribed: false, serverRegistered: false, subscription: null, reason: 'no-vapid-key' };
+        }
         const convertedVapidKey = urlBase64ToUint8Array(vapidPublicKey);
         subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
@@ -254,17 +274,116 @@ export const notificationService = {
         });
       }
 
-      if (subscription) {
-        writeJSON(PUSH_SUBSCRIPTION_KEY, subscription);
-        if (uid) {
-          await notificationService.savePushSubscriptionToServer(uid, subscription);
-        }
+      if (!subscription) {
+        return { subscribed: false, serverRegistered: false, subscription: null, reason: 'subscribe-failed' };
       }
-      return subscription;
+
+      writeJSON(PUSH_SUBSCRIPTION_KEY, subscription);
+
+      if (!uid) {
+        // Guest: a local subscription is all there is to have. Cloud Functions
+        // send per-uid, so a guest never receives automatic pushes anyway.
+        return { subscribed: true, serverRegistered: false, subscription, reason: 'signed-out' };
+      }
+
+      const serverRegistered = await notificationService.savePushSubscriptionToServer(uid, subscription);
+      return {
+        subscribed: true,
+        serverRegistered,
+        subscription,
+        reason: serverRegistered ? null : 'server-write-failed'
+      };
     } catch (e) {
       console.warn('[NotificationService] Push subscription failed or not supported:', e);
-      return null;
+      return { subscribed: false, serverRegistered: false, subscription: null, reason: 'error' };
     }
+  },
+
+  /**
+   * Re-establishes the server-side push subscription for an already-permitted
+   * device. Safe and cheap to call on every sign-in and every time the
+   * notification settings are opened.
+   *
+   * This exists because `subscribeToPush` used to be reachable from exactly
+   * one place — the "enable notifications" button — which AccountModal only
+   * renders while `Notification.permission !== 'granted'`. Any user who had
+   * already granted permission (including everyone who granted it before
+   * server-side push shipped), or whose browser rotated or dropped its
+   * subscription, could therefore never create one again: the button was gone,
+   * the UI said notifications were on, and `pushSubscriptions/{uid}/tokens`
+   * stayed empty forever.
+   *
+   * A no-op unless permission is already granted — it never prompts.
+   *
+   * @param {string} [uid]
+   * @returns {Promise<PushSubscriptionStatus>}
+   */
+  ensurePushSubscription: async (uid) => {
+    if (notificationService.getNotificationPermission() !== 'granted') {
+      return { subscribed: false, serverRegistered: false, subscription: null, reason: 'permission-not-granted' };
+    }
+    if (!notificationService.getPreferences().pushEnabled && !uid) {
+      return { subscribed: false, serverRegistered: false, subscription: null, reason: 'disabled' };
+    }
+
+    const result = await notificationService.subscribeToPush(import.meta.env.VITE_VAPID_PUBLIC_KEY, uid);
+
+    // Keep the stored preference honest in both directions: a device that now
+    // has a reachable subscription is genuinely enabled, and one that lost it
+    // must stop claiming to be. Only ever narrowed for a signed-in user —
+    // a guest has no server side to be registered with.
+    if (uid) {
+      const prefs = notificationService.getPreferences();
+      if (prefs.pushEnabled !== result.serverRegistered) {
+        notificationService.savePreferences({ pushEnabled: result.serverRegistered });
+      }
+    }
+    return result;
+  },
+
+  /**
+   * Reports each independently-failing stage of the push pipeline, so a
+   * non-arriving notification can be attributed instead of guessed at. The
+   * in-app test notification deliberately does NOT appear here: it calls
+   * `sendWebNotification` (a local `registration.showNotification`) and
+   * proves only that the OS will display a notification — it never touches
+   * VAPID, the server, or the service worker's `push` handler, so a passing
+   * test is not evidence that Web Push works.
+   *
+   * @param {string} [uid]
+   * @returns {Promise<{ permission: string, vapidConfigured: boolean, browserSubscription: boolean, serverRegistered: boolean|null, pushEnabled: boolean }>}
+   */
+  getPushDiagnostics: async (uid) => {
+    const permission = notificationService.getNotificationPermission();
+    const vapidConfigured = Boolean(import.meta.env.VITE_VAPID_PUBLIC_KEY);
+    const pushEnabled = Boolean(notificationService.getPreferences().pushEnabled);
+
+    let browserSubscription = false;
+    let endpoint = null;
+    const root = typeof window !== 'undefined' ? window : globalThis;
+    try {
+      if (root?.navigator && 'serviceWorker' in root.navigator) {
+        const registration = await root.navigator.serviceWorker.ready;
+        const subscription = await registration?.pushManager?.getSubscription();
+        browserSubscription = Boolean(subscription);
+        endpoint = subscription?.endpoint || null;
+      }
+    } catch {
+      browserSubscription = false;
+    }
+
+    // `pushSubscriptions` is write-only from the client (firestore.rules) —
+    // the Admin SDK is the only reader — so the client genuinely cannot read
+    // back whether its own token doc exists. Re-writing it is the only
+    // available proof, and it is idempotent (doc id is the endpoint hash).
+    let serverRegistered = null;
+    if (uid && browserSubscription) {
+      const registration = await root.navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      serverRegistered = await notificationService.savePushSubscriptionToServer(uid, subscription);
+    }
+
+    return { permission, vapidConfigured, browserSubscription, serverRegistered, pushEnabled, endpoint };
   },
 
   /**

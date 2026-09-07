@@ -4,7 +4,7 @@ import { screen, cleanup, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AccountModal } from './AccountModal';
 import { renderWithLanguage } from '../test-utils/renderWithProviders';
-import { DEFAULT_NOTIFICATION_PREFS } from '../services/notificationService';
+import { DEFAULT_NOTIFICATION_PREFS, notificationService } from '../services/notificationService';
 import { todayISO } from '../utils/dateUtils';
 
 // AuthContext and ThemeContext both reach for browser/Firebase state that is
@@ -294,3 +294,63 @@ describe('AccountModal — preferred navigation app', () => {
   });
 });
 
+
+
+describe('AccountModal — push subscription uid plumbing', () => {
+  // The ownership-ledger worked example in issue #64: a correct service-side
+  // fix reached through a call site that passed the wrong argument. Every push
+  // call here read `user?.uid`, but AuthContext's profile exposes the Firebase
+  // uid as `id` (buildCleanUserProfile), so `undefined` was passed and
+  // `subscribeToPush` skipped its `if (uid)` server-persist branch entirely —
+  // no row in `pushSubscriptions/{uid}/tokens`, nothing for a Cloud Function
+  // to send to, and a green "permission granted" in the UI regardless.
+  //
+  // Asserted at the component, not at the service, because the service was
+  // never the part that was wrong.
+  afterEach(() => {
+    delete globalThis.Notification;
+    vi.restoreAllMocks();
+    cleanup();
+  });
+
+  it('passes the signed-in uid through to the push subscription refresh', async () => {
+    globalThis.Notification = { permission: 'granted', requestPermission: vi.fn() };
+    const ensureSpy = vi
+      .spyOn(notificationService, 'ensurePushSubscription')
+      .mockResolvedValue({ subscribed: true, serverRegistered: true, subscription: {}, reason: null });
+    vi.spyOn(notificationService, 'getPushDiagnostics').mockResolvedValue({
+      permission: 'granted',
+      vapidConfigured: true,
+      browserSubscription: true,
+      serverRegistered: true,
+      pushEnabled: true
+    });
+
+    renderWithLanguage(
+      <AccountModal isOpen initialTab="notifications" onClose={vi.fn()} onShowToast={vi.fn()} />
+    );
+
+    await vi.waitFor(() => {
+      expect(ensureSpy).toHaveBeenCalledWith('user-42');
+    });
+  });
+
+  it('flags the unregistered stage instead of showing an unqualified success', async () => {
+    globalThis.Notification = { permission: 'granted', requestPermission: vi.fn() };
+    vi.spyOn(notificationService, 'ensurePushSubscription')
+      .mockResolvedValue({ subscribed: true, serverRegistered: false, subscription: {}, reason: 'server-write-failed' });
+    vi.spyOn(notificationService, 'getPushDiagnostics').mockResolvedValue({
+      permission: 'granted',
+      vapidConfigured: true,
+      browserSubscription: true,
+      serverRegistered: false,
+      pushEnabled: false
+    });
+
+    renderWithLanguage(
+      <AccountModal isOpen initialTab="notifications" onClose={vi.fn()} onShowToast={vi.fn()} />
+    );
+
+    expect(await screen.findByText(/Subscription registered on server/i)).toBeTruthy();
+  });
+});

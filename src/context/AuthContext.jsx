@@ -549,6 +549,36 @@ export function AuthProvider({ children }) {
     }
   }, [user]);
 
+  // Re-establish the Web Push subscription whenever a user becomes signed in.
+  //
+  // Sign-in is the only moment a uid exists to persist a subscription against,
+  // and until this ran the ONLY code path that ever created one was the
+  // "enable notifications" button — which AccountModal hides once permission
+  // is granted. A user who granted permission on a previous visit (or before
+  // server-side push existed) therefore had a granted permission, a working
+  // in-app test notification, and no row in `pushSubscriptions/{uid}/tokens`
+  // for any Cloud Function to send to.
+  //
+  // `ensurePushSubscription` never prompts — it returns immediately unless
+  // permission is already granted — so this cannot surprise a user who
+  // declined. Dynamically imported to keep the browser-only notification code
+  // out of the auth module's critical path.
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    import('../services/notificationService')
+      .then(({ notificationService }) => {
+        if (cancelled) return;
+        return notificationService.ensurePushSubscription(user.id);
+      })
+      .catch((err) => {
+        console.warn('[AuthContext] Push subscription refresh failed:', err?.message);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
   const syncProfileToFirestore = async (firebaseUser, customName = null, overrideProfile = null) => {
     if (!db || !firebaseUser) return null;
     const cleanUser = overrideProfile || buildCleanUserProfile(firebaseUser, customName);

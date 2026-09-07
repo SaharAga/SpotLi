@@ -64,6 +64,58 @@ describe('Service Worker Web Push and Click Handler', () => {
     );
   });
 
+  it('tags by packageId when the server sends it at the top level', async () => {
+    // This is the shape the Cloud Functions actually send
+    // (functions/src/newPackagePush.js builds a flat payload with no `data`
+    // key). Reading only `data.data.packageId` made every automatic push fall
+    // back to the shared tag 'deliveree-update', so each new notification
+    // replaced the previous one and only the last package was ever visible.
+    const event = {
+      data: {
+        json: () => ({
+          title: 'New Package Detected!',
+          body: 'Sunglasses — RR123456789IL',
+          packageId: 'pkg-gmail-abc',
+          trackingNumber: 'RR123456789IL',
+          url: '/?packageId=pkg-gmail-abc'
+        }),
+        text: () => 'fallback text'
+      },
+      waitUntil: vi.fn()
+    };
+
+    listeners.push(event);
+
+    expect(mockRegistration.showNotification).toHaveBeenCalledWith(
+      'New Package Detected!',
+      expect.objectContaining({ tag: 'pkg-pkg-gmail-abc' })
+    );
+  });
+
+  it('gives two separate packages distinct tags so neither replaces the other', async () => {
+    for (const pkgId of ['pkg-one', 'pkg-two']) {
+      listeners.push({
+        data: { json: () => ({ title: 'New Package', body: 'x', packageId: pkgId }), text: () => '' },
+        waitUntil: vi.fn()
+      });
+    }
+
+    const tags = mockRegistration.showNotification.mock.calls.map(([, opts]) => opts.tag);
+    expect(tags).toEqual(['pkg-pkg-one', 'pkg-pkg-two']);
+  });
+
+  it('falls back to the shared tag only when there is genuinely no packageId', async () => {
+    listeners.push({
+      data: { json: () => ({ title: 'Update', body: 'x' }), text: () => '' },
+      waitUntil: vi.fn()
+    });
+
+    expect(mockRegistration.showNotification).toHaveBeenCalledWith(
+      'Update',
+      expect.objectContaining({ tag: 'deliveree-update' })
+    );
+  });
+
   it('handles push event with plain text fallback', async () => {
     const waitUntilMock = vi.fn();
     const event = {

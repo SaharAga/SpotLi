@@ -39,7 +39,16 @@ self.addEventListener('push', (event) => {
     body: data.body || (data.notification && data.notification.body) || 'יש לך עדכון חדש לגבי חבילה',
     icon: data.icon || (data.notification && data.notification.icon) || '/icons/icon-192.png',
     badge: data.badge || '/icons/icon-192.png',
-    tag: data.tag || (data.data && data.data.packageId ? `pkg-${data.data.packageId}` : 'deliveree-update'),
+    // Read packageId from BOTH shapes. The server (functions/src/newPackagePush.js,
+    // updatePackagePush.js) sends it at the TOP level and sends no `data` key at
+    // all, so checking only `data.data.packageId` made every automatic push fall
+    // back to the shared tag 'deliveree-update' — and a shared tag means each new
+    // notification REPLACES the previous one. Two packages arriving together
+    // showed as one.
+    tag: data.tag || (() => {
+      const pkgId = (data.data && data.data.packageId) || data.packageId;
+      return pkgId ? `pkg-${pkgId}` : 'deliveree-update';
+    })(),
     data: data.data || {
       url: data.url || '/',
       packageId: data.packageId || null,
