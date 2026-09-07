@@ -31,9 +31,16 @@ service cloud.firestore {
         'store', 'createdAt', 'updatedAt', 'userId'
       ];
       
+      // Must stay in lockstep with VALID_STATUSES in src/utils/packageValidator.js
+      // (the source the Zod schema builds its enum from). These two encode the
+      // same invariant deliberately, but only this one is enforced: a status the
+      // client accepts and this list omits is written locally and then rejected
+      // here, so the package silently stops syncing to the cloud. The parity
+      // check in src/tests/integration/firestoreRulesContract.test.js fails if
+      // they drift.
       let validStatuses = [
         'ordered', 'shipped', 'in_transit', 'customs', 
-        'out_for_delivery', 'delivered', 'exception', 'archived'
+        'out_for_delivery', 'delivered', 'exception', 'returned_to_sender', 'archived'
       ];
 
       return data.keys().hasOnly(allowedKeys) &&
