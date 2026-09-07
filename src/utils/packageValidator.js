@@ -1,6 +1,6 @@
-import { CARRIERS, getCarrier } from '../types/carriers';
-import { STAGES, CATEGORIES } from '../types/stages';
-import { toLocalISODate } from './dateUtils';
+import { CARRIERS, getCarrier } from '../types/carriers.js';
+import { STAGES, CATEGORIES } from '../types/stages.js';
+import { toLocalISODate } from './dateUtils.js';
 // NOTE: this module deliberately does NOT import from '../schemas/packageSchema'.
 // packageSchema imports `sanitizeString` from here; importing back created a
 // circular dependency. The canonical status list therefore lives here and is

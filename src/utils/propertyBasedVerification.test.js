@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { sanitizeString, validatePackage, validatePackageList } from './packageValidator';
-import { parseSmartText, extractTrackingCandidates } from './smartParser';
+import { parseSmartText, extractTrackingCandidates, detectCarrierFromPhrasing } from './smartParser';
 import { CARRIER_LIST } from '../types/carriers';
 import { GOLD_STANDARD_CARRIER_SAMPLES } from './bistDiagnostics';
 import { deliveryService, TRANSITION_MATRIX, canTransition } from '../services/deliveryService';
@@ -204,9 +204,12 @@ describe('High-Assurance Property-Based Verification (fast-check)', () => {
       // the number as a low-confidence suggestion, but it must never reach
       // `verified` — the tier Smart Import fills in without asking the user.
       const noiseArbitrary = fc.stringMatching(/^[a-zA-Z0-9 א-ת,.:;!?-]{0,50}$/);
+      const unlabeledNoise = noiseArbitrary.filter(
+        (s) => !detectCarrierFromPhrasing(s) && !/\b(tracking|package|parcel|מעקב|שליחות|משלוח|חבילה)\b/i.test(s)
+      );
 
       fc.assert(
-        fc.property(noiseArbitrary, bareDigitTracking, noiseArbitrary, (prefix, digits, suffix) => {
+        fc.property(unlabeledNoise, bareDigitTracking, unlabeledNoise, (prefix, digits, suffix) => {
           const parsed = parseSmartText(`${prefix} ${digits} ${suffix}`);
           if (parsed.trackingNumber === digits) {
             expect(parsed.candidateStatus).not.toBe('verified');
