@@ -324,6 +324,30 @@ function PackageCardImpl({
                   <span>{t('redirectDetection.badge')}</span>
                 </span>
               )}
+              {pkg.shelfNumber && (
+                <span
+                  title={language === 'he' ? `מספר מדף: ${pkg.shelfNumber}` : `Shelf number: ${pkg.shelfNumber}`}
+                  className="ms-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono text-xs font-bold shrink-0"
+                >
+                  <span>{language === 'he' ? 'מדף' : 'Shelf'} {pkg.shelfNumber}</span>
+                </span>
+              )}
+              {pkg.localCarrier && pkg.localCarrier !== pkg.carrier && (
+                <span
+                  title={language === 'he' ? `הועבר לחלוקה מקומית: ${getCarrier(pkg.localCarrier).hebrewName} (${pkg.localTrackingNumber || ''})` : `Domestic handover: ${getCarrier(pkg.localCarrier).name}`}
+                  className="ms-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 text-xs font-medium shrink-0"
+                >
+                  <span>➔ {language === 'he' ? getCarrier(pkg.localCarrier).hebrewName : getCarrier(pkg.localCarrier).name}</span>
+                </span>
+              )}
+              {pkg.customsDetails?.required && pkg.customsDetails?.status !== 'paid' && (
+                <span
+                  title={language === 'he' ? 'נדרש תשלום מכס' : 'Customs payment required'}
+                  className="ms-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-bold shrink-0"
+                >
+                  <span>{language === 'he' ? 'מכס' : 'Customs'}</span>
+                </span>
+              )}
               {pkg.confidence === 'sender_reported' && (
                 <span
                   title={language === 'he'

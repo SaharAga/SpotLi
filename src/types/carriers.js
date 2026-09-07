@@ -87,6 +87,37 @@ function buildIsraelPostCheckpoints(data, trackNum) {
   ];
 }
 
+/**
+ * Maps Exelot last-mile courier names to Deliveree carrier IDs.
+ * @param {string} [lmp]
+ * @returns {string|null}
+ */
+export function mapExelotLocalCarrier(lmp = '') {
+  const clean = String(lmp || '').toLowerCase();
+  if (clean.includes('buzzr') || clean.includes('באזר')) return 'buzzr';
+  if (clean.includes('chita') || clean.includes('צ\'יטה') || clean.includes('cheetah')) return 'chita';
+  if (clean.includes('hfd') || clean.includes('איפוס') || clean.includes('epost')) return 'hfd';
+  if (clean.includes('post') || clean.includes('דואר')) return 'israel-post';
+  if (clean.includes('bar') || clean.includes('בר')) return 'bar-distribution';
+  return null;
+}
+
+/**
+ * Maps Cainiao destination courier code to Deliveree carrier IDs.
+ * @param {string} [cpCode]
+ * @returns {string|null}
+ */
+export function mapCainiaoLocalCarrier(cpCode = '') {
+  const code = String(cpCode || '').toUpperCase();
+  if (code.includes('POST_IL') || code.includes('ISRAEL_POST') || code.includes('IL_POST')) return 'israel-post';
+  if (code.includes('CHEETAH') || code.includes('CHITA')) return 'chita';
+  if (code.includes('EXELOT')) return 'exelot';
+  if (code.includes('BUZZR')) return 'buzzr';
+  if (code.includes('HFD')) return 'hfd';
+  if (code.includes('BAR')) return 'bar-distribution';
+  return null;
+}
+
 export const CARRIERS = {
   'israel-post': {
     id: 'israel-post',
@@ -112,13 +143,25 @@ export const CARRIERS = {
         const historyText = checkpoints.map((cp) => cp.title).join(' ') || data.laststatus || '';
         const stage = inferStageFromText(historyText);
 
+        const customsPaymentUrl = data.CustomsPaymentLink || data.customsPaymentLink || null;
+        const customsDetails = customsPaymentUrl ? {
+          required: true,
+          amount: data.CustomsAmount || data.customsAmount || null,
+          currency: 'ILS',
+          paymentUrl: customsPaymentUrl,
+          status: 'pending'
+        } : null;
+
         return {
           carrier: 'israel-post',
           tracked: true,
           status: stage,
           checkpoints,
           location: data.unitname || null,
-          estimatedDelivery: null
+          estimatedDelivery: null,
+          shelfNumber: data.Madaf || data.madaf || data.ShelfNumber || null,
+          pickupDeadline: data.PickupDaysLeft ? `${data.PickupDaysLeft} days` : null,
+          customsDetails
         };
       }
     },
@@ -392,6 +435,44 @@ export const CARRIERS = {
     website: 'https://exelot.com',
     getTrackingUrl: (trackNum) => `https://exelot.com/tracking/?num=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
+    liveTracking: {
+      endpoint: (trackNum) =>
+        `https://app.exelot.com/api/tracking/search?trackingNumber=${encodeURIComponent(trackNum)}`,
+      parse: (data, trackNum, { inferStageFromText }) => {
+        if (!data) return null;
+        const payload = data.data || data;
+        const events = payload.events || payload.trackingEvents || payload.checkpoints || [];
+        const checkpoints = Array.isArray(events)
+          ? events.map((ev, idx) => ({
+              id: `cp-xlt-${trackNum}-${idx}`.slice(0, 100),
+              title: ev.statusDescription || ev.eventDescription || ev.status || ev.description || '',
+              description: ev.details || ev.description || '',
+              descriptionHe: ev.statusDescriptionHe || ev.statusDescription || '',
+              location: ev.location || payload.current_pudo_name || 'Exelot',
+              timestamp: ev.eventDate || ev.timestamp || new Date().toISOString(),
+              isCompleted: true
+            }))
+          : [];
+
+        const lastEvent = checkpoints[0]?.title || payload.status || payload.currentStatus || '';
+        const stage = inferStageFromText(lastEvent);
+        const localCarrier = mapExelotLocalCarrier(payload.lastMileProvider);
+
+        return {
+          carrier: 'exelot',
+          tracked: true,
+          status: stage,
+          checkpoints,
+          location: payload.current_pudo_name || payload.location || null,
+          estimatedDelivery: payload.estimatedDeliveryDate || null,
+          localTrackingNumber: payload.lastMileTrackingNumber || payload.localNumber || null,
+          localCarrier,
+          shelfNumber: payload.shelfNumber || payload.bin || null,
+          pickupLocation: payload.current_pudo_name || null,
+          pickupHours: payload.current_pudo_additionalInformation || null
+        };
+      }
+    },
     patterns: [
       rule(/^XLT\d{9}$/i, { confidence: 'high', priority: 135 })
     ],
@@ -409,6 +490,42 @@ export const CARRIERS = {
     website: 'https://global.cainiao.com',
     getTrackingUrl: (trackNum) => `https://global.cainiao.com/newDetail.htm?mailNoList=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
+    liveTracking: {
+      endpoint: (trackNum) =>
+        `https://global.cainiao.com/global/detail.json?mailNos=${encodeURIComponent(trackNum)}&lang=en-US`,
+      parse: (data, trackNum, { inferStageFromText }) => {
+        if (!data || !data.module || !Array.isArray(data.module) || data.module.length === 0) return null;
+        const mod = data.module[0];
+        const detailList = mod.detailList || [];
+        const checkpoints = detailList.map((item, idx) => ({
+          id: `cp-cn-${trackNum}-${idx}`.slice(0, 100),
+          title: item.desc || item.standerdDesc || '',
+          description: item.desc || '',
+          descriptionHe: item.desc || '',
+          location: item.location || 'Cainiao',
+          timestamp: item.time ? new Date(item.time).toISOString() : new Date().toISOString(),
+          isCompleted: true
+        }));
+
+        const lastStatus = checkpoints[0]?.title || mod.status || '';
+        const stage = inferStageFromText(lastStatus);
+
+        const destCp = mod.destCpList?.[0];
+        const localTrackingNumber = destCp?.mailNo || mod.destMailNo || mod.realMailNo || null;
+        const localCarrier = mapCainiaoLocalCarrier(destCp?.cpCode || mod.destCpCode);
+
+        return {
+          carrier: 'cainiao',
+          tracked: true,
+          status: stage,
+          checkpoints,
+          location: mod.destCountry || null,
+          estimatedDelivery: mod.latestDeliveryTime ? new Date(mod.latestDeliveryTime).toISOString() : null,
+          localTrackingNumber,
+          localCarrier
+        };
+      }
+    },
     patterns: [
       // S10 ending in CN is checksummed; the Cainiao-specific prefixes are not,
       // so they report a passing checksum exactly as the previous branch did.

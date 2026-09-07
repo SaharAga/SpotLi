@@ -666,6 +666,33 @@ export function extractLockerPin(text) {
 }
 
 /**
+ * Extracts shelf number (מדף / מספר איסוף) from Hebrew and English SMS/notification text.
+ * Examples: מדף ג693, מדף: 412, מספר מדף: ג-693, במדף 12ב, shelf 42, bin #12
+ * @param {string} text 
+ * @returns {string}
+ */
+export function extractShelfNumber(text) {
+  if (!text || typeof text !== 'string') return '';
+
+  const patterns = [
+    /(?:(?:מספר\s+|מס['׳]?\s+)?(?:ב)?מדף(?:\s*(?:מספר|מס['׳]?))?)[\s:#*-]+([א-ת0-9]{1,4}(?:[/-][א-ת0-9]{1,4})?|[א-ת]?\d{1,4}[א-ת]?)(?:[^\S\r\n]|$|[.,;!])/i,
+    /(?:\b(?:shelf|bin)\s*(?:number|no|num|#)?)[\s:#*-]+([a-z0-9]{1,4}(?:-[a-z0-9]{1,4})?|[a-z]?\d{1,4}[a-z]?)(?:[^\S\r\n]|$|[.,;!])/i
+  ];
+
+  for (const pattern of patterns) {
+    const match = pattern.exec(text);
+    if (match && match[1]) {
+      const shelf = match[1].trim();
+      if (shelf && !/^(?:http|https|null|undefined)$/i.test(shelf)) {
+        return shelf;
+      }
+    }
+  }
+
+  return '';
+}
+
+/**
  * Extracts pickup location or locker info from Hebrew and English SMS/Email text snippets.
  * @param {string} text 
  * @returns {string}
@@ -1033,6 +1060,7 @@ export function parseSmartText(rawText) {
       notesHe: '',
       pickupLocation: '',
       lockerPin: '',
+      shelfNumber: '',
       store: '',
       storeHe: '',
       storeInfo: null
@@ -1055,6 +1083,7 @@ export function parseSmartText(rawText) {
   const pickupHours = extractOpeningHours(cleanText);
   const pickupPhone = extractPickupPhone(cleanText);
   const lockerPin = extractLockerPin(cleanText);
+  const shelfNumber = extractShelfNumber(cleanText);
   const phraseCarrier = detectCarrierFromPhrasing(cleanText);
 
   let bestTracking = '';
@@ -1241,6 +1270,7 @@ export function parseSmartText(rawText) {
       pickupHours,
       pickupPhone,
       lockerPin,
+      shelfNumber,
       isRedirected: redirectInfo.isRedirected || false,
       originalPickupLocation: redirectInfo.originalPickupLocation || undefined,
       redirectReason: redirectInfo.redirectReason || undefined,
@@ -1270,6 +1300,7 @@ export function parseSmartText(rawText) {
     pickupHours,
     pickupPhone,
     lockerPin,
+    shelfNumber,
     isRedirected: redirectInfo.isRedirected || false,
     originalPickupLocation: redirectInfo.originalPickupLocation || undefined,
     redirectReason: redirectInfo.redirectReason || undefined,

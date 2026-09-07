@@ -760,6 +760,29 @@ export function extractLockerPin(text = '') {
 }
 
 /**
+ * Extracts shelf number (מדף) if present in message body.
+ * @param {string} text
+ * @returns {string|null}
+ */
+export function extractShelfNumber(text = '') {
+  if (!text || typeof text !== 'string') return null;
+  const patterns = [
+    /(?:(?:מספר\s+|מס['׳]?\s+)?(?:ב)?מדף(?:\s*(?:מספר|מס['׳]?))?)[\s:#*-]+([א-ת0-9]{1,4}(?:[/-][א-ת0-9]{1,4})?|[א-ת]?\d{1,4}[א-ת]?)(?:[^\S\r\n]|$|[.,;!])/i,
+    /(?:\b(?:shelf|bin)\s*(?:number|no|num|#)?)[\s:#*-]+([a-z0-9]{1,4}(?:-[a-z0-9]{1,4})?|[a-z]?\d{1,4}[a-z]?)(?:[^\S\r\n]|$|[.,;!])/i
+  ];
+  for (const pattern of patterns) {
+    const match = pattern.exec(text);
+    if (match && match[1]) {
+      const shelf = match[1].trim();
+      if (shelf && !/^(?:http|https|null|undefined)$/i.test(shelf)) {
+        return shelf;
+      }
+    }
+  }
+  return null;
+}
+
+/**
  * Extracts pickup location or locker info from Hebrew and English SMS/Email text snippets.
  * @param {string} text 
  * @returns {string}
@@ -933,6 +956,7 @@ export function extractTrackingDetails(subject = '', body = '', from = '', optio
   const combinedText = `${subject} ${cleanBody} ${from}`.slice(0, 25000);
   const store = detectStore(from, combinedText);
   const lockerPin = extractLockerPin(combinedText);
+  const shelfNumber = extractShelfNumber(combinedText);
   const rawPickupLocation = extractPickupLocation(combinedText);
   const redirectInfo = extractRedirectInfo(combinedText);
   const pickupLocation = redirectInfo.newPickupLocation || rawPickupLocation;
@@ -1207,6 +1231,7 @@ export function extractTrackingDetails(subject = '', body = '', from = '', optio
       pickupHours: pickupHours || undefined,
       pickupPhone: pickupPhone || undefined,
       lockerPin,
+      shelfNumber,
       isRedirected: redirectInfo.isRedirected || undefined,
       originalPickupLocation: redirectInfo.originalPickupLocation || undefined,
       redirectReason: redirectInfo.redirectReason || undefined,
@@ -1233,6 +1258,7 @@ export function extractTrackingDetails(subject = '', body = '', from = '', optio
     origin: '',
     notes: '',
     lockerPin,
+    shelfNumber,
     status,
     confidence: trackingNumber ? confidence : 'none',
     candidates,

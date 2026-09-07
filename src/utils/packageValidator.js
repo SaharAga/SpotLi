@@ -1,6 +1,6 @@
-import { CARRIERS, getCarrier } from '../types/carriers';
-import { STAGES, CATEGORIES } from '../types/stages';
-import { toLocalISODate } from './dateUtils';
+import { CARRIERS, getCarrier } from '../types/carriers.js';
+import { STAGES, CATEGORIES } from '../types/stages.js';
+import { toLocalISODate } from './dateUtils.js';
 // NOTE: this module deliberately does NOT import from '../schemas/packageSchema'.
 // packageSchema imports `sanitizeString` from here; importing back created a
 // circular dependency. The canonical status list therefore lives here and is
@@ -274,6 +274,31 @@ export function validatePackage(pkg) {
 
   if (userId) {
     output.userId = userId;
+  }
+
+  if (safeObj.pickupCode) output.pickupCode = sanitizeString(safeObj.pickupCode, 50);
+  if (safeObj.pickupLocation) output.pickupLocation = sanitizeString(safeObj.pickupLocation, 250);
+  if (safeObj.pickupHours) output.pickupHours = sanitizeString(safeObj.pickupHours, 200);
+  if (safeObj.pickupPhone) output.pickupPhone = sanitizeString(safeObj.pickupPhone, 50);
+  if (safeObj.pickupDeadline) output.pickupDeadline = sanitizeString(safeObj.pickupDeadline, 50);
+  if (safeObj.returnDeadline) output.returnDeadline = sanitizeString(safeObj.returnDeadline, 50);
+  if (safeObj.returnNotes) output.returnNotes = sanitizeString(safeObj.returnNotes, 500);
+  if (safeObj.store) output.store = sanitizeString(safeObj.store, 100);
+  if (safeObj.shelfNumber) output.shelfNumber = sanitizeString(safeObj.shelfNumber, 50);
+  if (safeObj.localTrackingNumber) output.localTrackingNumber = sanitizeString(safeObj.localTrackingNumber, 100).toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+  if (safeObj.localCarrier) output.localCarrier = sanitizeString(safeObj.localCarrier, 50).toLowerCase();
+  if (Array.isArray(safeObj.aliases)) {
+    output.aliases = safeObj.aliases.map(a => sanitizeString(a, 100).toUpperCase().replace(/[^A-Z0-9_-]/g, '')).filter(Boolean).slice(0, 10);
+  }
+  if (safeObj.customsDetails && typeof safeObj.customsDetails === 'object' && !Array.isArray(safeObj.customsDetails)) {
+    const cd = safeObj.customsDetails;
+    output.customsDetails = {
+      amount: typeof cd.amount === 'number' ? cd.amount : undefined,
+      paymentUrl: sanitizeString(cd.paymentUrl, 500) || undefined,
+      isCleared: typeof cd.isCleared === 'boolean' ? cd.isCleared : undefined,
+      declarationNumber: sanitizeString(cd.declarationNumber, 100) || undefined,
+      handler: sanitizeString(cd.handler, 100) || undefined
+    };
   }
 
   return output;

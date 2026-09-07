@@ -28,7 +28,8 @@ service cloud.firestore {
         'checkpoints', 'pickupCode', 'pickupLocation', 'pickupHours', 'pickupPhone',
         'pickupDeadline', 'returnDeadline', 'returnNotes',
         'isRedirected', 'originalPickupLocation', 'redirectedAt', 'redirectReason',
-        'store', 'createdAt', 'updatedAt', 'userId'
+        'store', 'createdAt', 'updatedAt', 'userId',
+        'shelfNumber', 'localTrackingNumber', 'localCarrier', 'aliases', 'customsDetails'
       ];
       
       // Must stay in lockstep with VALID_STATUSES in src/utils/packageValidator.js
@@ -70,6 +71,11 @@ service cloud.firestore {
         (!('redirectedAt' in data) || (data.redirectedAt is string && data.redirectedAt.size() <= 50)) &&
         (!('redirectReason' in data) || (data.redirectReason is string && data.redirectReason.size() <= 100)) &&
         (!('store' in data) || (data.store is string && data.store.size() <= 100)) &&
+        (!('shelfNumber' in data) || (data.shelfNumber is string && data.shelfNumber.size() <= 50)) &&
+        (!('localTrackingNumber' in data) || (data.localTrackingNumber is string && data.localTrackingNumber.size() <= 100)) &&
+        (!('localCarrier' in data) || (data.localCarrier is string && data.localCarrier.size() <= 50)) &&
+        (!('aliases' in data) || (data.aliases is list && data.aliases.size() <= 10)) &&
+        (!('customsDetails' in data) || (data.customsDetails is map)) &&
         (!('isPinned' in data) || data.isPinned is bool) &&
         (!('isArchived' in data) || data.isArchived is bool) &&
         (!('checkpoints' in data) || (data.checkpoints is list && data.checkpoints.size() <= 50)) &&

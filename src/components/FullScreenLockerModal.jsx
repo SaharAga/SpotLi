@@ -123,13 +123,13 @@ export function FullScreenLockerModal({
   const whatsappProxyText = isBundled
     ? (language === 'he'
         ? `היי, אשמח שתיקח עבורי ${bundledList.length} חבילות!\nמיקום: ${pkg.pickupLocation || 'לא צוין'}\n\n` +
-          bundledList.map((item, idx) => `${idx + 1}. ${(item.titleHe || item.title)} — קוד: ${item.pickupCode || 'ללא קוד'} (${item.trackingNumber})`).join('\n')
+          bundledList.map((item, idx) => `${idx + 1}. ${(item.titleHe || item.title)} — קוד: ${item.pickupCode || 'ללא קוד'}${item.shelfNumber ? ` (מדף: ${item.shelfNumber})` : ''} (${item.trackingNumber})`).join('\n')
         : `Hey, could you pick up ${bundledList.length} packages for me?\nLocation: ${pkg.pickupLocation || 'N/A'}\n\n` +
-          bundledList.map((item, idx) => `${idx + 1}. ${item.title} — PIN: ${item.pickupCode || 'None'} (${item.trackingNumber})`).join('\n')
+          bundledList.map((item, idx) => `${idx + 1}. ${item.title} — PIN: ${item.pickupCode || 'None'}${item.shelfNumber ? ` (Shelf: ${item.shelfNumber})` : ''} (${item.trackingNumber})`).join('\n')
       )
     : (language === 'he'
-        ? `היי, אשמח שתיקח עבורי חבילה (${title})!\nקוד איסוף לוקר: ${pin || 'אין'}\nמיקום: ${pkg.pickupLocation || 'לא צוין'}`
-        : `Hey, could you pick up my package (${title})?\nLocker PIN: ${pin || 'N/A'}\nLocation: ${pkg.pickupLocation || 'N/A'}`
+        ? `היי, אשמח שתיקח עבורי חבילה (${title})!\nקוד איסוף לוקר: ${pin || 'אין'}${pkg.shelfNumber ? `\nמספר מדף: ${pkg.shelfNumber}` : ''}\nמיקום: ${pkg.pickupLocation || 'לא צוין'}`
+        : `Hey, could you pick up my package (${title})?\nLocker PIN: ${pin || 'N/A'}${pkg.shelfNumber ? `\nShelf: ${pkg.shelfNumber}` : ''}\nLocation: ${pkg.pickupLocation || 'N/A'}`
       );
 
   const whatsappProxyUrl = `https://wa.me/?text=${encodeURIComponent(whatsappProxyText)}`;
@@ -210,6 +210,17 @@ export function FullScreenLockerModal({
                     {item.trackingNumber}
                   </span>
                 </div>
+
+                {item.shelfNumber && (
+                  <div className="mb-3 px-3 py-1.5 rounded-2xl bg-amber-500/20 border border-amber-400/40 inline-flex items-center gap-2 shadow-sm">
+                    <span className="text-xs text-amber-300 font-bold uppercase tracking-wider">
+                      {language === 'he' ? 'מדף / מספר איסוף' : 'Shelf / Bin'}:
+                    </span>
+                    <span className="text-lg sm:text-xl font-mono font-black text-amber-200">
+                      {item.shelfNumber}
+                    </span>
+                  </div>
+                )}
 
                 <span className="text-xs text-emerald-400 uppercase tracking-widest font-black block mb-2">
                   {itemPin ? t('lockerMode.pickupPin') : t('locationBundling.pinCode')}

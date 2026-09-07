@@ -70,8 +70,65 @@ export function findPackageByTrackingNumber(packages, trackingNumber, excludeId 
 
   return packages.find(pkg => {
     if (!pkg || (excludeId && pkg.id === excludeId)) return false;
-    return normalizeTrackingNumber(pkg.trackingNumber) === canonical;
+    if (normalizeTrackingNumber(pkg.trackingNumber) === canonical) return true;
+    if (pkg.localTrackingNumber && normalizeTrackingNumber(pkg.localTrackingNumber) === canonical) return true;
+    if (Array.isArray(pkg.aliases) && pkg.aliases.some(a => normalizeTrackingNumber(a) === canonical)) return true;
+    return false;
   }) || null;
+}
+
+/**
+ * Merges new package details into an existing package entity (e.g. when connecting
+ * a domestic delivery or SMS alert to a global shipment).
+ *
+ * @param {object} existingPkg
+ * @param {object} incomingData
+ * @returns {object} Merged package
+ */
+export function mergePackageData(existingPkg, incomingData) {
+  if (!existingPkg) return incomingData;
+  if (!incomingData) return existingPkg;
+
+  const aliases = new Set(existingPkg.aliases || []);
+  if (incomingData.trackingNumber) aliases.add(incomingData.trackingNumber);
+  if (incomingData.localTrackingNumber) aliases.add(incomingData.localTrackingNumber);
+  if (Array.isArray(incomingData.aliases)) {
+    incomingData.aliases.forEach(a => aliases.add(a));
+  }
+  aliases.delete(existingPkg.trackingNumber);
+
+  let targetStatus = existingPkg.status;
+  if (incomingData.status && canTransition(existingPkg.status, incomingData.status)) {
+    targetStatus = incomingData.status;
+  }
+
+  const existingCheckpointIds = new Set((existingPkg.checkpoints || []).map(cp => cp.id));
+  const newCheckpoints = (incomingData.checkpoints || []).filter(cp => !existingCheckpointIds.has(cp.id));
+  const mergedCheckpoints = [...newCheckpoints, ...(existingPkg.checkpoints || [])];
+
+  const isDomesticCourier = incomingData.carrier && incomingData.carrier !== 'other' && incomingData.carrier !== existingPkg.carrier;
+  const localTrackingNumber = incomingData.localTrackingNumber || (isDomesticCourier ? incomingData.trackingNumber : null) || existingPkg.localTrackingNumber || null;
+  const localCarrier = incomingData.localCarrier || (isDomesticCourier ? incomingData.carrier : null) || existingPkg.localCarrier || null;
+
+  return {
+    ...existingPkg,
+    status: targetStatus,
+    localCarrier,
+    localTrackingNumber,
+    shelfNumber: incomingData.shelfNumber || existingPkg.shelfNumber || null,
+    pickupDeadline: incomingData.pickupDeadline || existingPkg.pickupDeadline || null,
+    pickupCode: incomingData.pickupCode || existingPkg.pickupCode || null,
+    pickupLocation: incomingData.pickupLocation || existingPkg.pickupLocation || null,
+    pickupHours: incomingData.pickupHours || existingPkg.pickupHours || null,
+    customsDetails: incomingData.customsDetails
+      ? { ...(existingPkg.customsDetails || {}), ...incomingData.customsDetails }
+      : existingPkg.customsDetails || null,
+    location: incomingData.location || existingPkg.location || null,
+    expectedDeliveryDate: incomingData.expectedDeliveryDate || existingPkg.expectedDeliveryDate || null,
+    aliases: Array.from(aliases),
+    checkpoints: mergedCheckpoints,
+    updatedAt: new Date().toISOString()
+  };
 }
 
 /**
@@ -101,6 +158,7 @@ export const deliveryService = {
   TRANSITION_MATRIX,
   normalizeTrackingNumber,
   findPackageByTrackingNumber,
+  mergePackageData,
   /**
    * Helper to derive the storage key for a user or guest
    */
@@ -390,11 +448,24 @@ export const deliveryService = {
       targetStatus = res.status;
     }
 
+    const updatedAliases = new Set(pkg.aliases || []);
+    if (res.localTrackingNumber) updatedAliases.add(res.localTrackingNumber);
+    updatedAliases.delete(pkg.trackingNumber);
+
     const updated = {
       ...pkg,
       status: targetStatus,
       checkpoints: mergedCheckpoints,
       expectedDeliveryDate: res.expectedDeliveryDate || pkg.expectedDeliveryDate,
+      shelfNumber: res.shelfNumber || pkg.shelfNumber || null,
+      localTrackingNumber: res.localTrackingNumber || pkg.localTrackingNumber || null,
+      localCarrier: res.localCarrier || pkg.localCarrier || null,
+      pickupDeadline: res.pickupDeadline || pkg.pickupDeadline || null,
+      customsDetails: res.customsDetails
+        ? { ...(pkg.customsDetails || {}), ...res.customsDetails }
+        : pkg.customsDetails || null,
+      location: res.location || pkg.location || null,
+      aliases: Array.from(updatedAliases),
       updatedAt: new Date().toISOString()
     };
 

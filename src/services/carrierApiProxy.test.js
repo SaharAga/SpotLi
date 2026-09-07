@@ -86,7 +86,7 @@ describe('carrierApiProxy Service', () => {
     });
 
     it('never fabricates checkpoints for any unsupported carrier', async () => {
-      const carriers = ['chita', 'hfd', 'boxit', 'cainiao', 'dhl', 'fedex', 'ups', 'usps', 'other'];
+      const carriers = ['chita', 'hfd', 'boxit', 'dhl', 'fedex', 'ups', 'usps', 'other'];
 
       for (const carrierId of carriers) {
         const res = await fetchLiveCarrierTracking('XX123456789XX', carrierId, true);
@@ -117,6 +117,8 @@ describe('carrierApiProxy Service', () => {
 
     it('identifies which carriers have a live integration', () => {
       expect(isLiveTrackingSupported('israel-post')).toBe(true);
+      expect(isLiveTrackingSupported('exelot')).toBe(true);
+      expect(isLiveTrackingSupported('cainiao')).toBe(true);
       expect(isLiveTrackingSupported('dhl')).toBe(false);
       expect(isLiveTrackingSupported('other')).toBe(false);
     });
@@ -202,6 +204,90 @@ describe('carrierApiProxy Service', () => {
       expect(record.checkpoints).toHaveLength(1);
       expect(record.checkpoints[0].title).toBe('בדרך');
       expect(record.checkpoints[0].description).toBe('some free text log');
+    });
+
+    it('extracts shelfNumber, pickupDeadline, and customsDetails from israel-post gateway', () => {
+      const { parse } = CARRIERS['israel-post'].liveTracking;
+      const record = parse(
+        {
+          itemcode: 'RS948219481IL',
+          laststatus: 'ממתין לאיסוף בסוכנות הדואר',
+          unitname: 'סוכנות דואר מרכז',
+          Madaf: 'ג693',
+          PickupDaysLeft: 5,
+          CustomsPaymentLink: 'https://mypost.israelpost.co.il/customs/pay?id=123',
+          CustomsAmount: 48.5
+        },
+        'RS948219481IL',
+        { inferStageFromText }
+      );
+      expect(record.shelfNumber).toBe('ג693');
+      expect(record.pickupDeadline).toBe('5 days');
+      expect(record.customsDetails).toEqual({
+        required: true,
+        amount: 48.5,
+        currency: 'ILS',
+        paymentUrl: 'https://mypost.israelpost.co.il/customs/pay?id=123',
+        status: 'pending'
+      });
+    });
+
+    it('parses Exelot liveTracking payload and resolves local carrier handover', () => {
+      const { parse } = CARRIERS['exelot'].liveTracking;
+      const record = parse(
+        {
+          data: {
+            currentStatus: 'מוכן לאיסוף בלוקר',
+            lastMileProvider: 'Buzzr',
+            lastMileTrackingNumber: 'BZR9842109',
+            current_pudo_name: 'לוקר באזר סוקולוב 12',
+            shelfNumber: '412',
+            events: [
+              { statusDescription: 'מוכן לאיסוף בלוקר', eventDate: '2026-08-04T12:00:00Z' },
+              { statusDescription: 'הגיע לנקודת חלוקה', eventDate: '2026-08-04T10:00:00Z' }
+            ]
+          }
+        },
+        'XLT124778035',
+        { inferStageFromText }
+      );
+      expect(record.tracked).toBe(true);
+      expect(record.carrier).toBe('exelot');
+      expect(record.localCarrier).toBe('buzzr');
+      expect(record.localTrackingNumber).toBe('BZR9842109');
+      expect(record.shelfNumber).toBe('412');
+      expect(record.pickupLocation).toBe('לוקר באזר סוקולוב 12');
+      expect(record.checkpoints).toHaveLength(2);
+      expect(record.status).toBe('out_for_delivery');
+    });
+
+    it('parses Cainiao liveTracking payload and resolves destination courier handover', () => {
+      const { parse } = CARRIERS['cainiao'].liveTracking;
+      const record = parse(
+        {
+          module: [
+            {
+              status: 'Arrived at destination country',
+              destCountry: 'Israel',
+              destCpList: [
+                { cpCode: 'POST_IL', mailNo: 'RU0126608087Z' }
+              ],
+              detailList: [
+                { desc: 'Out for delivery in destination country', time: 1722770000000 },
+                { desc: 'Arrived in destination country', time: 1722760000000 }
+              ]
+            }
+          ]
+        },
+        'LP00582910482CN',
+        { inferStageFromText }
+      );
+      expect(record.tracked).toBe(true);
+      expect(record.carrier).toBe('cainiao');
+      expect(record.localCarrier).toBe('israel-post');
+      expect(record.localTrackingNumber).toBe('RU0126608087Z');
+      expect(record.checkpoints).toHaveLength(2);
+      expect(record.status).toBe('out_for_delivery');
     });
   });
 });

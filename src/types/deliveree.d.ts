@@ -85,6 +85,17 @@ export interface Package {
   notesHe?: string;
   isPinned: boolean;
   isArchived: boolean;
+  shelfNumber?: string;
+  localTrackingNumber?: string;
+  localCarrier?: string;
+  aliases?: string[];
+  customsDetails?: {
+    amount?: number;
+    paymentUrl?: string;
+    isCleared?: boolean;
+    declarationNumber?: string;
+    handler?: string;
+  };
   checkpoints: Checkpoint[];
   createdAt: string;
   updatedAt: string;
@@ -111,6 +122,17 @@ export interface PackageInput {
   notesHe?: string;
   isPinned?: boolean;
   isArchived?: boolean;
+  shelfNumber?: string;
+  localTrackingNumber?: string;
+  localCarrier?: string;
+  aliases?: string[];
+  customsDetails?: {
+    amount?: number;
+    paymentUrl?: string;
+    isCleared?: boolean;
+    declarationNumber?: string;
+    handler?: string;
+  };
   checkpoints?: Checkpoint[];
   createdAt?: string;
   updatedAt?: string;

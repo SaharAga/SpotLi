@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ExternalLink, Copy, Check, Calendar, MapPin, Plus, Truck, Clock, RefreshCw, Info, RotateCcw, Edit3, AlertCircle, ChevronDown, ChevronUp, Flag, Maximize2, Layers, Phone, Trash2, ArrowLeft } from 'lucide-react';
+import { X, ExternalLink, Copy, Check, Calendar, MapPin, Plus, Truck, Clock, RefreshCw, Info, RotateCcw, Edit3, AlertCircle, ChevronDown, ChevronUp, Flag, Maximize2, Layers, Phone, Trash2, ArrowLeft, ShieldAlert } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { getCarrier } from '../types/carriers';
 import { detectStore } from '../utils/storeDetector';
@@ -533,6 +533,31 @@ export function PackageDetailModal({
                     </div>
                   )}
 
+                  {pkg.shelfNumber && (
+                    <div className="flex items-center gap-3">
+                      <div className="flex flex-col">
+                        <span className="text-xs text-amber-400 uppercase tracking-widest font-extrabold mb-1">
+                          {language === 'he' ? 'מספר מדף / איסוף' : 'Shelf / Bin Number'}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl sm:text-3xl font-black text-amber-200 tracking-wider font-mono">
+                            {pkg.shelfNumber}
+                          </span>
+                          <button
+                            onClick={async () => {
+                              const success = await copyToClipboard(pkg.shelfNumber);
+                              if (success && onShowToast) onShowToast(language === 'he' ? 'מספר מדף הועתק' : 'Shelf number copied', 'success');
+                            }}
+                            className="p-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 transition-colors"
+                            title={language === 'he' ? 'העתק מספר מדף' : 'Copy shelf number'}
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Deadline & Live Opening Hours Badges */}
                   <div className="flex flex-wrap items-center gap-2 mt-1">
                     {pickupCountdown.hasDeadline && (
@@ -781,24 +806,84 @@ export function PackageDetailModal({
           {/* 1-Click Courier & WhatsApp Actions Hub */}
           <CourierActionHub pkg={pkg} onShowToast={onShowToast} />
 
+          {/* Customs Clearance Banner */}
+          {pkg.customsDetails?.required && (
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-rose-950/50 via-slate-900 to-rose-950/30 border border-rose-500/40 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-rose-500/20 text-rose-400">
+                  <ShieldAlert className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-rose-200">
+                    {language === 'he' ? 'נדרש תשלום / שחרור ממכס' : 'Customs Payment / Clearance Required'}
+                  </h4>
+                  <p className="text-xs text-rose-300/80">
+                    {pkg.customsDetails.amount
+                      ? (language === 'he' ? `סכום לתשלום: ${pkg.customsDetails.amount} ${pkg.customsDetails.currency || '₪'}` : `Amount due: ${pkg.customsDetails.amount} ${pkg.customsDetails.currency || 'ILS'}`)
+                      : (language === 'he' ? 'החבילה ממתינה לתשלום מכס' : 'Package awaiting customs settlement')}
+                  </p>
+                </div>
+              </div>
+              {pkg.customsDetails.paymentUrl && (
+                <a
+                  href={pkg.customsDetails.paymentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-md shadow-rose-900/30 min-h-[48px]"
+                >
+                  <span>{language === 'he' ? 'מעבר לתשלום המכס' : 'Pay Customs Online'}</span>
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              )}
+            </div>
+          )}
+
           {/* Quick Tracking & Official Link Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-slate-950/80 border border-slate-800">
-            <div className="flex items-center gap-3">
-              <div className="flex flex-col">
-                <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
-                  {t('card.trackingNumber')}
-                </span>
-                <span className="font-mono text-base font-bold text-slate-200">
-                  {pkg.trackingNumber}
-                </span>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col">
+                  <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
+                    {t('card.trackingNumber')}
+                  </span>
+                  <span className="font-mono text-base font-bold text-slate-200">
+                    {pkg.trackingNumber}
+                  </span>
+                </div>
+                <button
+                  onClick={handleCopy}
+                  className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                  title={t('card.copyTracking')}
+                >
+                  {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                </button>
               </div>
-              <button
-                onClick={handleCopy}
-                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
-                title={t('card.copyTracking')}
-              >
-                {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-              </button>
+
+              {pkg.localTrackingNumber && (
+                <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-slate-800/80 text-xs">
+                  <span className="text-slate-400 font-medium">
+                    {language === 'he' ? 'חלוקה מקומית בארץ:' : 'Domestic courier:'}
+                  </span>
+                  <span className="font-mono font-bold text-cyan-300">
+                    {pkg.localTrackingNumber}
+                  </span>
+                  {pkg.localCarrier && (
+                    <span className="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-semibold">
+                      {language === 'he' ? getCarrier(pkg.localCarrier).hebrewName : getCarrier(pkg.localCarrier).name}
+                    </span>
+                  )}
+                  <button
+                    onClick={async () => {
+                      const success = await copyToClipboard(pkg.localTrackingNumber);
+                      if (success && onShowToast) onShowToast(language === 'he' ? 'מספר מעקב מקומי הועתק' : 'Local tracking number copied', 'success');
+                    }}
+                    className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+                    title={language === 'he' ? 'העתק מספר מעקב מקומי' : 'Copy local tracking'}
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-2">
