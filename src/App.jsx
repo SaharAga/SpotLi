@@ -7,7 +7,7 @@ import { PackageCard } from './components/PackageCard';
 import { PackageTable } from './components/PackageTable';
 import { LegalConsentGate } from './components/LegalConsentGate';
 import { ModalLoadingFallback } from './components/ModalLoadingFallback';
-import { findPackageByTrackingNumber } from './services/deliveryService';
+import { findPackageByTrackingNumber, mergePackageData } from './services/deliveryService';
 import { deriveMood } from './utils/ambientMood';
 
 /**
@@ -611,12 +611,15 @@ export function DashboardContent() {
 
     let changedPkg;
     if (existingPkg) {
-      // Merge/enrich existing package data while preserving existing ID and history
+      // Merge/enrich existing package data (domestic handover, shelf number, aliases, checkpoints)
+      const isDirectEdit = pkgData.id && pkgData.id === existingPkg.id;
+      const merged = mergePackageData(existingPkg, pkgData);
       changedPkg = {
-        ...existingPkg,
-        ...pkgData,
+        ...merged,
+        ...(isDirectEdit ? pkgData : {}),
         id: targetId,
-        checkpoints: pkgData.checkpoints?.length ? pkgData.checkpoints : existingPkg.checkpoints,
+        aliases: merged.aliases,
+        checkpoints: pkgData.checkpoints?.length ? pkgData.checkpoints : merged.checkpoints,
         userId: user?.id || existingPkg.userId,
         updatedAt: new Date().toISOString()
       };

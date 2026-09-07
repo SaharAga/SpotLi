@@ -48,6 +48,7 @@ export function AddEditPackageModal({
   const [pickupLocation, setPickupLocation] = useState('');
   const [pickupHours, setPickupHours] = useState('');
   const [pickupPhone, setPickupPhone] = useState('');
+  const [shelfNumber, setShelfNumber] = useState('');
   const [isRedirected, setIsRedirected] = useState(false);
   const [originalPickupLocation, setOriginalPickupLocation] = useState('');
   const [redirectReason, setRedirectReason] = useState('');
@@ -108,6 +109,7 @@ export function AddEditPackageModal({
       setNotes(editPackage.notes || '');
       setStatus(editPackage.status || 'in_transit');
       setPickupCode(editPackage.pickupCode || '');
+      setShelfNumber(editPackage.shelfNumber || '');
       setPickupLocation(editPackage.pickupLocation || '');
       setPickupHours(editPackage.pickupHours || '');
       setPickupPhone(editPackage.pickupPhone || '');
@@ -129,6 +131,7 @@ export function AddEditPackageModal({
       const category = initialValues.category || 'electronics';
       const pickupLocation = initialValues.pickupLocation || '';
       const pickupCode = initialValues.pickupCode || initialValues.lockerPin || '';
+      const shelfNumberVal = initialValues.shelfNumber || '';
       const pickupHours = initialValues.pickupHours || '';
       const pickupPhone = initialValues.pickupPhone || '';
       const isRedirected = initialValues.isRedirected || false;
@@ -157,6 +160,7 @@ export function AddEditPackageModal({
       setNotes(notes);
       setStatus(status);
       setPickupCode(pickupCode);
+      setShelfNumber(shelfNumberVal);
       setPickupLocation(pickupLocation);
       setPickupHours(pickupHours);
       setPickupPhone(pickupPhone);
@@ -191,6 +195,7 @@ export function AddEditPackageModal({
       setNotes('');
       setStatus('in_transit');
       setPickupCode('');
+      setShelfNumber('');
       setPickupLocation('');
       setPickupHours('');
       setPickupPhone('');
@@ -311,6 +316,7 @@ export function AddEditPackageModal({
       notesHe: notes.trim(),
       status: status,
       pickupCode: pickupCode.trim(),
+      shelfNumber: shelfNumber.trim() || undefined,
       pickupLocation: pickupLocation.trim(),
       pickupHours: pickupHours.trim(),
       pickupPhone: pickupPhone.trim(),
@@ -320,6 +326,10 @@ export function AddEditPackageModal({
       pickupDeadline: pickupDeadline.trim(),
       returnDeadline: returnDeadline.trim(),
       returnNotes: returnNotes.trim(),
+      localTrackingNumber: editPackage?.localTrackingNumber || initialValues?.localTrackingNumber || undefined,
+      localCarrier: editPackage?.localCarrier || initialValues?.localCarrier || undefined,
+      aliases: editPackage?.aliases || initialValues?.aliases || undefined,
+      customsDetails: editPackage?.customsDetails || initialValues?.customsDetails || undefined,
       isPinned: editPackage ? editPackage.isPinned : false,
       isArchived: editPackage ? editPackage.isArchived : false,
       checkpoints: editPackage?.checkpoints || [
@@ -613,7 +623,7 @@ export function AddEditPackageModal({
         <div className="space-y-4 pt-4 border-t border-slate-800">
           <h3 className="text-sm font-bold text-slate-200">{language === 'he' ? 'פרטי איסוף ולוקר (אופציונלי)' : 'Pickup & Locker Details (Optional)'}</h3>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
                 {language === 'he' ? 'קוד איסוף' : 'Pickup Code'}
@@ -623,6 +633,18 @@ export function AddEditPackageModal({
                 value={pickupCode}
                 onChange={(e) => setPickupCode(e.target.value)}
                 placeholder={language === 'he' ? 'למשל: 12345' : 'e.g. 12345'}
+                className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors min-h-[48px]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                {language === 'he' ? 'מספר מדף / תא' : 'Shelf / Bin #'}
+              </label>
+              <input
+                type="text"
+                value={shelfNumber}
+                onChange={(e) => setShelfNumber(e.target.value)}
+                placeholder={language === 'he' ? 'למשל: ג693 או 12' : 'e.g. B-12 or 412'}
                 className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors min-h-[48px]"
               />
             </div>

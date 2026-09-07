@@ -329,6 +329,7 @@ export function SmartImportModal({
         destination: parsed.destination || 'Israel',
         pickupLocation: parsed.pickupLocation || '',
         pickupCode: parsed.lockerPin || parsed.pickupCode || '',
+        shelfNumber: parsed.shelfNumber || '',
         pickupHours: parsed.pickupHours || '',
         pickupPhone: parsed.pickupPhone || '',
         isRedirected: parsed.isRedirected || false,
@@ -629,6 +630,13 @@ export function SmartImportModal({
                       <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
                         <span className="text-xs text-slate-500 uppercase font-bold">{language === 'he' ? 'נקודת איסוף' : 'Pickup Point'}</span>
                         <p className="font-semibold text-amber-300 mt-0.5">{parsed.pickupLocation}</p>
+                      </div>
+                    )}
+
+                    {parsed.shelfNumber && (
+                      <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+                        <span className="text-xs text-slate-500 uppercase font-bold">{language === 'he' ? 'מספר מדף' : 'Shelf Number'}</span>
+                        <p className="font-mono font-bold text-amber-300 mt-0.5">{parsed.shelfNumber}</p>
                       </div>
                     )}
                   </div>

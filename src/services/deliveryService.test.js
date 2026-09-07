@@ -512,13 +512,45 @@ describe('Delivery Service and Storage Persistence', () => {
 
       const pkgs = [
         { id: "pkg-1", trackingNumber: "RS 123 456 789 IL" },
-        { id: "pkg-2", trackingNumber: "LP-001-998" }
+        { id: "pkg-2", trackingNumber: "LP-001-998", localTrackingNumber: "RU0126608087Z", aliases: ["AE123456"] }
       ];
 
       expect(deliveryService.findPackageByTrackingNumber(pkgs, "rs123456789il")).toEqual(pkgs[0]);
       expect(deliveryService.findPackageByTrackingNumber(pkgs, "LP001998")).toEqual(pkgs[1]);
+      expect(deliveryService.findPackageByTrackingNumber(pkgs, "RU0126608087Z")).toEqual(pkgs[1]);
+      expect(deliveryService.findPackageByTrackingNumber(pkgs, "ae-123-456")).toEqual(pkgs[1]);
       expect(deliveryService.findPackageByTrackingNumber(pkgs, "rs-123-456-789-il", "pkg-1")).toBeNull();
       expect(deliveryService.findPackageByTrackingNumber(pkgs, "NONEXISTENT")).toBeNull();
+    });
+
+    it('merges domestic courier data and shelf number into existing global shipment via mergePackageData', () => {
+      const existing = {
+        id: 'pkg-global-1',
+        title: 'AliExpress order',
+        trackingNumber: 'LP00582910482CN',
+        carrier: 'cainiao',
+        status: 'in_transit',
+        aliases: []
+      };
+
+      const incoming = {
+        trackingNumber: 'RU0126608087Z',
+        carrier: 'israel-post',
+        status: 'out_for_delivery',
+        shelfNumber: 'ג693',
+        pickupLocation: 'סוכנות דואר גבעתיים'
+      };
+
+      const merged = deliveryService.mergePackageData(existing, incoming);
+      expect(merged.id).toBe('pkg-global-1');
+      expect(merged.trackingNumber).toBe('LP00582910482CN');
+      expect(merged.carrier).toBe('cainiao');
+      expect(merged.localCarrier).toBe('israel-post');
+      expect(merged.localTrackingNumber).toBe('RU0126608087Z');
+      expect(merged.shelfNumber).toBe('ג693');
+      expect(merged.pickupLocation).toBe('סוכנות דואר גבעתיים');
+      expect(merged.status).toBe('out_for_delivery');
+      expect(merged.aliases).toContain('RU0126608087Z');
     });
 
     it('handles null, undefined, or unknown state inputs safely', () => {

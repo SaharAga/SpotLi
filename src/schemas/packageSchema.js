@@ -52,6 +52,17 @@ export const packageSchema = z.object({
   redirectedAt: z.string().max(50).optional().transform(s => (s ? sanitizeString(s, 50) : undefined)),
   redirectReason: z.string().max(100).optional().transform(s => (s ? sanitizeString(s, 100) : undefined)),
   store: z.string().max(100).optional().transform(s => (s ? sanitizeString(s, 100) : undefined)),
+  shelfNumber: z.string().max(50).optional().transform(s => (s ? sanitizeString(s, 50) : undefined)),
+  localTrackingNumber: z.string().max(100).optional().transform(s => (s ? sanitizeString(s, 100).toUpperCase().replace(/[^A-Z0-9_-]/g, '') : undefined)),
+  localCarrier: z.string().max(50).optional().transform(s => (s ? sanitizeString(s, 50).toLowerCase() : undefined)),
+  aliases: z.array(z.string().max(100)).max(10).optional().default([]),
+  customsDetails: z.object({
+    amount: z.number().optional(),
+    paymentUrl: z.string().max(500).optional(),
+    isCleared: z.boolean().optional(),
+    declarationNumber: z.string().max(100).optional(),
+    handler: z.string().max(100).optional()
+  }).optional(),
   isPinned: z.boolean().default(false),
   isArchived: z.boolean().default(false),
   checkpoints: z.array(checkpointSchema).max(50).default([]),
@@ -226,6 +237,30 @@ export const repairingPackageSchema = z.preprocess(
     redirectedAt: repairedString(50),
     redirectReason: repairedString(100),
     store: repairedString(100),
+    shelfNumber: repairedString(50),
+    localTrackingNumber: z.unknown().optional().transform((value) => {
+      const cleaned = sanitizeString(value, 100).toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+      return cleaned || undefined;
+    }),
+    localCarrier: repairedEnum(VALID_CARRIER_IDS, undefined),
+    aliases: z.unknown().optional().transform((value) => {
+      if (!Array.isArray(value)) return [];
+      return value
+        .map((x) => sanitizeString(x, 100).toUpperCase().replace(/[^A-Z0-9_-]/g, ''))
+        .filter(Boolean)
+        .slice(0, 10);
+    }),
+    customsDetails: z.unknown().optional().transform((val) => {
+      if (!val || typeof val !== 'object' || Array.isArray(val)) return undefined;
+      const cd = val;
+      return {
+        amount: typeof cd.amount === 'number' ? cd.amount : undefined,
+        paymentUrl: sanitizeString(cd.paymentUrl, 500) || undefined,
+        isCleared: typeof cd.isCleared === 'boolean' ? cd.isCleared : undefined,
+        declarationNumber: sanitizeString(cd.declarationNumber, 100) || undefined,
+        handler: sanitizeString(cd.handler, 100) || undefined
+      };
+    }),
     isPinned: z.unknown().optional().transform(Boolean),
     isArchived: z.unknown().optional().transform(Boolean),
     checkpoints: z.unknown().optional().transform((value) => {

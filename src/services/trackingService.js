@@ -138,7 +138,13 @@ export async function fetchTrackingUpdates(trackingNumber, carrierId, bypassRate
       carrier: detectedCarrier,
       status: trackingData.status,
       checkpoints: trackingData.checkpoints,
-      expectedDeliveryDate: trackingData.estimatedDelivery
+      expectedDeliveryDate: trackingData.estimatedDelivery,
+      shelfNumber: trackingData.shelfNumber || null,
+      localTrackingNumber: trackingData.localTrackingNumber || null,
+      localCarrier: trackingData.localCarrier || null,
+      customsDetails: trackingData.customsDetails || null,
+      pickupDeadline: trackingData.pickupDeadline || null,
+      location: trackingData.location || null
     };
   } catch (err) {
     return {
