@@ -112,7 +112,7 @@ describe('Service Worker Web Push and Click Handler', () => {
 
     expect(mockRegistration.showNotification).toHaveBeenCalledWith(
       'Update',
-      expect.objectContaining({ tag: 'deliveree-update' })
+      expect.objectContaining({ tag: 'spotli-update' })
     );
   });
 
