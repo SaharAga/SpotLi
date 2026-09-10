@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  Package, Sparkles, Link2, BarChart3, MessageSquare,
+  Sparkles, Link2, BarChart3, MessageSquare,
   ShieldCheck, Info, Download, Upload, RotateCcw, Sun, Moon,
   User, Settings, X, MapPin
 } from 'lucide-react';
@@ -128,8 +128,8 @@ export function SideNavDrawer({
         {/* Drawer Header */}
         <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-blue-600/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-bold">
-              <Package className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center overflow-hidden shadow-sm">
+              <img src="/icons/app-icon.png" alt="SpotLi" className="w-full h-full object-cover" />
             </div>
             <div>
               <h3 className="font-bold text-sm text-slate-100">{APP_NAME} Pro</h3>
