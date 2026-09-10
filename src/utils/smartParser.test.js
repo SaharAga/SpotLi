@@ -355,6 +355,22 @@ describe('smartParser - parseSmartText', () => {
       expect(pkgs).toHaveLength(1);
       expect(pkgs[0].trackingNumber).toBe('1Z9999999999999999');
     });
+
+    it('extracts specific item name and order number from pasted order confirmation text', () => {
+      const text = 'AliExpress Order #818274917401\nYour order for "Keychron K2 Keyboard" has shipped!\nTracking: LP00582910482CN';
+      const res = parseSmartText(text);
+      expect(res.trackingNumber).toBe('LP00582910482CN');
+      expect(res.title).toBe('AliExpress - Keychron K2 Keyboard');
+      expect(res.orderNumber).toBe('818274917401');
+    });
+
+    it('extracts Hebrew item name from label text', () => {
+      const text = 'ההזמנה שלך מאליאקספרס מספר הזמנה: 9988776655\nמוצר: אוזניות בלוטוס אלחוטיות\nמספר מעקב: RU0126608087Z';
+      const res = parseSmartText(text);
+      expect(res.trackingNumber).toBe('RU0126608087Z');
+      expect(res.title).toContain('אוזניות בלוטוס אלחוטיות');
+      expect(res.orderNumber).toBe('9988776655');
+    });
   });
 });
 

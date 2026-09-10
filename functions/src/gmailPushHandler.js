@@ -26,6 +26,12 @@ import {
 } from './gmailPackageSync.js';
 import { logUsageEvent } from './analyticsEvents.js';
 import { safeCompareTokens } from './inboundEmailHandler.js';
+import {
+  findExistingOrderMatch,
+  isGenericPackageTitle,
+  isValidOrderNumber,
+  fetchOrderConfirmationTitleFromGmail
+} from './orderCorrelationService.js';
 
 /**
  * @param {{ db: FirebaseFirestore.Firestore, clientSecret: string, pushToken: string, geminiApiKey?: string }} deps
@@ -121,6 +127,7 @@ export async function syncHistoryForConnection({ db, connection, clientSecret, n
   const trackingNumberToDocId = new Map();
   const existingPackagesMap = new Map();
   const storeToOrderStatusDocId = new Map();
+  const orderNumberToDocMap = new Map();
   for (const d of existingSnap.docs) {
     const data = d.data() || {};
     if (data.trackingNumber) {
@@ -131,8 +138,12 @@ export async function syncHistoryForConnection({ db, connection, clientSecret, n
     if (data.source === 'gmail_sync_order_status' && data.store) {
       storeToOrderStatusDocId.set(String(data.store).toUpperCase(), { id: d.id, status: data.status });
     }
+    if (data.orderNumber) {
+      orderNumberToDocMap.set(String(data.orderNumber).trim(), { id: d.id, data });
+    }
   }
   const existingTrackingNumbers = new Set(trackingNumberToDocId.keys());
+  const crossLookupBudget = { used: 0, max: 2 };
 
   // One shared budget across this whole push batch (not per-message) so a
   // single burst of history can't run through the entire daily AI cap by
@@ -215,10 +226,56 @@ export async function syncHistoryForConnection({ db, connection, clientSecret, n
     if (!pkgs || pkgs.length === 0) continue;
 
     for (const pkg of pkgs) {
+      // 1. Tier 1: In-Memory Order Match (95%+ Fast Path)
+      if (pkg.orderNumber) {
+        const match = findExistingOrderMatch(orderNumberToDocMap, pkg.orderNumber, pkg.trackingNumber);
+        if (match.matchedDocId && !match.isMultiParcel) {
+          const existingDocId = match.matchedDocId;
+          const existingData = match.existingData || {};
+          const patch = {
+            updatedAt: new Date().toISOString(),
+            trackingNumber: pkg.trackingNumber,
+            carrier: pkg.carrier,
+            ...(pkg.status && shouldAdvanceStatus(existingData.status, pkg.status) ? { status: pkg.status } : {}),
+            ...(pkg.lockerPin && !existingData.lockerPin ? { lockerPin: pkg.lockerPin, pickupCode: pkg.lockerPin } : {}),
+            ...(pkg.pickupLocation && !existingData.pickupLocation ? { pickupLocation: pkg.pickupLocation } : {}),
+            ...(pkg.pickupHours && !existingData.pickupHours ? { pickupHours: pkg.pickupHours } : {}),
+            ...(pkg.pickupPhone && !existingData.pickupPhone ? { pickupPhone: pkg.pickupPhone } : {}),
+            ...(!isGenericPackageTitle(pkg.title) && isGenericPackageTitle(existingData.title) ? { title: pkg.title } : {})
+          };
+          await db.collection('users').doc(uid).collection('packages').doc(existingDocId).set(patch, { merge: true });
+          if (pkg.trackingNumber) {
+            existingTrackingNumbers.add(pkg.trackingNumber.toUpperCase());
+            trackingNumberToDocId.set(pkg.trackingNumber.toUpperCase(), existingDocId);
+            existingPackagesMap.set(pkg.trackingNumber.toUpperCase(), { ...existingData, ...patch });
+          }
+          orderNumberToDocMap.set(String(pkg.orderNumber).trim(), { id: existingDocId, data: { ...existingData, ...patch } });
+          updated += 1;
+          continue;
+        }
+      }
+
+      // 2. Tier 2: On-Demand Gmail Confirmation Search Fallback (Only when missing from DB & title is generic)
+      if (isGenericPackageTitle(pkg.title) && isValidOrderNumber(pkg.orderNumber) && crossLookupBudget.used < crossLookupBudget.max) {
+        const foundTitle = await fetchOrderConfirmationTitleFromGmail({
+          gmail,
+          orderNumber: pkg.orderNumber,
+          store: pkg.store,
+          budget: crossLookupBudget
+        });
+        if (foundTitle) {
+          pkg.title = pkg.store ? `${pkg.store} - ${foundTitle}` : foundTitle;
+        }
+      }
+
       await db.collection('users').doc(uid).collection('packages').doc(pkg.id).set(pkg);
       if (pkg.trackingNumber) {
         existingTrackingNumbers.add(pkg.trackingNumber.toUpperCase());
         trackingNumberToDocId.set(pkg.trackingNumber.toUpperCase(), pkg.id);
+        existingPackagesMap.set(pkg.trackingNumber.toUpperCase(), pkg);
+      }
+      if (pkg.orderNumber) {
+        orderNumberToDocMap.set(String(pkg.orderNumber).trim(), { id: pkg.id, data: pkg });
       }
       if (pkg.source === 'gmail_sync_order_status' && pkg.store) {
         storeToOrderStatusDocId.set(pkg.store.toUpperCase(), { id: pkg.id, status: pkg.status });

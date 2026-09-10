@@ -148,6 +148,8 @@ export function buildPackagesFromGmailMessage({
         status: ext.deliveryStatus || inferDeliveryStatus(subject, body),
         source: 'gmail_sync',
         notes: ext.store ? `${ext.store} order` : (subject ? `From Gmail: ${subject.slice(0, 80)}` : ''),
+        ...(ext.orderNumber ? { orderNumber: ext.orderNumber } : {}),
+        ...(ext.store ? { store: ext.store } : {}),
         ...(ext.lockerPin ? { lockerPin: ext.lockerPin, pickupCode: ext.lockerPin } : {}),
         ...(ext.pickupLocation ? { pickupLocation: ext.pickupLocation } : {}),
         ...(ext.pickupHours ? { pickupHours: ext.pickupHours } : {}),

@@ -57,7 +57,7 @@ const SYSTEM_INSTRUCTION = `You extract package tracking details from a short me
 Rules:
 - selectedCandidateId: choose exactly one ID from the deterministic candidate list supplied in the user message, or "" if none is a shipment tracking number. Never output a tracking number or an ID that was not supplied.
 - confidence: "none" if you found no real tracking number, "low"/"medium"/"high" based on how sure you are of the whole result.
-- title: a short human label (e.g. "AliExpress Order", "Israel Post Package"), empty string if you can't tell.
+- title: the specific product or item name if mentioned (e.g. "Mechanical Keyboard", "Nike Running Shoes"). If only the merchant/courier is known, use "Store Order" (e.g. "AliExpress Order", "Zara Delivery"). Empty string if you can't tell.
 - pickupLocation: a locker/branch/pickup point name if mentioned, else empty string.
 - origin: the shipping origin country/city if evident, else empty string.
 - notes: a short (<300 char) plain-text summary of anything else relevant. Never copy long raw text verbatim.
@@ -70,7 +70,7 @@ Rules:
 - transcribedText: faithfully transcribe all visible text, barcodes, tracking labels, courier names, SMS text, addresses, pickup notices, or locker codes visible in the image.
 - trackingNumber: the primary shipment tracking number visible on the label or screenshot (empty string if none). Never invent or hallucinate a number.
 - carrier: the courier service name if evident from logos or text, or 'other'.
-- title: a short human label (e.g. "AliExpress Order", "Israel Post Package", "Zara Delivery"), empty string if you can't tell.
+- title: the specific product or item name if visible on the label or screenshot (e.g. "Mechanical Keyboard", "Nike Running Shoes"). If only the merchant/courier is evident without product name, use "Store Order" (e.g. "AliExpress Order", "Zara Delivery"). Empty string if you can't tell.
 - pickupLocation: a locker/branch/pickup point name if mentioned, else empty string.
 - origin: the shipping origin country/city if evident, else empty string.
 - notes: a short (<300 char) plain-text summary of anything else relevant. Never copy long raw text verbatim.

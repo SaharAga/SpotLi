@@ -1,5 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createGmailPushHandler } from './gmailPushHandler.js';
+import { getGmailClientForUser } from './gmailAuth.js';
+import { createGmailPushHandler, syncHistoryForConnection } from './gmailPushHandler.js';
+
+vi.mock('./gmailAuth.js', () => ({
+  getGmailClientForUser: vi.fn(),
+  setGmailConnection: vi.fn().mockResolvedValue(),
+  findGmailConnectionByEmail: vi.fn()
+}));
 
 describe('createGmailPushHandler Unit Tests', () => {
   it('rejects non-POST requests with 405', async () => {
@@ -53,5 +60,91 @@ describe('createGmailPushHandler Unit Tests', () => {
     await handler(req, res);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.send).toHaveBeenCalledWith('ok');
+  });
+});
+
+describe('syncHistoryForConnection Order Correlation', () => {
+  it('merges tracking number into existing untracked package when orderNumber matches (Tier 1)', async () => {
+    const mockDocs = [
+      {
+        id: 'pkg-order-1',
+        data: () => ({
+          id: 'pkg-order-1',
+          title: 'Keychron K2 Keyboard',
+          orderNumber: '818274917401',
+          trackingNumber: '',
+          status: 'ordered'
+        })
+      }
+    ];
+
+    const setMock = vi.fn().mockResolvedValue();
+    const docMock = vi.fn().mockReturnValue({ set: setMock });
+    const collectionMock = vi.fn().mockReturnValue({
+      get: vi.fn().mockResolvedValue({ docs: mockDocs }),
+      doc: docMock,
+      add: vi.fn()
+    });
+
+    const db = {
+      collection: vi.fn().mockReturnValue({
+        doc: vi.fn().mockReturnValue({ collection: collectionMock, set: vi.fn().mockResolvedValue() })
+      })
+    };
+
+    const mockGmail = {
+      users: {
+        history: {
+          list: vi.fn().mockResolvedValue({
+            data: {
+              history: [
+                {
+                  messagesAdded: [{ message: { id: 'msg-shipping-1' } }]
+                }
+              ]
+            }
+          })
+        },
+        messages: {
+          get: vi.fn().mockResolvedValue({
+            data: {
+              id: 'msg-shipping-1',
+              snippet: 'Tracking LP00582910482CN Order #818274917401',
+              payload: {
+                headers: [
+                  { name: 'Subject', value: 'AliExpress: Your order has shipped' },
+                  { name: 'From', value: 'transaction@notice.aliexpress.com' }
+                ],
+                body: {
+                  data: Buffer.from(
+                    'Your order #818274917401 has shipped with Cainiao. Tracking number LP00582910482CN'
+                  ).toString('base64url')
+                }
+              }
+            }
+          })
+        }
+      }
+    };
+
+    getGmailClientForUser.mockReturnValue({ gmail: mockGmail });
+
+    const result = await syncHistoryForConnection({
+      db,
+      connection: { uid: 'u1', refreshToken: 'rt', historyId: '100' },
+      clientSecret: 'secret',
+      newHistoryId: '101'
+    });
+
+    expect(result.saved).toBe(0);
+    expect(result.updated).toBe(1);
+    expect(docMock).toHaveBeenCalledWith('pkg-order-1');
+    expect(setMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        trackingNumber: 'LP00582910482CN',
+        carrier: 'cainiao'
+      }),
+      { merge: true }
+    );
   });
 });

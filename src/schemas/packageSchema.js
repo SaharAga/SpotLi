@@ -52,6 +52,7 @@ export const packageSchema = z.object({
   redirectedAt: z.string().max(50).optional().transform(s => (s ? sanitizeString(s, 50) : undefined)),
   redirectReason: z.string().max(100).optional().transform(s => (s ? sanitizeString(s, 100) : undefined)),
   store: z.string().max(100).optional().transform(s => (s ? sanitizeString(s, 100) : undefined)),
+  orderNumber: z.string().max(100).optional().transform(s => (s ? sanitizeString(s, 100) : undefined)),
   shelfNumber: z.string().max(50).optional().transform(s => (s ? sanitizeString(s, 50) : undefined)),
   localTrackingNumber: z.string().max(100).optional().transform(s => (s ? sanitizeString(s, 100).toUpperCase().replace(/[^A-Z0-9_-]/g, '') : undefined)),
   localCarrier: z.string().max(50).optional().transform(s => (s ? sanitizeString(s, 50).toLowerCase() : undefined)),

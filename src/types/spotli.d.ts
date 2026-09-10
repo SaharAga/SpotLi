@@ -84,6 +84,7 @@ export interface Package {
   destination?: string;
   notes?: string;
   notesHe?: string;
+  orderNumber?: string;
   isPinned: boolean;
   isArchived: boolean;
   checkpoints: Checkpoint[];
@@ -110,6 +111,7 @@ export interface PackageInput {
   destination?: string;
   notes?: string;
   notesHe?: string;
+  orderNumber?: string;
   isPinned?: boolean;
   isArchived?: boolean;
   checkpoints?: Checkpoint[];

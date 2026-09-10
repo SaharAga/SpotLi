@@ -1153,10 +1153,56 @@ export function parseSmartText(rawText) {
     }
   }
 
+  // Extract explicit product / item candidate from text if present
+  const extractItemCandidate = (text) => {
+    if (!text || typeof text !== 'string') return null;
+    const quoteMatch = text.match(/["'״”]([^"'״”\n]{3,50})["'״”]/);
+    if (quoteMatch && quoteMatch[1]) {
+      const candidate = quoteMatch[1].trim();
+      if (
+        !/^[A-Z0-9_-]{8,35}$/i.test(candidate) &&
+        !/^(?:order|package|tracking|delivery|shipment|חבילה|משלוח|הזמנה|איסוף)/i.test(candidate) &&
+        !/^https?:\/\//i.test(candidate)
+      ) {
+        return candidate;
+      }
+    }
+    const labelMatch = text.match(/(?:item|product|מוצר|פריט|עבור|for)\s*[:：-]\s*([A-Za-z0-9\u0590-\u05FF\s-]{3,50})(?:[,\n.]|$)/i);
+    if (labelMatch && labelMatch[1]) {
+      const candidate = labelMatch[1].trim();
+      if (
+        !/^(?:order|package|tracking|delivery|shipment|pickup|חבילה|משלוח|הזמנה|איסוף)/i.test(candidate) &&
+        !/^[A-Z0-9_-]{8,35}$/i.test(candidate)
+      ) {
+        return candidate;
+      }
+    }
+    const parenMatch = text.match(/\(([A-Za-z0-9\u0590-\u05FF\s-]{3,40})\)/);
+    if (parenMatch && parenMatch[1]) {
+      const candidate = parenMatch[1].trim();
+      if (
+        !/^(?:מדף|סניף|לוקר|קוד|חבילה|מספר|order|package|shelf|code|\d+)/i.test(candidate) &&
+        !/^[A-Z0-9_-]{8,35}$/i.test(candidate)
+      ) {
+        return candidate;
+      }
+    }
+    return null;
+  };
+
+  const itemCandidate = extractItemCandidate(cleanText);
+
+  // Extract order number if mentioned in text
+  const orderMatch = cleanText.match(/(?:order\s*(?:id|#|no|number)?|מספר\s*הזמנה|הזמנה\s*מספר)\s*[:：#]?\s*([A-Za-z0-9-]{6,35})\b/i);
+  const parsedOrderNumber = orderMatch ? orderMatch[1].trim() : undefined;
+
   // Determine Title
   let title = '';
   let titleHe = '';
-  if (detectedStore) {
+  if (itemCandidate) {
+    title = detectedStore ? `${detectedStore} - ${itemCandidate}` : itemCandidate;
+    titleHe = (detectedStoreHe || detectedStore) ? `${detectedStoreHe || detectedStore} - ${itemCandidate}` : itemCandidate;
+  } else if (detectedStore) {
     title = `${detectedStore} Order`;
     titleHe = `הזמנה מ-${detectedStoreHe || detectedStore}`;
   } else if (bestTracking) {
@@ -1277,6 +1323,7 @@ export function parseSmartText(rawText) {
       store: detectedStore,
       storeHe: detectedStoreHe,
       storeInfo,
+      orderNumber: parsedOrderNumber,
       candidateStatus: cand.status || 'verified',
       candidate: cand
     });
@@ -1285,6 +1332,7 @@ export function parseSmartText(rawText) {
   return {
     title,
     titleHe,
+    orderNumber: parsedOrderNumber,
     trackingNumber: bestTracking,
     carrier: bestCarrier,
     carrierName: carrierObj.name,

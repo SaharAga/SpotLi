@@ -642,6 +642,22 @@ export function DashboardContent() {
     if (isNewlyDelivered) {
       checkAndHandleAutoArchive(targetId, true);
     }
+
+    // Trigger background tracking refresh for newly created packages or newly tracked orders:
+    // Non-blocking, so the user interface immediately reflects the added package.
+    const isNewTracking = changedPkg.trackingNumber && (!existingPkg || !existingPkg.trackingNumber);
+    if (isNewTracking) {
+      deliveryService.refreshPackageTracking(changedPkg, user?.id || null, true)
+        .then((res) => {
+          if (res?.success && res?.updatedPackage && res.tracked) {
+            commit({ type: MUTATION_TYPES.UPDATE, payload: res.updatedPackage });
+            setModalPayload(MODAL.DETAIL, (open) => (open?.id === targetId ? res.updatedPackage : open));
+          }
+        })
+        .catch((err) => {
+          console.info('[App] Background tracking refresh failed on creation:', err?.message);
+        });
+    }
   };
 
   const handleDeletePackage = (id) => {
