@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Package, Plus, Sparkles, Menu, X, LogIn,
+  Plus, Sparkles, Menu, X, LogIn,
   ClipboardCheck, Edit3, ShieldCheck
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
@@ -93,8 +93,12 @@ export function Navbar({
               style={{ background: 'var(--chrome-mark)' }}
               aria-hidden="true"
             />
-            <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-900 border border-slate-700/80 flex items-center justify-center text-[color:var(--chrome-mark)] transition-colors duration-500 shadow-md">
-              <Package className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:scale-110" />
+            <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center overflow-hidden shadow-md">
+              <img
+                src="/icons/app-icon.png"
+                alt="SpotLi"
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+              />
             </div>
           </div>
 

@@ -1,4 +1,4 @@
-# Deliveree — Master Monetization & Business Strategy
+# SpotLi — Master Monetization & Business Strategy
 **Comprehensive Financial Model & Revenue Roadmap**
 *Authors: Sahar (Product Owner) & Antigravity*
 
@@ -6,7 +6,7 @@
 
 ## 💎 1. The 4-Pillar Revenue Engine
 
-Deliveree captures value across consumer and macro-data segments while maintaining strict **Zero-Profiling & Client-Side Privacy**. We explicitly avoid B2B seller tools to maintain 100% focus on the consumer experience.
+SpotLi captures value across consumer and macro-data segments while maintaining strict **Zero-Profiling & Client-Side Privacy**. We explicitly avoid B2B seller tools to maintain 100% focus on the consumer experience.
 
 ```
 [ Pillar 1: Consumer Pro (B2C) ]   [ Pillar 2: Passive Affiliates ]   [ Pillar 3: Voluntary Support ]   [ Pillar 4: Aggregated Data ]
@@ -17,7 +17,7 @@ Deliveree captures value across consumer and macro-data segments while maintaini
 
 ---
 
-## 👥 Pillar 1: Consumer Freemium ("Deliveree Pro")
+## 👥 Pillar 1: Consumer Freemium ("SpotLi Pro")
 
 ### 🟢 Free Tier (High-Retention Growth Engine)
 * **Unlimited Core Tracking**: Unlimited active shipments for Israeli couriers. (Global carriers may be capped to offset API costs if external APIs are used later).
@@ -25,7 +25,7 @@ Deliveree captures value across consumer and macro-data segments while maintaini
 * **1 Connected Email Account (Gmail)**.
 * **Zero E-Commerce Bloat**: No intrusive ads, no shopping mall features (our wedge against the "Shop" app).
 
-### ⭐ Deliveree Pro (₪9.90 / month or ₪79.00 / year)
+### ⭐ SpotLi Pro (₪9.90 / month or ₪79.00 / year)
 * **Aesthetic Customization (High Margin)**: Exclusive App Icons, AMOLED/Pastel UI themes, and custom notification sounds.
 * **Multi-Email Auto-Sync**: Simultaneous connections for Gmail, Outlook, iCloud.
 * **Household / Family Shared Feed**: Sync and track packages across family members.

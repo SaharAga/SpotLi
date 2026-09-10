@@ -1,6 +1,6 @@
 ---
 name: project-release-tracking
-description: Release management and project state tracking protocol for Deliveree. Use when cutting new releases, bumping semantic versions, updating deployed/planned feature matrices, checking quality gates, or tracking component specialist assignments. Do NOT use for individual component coding or general chat.
+description: Release management and project state tracking protocol for SpotLi. Use when cutting new releases, bumping semantic versions, updating deployed/planned feature matrices, checking quality gates, or tracking component specialist assignments. Do NOT use for individual component coding or general chat.
 inputs:
   - Proposed version bump or feature status change
   - Quality gate verification results (tests, lints, security audit)
@@ -10,7 +10,7 @@ outputs:
 
 # Project Release Tracking & Version Governance Protocol
 
-This skill standardizes release management, versioning invariants, cache invalidation, and component specialist orchestration across the Deliveree lifecycle.
+This skill standardizes release management, versioning invariants, cache invalidation, and component specialist orchestration across the SpotLi lifecycle.
 
 ---
 
@@ -39,7 +39,7 @@ When a version bump occurs, the following files **MUST** be updated atomically:
 3. **[`public/sw.js`](public/sw.js)**:
    Increment cache name to force client-side cache busting:
    ```javascript
-   const CACHE_NAME = 'deliveree-vX.Y.Z';
+   const CACHE_NAME = 'spotli-vX.Y.Z';
    ```
 4. **[`PROJECT_STATE.md`](PROJECT_STATE.md)**:
    Update the Live Version table, Deployed Feature Matrix, and Quality Gate metrics.
@@ -55,7 +55,7 @@ No release tag or deployment may be authorized unless all quality gates are veri
        are permitted — the `react-perf` rules are a worklist, not a gate.
 - [ ] 2. Schema Contracts: 100% Zod validation pass across all data ingestion boundaries.
 - [ ] 3. Automated Testbench: 100% pass rate across all co-located unit and integration tests.
-- [ ] 4. Security Audit: Deliveree Security Baseline compliance verified.
+- [ ] 4. Security Audit: SpotLi Security Baseline compliance verified.
 ```
 
 ---

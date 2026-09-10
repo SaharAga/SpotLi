@@ -49,7 +49,7 @@ For a single-developer project, the standard quality gate pipeline is:
 * **Execute Scope Challenge**: Log non-blocking findings to `DEFERRED.md`.
 
 ### Gate 3: Security Baseline Audit (Security Auditor)
-* **Deliveree Security Baseline (Client-Only PWA)**:
+* **SpotLi Security Baseline (Client-Only PWA)**:
   * *Re-adopt ASVS L2/L3 language only if/when a real backend or auth server is introduced.*
   * **Firestore BOLA Invariant**: `allow update: if request.auth != null && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid;`
   * **Anti-ReDoS**: Deterministic, single-pass regex patterns with no nested quantifiers.

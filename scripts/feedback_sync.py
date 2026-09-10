@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Deliveree Admin Feedback Synchronization & Triage CLI Tool.
+SpotLi Admin Feedback Synchronization & Triage CLI Tool.
 Fetches feedback items from Cloud Firestore REST API or local storage buffer,
 updates .agents/feedback_buffer.json, and executes automated triage via feedback_triage.py.
 
@@ -58,7 +58,7 @@ def fetch_firestore_feedbacks(project_id: str = "deliveree-80c7d", limit: int = 
     url = f"https://firestore.googleapis.com/v1/projects/{project_id}/databases/(default)/documents/feedback?pageSize={limit}"
     req = urllib.request.Request(
         url,
-        headers={"User-Agent": "DelivereeFeedbackSync/1.0", "Accept": "application/json"}
+        headers={"User-Agent": "SpotLiFeedbackSync/1.0", "Accept": "application/json"}
     )
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
@@ -103,7 +103,7 @@ def sync_feedbacks(limit: int = 50, dry_run: bool = False, source: str = "all") 
     Synchronizes feedback records from Firestore and local buffer,
     updates buffer store, and runs triage.
     """
-    print(f"🔄 Starting Deliveree Feedback Sync (source={source}, limit={limit}, dry_run={dry_run})...")
+    print(f"🔄 Starting SpotLi Feedback Sync (source={source}, limit={limit}, dry_run={dry_run})...")
 
     current_buffer = load_buffer()
     buffer_by_id = {item.get("id"): item for item in current_buffer if item.get("id")}
@@ -148,7 +148,7 @@ def sync_feedbacks(limit: int = 50, dry_run: bool = False, source: str = "all") 
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Deliveree Feedback Synchronization & Triage Engine")
+    parser = argparse.ArgumentParser(description="SpotLi Feedback Synchronization & Triage Engine")
     parser.add_argument("--limit", type=int, default=50, help="Maximum number of items to sync/triage")
     parser.add_argument("--dry-run", action="store_true", help="Perform sync and triage without persisting changes")
     parser.add_argument("--source", choices=["all", "buffer", "firestore"], default="all", help="Data source to pull from")

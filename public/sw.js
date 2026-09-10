@@ -34,7 +34,7 @@ self.addEventListener('push', (event) => {
     }
   }
 
-  const title = data.title || (data.notification && data.notification.title) || 'Deliveree | עדכון משלוח';
+  const title = data.title || (data.notification && data.notification.title) || 'SpotLi | עדכון משלוח';
   const options = {
     body: data.body || (data.notification && data.notification.body) || 'יש לך עדכון חדש לגבי חבילה',
     icon: data.icon || (data.notification && data.notification.icon) || '/icons/icon-192.png',
@@ -42,12 +42,12 @@ self.addEventListener('push', (event) => {
     // Read packageId from BOTH shapes. The server (functions/src/newPackagePush.js,
     // updatePackagePush.js) sends it at the TOP level and sends no `data` key at
     // all, so checking only `data.data.packageId` made every automatic push fall
-    // back to the shared tag 'deliveree-update' — and a shared tag means each new
+    // back to the shared tag 'spotli-update' — and a shared tag means each new
     // notification REPLACES the previous one. Two packages arriving together
     // showed as one.
     tag: data.tag || (() => {
       const pkgId = (data.data && data.data.packageId) || data.packageId;
-      return pkgId ? `pkg-${pkgId}` : 'deliveree-update';
+      return pkgId ? `pkg-${pkgId}` : 'spotli-update';
     })(),
     data: data.data || {
       url: data.url || '/',
@@ -91,7 +91,7 @@ self.addEventListener('notificationclick', (event) => {
           : '/');
 
     if (typeof rawUrl === 'string') {
-      const baseOrigin = (self.location && self.location.origin) ? self.location.origin : 'https://deliveree.app';
+      const baseOrigin = (self.location && self.location.origin) ? self.location.origin : 'https://spotliapp.com';
       const parsed = new URL(rawUrl, baseOrigin);
       const expectedOrigin = (self.location && self.location.origin) || baseOrigin;
       if (parsed.origin === expectedOrigin && (parsed.protocol === 'https:' || parsed.protocol === 'http:')) {

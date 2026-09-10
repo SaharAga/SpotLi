@@ -143,7 +143,7 @@ export function exportToCSV(packages, triggerDownload = false, filename = '') {
   const csvContentWithBOM = '\uFEFF' + csvBody;
 
   if (triggerDownload && typeof document !== 'undefined') {
-    const defaultName = filename || `deliveree_export_${todayISO()}.csv`;
+    const defaultName = filename || `spotli_export_${todayISO()}.csv`;
     downloadBlob(csvContentWithBOM, 'text/csv;charset=utf-8;', defaultName);
   }
 
@@ -192,7 +192,7 @@ export function exportRawToJSON(packages, triggerDownload = false, filename = ''
   const jsonString = JSON.stringify(manifest);
 
   if (triggerDownload && typeof document !== 'undefined') {
-    const defaultName = filename || `deliveree_backup_${todayISO()}.json`;
+    const defaultName = filename || `spotli_backup_${todayISO()}.json`;
     downloadBlob(jsonString, 'application/json;charset=utf-8;', defaultName);
   }
 
@@ -232,7 +232,7 @@ export function exportToJSON(packages, triggerDownload = false, filename = '', o
   const jsonString = JSON.stringify(manifest, null, 2);
 
   if (triggerDownload && typeof document !== 'undefined') {
-    const defaultName = filename || `deliveree_export_${scope ? `${scope}_` : ''}${todayISO()}.json`;
+    const defaultName = filename || `spotli_export_${scope ? `${scope}_` : ''}${todayISO()}.json`;
     downloadBlob(jsonString, 'application/json;charset=utf-8;', defaultName);
   }
 
@@ -277,7 +277,7 @@ export function generatePrintableSummary(packages, language = 'he', triggerPrint
 
   const tStatus = statusTranslations[language] || statusTranslations.en;
 
-  const titleText = isRTL ? 'דוח ריכוז משלוחים — Deliveree' : 'Deliveree — Shipment Summary Report';
+  const titleText = isRTL ? 'דוח ריכוז משלוחים — SpotLi' : 'SpotLi — Shipment Summary Report';
   const generatedAtText = isRTL ? 'הופק בתאריך:' : 'Generated On:';
   const totalCountText = isRTL ? 'סה״כ חבילות בדוח:' : 'Total Packages:';
   const activeCountText = isRTL ? 'משלוחים פעילים:' : 'Active Shipments:';
@@ -438,8 +438,8 @@ export function generatePrintableSummary(packages, language = 'he', triggerPrint
   </table>
 
   <div class="footer">
-    <span>Deliveree Package Tracker</span>
-    <span>https://deliveree.app</span>
+    <span>SpotLi Package Tracker</span>
+    <span>https://spotliapp.com</span>
   </div>
 </body>
 </html>`;

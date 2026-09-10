@@ -1,6 +1,6 @@
 export const translations = {
   en: {
-    appTitle: 'Deliveree',
+    appTitle: 'SpotLi',
     appTagline: 'Smart Package & Shipment Tracker',
     searchPlaceholder: 'Search by item name, tracking number, carrier...',
     addPackage: 'Add Package',
@@ -135,7 +135,7 @@ export const translations = {
     },
     smartModal: {
       title: 'Smart Import from SMS / Email',
-      subtitle: 'Paste any shipping text, SMS from Israel Post, or order notification. Deliveree will automatically parse the tracking number, carrier, and pickup details!',
+      subtitle: 'Paste any shipping text, SMS from Israel Post, or order notification. SpotLi will automatically parse the tracking number, carrier, and pickup details!',
       pastePlaceholder: 'Paste SMS or email text here... Example:\n"שלום, דבר דואר שמספרו RS948219481IL נמסר לחלוקה בסניף דיזנגוף סנטר..."',
       parseBtn: 'Analyze & Auto-Fill',
       parsedSuccess: 'Successfully extracted shipping details! Review and confirm below:',
@@ -188,7 +188,7 @@ export const translations = {
     },
     autoArchive: {
       promptTitle: 'Auto-Archive Delivered Packages?',
-      promptQuestion: 'Would you like Deliveree to automatically move packages to your Archive once they are delivered?',
+      promptQuestion: 'Would you like SpotLi to automatically move packages to your Archive once they are delivered?',
       promptHint: 'You can change this preference anytime in Account Settings.',
       confirmYes: 'Yes, Auto-Archive',
       confirmNo: 'No, Keep in Delivered',
@@ -288,7 +288,7 @@ export const translations = {
     }
   },
   he: {
-    appTitle: 'Deliveree',
+    appTitle: 'SpotLi',
     appTagline: 'מעקב חכם ומתקדם אחר חבילות ומשלוחים',
     searchPlaceholder: 'חיפוש לפי שם פריט, מספר מעקב, חברת שילוח...',
     addPackage: 'הוסף חבילה',
@@ -420,7 +420,7 @@ export const translations = {
     },
     smartModal: {
       title: 'ייבוא חכם מהודעת SMS / אימייל',
-      subtitle: 'הדבק כאן הודעת SMS מדואר ישראל, הודעת שילוח מעליאקספרס או אמזון. Deliveree יזהה אוטומטית את מספר המעקב, חברת השילוח, ופרטי האיסוף!',
+      subtitle: 'הדבק כאן הודעת SMS מדואר ישראל, הודעת שילוח מעליאקספרס או אמזון. SpotLi יזהה אוטומטית את מספר המעקב, חברת השילוח, ופרטי האיסוף!',
       pastePlaceholder: 'הדבק כאן את תוכן ההודעה... לדוגמה:\n"שלום, דבר דואר שמספרו RS948219481IL נמסר לחלוקה בסניף דיזנגוף סנטר..."',
       parseBtn: 'נתח והשלם אוטומטית',
       parsedSuccess: 'הפרטים זוהו בהצלחה! באפשרותך לבדוק ולאשר למטה:',
@@ -473,7 +473,7 @@ export const translations = {
     },
     autoArchive: {
       promptTitle: 'העברה אוטומטית לארכיון לאחר מסירה?',
-      promptQuestion: 'האם ברצונך ש-Deliveree יעביר חבילות לארכיון באופן אוטומטי ברגע שהן נמסרות?',
+      promptQuestion: 'האם ברצונך ש-SpotLi יעביר חבילות לארכיון באופן אוטומטי ברגע שהן נמסרות?',
       promptHint: 'ניתן לשנות הגדרה זו בכל עת בהגדרות החשבון.',
       confirmYes: 'כן, העבר אוטומטית לארכיון',
       confirmNo: 'לא, השאר ברשימת הנמסרו',

@@ -338,7 +338,7 @@ export async function triggerGmailBackfill() {
 /**
  * Programmatically creates a shipping email forwarding rule in Outlook via Microsoft Graph REST API.
  * @param {string} accessToken Valid Microsoft OAuth access token
- * @param {string} ingestionEmail The user's Deliveree ingestion email address
+ * @param {string} ingestionEmail The user's SpotLi ingestion email address
  * @returns {Promise<{ ok: boolean, error?: string }>}
  */
 export async function setupOutlookAutoForward(accessToken, ingestionEmail) {
@@ -356,7 +356,7 @@ export async function setupOutlookAutoForward(accessToken, ingestionEmail) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          displayName: 'Deliveree Shipping Ingestion',
+          displayName: 'SpotLi Shipping Ingestion',
           sequence: 1,
           isEnabled: true,
           conditions: {

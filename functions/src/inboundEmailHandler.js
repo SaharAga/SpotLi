@@ -39,6 +39,8 @@ export function safeCompareTokens(a, b) {
  * Extracts userId from the recipient email address.
  * Formats:
  * - `233b362d7b331adfde6e+usr_abc123@cloudmailin.net`
+ * - `usr_abc123@in.spotliapp.com`
+ * - `abc123.pkg@in.spotliapp.com`
  * - `usr_abc123@in.deliveree.app`
  * - `abc123.pkg@in.deliveree.app`
  * @param {string} toAddress
@@ -54,8 +56,8 @@ export function extractUserIdFromToAddress(toAddress) {
     if (cleanId && cleanId.length >= 3) return cleanId;
   }
 
-  // 2. Check for direct subdomain pattern (e.g. usr_abc123@in.deliveree.app or abc123.pkg@deliveree.app)
-  const emailMatch = toAddress.match(/([a-zA-Z0-9_-]+)(?:\.pkg)?@(?:in\.)?(?:deliveree\.app|cloudmailin\.net)/i);
+  // 2. Check for direct subdomain pattern (e.g. usr_abc123@in.spotliapp.com or abc123.pkg@spotliapp.com)
+  const emailMatch = toAddress.match(/([a-zA-Z0-9_-]+)(?:\.pkg)?@(?:in\.)?(?:spotliapp\.com|deliveree\.app|cloudmailin\.net)/i);
   if (!emailMatch) return null;
 
   const localPart = emailMatch[1];

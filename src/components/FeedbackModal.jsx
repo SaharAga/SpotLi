@@ -162,7 +162,7 @@ export function FeedbackModal({
                 {language === 'he' ? 'משוב ודיווח תקלות (גרסת אלפא)' : 'Alpha Feedback & Bug Report'}
               </h2>
               <p className="text-xs text-slate-400">
-                {language === 'he' ? 'עזרו לנו לשפר את Deliveree לפני ההשקה' : 'Help us perfect Deliveree before launch'}
+                {language === 'he' ? 'עזרו לנו לשפר את SpotLi לפני ההשקה' : 'Help us perfect SpotLi before launch'}
               </p>
             </div>
           </div>

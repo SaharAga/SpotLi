@@ -1,4 +1,4 @@
-# Deliveree — Project Release & Architecture State
+# SpotLi — Project Release & Architecture State
 
 ## Current Live Release
 

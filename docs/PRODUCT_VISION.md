@@ -1,4 +1,4 @@
-# Deliveree — End-State Product Vision & Feature Specification (Q&A)
+# SpotLi — End-State Product Vision & Feature Specification (Q&A)
 **Authoritative Product Specification & Strategic North Star**
 *Target Audience: Sahar (Product Owner) & Autonomous Engineering Swarm (Antigravity, Codex, Claude)*
 
@@ -6,10 +6,10 @@
 
 ## 🧭 1. Executive Summary & North Star
 
-### Q1.1: What is Deliveree in one sentence?
-**Deliveree** is the ultimate, privacy-first, zero-friction package tracking and last-mile management app designed specifically for Israeli and international e-commerce consumers.
+### Q1.1: What is SpotLi in one sentence?
+**SpotLi** is the ultimate, privacy-first, zero-friction package tracking and last-mile management app designed specifically for Israeli and international e-commerce consumers.
 
-### Q1.2: What is the core problem Deliveree solves?
+### Q1.2: What is the core problem SpotLi solves?
 Online shoppers in Israel (and globally) order across multiple merchants (AliExpress, Amazon, ASOS, Shein, iHerb, local stores) and receive packages through a fragmented ecosystem of 10+ different couriers (Israel Post, Cheetah/Chita, HFD, Tapuz, BoxIt, Buzzr, DHL, FedEx, UPS, Cainiao).
 Users face:
 1. **Fragmented tracking**: Manually checking multiple carrier websites or deciphering unreadable SMS messages.
@@ -22,7 +22,7 @@ Users face:
 8. **Courier communication friction**: Repeating gate codes, apartment numbers, or safe-place instructions over phone calls and WhatsApp.
 
 ### Q1.3: What is the "Magic Moment" for a user?
-The user never has to copy-paste or manually type a tracking number again. **Deliveree automatically captures deliveries from SMS and connected email accounts, surfaces locker PINs and live store opening hours, guides the user via their favorite navigation app (Waze/Google Maps/Apple Maps), alerts them to pick up all waiting packages at the same spot, and empowers them to communicate with couriers in a single tap.**
+The user never has to copy-paste or manually type a tracking number again. **SpotLi automatically captures deliveries from SMS and connected email accounts, surfaces locker PINs and live store opening hours, guides the user via their favorite navigation app (Waze/Google Maps/Apple Maps), alerts them to pick up all waiting packages at the same spot, and empowers them to communicate with couriers in a single tap.**
 
 ---
 
@@ -30,8 +30,9 @@ The user never has to copy-paste or manually type a tracking number again. **Del
 
 ### Q2.1: Who is the primary user?
 - **The Israeli Power Shopper**: Orders 5–30 packages a month from AliExpress, Amazon, Shein, ASOS, and Israeli shops. Regularly interacts with pickup shops, BoxIt/E-Post lockers, and needs fast WhatsApp courier communication and Hebrew RTL support.
-- **The Household Manager**: Tracks deliveries for family members, coordinates locker pickups, and delegates pickup tasks to partners or kids.
-- **The Privacy-Conscious Consumer**: Demands guest mode, client-first security, zero ad-network tracking, and selective family sharing (no gift spoiling).
+- **The Global Value Shopper (AliExpress & Shein power users)**: Orders 15–30 parcels a month from overseas; struggles with fragmented tracking numbers, confusing combined packages, and customs limits.
+- **The Convenience-Driven Professional (Amazon & iHerb)**: Fast delivery expectations, locker pickup after work, values instant navigation and single-tap driver contact.
+- **The Household Delivery Hub**: Manages packages for partners, roommates, or children; needs clean separation between personal and shared items.
 
 ### Q2.2: What languages and locales are supported?
 - **Hebrew (RTL)**: Full native Israeli experience with Israeli courier names, Hebrew SMS detection, local date formats, and right-to-left layout symmetry.
@@ -42,8 +43,8 @@ The user never has to copy-paste or manually type a tracking number again. **Del
 
 ## 📥 3. Omni-Channel Ingestion (The "What" of Package Capture)
 
-### Q3.1: How do packages enter Deliveree?
-Deliveree captures packages through 5 zero-friction channels:
+### Q3.1: How do packages enter SpotLi?
+SpotLi captures packages through 5 zero-friction channels:
 
 ```
 [ Automatic SMS Courier Detection ] ──┐
@@ -61,7 +62,7 @@ Deliveree captures packages through 5 zero-friction channels:
    - **Apple iCloud Mail**: Secure connection for Apple ecosystem users.
    - **Generic IMAP / Custom Domains**: App-password support for custom email providers.
    - 30-day historical order backfill upon initial connection.
-3. **Universal Forwarding Inbound Email (`track@deliveree.app`)**:
+3. **Universal Forwarding Inbound Email (`track@spotliapp.com`)**:
    - Forward any shipping confirmation email to a private inbound address for instant serverless parsing.
 4. **Camera Barcode & Physical Label Scanner**:
    - Point the camera at a physical shipping box label, locker barcode, or order screenshot to extract package details instantly.
@@ -91,7 +92,7 @@ Deliveree captures packages through 5 zero-friction channels:
   - Custom / Generic courier with custom tracking links
 
 ### Q4.2: How are Consolidated / Combined Shipments handled (e.g. AliExpress Combined Delivery)?
-- **Multi-Item Bundling View**: When a carrier or merchant combines multiple distinct orders into a single consolidated shipping container, Deliveree displays all original item names, order IDs, and product thumbnails grouped under the single master tracking card.
+- **Multi-Item Bundling View**: When a carrier or merchant combines multiple distinct orders into a single consolidated shipping container, SpotLi displays all original item names, order IDs, and product thumbnails grouped under the single master tracking card.
 
 ### Q4.3: What are the unified package lifecycle stages?
 1. `ordered` — Order placed with merchant.
@@ -128,8 +129,8 @@ When a courier moves a package to an alternate pickup point because the original
 - **Urgent Redirect Alert**: Proactive notification: *"Package redirected to Super Yuda Dizengoff (Original: BoxIt Arlozorov was full)"*.
 - **Live Location Update**: Automatically updates the map, address, opening hours, and navigation target, while preserving a clear historical note of the change.
 
-### Q5.3: How does Deliveree prevent users from leaving packages behind at the same pickup spot?
-- **Smart Location Bundling Banner**: When viewing any package at a pickup point, Deliveree detects all other packages waiting at the same address and displays:
+### Q5.3: How does SpotLi prevent users from leaving packages behind at the same pickup spot?
+- **Smart Location Bundling Banner**: When viewing any package at a pickup point, SpotLi detects all other packages waiting at the same address and displays:
   > 📦 **You have 2 other packages waiting here!** (View all 3 at Super Yuda Dizengoff)
 - **Geofence / Near-Pickup Alert**: Sends a proactive push notification when arriving near a pickup location reminding the user to collect all pending parcels together.
 - **One-Tap "Mark All as Collected"**: Single button to archive or mark all packages at that location as picked up simultaneously.
@@ -148,7 +149,7 @@ When a courier moves a package to an alternate pickup point because the original
 
 ## 💬 7. Courier Communication Hub (Action Hub)
 
-### Q7.1: How does Deliveree simplify interacting with delivery drivers?
+### Q7.1: How does SpotLi simplify interacting with delivery drivers?
 When a courier calls or messages, the user taps **Quick Reply** on the active package card:
 - Choose from customizable, variable-interpolated presets:
   - 🚪 *"The building code is {gateCode}. Please leave outside apartment {apt}."*
@@ -203,18 +204,18 @@ When a courier calls or messages, the user taps **Quick Reply** on the active pa
 ## 🔒 10. Privacy & Security Baselines
 
 ### Q10.1: How is user data secured?
-- **Zero Advertising Trackers**: Deliveree will never sell user delivery data or browsing habits.
+- **Zero Advertising Trackers**: SpotLi will never sell user delivery data or browsing habits.
 - **Client-Side PII Masking & Salted Hashing**: Personal phone numbers and addresses are scrubbed and hashed using salted SHA-256.
-- **Zero ID/Passport Storage**: Deliveree never asks for or stores government ID numbers.
+- **Zero ID/Passport Storage**: SpotLi never asks for or stores government ID numbers.
 - **Guest Mode Support**: Users can track packages locally with zero account creation, with non-destructive cloud migration when signing in.
 - **Zero-Trust Token Isolation**: Third-party email OAuth tokens are stored in an isolated, server-side deny-all Firestore vault inaccessible from client devices.
 
 ---
 
-## 🚫 11. Explicit Non-Goals (What Deliveree is NOT)
+## 🚫 11. Explicit Non-Goals (What SpotLi is NOT)
 
 To maintain crystal-clear product focus and our competitive moat against bloated trackers like "Shop":
-1. **NOT an E-Commerce Mall**: Deliveree will never advertise "trending products", push store promotions, or try to be a shopping destination. We are a pure utility.
+1. **NOT an E-Commerce Mall**: SpotLi will never advertise "trending products", push store promotions, or try to be a shopping destination. We are a pure utility.
 2. **NOT a B2B Courier Logistics Platform**: Built for recipients/shoppers, not for courier companies managing fleet routes.
 3. **NOT a Bank / General Expense Tracker**: Does not track credit card balances or unrelated spending; focuses strictly on shipping, customs fees, and delivery lifecycle.
 

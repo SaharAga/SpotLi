@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Package, Sparkles, RefreshCw, ShieldCheck, Heart, CheckCircle2, Lock, Cpu, Award, Globe, Activity, AlertTriangle, XCircle, FileText, ArrowLeft } from 'lucide-react';
+import { X, Sparkles, RefreshCw, ShieldCheck, Heart, CheckCircle2, Lock, Cpu, Award, Globe, Activity, AlertTriangle, XCircle, FileText, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { CARRIER_LIST } from '../types/carriers';
 import { APP_VERSION, RELEASE_DATE, BUILD_CHANNEL } from '../constants/version';
@@ -82,8 +82,8 @@ export function AboutModal({
             if (onShowToast) {
               onShowToast(
                 language === 'he'
-                  ? 'גרסה חדשה של Deliveree זמינה! לחץ לרענון והחלת העדכון'
-                  : 'New Deliveree update ready! Reload to apply.',
+                  ? 'גרסה חדשה של SpotLi זמינה! לחץ לרענון והחלת העדכון'
+                  : 'New SpotLi update ready! Reload to apply.',
                 'info'
               );
             }
@@ -166,8 +166,12 @@ export function AboutModal({
           <div className="flex flex-1 min-w-0 items-center gap-3">
             <div className="relative group shrink-0">
               <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 opacity-80 blur-sm group-hover:opacity-100 transition duration-500" />
-              <div className="relative w-11 h-11 rounded-2xl bg-slate-900 border border-slate-700/80 flex items-center justify-center text-blue-400 shadow-md">
-                <Package className="w-6 h-6" />
+              <div className="relative w-11 h-11 rounded-2xl bg-slate-950 border border-slate-700/80 flex items-center justify-center overflow-hidden shadow-md">
+                <img
+                  src="/icons/app-icon.png"
+                  alt="SpotLi"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
             <div>

@@ -69,7 +69,7 @@ flowchart LR
 * **Specialist Consultation**: Check domain-specific invariants for Auth, Delivery, UI/UX, and PWA files.
 
 ### Stage 5: Security Baseline Audit (Security Auditor Subagent)
-* **Deliveree Security Baseline (Client-Only PWA)**:
+* **SpotLi Security Baseline (Client-Only PWA)**:
   * *Re-adopt ASVS L2/L3 language only if/when a real backend or auth server is introduced.*
   * **Firestore BOLA Invariant**: Rule `update` must enforce `resource.data.userId == auth.uid && request.resource.data.userId == auth.uid`.
   * **Anti-ReDoS**: Deterministic regex patterns without nested unanchored quantifiers.
@@ -120,7 +120,7 @@ No feature or change is approved if:
 1. Any automated test fails.
 2. The linter or typechecker emits errors or warnings.
 3. The build fails or emits critical errors.
-4. Any Deliveree Security Baseline vulnerability is detected.
+4. Any SpotLi Security Baseline vulnerability is detected.
 5. An uncontrolled $O(N^2)$ algorithm or memory leak is introduced.
 6. Mobile touch targets fall below $48\text{px}$ or RTL/LTR mirroring is broken.
 

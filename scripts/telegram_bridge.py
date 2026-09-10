@@ -77,7 +77,7 @@ class TelegramSender:
         body = json.dumps(data or {}).encode("utf-8")
         req  = urllib.request.Request(
             url, data=body,
-            headers={"Content-Type": "application/json", "User-Agent": "DelivereeAgent/2.0"},
+            headers={"Content-Type": "application/json", "User-Agent": "SpotLiAgent/2.0"},
         )
         try:
             with urllib.request.urlopen(req, timeout=timeout) as resp:

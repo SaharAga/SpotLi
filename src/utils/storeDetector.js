@@ -1,5 +1,5 @@
 /**
- * Deliveree Store / Merchant Detection Engine
+ * SpotLi Store / Merchant Detection Engine
  * 
  * Automatically detects online stores and merchants from item titles, tracking numbers, 
  * carrier metadata, or note snippets and provides visual branding metadata (badges, icons, brand colors).

@@ -22,6 +22,7 @@ import {
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { APP_VERSION } from '../constants/version';
+import { APP_NAME, INGESTION_EMAIL_DOMAIN } from '../constants/app';
 import { notificationService } from '../services/notificationService';
 import { Modal } from './Modal';
 import { AccountSettingsRows } from './AccountSettingsRows';
@@ -297,7 +298,7 @@ export function AccountModal({
           <span className={label}>{language === 'he' ? 'כתובת ייבוא אוטומטית' : 'Ingestion Email Box'}</span>
           <div className="flex items-center gap-2">
             <Mail className="w-4 h-4 text-blue-400 shrink-0" />
-            <span className="font-mono text-slate-100 text-xs truncate">{user?.ingestionEmail || `${user?.id || 'user'}@in.deliveree.app`}</span>
+            <span className="font-mono text-slate-100 text-xs truncate">{user?.ingestionEmail || `${user?.id || 'user'}@${INGESTION_EMAIL_DOMAIN}`}</span>
           </div>
         </div>
 
@@ -655,7 +656,7 @@ export function AccountModal({
               </Section>
 
               <p className="text-xs text-slate-600 text-center" dir={isRTL ? 'rtl' : 'ltr'}>
-                Deliveree v{APP_VERSION}
+                {APP_NAME} v{APP_VERSION}
               </p>
             </div>
           </>

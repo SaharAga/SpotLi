@@ -101,7 +101,7 @@ export function IngestionGuideModal({
 
   if (!isOpen) return null;
 
-  const appOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://deliveree.app';
+  const appOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://spotliapp.com';
   const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(appOrigin)}`;
   const ingestionEmail = getIngestionEmailAddress(user);
 
@@ -549,7 +549,7 @@ export function IngestionGuideModal({
                       {DEFAULT_FORWARDING_FILTER_QUERY}
                     </code>
                   </li>
-                  <li>{language === 'he' ? 'סמנו "העבר אל" ובחרו בכתובת ה-Deliveree שהעתקתם למעלה.' : 'Check "Forward it to" and enter your Deliveree address above.'}</li>
+                  <li>{language === 'he' ? 'סמנו "העבר אל" ובחרו בכתובת ה-SpotLi שהעתקתם למעלה.' : 'Check "Forward it to" and enter your SpotLi address above.'}</li>
                 </ol>
               )}
 
@@ -557,8 +557,8 @@ export function IngestionGuideModal({
                 <ol className="list-decimal list-inside space-y-1.5 leading-relaxed">
                   <li>{language === 'he' ? 'פתחו את Outlook.com ולחצו על הגדרות (גלגל שיניים ⚙️).' : 'Open Outlook.com and open Settings (gear icon ⚙️).'}</li>
                   <li>{language === 'he' ? 'עברו אל דואר ➔ כללים ולחצו על "הוסף כלל חדש".' : 'Navigate to Mail ➔ Rules and click "Add new rule".'}</li>
-                  <li>{language === 'he' ? 'תנו לכלל שם (למשל: Deliveree) והגדירו תנאי: "נושא או גוף ההודעה כוללים \'tracking\' או \'shipped\'".' : 'Name the rule (e.g. Deliveree) and condition: "Subject or body includes \'tracking\' or \'shipped\'".'}</li>
-                  <li>{language === 'he' ? 'בפעולה בחרו: "העבר אל" והדביקו את כתובת ה-Deliveree שלכם.' : 'Under action select "Forward to" and paste your Deliveree ingestion address.'}</li>
+                  <li>{language === 'he' ? 'תנו לכלל שם (למשל: SpotLi) והגדירו תנאי: "נושא או גוף ההודעה כוללים \'tracking\' או \'shipped\'".' : 'Name the rule (e.g. SpotLi) and condition: "Subject or body includes \'tracking\' or \'shipped\'".'}</li>
+                  <li>{language === 'he' ? 'בפעולה בחרו: "העבר אל" והדביקו את כתובת ה-SpotLi שלכם.' : 'Under action select "Forward to" and paste your SpotLi ingestion address.'}</li>
                 </ol>
               )}
 
@@ -566,7 +566,7 @@ export function IngestionGuideModal({
                 <ol className="list-decimal list-inside space-y-1.5 leading-relaxed">
                   <li>{language === 'he' ? 'היכנסו ל-iCloud.com/mail מדפדפן מחשב.' : 'Log in to iCloud.com/mail on a desktop browser.'}</li>
                   <li>{language === 'he' ? 'לחצו על גלגל השיניים ⚙️ בפינה התחתונה/עליונה ובחרו "כללים".' : 'Click the Gear icon ⚙️ and choose "Rules".'}</li>
-                  <li>{language === 'he' ? 'הוסיפו כלל: "אם הנושא מכיל tracking" ➔ "העבר אל" כתובת ה-Deliveree שלכם.' : 'Add rule: "If subject contains tracking" ➔ "Forward to" your Deliveree address.'}</li>
+                  <li>{language === 'he' ? 'הוסיפו כלל: "אם הנושא מכיל tracking" ➔ "העבר אל" כתובת ה-SpotLi שלכם.' : 'Add rule: "If subject contains tracking" ➔ "Forward to" your SpotLi address.'}</li>
                 </ol>
               )}
 
@@ -574,7 +574,7 @@ export function IngestionGuideModal({
                 <ol className="list-decimal list-inside space-y-1.5 leading-relaxed">
                   <li>{language === 'he' ? 'פתחו את Yahoo Mail ולחצו על הגדרות ➔ עוד הגדרות.' : 'Open Yahoo Mail and tap Settings ➔ More Settings.'}</li>
                   <li>{language === 'he' ? 'בחרו בלשונית "מסננים" ולחצו "הוסף מסננים חדשים".' : 'Select "Filters" and tap "Add new filters".'}</li>
-                  <li>{language === 'he' ? 'הגדירו מילת מפתח "shipped" או "tracking" והפנו אל כתובת המשלוחים שלכם.' : 'Set keyword "shipped" or "tracking" and forward to your Deliveree box.'}</li>
+                  <li>{language === 'he' ? 'הגדירו מילת מפתח "shipped" או "tracking" והפנו אל כתובת המשלוחים שלכם.' : 'Set keyword "shipped" or "tracking" and forward to your SpotLi box.'}</li>
                 </ol>
               )}
             </div>
@@ -617,7 +617,7 @@ export function IngestionGuideModal({
                 </span>
                 <ol className="list-decimal list-inside space-y-1 text-slate-400 text-xs">
                   <li>{language === 'he' ? 'סרוק את הברקוד במצלמת הטלפון.' : 'Scan QR code with phone camera.'}</li>
-                  <li>{language === 'he' ? 'האפליקציה תיפתח מיידית בדפדפן הנייד.' : 'Deliveree opens immediately.'}</li>
+                  <li>{language === 'he' ? 'האפליקציה תיפתח מיידית בדפדפן הנייד.' : 'SpotLi opens immediately.'}</li>
                   <li>{language === 'he' ? 'לחץ "הוסף למסך הבית" להתקנה כאפליקציה חלקה.' : 'Tap "Add to Home Screen" to install.'}</li>
                 </ol>
               </div>

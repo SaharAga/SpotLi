@@ -132,7 +132,7 @@ describe('AuthContext - validateUserProfile', () => {
     expect(validated.name).toBe('Charlie');
     expect(validated.email).toBe('user@example.com');
     expect(validated.plan).toBe('Personal Account');
-    expect(validated.ingestionEmail).toBe('charlie.pkg@in.deliveree.app');
+    expect(validated.ingestionEmail).toBe('charlie.pkg@in.spotliapp.com');
     expect(validated.devicesCount).toBe(1);
     expect(validated.preferences).toEqual({
       defaultCarrier: 'all',

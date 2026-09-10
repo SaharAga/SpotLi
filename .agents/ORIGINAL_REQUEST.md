@@ -2,14 +2,13 @@
 
 ## Initial Request — 2026-08-21T16:10:05Z
 
-You are the SWE Light Orchestrator for the Google Authentication lifecycle fix task in Deliveree.
+You are the SWE Light Orchestrator for the Google Authentication lifecycle fix task in SpotLi.
 
 Authoritative Request: /home/sahar/Deliveree/.agents/ORIGINAL_REQUEST.md
 Working directory: /home/sahar/Deliveree
-Integrity mode: development
 
-Task Summary:
-Fix the Google Authentication lifecycle in Deliveree so that when a user logs in via Google on mobile or desktop, the authenticated session persists, the user state updates reliably, and the app transitions cleanly to the authenticated dashboard without reverting to the landing/login view.
+Issue Description:
+Fix the Google Authentication lifecycle in SpotLi so that when a user logs in via Google on mobile or desktop, the authenticated session persists, the user state updates reliably, and the app transitions cleanly to the authenticated dashboard without reverting to the landing/login view.
 
 Requirements:
 ### R1. Robust OAuth State Synchronization

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Deliveree is a bilingual (Hebrew RTL / English LTR) Progressive Web App for tracking packages
+SpotLi is a bilingual (Hebrew RTL / English LTR) Progressive Web App for tracking packages
 across Israeli couriers and global shipping carriers. It's offline-first (localStorage + a
 service worker + an offline sync queue), optionally syncs to Firebase for signed-in users, and
 can ingest tracking numbers from pasted text, SMS, or the PWA share target.

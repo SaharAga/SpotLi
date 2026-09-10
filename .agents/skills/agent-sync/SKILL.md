@@ -59,7 +59,7 @@ This is the first thing to read and the last thing to write. If you're updating 
 
 ## 6. Automated Channel CLI Tooling (`scripts/agent-sync-channel.mjs`)
 
-Deliveree includes an automated lock-safe CLI state machine for turn-taking across agents, backed by `docs/AGENT_SYNC_STATE.json`:
+SpotLi includes an automated lock-safe CLI state machine for turn-taking across agents, backed by `docs/AGENT_SYNC_STATE.json`:
 
 ```bash
 # Check current channel state

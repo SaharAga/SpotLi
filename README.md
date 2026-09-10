@@ -1,6 +1,6 @@
-# Deliveree
+# SpotLi
 
-Deliveree is a bilingual (Hebrew RTL / English LTR) Progressive Web App for
+SpotLi is a bilingual (Hebrew RTL / English LTR) Progressive Web App for
 tracking packages across Israeli couriers and global shipping carriers from a
 single dashboard. It works offline-first (`localStorage` + an offline sync queue), syncs
 across devices for signed-in users via Firebase, and can ingest tracking
@@ -13,7 +13,7 @@ updates for them. See `src/services/carrierApiProxy.js`.
 
 ### Supported Carriers
 
-Deliveree provides out-of-the-box detection, status tracking, branded theme styling, and direct tracking portal links for 24 couriers:
+SpotLi provides out-of-the-box detection, status tracking, branded theme styling, and direct tracking portal links for 24 couriers:
 
 - **Domestic (Israel)**: Israel Post (`דואר ישראל`), Cheetah Delivery (`צ'יטה`), HFD (`הפצה ושליחויות`), BoxIt, Tapuz (`תפוז`), Cargo Express (`אמיטל / שילוח`), GetPackage (`גט פקג'`), Flying Cargo (`פליינג קרגו`), Orian (`אוריאן`), Bar Distribution (`בר הפצה`), LionWheel, Buzzr (`באזר`), Zigzag (`זיגזג`), Exelot (`אקסלוט`).
 - **Global & International**: AliExpress Cainiao, Shein, YunExpress, 4PX, DHL Express, FedEx, UPS, USPS, Royal Mail, Aramex, Yanwen.
@@ -195,7 +195,7 @@ were affected:
 
 ## Automated Email Ingestion & Gmail Sync
 
-Deliveree supports two channels for automatic shipment tracking from emails:
+SpotLi supports two channels for automatic shipment tracking from emails:
 
 1. **Direct Inbound Email Gateway (`functions/src/inboundEmailHandler.js`)**:
    - Every user gets a dedicated ingestion address (`233b362d7b331adfde6e+usr_<uid>@cloudmailin.net`).

@@ -33,7 +33,7 @@ export function AutoArchivePromptModal({
               {t("autoArchive.promptTitle")}
             </h3>
             <p className="text-xs text-[var(--text-muted)]">
-              Deliveree Smart Workflows
+              SpotLi Smart Workflows
             </p>
           </div>
         </div>

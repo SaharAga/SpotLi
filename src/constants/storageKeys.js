@@ -35,5 +35,5 @@ export const STORAGE_KEYS = Object.freeze({
  * @returns {boolean}
  */
 export function isAppStorageKey(key) {
-  return typeof key === 'string' && key.startsWith('deliveree_');
+  return typeof key === 'string' && (key.startsWith('spotli_') || key.startsWith('deliveree_'));
 }

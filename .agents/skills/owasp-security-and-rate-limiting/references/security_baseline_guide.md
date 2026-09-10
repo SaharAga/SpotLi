@@ -1,4 +1,4 @@
-# Deliveree Security Baseline Guide (Client-Only PWA)
+# SpotLi Security Baseline Guide (Client-Only PWA)
 
 *Re-adopt ASVS L2/L3 language only if/when a real backend or auth server is introduced.*
 

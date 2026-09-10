@@ -377,7 +377,7 @@ describe('Delivery Service and Storage Persistence', () => {
 
     expect(createdUrl).toBe('blob:http://localhost/test-uuid');
     expect(revokedUrl).toBe('blob:http://localhost/test-uuid');
-    expect(mockAnchor.download).toMatch(/^deliveree_backup_/);
+    expect(mockAnchor.download).toMatch(/^spotli_backup_/);
     expect(mockAnchor.href).toBe('blob:http://localhost/test-uuid');
   });
 

@@ -91,12 +91,12 @@ export function InstallPwaBanner() {
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center shrink-0 text-blue-400">
-              <Smartphone className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-slate-950 border border-slate-700/80 flex items-center justify-center shrink-0 overflow-hidden shadow-md">
+              <img src="/icons/app-icon.png" alt="SpotLi" className="w-full h-full object-cover" />
             </div>
             <div>
               <h4 className="text-sm font-semibold text-white">
-                {isRTL ? 'התקן את Deliveree בסמארטפון' : 'Install Deliveree on Your Phone'}
+                {isRTL ? 'התקן את SpotLi בסמארטפון' : 'Install SpotLi on Your Phone'}
               </h4>
               <p className="text-xs text-blue-200/80 mt-0.5">
                 {isRTL 

@@ -44,7 +44,7 @@ describe('Google Authentication Lifecycle & OAuth Synchronization', () => {
       expect(validated.name).toBe('Alex Johnson');
       expect(validated.email).toBe('alex.johnson@gmail.com');
       expect(validated.avatar).toBe('https://lh3.googleusercontent.com/a/ACg8ocK123456789=s96-c');
-      expect(validated.ingestionEmail).toBe('alexjohnson.pkg@in.deliveree.app');
+      expect(validated.ingestionEmail).toBe('alexjohnson.pkg@in.spotliapp.com');
       expect(validated.preferences).toEqual({
         defaultCarrier: 'all',
         language: 'he',
@@ -63,7 +63,7 @@ describe('Google Authentication Lifecycle & OAuth Synchronization', () => {
       const validated = validateUserProfile(googleUserNoName);
       expect(validated.name).toBe('User');
       expect(validated.email).toBe('developer2026@gmail.com');
-      expect(validated.ingestionEmail).toBe('user.pkg@in.deliveree.app');
+      expect(validated.ingestionEmail).toBe('user.pkg@in.spotliapp.com');
       expect(validated.avatar).toBe('https://lh3.googleusercontent.com/a/sample=s96-c');
     });
 
@@ -170,20 +170,20 @@ describe('Google Authentication Lifecycle & OAuth Synchronization', () => {
 
       const cleanUser = buildCleanUserProfile(liveGoogleAuth);
       expect(cleanUser.name).toBe('Alexander The Great');
-      expect(cleanUser.ingestionEmail).toBe('alexanderthegreat.pkg@in.deliveree.app');
+      expect(cleanUser.ingestionEmail).toBe('alexanderthegreat.pkg@in.spotliapp.com');
     });
 
     it('generates clean ingestion email prefix from email when user name is non-latin Hebrew', () => {
       const liveHebrewUser = {
-        uid: 'hebrew-user-123',
+        uid: 'google-uid-hebrew-1005',
         displayName: 'דנה כהן',
-        email: 'dana.cohen.il@gmail.com',
-        photoURL: 'https://lh3.googleusercontent.com/a/dana=s96-c'
+        email: 'danacohen.il@gmail.com',
+        photoURL: 'https://lh3.googleusercontent.com/a/hebrew=s96-c'
       };
 
       const cleanUser = buildCleanUserProfile(liveHebrewUser);
       expect(cleanUser.name).toBe('דנה כהן');
-      expect(cleanUser.ingestionEmail).toBe('danacohenil.pkg@in.deliveree.app');
+      expect(cleanUser.ingestionEmail).toBe('danacohenil.pkg@in.spotliapp.com');
     });
   });
 

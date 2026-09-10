@@ -207,8 +207,8 @@ describe('AccountModal — backup export path', () => {
 
     const [, triggerDownload, filename] = exportSpies.raw.mock.calls[0];
     expect(triggerDownload).toBe(true);
-    expect(filename).toBe(`deliveree_backup_user-42_${todayISO()}.json`);
-    expect(downloads).toEqual([`deliveree_backup_user-42_${todayISO()}.json`]);
+    expect(filename).toBe(`spotli_backup_user-42_${todayISO()}.json`);
+    expect(downloads).toEqual([`spotli_backup_user-42_${todayISO()}.json`]);
     expect(onShowToast).toHaveBeenCalledWith(expect.stringContaining('JSON backup'), 'success');
   });
 

@@ -1,6 +1,6 @@
 {
-  "name": "Deliveree - Smart Package Tracker",
-  "short_name": "Deliveree",
+  "name": "SpotLi - Smart Package Tracker",
+  "short_name": "SpotLi",
   "description": "Smart parcel and shipment tracking dashboard with auto carrier detection and live timelines.",
   "start_url": "/",
   "scope": "/",

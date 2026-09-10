@@ -23,6 +23,7 @@ import { deliveryService } from '../services/deliveryService';
 import { sanitizeString } from '../utils/packageValidator';
 import { LEGAL_VERSION } from '../constants/legalVersion';
 import { STORAGE_KEYS } from '../constants/storageKeys';
+import { INGESTION_EMAIL_DOMAIN } from '../constants/app';
 
 const AuthContext = createContext();
 
@@ -319,7 +320,7 @@ export function validateUserProfile(raw) {
   }
 
   const cleanPrefix = name.toLowerCase().replace(/[^a-z0-9]/g, '') || 'user';
-  const ingestionEmail = sanitizeString(safeObj.ingestionEmail, 150) || `${cleanPrefix}.pkg@in.deliveree.app`;
+  const ingestionEmail = sanitizeString(safeObj.ingestionEmail, 150) || `${cleanPrefix}.pkg@${INGESTION_EMAIL_DOMAIN}`;
   const plan = sanitizeString(safeObj.plan, 50) || 'Personal Account';
 
   const devicesCount =
@@ -333,8 +334,8 @@ export function validateUserProfile(raw) {
 
   // Legal acceptance & AI training opt-in (see src/constants/legal.js,
   // src/components/LegalConsentGate.jsx). null/false until the user
-  // explicitly accepts — never defaulted true.
-  const legalAcceptedVersion = sanitizeString(safeObj.legalAcceptedVersion, 20) || null;
+  // explicitly accepts; never assumed true for new or existing users.
+  const legalAcceptedVersion = sanitizeString(safeObj.legalAcceptedVersion, 50) || null;
   const legalAcceptedAt = sanitizeString(safeObj.legalAcceptedAt, 50) || null;
   const aiTrainingOptIn = Boolean(safeObj.aiTrainingOptIn);
   const aiTrainingOptInUpdatedAt = sanitizeString(safeObj.aiTrainingOptInUpdatedAt, 50) || null;
@@ -391,7 +392,7 @@ export function getCachedUserForUid(uid) {
 }
 
 /**
- * Builds and validates a clean Deliveree user profile from Firebase User credentials
+ * Builds and validates a clean SpotLi user profile from Firebase User credentials
  * while merging and preserving custom preferences and metadata.
  */
 export function buildCleanUserProfile(firebaseUser, customName = null) {
@@ -416,7 +417,7 @@ export function buildCleanUserProfile(firebaseUser, customName = null) {
     email: firebaseUser.email || cached?.email || '',
     emailVerified: Boolean(firebaseUser.emailVerified ?? cached?.emailVerified),
     avatar: firebaseUser.photoURL || cached?.avatar || null,
-    ingestionEmail: cached?.ingestionEmail || `${cleanPrefix}.pkg@in.deliveree.app`,
+    ingestionEmail: cached?.ingestionEmail || `${cleanPrefix}.pkg@${INGESTION_EMAIL_DOMAIN}`,
     plan: cached?.plan || 'Personal Account',
     devicesCount: cached?.devicesCount || 1,
     createdAt: firebaseUser.metadata?.creationTime || cached?.createdAt || new Date().toISOString(),

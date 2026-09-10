@@ -86,7 +86,7 @@ def create_html_body(subject: str, message: str, status: str) -> str:
               <table width="100%" border="0" cellspacing="0" cellpadding="0">
                 <tr>
                   <td>
-                    <span style="font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: -0.025em;">Deliveree Assistant</span>
+                    <span style="font-size: 20px; font-weight: 700; color: #ffffff; letter-spacing: -0.025em;">SpotLi Assistant</span>
                   </td>
                   <td align="right">
                     <span style="display: inline-block; padding: 4px 12px; font-size: 12px; font-weight: 600; color: #ffffff; background-color: {badge_color}; border-radius: 9999px; text-transform: uppercase;">{status}</span>
@@ -107,7 +107,7 @@ def create_html_body(subject: str, message: str, status: str) -> str:
           <!-- Footer -->
           <tr>
             <td style="background-color: #f9fafb; padding: 16px 32px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #6b7280; text-align: center;">
-              Sent automatically by Deliveree Agent System &bull; Workspace: <code>Deliveree</code>
+              Sent automatically by SpotLi Agent System &bull; Workspace: <code>SpotLi</code>
             </td>
           </tr>
         </table>
@@ -139,11 +139,11 @@ def send_email(subject: str, message: str, to_email: str = None, status: str = "
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = f"[{status.upper()}] {subject}"
-    msg["From"] = f"Deliveree Assistant <{sender}>"
+    msg["From"] = f"SpotLi Assistant <{sender}>"
     msg["To"] = recipient
 
     # Plain text version
-    text_content = f"{subject}\n\nStatus: {status}\n\n{message}\n\n--\nSent automatically by Deliveree Assistant"
+    text_content = f"{subject}\n\nStatus: {status}\n\n{message}\n\n--\nSent automatically by SpotLi Assistant"
     html_content = create_html_body(subject, message, status)
 
     msg.attach(MIMEText(text_content, "plain"))
@@ -154,28 +154,25 @@ def send_email(subject: str, message: str, to_email: str = None, status: str = "
             context = ssl.create_default_context()
             with smtplib.SMTP_SSL(host, port, context=context) as server:
                 server.login(sender, password)
-                server.sendmail(sender, recipient, msg.as_string())
+                server.send_message(msg)
         else:
             with smtplib.SMTP(host, port) as server:
-                server.starttls(context=ssl.create_default_context())
+                server.starttls()
                 server.login(sender, password)
-                server.sendmail(sender, recipient, msg.as_string())
+                server.send_message(msg)
 
-        print(f"✅ Notification email successfully sent to {recipient}!")
+        print(f"📧 Notification sent successfully to {recipient} [{status}]")
         return True
-    except smtplib.SMTPAuthenticationError as e:
-        print(f"❌ Authentication Failed: {e}", file=sys.stderr)
-        print("Make sure your GMAIL_USER is your full email and GMAIL_APP_PASSWORD is the 16-character App Password (not your normal account password).", file=sys.stderr)
-        return False
+
     except Exception as e:
         print(f"❌ Failed to send email: {e}", file=sys.stderr)
         return False
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Deliveree Notification Utility")
-    parser.add_argument("-s", "--subject", default="Deliveree Agent Notification", help="Email subject line")
-    parser.add_argument("-m", "--message", default="This is a notification from your Deliveree AI assistant.", help="Message body")
+    parser = argparse.ArgumentParser(description="SpotLi Notification Utility")
+    parser.add_argument("-s", "--subject", default="SpotLi Agent Notification", help="Email subject line")
+    parser.add_argument("-m", "--message", default="This is a notification from your SpotLi AI assistant.", help="Message body")
     parser.add_argument("-t", "--to", default=None, help="Recipient email address")
     parser.add_argument("--status", default="INFO", choices=["INFO", "SUCCESS", "WARNING", "ERROR", "ACTION_REQUIRED"], help="Notification status level")
     parser.add_argument("--test", action="store_true", help="Send a test verification notification")
@@ -183,8 +180,8 @@ def main():
     args = parser.parse_args()
 
     if args.test:
-        subject = "Deliveree Agent Notification Test"
-        message = "🎉 Congratulations! Your Deliveree agent notification flow is successfully configured and working.\n\nYou will receive automated alerts for task completions, critical build issues, and required actions directly here."
+        subject = "SpotLi Agent Notification Test"
+        message = "🎉 Congratulations! Your SpotLi agent notification flow is successfully configured and working.\n\nYou will receive automated alerts for task completions, critical build issues, and required actions directly here."
         status = "SUCCESS"
     else:
         subject = args.subject

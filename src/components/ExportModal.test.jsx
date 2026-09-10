@@ -71,9 +71,9 @@ describe('ExportModal Component Logic & State Specifications', () => {
     const triggerExport = (format, packages, language = 'he') => {
       const today = new Date().toISOString().slice(0, 10);
       if (format === 'csv') {
-        exportUtils.exportToCSV(packages, true, `deliveree_export_all_${today}.csv`);
+        exportUtils.exportToCSV(packages, true, `spotli_export_all_${today}.csv`);
       } else if (format === 'json') {
-        exportUtils.exportToJSON(packages, true, `deliveree_export_all_${today}.json`);
+        exportUtils.exportToJSON(packages, true, `spotli_export_all_${today}.json`);
       } else if (format === 'print') {
         exportUtils.generatePrintableSummary(packages, language, true);
       }

@@ -28,9 +28,11 @@ describe('Storage Keys Constants', () => {
   });
 
   describe('isAppStorageKey', () => {
-    it('returns true for keys starting with deliveree_', () => {
+    it('returns true for keys starting with deliveree_ or spotli_', () => {
       expect(isAppStorageKey('deliveree_auth_user_v1')).toBe(true);
       expect(isAppStorageKey('deliveree_custom_key')).toBe(true);
+      expect(isAppStorageKey('spotli_auth_user_v1')).toBe(true);
+      expect(isAppStorageKey('spotli_custom_key')).toBe(true);
     });
 
     it('returns false for keys not starting with deliveree_', () => {
