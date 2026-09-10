@@ -143,7 +143,7 @@ export function exportToCSV(packages, triggerDownload = false, filename = '') {
   const csvContentWithBOM = '\uFEFF' + csvBody;
 
   if (triggerDownload && typeof document !== 'undefined') {
-    const defaultName = filename || `deliveree_export_${todayISO()}.csv`;
+    const defaultName = filename || `spotli_export_${todayISO()}.csv`;
     downloadBlob(csvContentWithBOM, 'text/csv;charset=utf-8;', defaultName);
   }
 
@@ -192,7 +192,7 @@ export function exportRawToJSON(packages, triggerDownload = false, filename = ''
   const jsonString = JSON.stringify(manifest);
 
   if (triggerDownload && typeof document !== 'undefined') {
-    const defaultName = filename || `deliveree_backup_${todayISO()}.json`;
+    const defaultName = filename || `spotli_backup_${todayISO()}.json`;
     downloadBlob(jsonString, 'application/json;charset=utf-8;', defaultName);
   }
 
@@ -232,7 +232,7 @@ export function exportToJSON(packages, triggerDownload = false, filename = '', o
   const jsonString = JSON.stringify(manifest, null, 2);
 
   if (triggerDownload && typeof document !== 'undefined') {
-    const defaultName = filename || `deliveree_export_${scope ? `${scope}_` : ''}${todayISO()}.json`;
+    const defaultName = filename || `spotli_export_${scope ? `${scope}_` : ''}${todayISO()}.json`;
     downloadBlob(jsonString, 'application/json;charset=utf-8;', defaultName);
   }
 

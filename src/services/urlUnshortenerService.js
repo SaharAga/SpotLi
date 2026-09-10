@@ -1,5 +1,5 @@
 /**
- * Deliveree URL Unshortener & Short Link Intelligence Service
+ * SpotLi URL Unshortener & Short Link Intelligence Service
  * 
  * Safely identifies shortened courier URLs (chtr.co.il, slnk.to, is.gd, bit.ly, etc.)
  * and extracts carrier metadata, tracking identifiers, or resolves target URLs defensively.

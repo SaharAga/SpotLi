@@ -77,8 +77,8 @@ const STATUS_KEYWORDS_LC = Object.freeze(
 );
 
 /**
- * Infer unified Deliveree stage from carrier raw text
- * @param {string} text - Raw event status
+ * Infer unified SpotLi stage from carrier raw text
+ * @param {string} rawStatus
  * @returns {import('../types/deliveree').DeliveryStageId}
  */
 export function inferStageFromText(text = '') {
