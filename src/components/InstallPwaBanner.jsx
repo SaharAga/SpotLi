@@ -85,7 +85,7 @@ export function InstallPwaBanner() {
   return (
     <>
       <div 
-        className={`sticky top-16 z-30 mx-4 my-2 md:mx-auto md:max-w-xl bg-gradient-to-r from-blue-900/90 to-indigo-900/90 backdrop-blur-md border border-blue-500/30 rounded-2xl p-4 shadow-xl shadow-blue-950/40 transition-all duration-300 animate-in fade-in slide-in-from-top-2 ${
+        className={`sticky top-16 z-30 mx-4 my-2 md:mx-auto md:max-w-xl bg-gradient-to-r from-blue-900/90 to-indigo-900/90 backdrop-blur-md border border-blue-500/30 rounded-2xl p-4 shadow-xl shadow-blue-950/40 transition-ui duration-300 animate-in fade-in slide-in-from-top-2 ${
           isRTL ? 'text-right' : 'text-left'
         }`}
       >
@@ -117,7 +117,7 @@ export function InstallPwaBanner() {
         <div className="mt-3 flex items-center gap-2">
           <button
             onClick={handleInstallClick}
-            className="flex-1 flex items-center justify-center gap-2 px-3.5 py-2 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-xs font-medium rounded-xl shadow-md shadow-blue-600/30 transition-all cursor-pointer"
+            className="flex-1 flex items-center justify-center gap-2 px-3.5 py-2 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-xs font-medium rounded-xl shadow-md shadow-blue-600/30 transition-ui cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
             {isIOS 

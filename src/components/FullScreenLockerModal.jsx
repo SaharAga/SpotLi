@@ -197,7 +197,7 @@ export function FullScreenLockerModal({
             return (
               <div
                 key={item.id}
-                className="w-full p-5 sm:p-6 rounded-3xl bg-slate-900/90 border-2 border-emerald-400/50 hover:border-emerald-300 transition-all shadow-2xl shadow-emerald-950/60 relative overflow-hidden text-center"
+                className="w-full p-5 sm:p-6 rounded-3xl bg-slate-900/90 border-2 border-emerald-400/50 hover:border-emerald-300 transition-ui shadow-2xl shadow-emerald-950/60 relative overflow-hidden text-center"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-teal-500/10 pointer-events-none" />
 
@@ -336,7 +336,7 @@ export function FullScreenLockerModal({
           type="button"
           onClick={handleMarkAsDelivered}
           disabled={isMarking}
-          className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-sm sm:text-base shadow-xl shadow-emerald-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[54px]"
+          className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-sm sm:text-base shadow-xl shadow-emerald-500/25 transition-ui flex items-center justify-center gap-2 cursor-pointer min-h-[54px]"
         >
           <CheckCircle2 className="w-5 h-5 text-slate-950 stroke-[2.5]" />
           <span>
@@ -354,7 +354,7 @@ export function FullScreenLockerModal({
             href={whatsappProxyUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-400 hover:text-emerald-300 font-bold text-xs border border-emerald-900/60 transition-all flex items-center justify-center gap-2 min-h-[48px]"
+            className="py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-400 hover:text-emerald-300 font-bold text-xs border border-emerald-900/60 transition-ui flex items-center justify-center gap-2 min-h-[48px]"
           >
             <ExternalLink className="w-4 h-4" />
             <span>
@@ -368,7 +368,7 @@ export function FullScreenLockerModal({
             type="button"
             onClick={handleNavigate}
             disabled={!pkg.pickupLocation}
-            className="py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-blue-400 hover:text-blue-300 font-bold text-xs border border-blue-900/60 transition-all flex items-center justify-center gap-2 min-h-[48px] cursor-pointer disabled:opacity-50"
+            className="py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-blue-400 hover:text-blue-300 font-bold text-xs border border-blue-900/60 transition-ui flex items-center justify-center gap-2 min-h-[48px] cursor-pointer disabled:opacity-50"
           >
             <Navigation className="w-4 h-4" />
             <span>{t('lockerMode.navigate')}</span>
@@ -379,7 +379,7 @@ export function FullScreenLockerModal({
         {pkg.pickupPhone && (
           <a
             href={`tel:${pkg.pickupPhone}`}
-            className="w-full py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-300 font-bold text-xs border border-slate-800 transition-all flex items-center justify-center gap-2 min-h-[48px]"
+            className="w-full py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-300 font-bold text-xs border border-slate-800 transition-ui flex items-center justify-center gap-2 min-h-[48px]"
           >
             <Phone className="w-3.5 h-3.5" />
             <span>{t('phoneActions.callStore')} ({pkg.pickupPhone})</span>

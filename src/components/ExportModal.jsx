@@ -125,7 +125,7 @@ export function ExportModal({
               <button
                 type="button"
                 onClick={() => setSelectedFormat('csv')}
-                className={`p-3.5 rounded-2xl border text-start transition-all cursor-pointer flex flex-col justify-between min-h-[48px] ${
+                className={`p-3.5 rounded-2xl border text-start transition-ui cursor-pointer flex flex-col justify-between min-h-[48px] ${
                   selectedFormat === 'csv'
                     ? 'bg-blue-600/15 border-blue-500 text-blue-300 ring-1 ring-blue-500/50'
                     : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
@@ -147,7 +147,7 @@ export function ExportModal({
               <button
                 type="button"
                 onClick={() => setSelectedFormat('json')}
-                className={`p-3.5 rounded-2xl border text-start transition-all cursor-pointer flex flex-col justify-between min-h-[48px] ${
+                className={`p-3.5 rounded-2xl border text-start transition-ui cursor-pointer flex flex-col justify-between min-h-[48px] ${
                   selectedFormat === 'json'
                     ? 'bg-blue-600/15 border-blue-500 text-blue-300 ring-1 ring-blue-500/50'
                     : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
@@ -171,7 +171,7 @@ export function ExportModal({
               <button
                 type="button"
                 onClick={() => setSelectedFormat('print')}
-                className={`p-3.5 rounded-2xl border text-start transition-all cursor-pointer flex flex-col justify-between min-h-[48px] ${
+                className={`p-3.5 rounded-2xl border text-start transition-ui cursor-pointer flex flex-col justify-between min-h-[48px] ${
                   selectedFormat === 'print'
                     ? 'bg-blue-600/15 border-blue-500 text-blue-300 ring-1 ring-blue-500/50'
                     : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
@@ -201,7 +201,7 @@ export function ExportModal({
               <button
                 type="button"
                 onClick={() => setSelectedScope('all')}
-                className={`p-2.5 rounded-xl border text-center font-bold text-xs transition-all cursor-pointer min-h-[48px] flex items-center justify-center ${
+                className={`p-2.5 rounded-xl border text-center font-bold text-xs transition-ui cursor-pointer min-h-[48px] flex items-center justify-center ${
                   selectedScope === 'all'
                     ? 'bg-blue-600/20 border-blue-500 text-blue-300'
                     : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200'
@@ -213,7 +213,7 @@ export function ExportModal({
               <button
                 type="button"
                 onClick={() => setSelectedScope('active')}
-                className={`p-2.5 rounded-xl border text-center font-bold text-xs transition-all cursor-pointer min-h-[48px] flex items-center justify-center ${
+                className={`p-2.5 rounded-xl border text-center font-bold text-xs transition-ui cursor-pointer min-h-[48px] flex items-center justify-center ${
                   selectedScope === 'active'
                     ? 'bg-blue-600/20 border-blue-500 text-blue-300'
                     : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200'
@@ -225,7 +225,7 @@ export function ExportModal({
               <button
                 type="button"
                 onClick={() => setSelectedScope('delivered')}
-                className={`p-2.5 rounded-xl border text-center font-bold text-xs transition-all cursor-pointer min-h-[48px] flex items-center justify-center ${
+                className={`p-2.5 rounded-xl border text-center font-bold text-xs transition-ui cursor-pointer min-h-[48px] flex items-center justify-center ${
                   selectedScope === 'delivered'
                     ? 'bg-blue-600/20 border-blue-500 text-blue-300'
                     : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200'
@@ -273,7 +273,7 @@ export function ExportModal({
             type="button"
             disabled={isExporting || filteredExportPackages.length === 0}
             onClick={handleExecuteExport}
-            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-40 text-white font-bold text-xs transition-all flex items-center gap-2 shadow-lg shadow-blue-500/20 cursor-pointer min-h-[48px]"
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-40 text-white font-bold text-xs transition-ui flex items-center gap-2 shadow-lg shadow-blue-500/20 cursor-pointer min-h-[48px]"
           >
             <Download className="w-4 h-4" />
             <span>

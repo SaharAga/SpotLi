@@ -381,7 +381,7 @@ export function AddEditPackageModal({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={t('modal.itemTitlePlaceholder')}
-            className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all min-h-[48px]"
+            className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-ui min-h-[48px]"
           />
         </div>
 
@@ -406,7 +406,7 @@ export function AddEditPackageModal({
             placeholder={t('modal.trackingNumPlaceholder')}
             className={`w-full font-mono bg-slate-950 border ${
               duplicatePackage ? 'border-amber-500/50 focus:border-amber-500 focus:ring-amber-500' : 'border-slate-800 focus:border-blue-500 focus:ring-blue-500'
-            } text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-1 transition-all min-h-[48px]`}
+            } text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-1 transition-ui min-h-[48px]`}
           />
 
           {/* Live Ingestion Badges & 1-Tap Quick Action */}
@@ -435,7 +435,7 @@ export function AddEditPackageModal({
               <button
                 type="button"
                 onClick={handleApplySmartDetection}
-                className="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 hover:text-blue-200 border border-blue-500/30 rounded-xl font-semibold transition-all flex items-center gap-1.5 min-h-[48px] cursor-pointer"
+                className="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 hover:text-blue-200 border border-blue-500/30 rounded-xl font-semibold transition-ui flex items-center gap-1.5 min-h-[48px] cursor-pointer"
               >
                 <Wand2 className="w-3.5 h-3.5" />
                 <span>{t('modal.applyAllAction')}</span>
@@ -593,7 +593,7 @@ export function AddEditPackageModal({
                 type="button"
                 key={s.id}
                 onClick={() => setStatus(s.id)}
-                className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-center min-h-[48px] cursor-pointer ${
+                className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-ui text-center min-h-[48px] cursor-pointer ${
                   status === s.id
                     ? 'bg-blue-600 border-blue-500 text-white shadow-sm'
                     : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
@@ -615,7 +615,7 @@ export function AddEditPackageModal({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder={t('modal.notesPlaceholder')}
-            className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl p-3 focus:outline-none focus:border-blue-500 transition-all resize-none min-h-[48px]"
+            className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl p-3 focus:outline-none focus:border-blue-500 transition-ui resize-none min-h-[48px]"
           />
         </div>
 
@@ -746,7 +746,7 @@ export function AddEditPackageModal({
           </button>
           <button
             type="submit"
-            className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 min-h-[48px] cursor-pointer"
+            className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-ui shadow-md shadow-blue-500/20 min-h-[48px] cursor-pointer"
           >
             {editPackage ? t('modal.save') : t('modal.create')}
           </button>

@@ -382,7 +382,7 @@ export function AccountModal({
               <button
                 type="button"
                 onClick={handleRequestPushPermission}
-                className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer min-h-[48px]"
+                className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-ui flex items-center gap-1.5 cursor-pointer min-h-[48px]"
               >
                 <Bell className="w-3.5 h-3.5" />
                 <span>{t('notifications.requestPermission')}</span>
@@ -400,7 +400,7 @@ export function AccountModal({
             <button
               type="button"
               onClick={handleSendTestNotification}
-              className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-100 text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 min-h-[48px]"
+              className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-100 text-xs font-semibold transition-ui cursor-pointer flex items-center gap-1.5 min-h-[48px]"
             >
               <Sparkles className="w-3 h-3 text-blue-400" />
               <span>{language === 'he' ? 'שלח התראת בדיקה' : 'Send Test Notification'}</span>
@@ -507,7 +507,7 @@ export function AccountModal({
           type="button"
           disabled={isDeleting || (deleteConfirmationInput.trim().toUpperCase() !== 'DELETE' && deleteConfirmationInput.trim().toUpperCase() !== 'מחק')}
           onClick={handleDeleteAccount}
-          className="w-full py-3 px-4 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:opacity-40 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[48px]"
+          className="w-full py-3 px-4 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:opacity-40 text-white font-bold text-xs transition-ui flex items-center justify-center gap-2 cursor-pointer min-h-[48px]"
         >
           <Trash2 className="w-4 h-4" />
           <span>{isDeleting ? (language === 'he' ? 'מוחק נתונים...' : 'Wiping all data...') : (language === 'he' ? 'מחק את החשבון וכל הנתונים לצמיתות' : 'Delete Account & Wipe All Data')}</span>

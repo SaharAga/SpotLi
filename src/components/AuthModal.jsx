@@ -416,7 +416,7 @@ export function AuthModal({
                     type="button"
                     onClick={handleGoogleClick}
                     disabled={isGoogleLoading || isLoading}
-                    className="w-full flex items-center justify-center gap-2.5 p-3 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs transition-all shadow-md cursor-pointer min-h-[48px] disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-2.5 p-3 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs transition-ui shadow-md cursor-pointer min-h-[48px] disabled:opacity-50"
                   >
                     {isGoogleLoading ? (
                       <Loader2 className="w-4 h-4 animate-spin text-slate-900" />
@@ -468,7 +468,7 @@ export function AuthModal({
                       setFormError('');
                       setFormSuccess('');
                     }}
-                    className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer min-h-[48px] ${
+                    className={`flex-1 py-2 text-xs font-bold rounded-xl transition-ui cursor-pointer min-h-[48px] ${
                       activeTab === 'signin'
                         ? 'bg-blue-600 text-white shadow-md'
                         : 'text-slate-400 hover:text-slate-200'
@@ -483,7 +483,7 @@ export function AuthModal({
                       setFormError('');
                       setFormSuccess('');
                     }}
-                    className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer min-h-[48px] ${
+                    className={`flex-1 py-2 text-xs font-bold rounded-xl transition-ui cursor-pointer min-h-[48px] ${
                       activeTab === 'register'
                         ? 'bg-blue-600 text-white shadow-md'
                         : 'text-slate-400 hover:text-slate-200'
@@ -650,7 +650,7 @@ export function AuthModal({
                             {[1, 2, 3, 4].map((step) => (
                               <div
                                 key={step}
-                                className={`h-full rounded-full transition-all duration-300 ${
+                                className={`h-full rounded-full transition-ui duration-300 ${
                                   passwordStrength.score >= step ? passwordStrength.colorClass : 'bg-slate-800'
                                 }`}
                               />
@@ -715,7 +715,7 @@ export function AuthModal({
                 <button
                   type="submit"
                   disabled={isLoading || isGoogleLoading}
-                  className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:from-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/20 transition-all cursor-pointer min-h-[48px] flex items-center justify-center gap-2 disabled:opacity-50 mt-3"
+                  className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:from-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/20 transition-ui cursor-pointer min-h-[48px] flex items-center justify-center gap-2 disabled:opacity-50 mt-3"
                 >
                   {isLoading && <Loader2 className="w-4 h-4 animate-spin text-white" />}
                   <span>

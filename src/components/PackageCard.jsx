@@ -182,7 +182,7 @@ function PackageCardImpl({
          menu is open, so the menu's own z-50 is scoped INSIDE it and cannot
          escape. At z-30 the whole card-plus-menu sat below the install banner
          and the bottom nav (both z-40), and the menu was drawn behind them. */
-      className={`relative rounded-2xl transition-all ${menuOpen ? 'z-50' : 'z-0'}`}
+      className={`relative rounded-2xl transition-ui ${menuOpen ? 'z-50' : 'z-0'}`}
       /* `content-visibility: auto` implies `contain: layout style paint`, and
          PAINT containment clips anything a descendant draws outside this box.
          The row menu is positioned `absolute top-full` — below the card — so
@@ -269,7 +269,7 @@ function PackageCardImpl({
           transform: swipeOffset ? `translateX(${swipeOffset}px)` : 'none',
           transition: isSwiping ? 'none' : 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)'
         }}
-        className={`group relative bg-slate-900 hover:bg-slate-800 border rounded-2xl p-4 transition-all duration-200 cursor-pointer flex flex-col gap-3 shadow-sm hover:shadow-md ${
+        className={`group relative bg-slate-900 hover:bg-slate-800 border rounded-2xl p-4 transition-ui duration-200 cursor-pointer flex flex-col gap-3 shadow-sm hover:shadow-md ${
           pkg.isPinned ? 'border-blue-500/40 ring-1 ring-blue-500/20' : 'border-slate-800 hover:border-slate-700'
         }`}
       >
@@ -477,7 +477,7 @@ function PackageCardImpl({
                 <>
                   <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }} />
                   <div
-                    className={`absolute z-50 w-48 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl py-1 text-xs end-0 ${
+                    className={`absolute z-50 w-48 bg-slate-900/98 border border-slate-700/80 rounded-2xl shadow-2xl py-1 text-xs end-0 ${
                       menuFlipUp ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
                     }`}
                   >

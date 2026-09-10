@@ -225,7 +225,7 @@ export function AboutModal({
                 type="button"
                 onClick={handleCheckForUpdates}
                 disabled={isCheckingUpdate}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs transition-all shadow-md shadow-blue-600/20 cursor-pointer min-h-[48px] shrink-0"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs transition-ui shadow-md shadow-blue-600/20 cursor-pointer min-h-[48px] shrink-0"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isCheckingUpdate ? 'animate-spin' : ''}`} />
                 <span>
@@ -240,7 +240,7 @@ export function AboutModal({
                 onClick={handleClearCacheAndForceRefresh}
                 disabled={isForceRefreshing}
                 title={language === 'he' ? 'נקה מטמון ורענן אפליקציה' : 'Clear Cache & Force Reload'}
-                className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold text-xs border border-slate-700 transition-all cursor-pointer min-h-[48px] shrink-0"
+                className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold text-xs border border-slate-700 transition-ui cursor-pointer min-h-[48px] shrink-0"
               >
                 <RefreshCw className={`w-3 h-3 ${isForceRefreshing ? 'animate-spin' : ''}`} />
                 <span>{language === 'he' ? 'איפוס מטמון 🧹' : 'Clear Cache 🧹'}</span>
@@ -267,7 +267,7 @@ export function AboutModal({
                 onClick={() => {
                   if (typeof window !== 'undefined') window.location.reload();
                 }}
-                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all shadow-md cursor-pointer shrink-0 min-h-[48px]"
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-ui shadow-md cursor-pointer shrink-0 min-h-[48px]"
               >
                 {language === 'he' ? 'רענן כעת' : 'Reload Now'}
               </button>
@@ -304,7 +304,7 @@ export function AboutModal({
                 type="button"
                 onClick={handleRunSelfTest}
                 disabled={isRunningBist}
-                className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 font-bold text-xs border border-slate-700 transition-all cursor-pointer min-h-[48px]"
+                className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 font-bold text-xs border border-slate-700 transition-ui cursor-pointer min-h-[48px]"
               >
                 <Activity className={`w-3.5 h-3.5 ${isRunningBist ? 'animate-pulse text-emerald-400' : 'text-blue-400'}`} />
                 <span>
@@ -512,7 +512,7 @@ export function AboutModal({
           <button
             type="button"
             onClick={onOpenFeedback}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 font-bold text-xs transition-all cursor-pointer min-h-[48px] w-full sm:w-auto"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 font-bold text-xs transition-ui cursor-pointer min-h-[48px] w-full sm:w-auto"
           >
             <Heart className="w-4 h-4 text-purple-400 fill-purple-400/20" />
             <span>{language === 'he' ? 'שלח משוב ❤️' : 'Send Feedback ❤️'}</span>
@@ -521,7 +521,7 @@ export function AboutModal({
           <button
             type="button"
             onClick={onClose}
-            className="hidden lg:block px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-all cursor-pointer min-h-[48px] w-full sm:w-auto"
+            className="hidden lg:block px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-ui cursor-pointer min-h-[48px] w-full sm:w-auto"
           >
             {language === 'he' ? 'סגור' : 'Close'}
           </button>
