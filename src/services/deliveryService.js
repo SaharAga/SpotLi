@@ -110,8 +110,28 @@ export function mergePackageData(existingPkg, incomingData) {
   const localTrackingNumber = incomingData.localTrackingNumber || (isDomesticCourier ? incomingData.trackingNumber : null) || existingPkg.localTrackingNumber || null;
   const localCarrier = incomingData.localCarrier || (isDomesticCourier ? incomingData.carrier : null) || existingPkg.localCarrier || null;
 
+  const isGenericTitle = (t) => {
+    if (!t || typeof t !== 'string') return true;
+    const clean = t.trim().toLowerCase();
+    return (
+      clean === 'online order' ||
+      clean === 'new tracked package' ||
+      clean === 'חבילה חדשה למעקב' ||
+      /^package\s+[a-z0-9_.-]+$/i.test(clean) ||
+      /^חבילה\s+[a-z0-9_.-]+$/i.test(clean) ||
+      /^(?:aliexpress|shein|temu|amazon|ebay|zara|asos|ksp|ivory)\s+(?:order|package)$/i.test(clean) ||
+      /^(?:הזמנה מ-|משלוח מ-)(?:aliexpress|shein|temu|amazon|ebay|zara|asos|ksp|ivory)$/i.test(clean)
+    );
+  };
+
+  const resolvedTitle = (!isGenericTitle(incomingData.title) && isGenericTitle(existingPkg.title))
+    ? incomingData.title
+    : (existingPkg.title || incomingData.title);
+
   return {
     ...existingPkg,
+    title: resolvedTitle,
+    orderNumber: incomingData.orderNumber || existingPkg.orderNumber || null,
     status: targetStatus,
     localCarrier,
     localTrackingNumber,

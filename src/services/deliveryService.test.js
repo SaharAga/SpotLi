@@ -562,6 +562,32 @@ describe('Delivery Service and Storage Persistence', () => {
       expect(merged.aliases).toContain('RU0126608087Z');
     });
 
+    it('upgrades generic title to specific item title and preserves orderNumber in mergePackageData', () => {
+      const existing = {
+        id: 'pkg-1',
+        title: 'AliExpress Order',
+        trackingNumber: 'LP00582910482CN',
+        carrier: 'cainiao',
+        status: 'in_transit'
+      };
+      const incoming = {
+        title: 'Mechanical Keyboard',
+        orderNumber: '818274917401'
+      };
+      const merged = deliveryService.mergePackageData(existing, incoming);
+      expect(merged.title).toBe('Mechanical Keyboard');
+      expect(merged.orderNumber).toBe('818274917401');
+
+      // Does not downgrade a specific title with a generic incoming title
+      const incomingGeneric = {
+        title: 'Package LP00582910482CN',
+        status: 'out_for_delivery'
+      };
+      const merged2 = deliveryService.mergePackageData(merged, incomingGeneric);
+      expect(merged2.title).toBe('Mechanical Keyboard');
+      expect(merged2.orderNumber).toBe('818274917401');
+    });
+
     it('handles null, undefined, or unknown state inputs safely', () => {
       expect(canTransition(null, 'delivered')).toBe(false);
       expect(canTransition('ordered', null)).toBe(false);
