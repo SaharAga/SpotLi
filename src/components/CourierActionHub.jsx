@@ -344,7 +344,7 @@ export function CourierActionHub({ pkg, onShowToast }) {
                 triggerHapticFeedback(10);
                 setSelectedType(opt.id);
               }}
-              className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-semibold transition-all min-h-[48px] cursor-pointer ${
+              className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-semibold transition-ui min-h-[48px] cursor-pointer ${
                 isActive
                   ? 'bg-emerald-600/20 border-emerald-500/50 text-emerald-300 shadow-sm'
                   : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
@@ -417,7 +417,7 @@ export function CourierActionHub({ pkg, onShowToast }) {
         <button
           type="button"
           onClick={handleWhatsApp}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-600/20 min-h-[48px] cursor-pointer"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-ui shadow-md shadow-emerald-600/20 min-h-[48px] cursor-pointer"
         >
           <Send className="w-4 h-4" />
           <span>{isHe ? 'שלח בוואטסאפ' : 'WhatsApp'}</span>
@@ -426,7 +426,7 @@ export function CourierActionHub({ pkg, onShowToast }) {
         <button
           type="button"
           onClick={handleSms}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-bold transition-all border border-slate-700 min-h-[48px] cursor-pointer"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-bold transition-ui border border-slate-700 min-h-[48px] cursor-pointer"
         >
           <ExternalLink className="w-4 h-4" />
           <span>{isHe ? 'שלח ב-SMS' : 'SMS'}</span>
@@ -435,7 +435,7 @@ export function CourierActionHub({ pkg, onShowToast }) {
         <button
           type="button"
           onClick={handleCopy}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-bold transition-all border border-slate-700 min-h-[48px] cursor-pointer"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-bold transition-ui border border-slate-700 min-h-[48px] cursor-pointer"
         >
           {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
           <span>{copied ? (isHe ? 'הועתק!' : 'Copied!') : (isHe ? 'העתק טקסט' : 'Copy Text')}</span>

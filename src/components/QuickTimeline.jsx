@@ -15,7 +15,7 @@ export function QuickTimeline({ currentStatus }) {
       <div className="relative flex items-center justify-between w-full">
         <div className="absolute top-1/2 left-0 right-0 h-1 -translate-y-1/2 bg-slate-800 rounded-full z-0">
           <div
-            className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-500 rounded-full transition-all duration-500"
+            className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-500 rounded-full transition-ui duration-500"
             style={{
               width: `${(effectiveIndex / (STAGES.length - 1)) * 100}%`
             }}
@@ -38,7 +38,7 @@ export function QuickTimeline({ currentStatus }) {
           return (
             <div key={stage.id} className="relative z-10 flex flex-col items-center group">
               <div
-                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all duration-300 ${circleBg}`}
+                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-ui duration-300 ${circleBg}`}
                 title={language === 'he' ? stage.hebrewLabel : stage.label}
               >
                 {isPassed ? (

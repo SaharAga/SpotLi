@@ -146,7 +146,7 @@ export function NavigationChoiceModal({
               key={app.id}
               type="button"
               onClick={() => handleSelectApp(app.id)}
-              className={`w-full p-3.5 rounded-2xl border transition-all text-start flex items-center justify-between gap-3 cursor-pointer min-h-[52px] group ${
+              className={`w-full p-3.5 rounded-2xl border transition-ui text-start flex items-center justify-between gap-3 cursor-pointer min-h-[52px] group ${
                 isPreferred
                   ? 'bg-emerald-600/10 border-emerald-500/50 hover:bg-emerald-600/20'
                   : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-800/50'

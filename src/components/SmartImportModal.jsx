@@ -455,7 +455,7 @@ export function SmartImportModal({
             <button
               type="button"
               onClick={handleClipboardPaste}
-              className="px-3.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all shadow-md shadow-blue-500/20 cursor-pointer min-h-[48px] flex items-center justify-center"
+              className="px-3.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-ui shadow-md shadow-blue-500/20 cursor-pointer min-h-[48px] flex items-center justify-center"
             >
               {language === 'he' ? 'הדבק מלוח ההעתקה 📋' : 'Paste from Clipboard 📋'}
             </button>
@@ -476,7 +476,7 @@ export function SmartImportModal({
                       setRawText(s.text);
                       runTextParse(s.text);
                     }}
-                    className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition-all text-start cursor-pointer min-h-[48px] flex items-center"
+                    className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition-ui text-start cursor-pointer min-h-[48px] flex items-center"
                   >
                     {s.label}
                   </button>
@@ -492,13 +492,13 @@ export function SmartImportModal({
                 onChange={(e) => setRawText(e.target.value)}
                 onPaste={handleImagePaste}
                 placeholder={t('smartModal.pastePlaceholder')}
-                className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-2xl p-4 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all leading-relaxed"
+                className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-2xl p-4 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-ui leading-relaxed"
               />
               <div className="flex justify-end">
                 <button
                   type="submit"
                   disabled={isAiParsing}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 cursor-pointer min-h-[48px] disabled:opacity-50"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold transition-ui shadow-md shadow-blue-500/20 cursor-pointer min-h-[48px] disabled:opacity-50"
                 >
                   {isAiParsing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                   <span>
@@ -664,7 +664,7 @@ export function SmartImportModal({
                       type="button"
                       onClick={handleApply}
                       disabled={!canApplyParsed}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/20 transition-all cursor-pointer min-h-[48px]"
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/20 transition-ui cursor-pointer min-h-[48px]"
                     >
                       <span>{language === 'he' ? 'המשך להוספת חבילה זו למעקב' : 'Add this Package to Tracker'}</span>
                       <ArrowRight className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
@@ -681,7 +681,7 @@ export function SmartImportModal({
                     <button
                       type="button"
                       onClick={() => onSwitchToManual(rawText)}
-                      className="w-full px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all cursor-pointer min-h-[48px]"
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-ui cursor-pointer min-h-[48px]"
                     >
                       {language === 'he' ? 'הזן פרטים ידנית' : 'Enter Details Manually'}
                     </button>

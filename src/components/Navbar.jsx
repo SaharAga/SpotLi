@@ -56,7 +56,11 @@ export function Navbar({
     // App.jsx for why the two-step version raced with history.
     if (typeof onGoToTab === 'function') onGoToTab(modalId);
     if (typeof afterSwitch === 'function') afterSwitch();
-    if (!modalId && !afterSwitch) window.scrollTo({ top: 0, behavior: 'smooth' });
+    // 'instant', not 'smooth': the tab switch already re-renders the whole
+    // list and runs its fade-in, and a smooth scroll from deep in a long list
+    // animates for half a second on top of that. The two competing was most of
+    // why switching tabs felt like the app was catching up with the tap.
+    if (!modalId && !afterSwitch) window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
   const handleQuickClipboardPaste = async () => {
@@ -66,7 +70,7 @@ export function Navbar({
 
   return (
     <>
-    <header className="sticky top-0 z-40 w-full border-b border-[color:var(--chrome-line)] bg-slate-950/90 backdrop-blur-2xl transition-colors duration-500 pt-[env(safe-area-inset-top,0px)]">
+    <header className="sticky top-0 z-40 w-full border-b border-[color:var(--chrome-line)] bg-slate-950/90 backdrop-blur-md transition-colors duration-500 pt-[env(safe-area-inset-top,0px)]">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2">
         {/* Leading edge: menu + brand together, the way Gmail/WhatsApp anchor their drawer trigger */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -159,7 +163,7 @@ export function Navbar({
             /* Primary Add Package Trigger — opens Smart Import by default, with a manual-entry fallback inside it */
             <button
               onClick={onOpenSmartImport}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer min-h-[48px]"
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-ui cursor-pointer min-h-[48px]"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
               <span>{t('addPackage')}</span>
@@ -248,7 +252,7 @@ export function Navbar({
               {/* Option 1: 1-Click Clipboard Auto-Paste */}
               <button
                 onClick={handleQuickClipboardPaste}
-                className="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-blue-600/20 to-indigo-600/20 border border-blue-500/40 hover:border-blue-500 transition-all text-start cursor-pointer min-h-[48px]"
+                className="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-blue-600/20 to-indigo-600/20 border border-blue-500/40 hover:border-blue-500 transition-ui text-start cursor-pointer min-h-[48px]"
               >
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 rounded-xl bg-blue-600 text-white shadow-md">
@@ -272,7 +276,7 @@ export function Navbar({
                   setIsAddActionSheetOpen(false);
                   onOpenAddModal();
                 }}
-                className="flex items-center gap-3 p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-slate-700 transition-all text-start cursor-pointer min-h-[48px]"
+                className="flex items-center gap-3 p-4 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-slate-700 transition-ui text-start cursor-pointer min-h-[48px]"
               >
                 <div className="p-2.5 rounded-xl bg-slate-800 text-slate-300">
                   <Edit3 className="w-5 h-5" />

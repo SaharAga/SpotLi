@@ -59,7 +59,7 @@ export function LegalDocumentModal({ isOpen, onClose, docType = 'terms' }) {
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-all cursor-pointer min-h-[48px]"
+            className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-ui cursor-pointer min-h-[48px]"
           >
             {language === 'he' ? 'סגור' : 'Close'}
           </button>

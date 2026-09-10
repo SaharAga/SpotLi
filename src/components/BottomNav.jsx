@@ -99,7 +99,7 @@ function BottomNavImpl({
       /* The hairline picks up the ambient mood tint (see index.css
          [data-mood]) — down here it reads faster than the header does,
          because a thumb-driven eye is already at the bottom of the screen. */
-      className="lg:hidden fixed bottom-0 inset-x-0 z-[60] flex items-start gap-1 px-2 pt-2 border-t border-[color:var(--chrome-line)] bg-slate-950/95 backdrop-blur-2xl transition-colors duration-500 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]"
+      className="lg:hidden fixed bottom-0 inset-x-0 z-[60] flex items-start gap-1 px-2 pt-2 border-t border-[color:var(--chrome-line)] bg-slate-950/95 backdrop-blur-md transition-colors duration-500 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]"
     >
       {leading.map(renderTab)}
 

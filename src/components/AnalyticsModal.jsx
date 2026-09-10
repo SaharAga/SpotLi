@@ -164,7 +164,7 @@ export function AnalyticsModal({
                         cx="48"
                         cy="48"
                         r={ringRadius}
-                        className="stroke-emerald-500 transition-all duration-1000 ease-out"
+                        className="stroke-emerald-500 transition-ui duration-1000 ease-out"
                         strokeWidth="8"
                         strokeDasharray={circumference}
                         strokeDashoffset={successStrokeDashoffset}
@@ -199,7 +199,7 @@ export function AnalyticsModal({
                         cx="48"
                         cy="48"
                         r={ringRadius}
-                        className="stroke-indigo-500 transition-all duration-1000 ease-out"
+                        className="stroke-indigo-500 transition-ui duration-1000 ease-out"
                         strokeWidth="8"
                         strokeDasharray={circumference}
                         strokeDashoffset={onTimeStrokeDashoffset}
@@ -273,7 +273,7 @@ export function AnalyticsModal({
                 {leaderboard.map((item, idx) => (
                   <div
                     key={item.carrierId}
-                    className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800/90 hover:border-slate-700 transition-all flex items-center justify-between gap-3 min-h-[52px]"
+                    className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800/90 hover:border-slate-700 transition-ui flex items-center justify-between gap-3 min-h-[52px]"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
@@ -327,7 +327,7 @@ export function AnalyticsModal({
               {Object.entries(currencyBreakdown.currencies).map(([code, cur]) => (
                 <div
                   key={code}
-                  className="p-4 rounded-xl bg-slate-900/90 border border-slate-800/90 flex flex-col justify-between min-h-[96px] hover:border-slate-700 transition-all shadow-sm"
+                  className="p-4 rounded-xl bg-slate-900/90 border border-slate-800/90 flex flex-col justify-between min-h-[96px] hover:border-slate-700 transition-ui shadow-sm"
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-400">{code}</span>
@@ -371,7 +371,7 @@ export function AnalyticsModal({
                     </div>
                     <div className="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800/50">
                       <div
-                        className={`h-full bg-gradient-to-r ${carrier.color} rounded-full transition-all duration-500`}
+                        className={`h-full bg-gradient-to-r ${carrier.color} rounded-full transition-ui duration-500`}
                         style={{ width: `${data.percentage}%` }}
                       />
                     </div>
@@ -417,7 +417,7 @@ export function AnalyticsModal({
         <div className="hidden p-4 border-t border-slate-800 bg-slate-950/80 lg:flex justify-end shrink-0">
           <button
             onClick={onClose}
-            className="min-w-[120px] min-h-[48px] px-6 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 hover:text-white text-xs font-bold transition-all border border-slate-700/60 shadow-md flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="min-w-[120px] min-h-[48px] px-6 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 hover:text-white text-xs font-bold transition-ui border border-slate-700/60 shadow-md flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             {language === 'he' ? 'סגור' : 'Close'}
           </button>

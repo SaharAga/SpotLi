@@ -90,7 +90,7 @@ export function FilterBar({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={t('searchPlaceholder')}
-          className="w-full bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 text-sm rounded-2xl py-3 ps-11 pe-11 transition-all focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[48px]"
+          className="w-full bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 text-sm rounded-2xl py-3 ps-11 pe-11 transition-ui focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[48px]"
         />
         {searchQuery && (
           <button
@@ -136,7 +136,7 @@ export function FilterBar({
           onClick={() => setFiltersOpen((v) => !v)}
           aria-expanded={filtersOpen}
           aria-label={t('filters.status')}
-          className={`relative shrink-0 ms-auto min-h-[48px] min-w-[48px] rounded-xl border transition-all flex items-center justify-center ${
+          className={`relative shrink-0 ms-auto min-h-[48px] min-w-[48px] rounded-xl border transition-ui flex items-center justify-center ${
             filtersOpen
               ? 'bg-blue-600 border-blue-600 text-white'
               : 'bg-slate-900 border-slate-800 text-slate-300 hover:text-slate-100 hover:bg-slate-800'

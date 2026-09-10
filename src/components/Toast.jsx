@@ -30,7 +30,7 @@ export function Toast({ toast, onClose }) {
       role={isError ? 'alert' : 'status'}
       aria-live={isError ? 'assertive' : 'polite'}
     >
-      <div className={`flex items-center justify-between p-4 rounded-xl border shadow-2xl backdrop-blur-xl transition-all duration-300 ${borderColors[toast.type || 'info']}`}>
+      <div className={`flex items-center justify-between p-4 rounded-xl border shadow-2xl transition-ui duration-300 ${borderColors[toast.type || 'info']}`}>
         <div className="flex items-center gap-3">
           {icons[toast.type || 'info']}
           <p className="text-sm font-medium">{toast.message}</p>

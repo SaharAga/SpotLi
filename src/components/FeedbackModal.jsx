@@ -186,7 +186,7 @@ export function FeedbackModal({
               <button
                 type="button"
                 onClick={() => setFeedbackType('bug')}
-                className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer min-h-[48px] ${
+                className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl border text-xs font-bold transition-ui cursor-pointer min-h-[48px] ${
                   feedbackType === 'bug'
                     ? 'bg-rose-500/10 border-rose-500/40 text-rose-300'
                     : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
@@ -199,7 +199,7 @@ export function FeedbackModal({
               <button
                 type="button"
                 onClick={() => setFeedbackType('feature')}
-                className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer min-h-[48px] ${
+                className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl border text-xs font-bold transition-ui cursor-pointer min-h-[48px] ${
                   feedbackType === 'feature'
                     ? 'bg-blue-500/10 border-blue-500/40 text-blue-300'
                     : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
@@ -212,7 +212,7 @@ export function FeedbackModal({
               <button
                 type="button"
                 onClick={() => setFeedbackType('praise')}
-                className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer min-h-[48px] ${
+                className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl border text-xs font-bold transition-ui cursor-pointer min-h-[48px] ${
                   feedbackType === 'praise'
                     ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300'
                     : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
@@ -260,7 +260,7 @@ export function FeedbackModal({
                   key={star}
                   type="button"
                   onClick={() => setRating((r) => (r === star ? null : star))}
-                  className={`flex-1 py-1.5 rounded-lg font-bold text-xs transition-all cursor-pointer border ${
+                  className={`flex-1 py-1.5 rounded-lg font-bold text-xs transition-ui cursor-pointer border ${
                     rating !== null && rating >= star
                       ? 'bg-amber-500/15 text-amber-300 border-amber-500/40'
                       : 'bg-slate-900/60 text-slate-600 border-slate-800'
@@ -378,14 +378,14 @@ export function FeedbackModal({
             <button
               type="button"
               onClick={onClose}
-              className="w-1/3 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-all cursor-pointer min-h-[48px]"
+              className="w-1/3 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-ui cursor-pointer min-h-[48px]"
             >
               {language === 'he' ? 'ביטול' : 'Cancel'}
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-all shadow-md shadow-indigo-500/20 cursor-pointer min-h-[48px]"
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-ui shadow-md shadow-indigo-500/20 cursor-pointer min-h-[48px]"
             >
               <Send className={`w-3.5 h-3.5 ${isRTL ? 'rotate-180' : ''}`} />
               <span>{isSubmitting ? (language === 'he' ? 'שולח משוב...' : 'Sending...') : (language === 'he' ? 'שלח משוב' : 'Submit Feedback')}</span>

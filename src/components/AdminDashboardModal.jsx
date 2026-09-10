@@ -292,7 +292,7 @@ export function AdminDashboardModal({
         <div className="px-4 sm:px-6 pt-3 flex items-center gap-1 sm:gap-2 border-b border-slate-800 overflow-x-auto">
           <button
             onClick={() => setActiveTab('trends')}
-            className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-all cursor-pointer min-h-[48px] flex items-center gap-1.5 whitespace-nowrap ${
+            className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-ui cursor-pointer min-h-[48px] flex items-center gap-1.5 whitespace-nowrap ${
               activeTab === 'trends'
                 ? 'bg-slate-800/90 text-indigo-300 border-b-2 border-indigo-400'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
@@ -304,7 +304,7 @@ export function AdminDashboardModal({
 
           <button
             onClick={() => setActiveTab('feedback')}
-            className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-all cursor-pointer min-h-[48px] flex items-center gap-1.5 whitespace-nowrap ${
+            className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-ui cursor-pointer min-h-[48px] flex items-center gap-1.5 whitespace-nowrap ${
               activeTab === 'feedback'
                 ? 'bg-slate-800/90 text-indigo-300 border-b-2 border-indigo-400'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
@@ -319,7 +319,7 @@ export function AdminDashboardModal({
 
           <button
             onClick={() => setActiveTab('crashes')}
-            className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-all cursor-pointer min-h-[48px] flex items-center gap-1.5 whitespace-nowrap ${
+            className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-ui cursor-pointer min-h-[48px] flex items-center gap-1.5 whitespace-nowrap ${
               activeTab === 'crashes'
                 ? 'bg-slate-800/90 text-orange-300 border-b-2 border-orange-400'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
@@ -334,7 +334,7 @@ export function AdminDashboardModal({
 
           <button
             onClick={() => setActiveTab('parser')}
-            className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-all cursor-pointer min-h-[48px] flex items-center gap-1.5 whitespace-nowrap ${
+            className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-ui cursor-pointer min-h-[48px] flex items-center gap-1.5 whitespace-nowrap ${
               activeTab === 'parser'
                 ? 'bg-slate-800/90 text-blue-300 border-b-2 border-blue-400'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
@@ -349,7 +349,7 @@ export function AdminDashboardModal({
 
           <button
             onClick={() => setActiveTab('adoption')}
-            className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-all cursor-pointer min-h-[48px] flex items-center gap-1.5 whitespace-nowrap ${
+            className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-ui cursor-pointer min-h-[48px] flex items-center gap-1.5 whitespace-nowrap ${
               activeTab === 'adoption'
                 ? 'bg-slate-800/90 text-purple-300 border-b-2 border-purple-400'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
@@ -361,7 +361,7 @@ export function AdminDashboardModal({
 
           <button
             onClick={() => setActiveTab('system')}
-            className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-all cursor-pointer min-h-[48px] flex items-center gap-1.5 whitespace-nowrap ${
+            className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-ui cursor-pointer min-h-[48px] flex items-center gap-1.5 whitespace-nowrap ${
               activeTab === 'system'
                 ? 'bg-slate-800/90 text-emerald-300 border-b-2 border-emerald-400'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
@@ -549,7 +549,7 @@ export function AdminDashboardModal({
                     <button
                       key={type}
                       onClick={() => setFeedbackFilterType(type)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer min-h-[48px] ${
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-ui cursor-pointer min-h-[48px] ${
                         feedbackFilterType === type
                           ? 'bg-indigo-600 text-white shadow-md'
                           : 'bg-slate-900 text-slate-400 hover:text-slate-200'
@@ -637,7 +637,7 @@ export function AdminDashboardModal({
                           <button
                             type="button"
                             onClick={() => setLightboxImage(fb.screenshot)}
-                            className="group relative block rounded-xl overflow-hidden border border-slate-800 hover:border-indigo-500/50 transition-all cursor-pointer max-w-sm text-start"
+                            className="group relative block rounded-xl overflow-hidden border border-slate-800 hover:border-indigo-500/50 transition-ui cursor-pointer max-w-sm text-start"
                           >
                             <img
                               src={fb.screenshot}

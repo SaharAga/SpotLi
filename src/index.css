@@ -308,6 +308,51 @@
     -webkit-text-size-adjust: 100%;
   }
 
+  /* Every interactive surface: `touch-action: manipulation` drops the
+     browser's wait-for-a-possible-double-tap delay before firing click, which
+     is what made taps read as ~300ms of nothing happening. `user-select: none`
+     stops a slightly-long press from selecting the label text instead of
+     pressing the control. */
+  button,
+  [role="button"],
+  a,
+  label,
+  summary,
+  input[type="checkbox"],
+  input[type="radio"],
+  select {
+    touch-action: manipulation;
+  }
+
+  button,
+  [role="button"],
+  summary {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* `-webkit-tap-highlight-color: transparent` above removes the platform's
+     own press feedback, so the app owes every control a replacement. Without
+     one there is no acknowledgement between finger-down and whatever the
+     handler does, and the handler's own latency gets read as the button being
+     broken. Transform + opacity only: both are compositor properties, so this
+     costs no layout or paint. */
+  button:not(:disabled):active,
+  [role="button"]:not([aria-disabled="true"]):active,
+  a:active,
+  summary:active {
+    transform: scale(0.97);
+    opacity: 0.85;
+  }
+
+  button,
+  [role="button"],
+  a,
+  summary {
+    transition: transform 90ms cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 90ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
   body {
     overflow-x: hidden;
     overflow-y: auto;
@@ -324,7 +369,30 @@
   }
 }
 
+/* Default timing for `.transition-ui`, deliberately in the components layer:
+   the nine call sites that pair it with a Tailwind `duration-*` utility must
+   still win, and utilities outrank components. */
+@layer components {
+  .transition-ui {
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    transition-duration: 150ms;
+  }
+}
+
 @layer utilities {
+  /* Replacement for `transition-all`, which was on ~100 controls. `all` makes
+     the browser watch every animatable property on the element — including
+     layout ones like width/height/padding/inset — so any unrelated style
+     change schedules a transition and, with it, a layout pass. Everything in
+     this app actually transitions colour, elevation, transform or opacity;
+     naming those four keeps the work on the compositor and off the layout
+     path. */
+  .transition-ui {
+    transition-property: color, background-color, border-color,
+      text-decoration-color, fill, stroke, box-shadow, transform, opacity,
+      filter, backdrop-filter;
+  }
+
   .safe-top {
     padding-top: env(safe-area-inset-top, 0px);
   }
@@ -591,14 +659,6 @@
   }
 }
 
-@keyframes bounceSubtle {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-4px);
-  }
-}
 
 .animate-fade-in {
   animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -632,9 +692,6 @@
   animation: bounceIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-.animate-bounce-subtle {
-  animation: bounceSubtle 2.5s ease-in-out infinite;
-}
 
 /* Fallback aliases for legacy tailwindcss-animate syntax */
 .animate-in {

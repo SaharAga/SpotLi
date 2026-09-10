@@ -133,7 +133,7 @@ export function LegalConsentGate({ onShowToast }) {
               type="button"
               onClick={handleContinue}
               disabled={!agreedToTerms || isSubmitting}
-              className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/20 transition-all cursor-pointer min-h-[48px]"
+              className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/20 transition-ui cursor-pointer min-h-[48px]"
             >
               {language === 'he' ? 'המשך' : 'Continue'}
             </button>

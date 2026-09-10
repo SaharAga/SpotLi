@@ -1241,7 +1241,7 @@ export function DashboardContent() {
       <main className="relative flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] lg:pb-6">
         {loading && !user ? (
           /* SLEEK INITIAL COLD-START SKELETON / LOADING STATE */
-          <div className="max-w-2xl mx-auto my-12 p-8 sm:p-12 bg-slate-900/40 border border-slate-800/60 rounded-3xl backdrop-blur-xl text-center flex flex-col items-center justify-center animate-pulse">
+          <div className="max-w-2xl mx-auto my-12 p-8 sm:p-12 bg-slate-900/40 border border-slate-800/60 rounded-3xl text-center flex flex-col items-center justify-center animate-pulse">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-gradient-to-tr from-blue-600/30 to-indigo-500/30 border border-blue-500/20 text-blue-400 flex items-center justify-center mb-6 shadow-xl">
               <RefreshCw className="w-8 h-8 sm:w-10 sm:h-10 animate-spin" />
             </div>
@@ -1250,7 +1250,7 @@ export function DashboardContent() {
           </div>
         ) : !user && !isDemoMode ? (
           /* GUEST / NEW USER WELCOME ONBOARDING GATE */
-          <div className="max-w-2xl mx-auto my-6 sm:my-12 p-6 sm:p-10 bg-gradient-to-b from-slate-900/90 to-slate-950/90 border border-slate-800/80 rounded-3xl shadow-2xl backdrop-blur-2xl text-center animate-in fade-in slide-in-from-bottom-6">
+          <div className="max-w-2xl mx-auto my-6 sm:my-12 p-6 sm:p-10 bg-gradient-to-b from-slate-900/90 to-slate-950/90 border border-slate-800/80 rounded-3xl shadow-2xl text-center animate-in fade-in slide-in-from-bottom-6">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-600/30">
               <Sparkles className="w-8 h-8 sm:w-10 sm:h-10" />
             </div>
@@ -1282,14 +1282,14 @@ export function DashboardContent() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto mb-4">
               <button
                 onClick={() => openModal(MODAL.AUTH, { initialMode: 'signin' })}
-                className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[48px]"
+                className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-blue-500/25 transition-ui flex items-center justify-center gap-2 cursor-pointer min-h-[48px]"
               >
                 <LogIn className="w-4 h-4" />
                 <span>{isRTL ? 'התחבר לחשבון שלך' : 'Sign In to Your Account'}</span>
               </button>
               <button
                 onClick={() => openModal(MODAL.AUTH, { initialMode: 'register' })}
-                className="w-full py-3.5 px-6 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs sm:text-sm border border-slate-700 transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[48px]"
+                className="w-full py-3.5 px-6 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs sm:text-sm border border-slate-700 transition-ui flex items-center justify-center gap-2 cursor-pointer min-h-[48px]"
               >
                 <UserPlus className="w-4 h-4 text-blue-400" />
                 <span>{isRTL ? 'יצירת חשבון חדש' : 'Create New Account'}</span>
@@ -1335,7 +1335,7 @@ export function DashboardContent() {
 
             {/* Package Content List / Table */}
             {filteredPackages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 px-4 bg-slate-900/40 border border-slate-800 rounded-3xl text-center backdrop-blur-xl animate-fade-in my-4">
+              <div className="flex flex-col items-center justify-center py-16 px-4 bg-slate-900/40 border border-slate-800 rounded-3xl text-center animate-fade-in my-4">
                 <div className="w-16 h-16 rounded-3xl bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-500 mb-4 shadow-inner">
                   <Inbox className="w-8 h-8" />
                 </div>
@@ -1354,13 +1354,13 @@ export function DashboardContent() {
                       setSelectedCarrier('all');
                       setActiveTab('all');
                     }}
-                    className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-all cursor-pointer min-h-[48px]"
+                    className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-ui cursor-pointer min-h-[48px]"
                   >
                     {t('filters.clearFilters')}
                   </button>
                   <button
                     onClick={() => openModal(MODAL.SMART_IMPORT)}
-                    className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 cursor-pointer min-h-[48px]"
+                    className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-ui shadow-md shadow-blue-500/20 cursor-pointer min-h-[48px]"
                   >
                     <Plus className="w-4 h-4" />
                     <span>{t('addPackage')}</span>
@@ -1485,8 +1485,8 @@ export function DashboardContent() {
 
       {/* PWA Floating Update Available Banner */}
       {isUpdateAvailable && (
-        <aside aria-label="App Update Ready" className="fixed top-18 left-1/2 -translate-x-1/2 z-50 animate-bounce-subtle">
-          <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold shadow-2xl border border-blue-400/30 backdrop-blur-xl">
+        <aside aria-label="App Update Ready" className="fixed top-18 left-1/2 -translate-x-1/2 z-50 animate-bounce-in">
+          <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold shadow-2xl border border-blue-400/30">
             <RefreshCw className="w-4 h-4 animate-spin text-blue-200" />
             <span>{isRTL ? `גרסה חדשה של ${APP_NAME} זמינה!` : `A new version of ${APP_NAME} is ready!`}</span>
             <button
