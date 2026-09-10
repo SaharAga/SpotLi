@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Deliveree Automated Feedback Ingestion, Triage & Action Items Generator.
+SpotLi Automated Feedback Ingestion, Triage & Action Items Generator.
 Scans new feedback entries from Firestore / local storage buffer,
 classifies priority, generates structured action items, updates the backlog,
 and sends real-time Telegram notification summaries.
@@ -164,7 +164,7 @@ def update_backlog(triaged_items: list):
     if BACKLOG_FILE.exists():
         existing_content = BACKLOG_FILE.read_text(encoding="utf-8")
     else:
-        existing_content = "# 📋 Deliveree User Feedback Action Items & Bug Backlog\n\n> Auto-generated and triaged by Deliveree Feedback Automation.\n\n---\n"
+        existing_content = "# 📋 SpotLi User Feedback Action Items & Bug Backlog\n\n> Auto-generated and triaged by SpotLi Feedback Automation.\n\n---\n"
 
     new_entries = []
     for item in triaged_items:
@@ -204,7 +204,7 @@ def send_telegram_alert(triaged_items: list):
         sender = TelegramSender(cfg["bot_token"], cfg["chat_id"])
         
         msg_lines = [
-            f"🔔 <b>Deliveree Feedback Triage ({len(triaged_items)} new)</b>\n"
+            f"🔔 <b>SpotLi Feedback Triage ({len(triaged_items)} new)</b>\n"
         ]
         for item in triaged_items:
             msg_lines.append(
@@ -246,7 +246,7 @@ def run_triage(feedbacks: list = None, dry_run: bool = False):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Deliveree Feedback Triage Automation")
+    parser = argparse.ArgumentParser(description="SpotLi Feedback Triage Automation")
     parser.add_argument("--once", action="store_true", help="Run once and exit")
     parser.add_argument("--dry-run", action="store_true", help="Parse and log without writing")
     parser.add_argument("--mock-sample", action="store_true", help="Seed a sample feedback for testing")

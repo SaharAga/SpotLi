@@ -191,7 +191,7 @@ describe('exportUtils Unit Tests', () => {
       expect(html).toContain('<!DOCTYPE html>');
       expect(html).toContain('dir="rtl"');
       expect(html).toContain('lang="he"');
-      expect(html).toContain('דוח ריכוז משלוחים — Deliveree');
+      expect(html).toContain('דוח ריכוז משלוחים — SpotLi');
       expect(html).toContain('מקלדת מכנית');
       expect(html).toContain('IL123456789');
       expect(html).toContain('בדרך לישראל');
@@ -203,7 +203,7 @@ describe('exportUtils Unit Tests', () => {
       expect(html).toContain('<!DOCTYPE html>');
       expect(html).toContain('dir="ltr"');
       expect(html).toContain('lang="en"');
-      expect(html).toContain('Deliveree — Shipment Summary Report');
+      expect(html).toContain('SpotLi — Shipment Summary Report');
       expect(html).toContain('Tracking Number');
       expect(html).toContain('In Transit');
     });

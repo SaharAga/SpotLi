@@ -37,7 +37,7 @@ export function AdminScreenshotLightbox({
     try {
       const link = document.createElement('a');
       link.href = imageSrc;
-      link.download = `deliveree_screenshot_${Date.now()}.png`;
+      link.download = `spotli_screenshot_${Date.now()}.png`;
       document.body.appendChild(link);
       link.click();
       link.remove();

@@ -27,7 +27,7 @@
  * which is gitignored.
  */
 
-import { createReadStream, writeFileSync, existsSync, statSync } from 'node:fs';
+import { createReadStream, writeFileSync, existsSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -163,7 +163,7 @@ const COURIER_HINT = new RegExp([
 /**
  * Food and grocery delivery — out of scope for this app.
  *
- * Deliveree tracks parcels. A restaurant order arrives within the hour, has no
+ * SpotLi tracks parcels. A restaurant order arrives within the hour, has no
  * carrier and no tracking number worth following, and the user is already
  * watching it in the vendor's own app. These messages are correct negatives,
  * so counting them as parser failures buries the real ones: they were three of

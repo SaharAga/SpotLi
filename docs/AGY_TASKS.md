@@ -1,4 +1,4 @@
-# Deliveree Engineering Task Catalog & Architecture Backlog (25 Tasks)
+# SpotLi Engineering Task Catalog & Architecture Backlog (25 Tasks)
 
 This catalog defines the comprehensive 25 engineering tasks across all priority tiers (P0 through P3), mapped to our **3-Squad Autonomous Topology** and **7-Stage Quality Gate Pipeline**.
 
@@ -144,7 +144,7 @@ This is an **agent-executable backlog** — every task here is something a squad
 * **Priority**: `P3`
 * **Status**: `Dropped (Out of Scope)`
 * **Squad**: Squad A (`delivery_pipeline_specialist`)
-* **Summary**: Dropped per design review — Deliveree is a post-purchase package tracker, not an e-commerce checkout or purchasing app.
+* **Summary**: Dropped per design review — SpotLi is a post-purchase package tracker, not an e-commerce checkout or purchasing app.
 
 ### `TASK-22-DEADLINES`: Dual Deadline Tracking Engine (Pickup Holding + Store Returns)
 * **Priority**: `P2`

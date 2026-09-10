@@ -50,7 +50,7 @@ def ask_via_daemon(root_dir: Path, question: str, options: list[str], timeout_s:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Deliveree Telegram CLI")
+    parser = argparse.ArgumentParser(description="SpotLi Telegram CLI")
     parser.add_argument("--send",    "-s",  help="Send a message directly via Telegram API")
     parser.add_argument("--queue",   "-q",  help="Queue message via .agents/tg_outbox.jsonl (Zero network permissions needed)")
     parser.add_argument("--photo",   "-p",  help="Send a photo directly via Telegram API")
@@ -109,7 +109,7 @@ def main():
         sys.exit(1)
 
     if args.test:
-        ok = sender.send_message("🎉 <b>Deliveree Telegram Bridge — test OK!</b>")
+        ok = sender.send_message("🎉 <b>SpotLi Telegram Bridge — test OK!</b>")
         if ok:
             print("✅ Test message sent successfully.")
         sys.exit(0 if ok else 1)

@@ -21,7 +21,7 @@ export function createParseWithAiHandler({ db, apiKey, parseFn = parseWithGemini
         'resource-exhausted',
         usage.reason === 'user-limit'
           ? 'Daily AI-parse limit reached for your account — try again tomorrow.'
-          : 'Daily AI-parse limit reached for Deliveree — try again tomorrow.'
+          : 'Daily AI-parse limit reached for SpotLi — try again tomorrow.'
       );
     }
 

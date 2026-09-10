@@ -12,7 +12,7 @@ outputs:
 
 # Git Branching, Pull Request & Guardline Workflow
 
-This skill defines the mandatory Git workflow for all development and automated agent tasks in the Deliveree repository.
+This skill defines the mandatory Git workflow for all development and automated agent tasks in the SpotLi repository.
 
 ---
 

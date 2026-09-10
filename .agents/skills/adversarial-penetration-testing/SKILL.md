@@ -17,7 +17,7 @@ This skill guides the **Adversarial Pentester & Red Team Specialist** in executi
 
 ### A. Multi-Tenant Authorization & BOLA/BFLA Attacks (Broken Object Level Authorization)
 * **Storage Namespace Tampering**:
-  * Attempt horizontal access: Force User A to read, overwrite, or clear `deliveree_packages_userB` or `deliveree_packages_guest`.
+  * Attempt horizontal access: Force User A to read, overwrite, or clear `spotli_packages_userB` (or legacy `deliveree_packages_userB`) or guest keys.
   * Attempt UID spoofing in cloud database mutations (e.g. passing a modified `userId` field to forge ownership).
 * **IDOR (Insecure Direct Object References)**:
   * Probe endpoints and handlers for predictable IDs (`1`, `2`, sequential timestamps) without tenant session validation.

@@ -1,6 +1,6 @@
 ---
 name: owasp-security-and-rate-limiting
-description: Security auditing protocol based on the Deliveree Security Baseline (client-only PWA). Use when evaluating code changes touching authentication, Firestore security rules, user input parsing, regular expressions, clipboard/file APIs, or repository secrets. Do NOT use for styling/CSS-only changes, static asset updates, or pure documentation edits.
+description: Security auditing protocol based on the SpotLi Security Baseline (client-only PWA). Use when evaluating code changes touching authentication, Firestore security rules, user input parsing, regular expressions, clipboard/file APIs, or repository secrets. Do NOT use for styling/CSS-only changes, static asset updates, or pure documentation edits.
 inputs:
   - List of modified files and code diffs
   - Identified threat surface (Firestore rules, user inputs, regexes, file parsing)
@@ -8,7 +8,7 @@ outputs:
   - Structured Security Audit Report (PASS / FAIL) with line-cited findings and remediation
 ---
 
-# Deliveree Security Baseline (Client-Only PWA)
+# SpotLi Security Baseline (Client-Only PWA)
 
 *Re-adopt ASVS L2/L3 language only if/when a real backend or auth server is introduced.*
 
@@ -31,7 +31,7 @@ This skill guides the security auditor in evaluating client-side PWA and Firesto
 ## 2. Structured Security Audit Report
 
 ```markdown
-# 🛡️ Security Audit Report (Deliveree Baseline)
+# 🛡️ Security Audit Report (SpotLi Baseline)
 
 ## Overall Status: [ PASS | FAIL ]
 

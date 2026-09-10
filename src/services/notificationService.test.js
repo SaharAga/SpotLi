@@ -355,14 +355,14 @@ describe('notificationService', () => {
       expect(heTest).toBeTruthy();
       expect(notificationConstructor).toHaveBeenCalledWith(
         expect.stringContaining('התראת בדיקה'),
-        expect.objectContaining({ tag: 'deliveree-test-notification' })
+        expect.objectContaining({ tag: 'spotli-test-notification' })
       );
 
       const enTest = await notificationService.sendTestNotification('en');
       expect(enTest).toBeTruthy();
       expect(notificationConstructor).toHaveBeenCalledWith(
         expect.stringContaining('Test Notification'),
-        expect.objectContaining({ tag: 'deliveree-test-notification' })
+        expect.objectContaining({ tag: 'spotli-test-notification' })
       );
     });
   });

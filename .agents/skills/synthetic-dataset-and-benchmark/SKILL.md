@@ -13,7 +13,7 @@ outputs:
 
 # Synthetic Dataset & Benchmark Skill
 
-This skill governs procedural generation of synthetic Israeli and international shipping notifications and the execution of high-rigor regression benchmark suites for Deliveree's tracking detection engine.
+This skill governs procedural generation of synthetic Israeli and international shipping notifications and the execution of high-rigor regression benchmark suites for SpotLi's tracking detection engine.
 
 ---
 

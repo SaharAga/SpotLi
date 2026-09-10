@@ -109,11 +109,11 @@ export async function subscriptionEndpointToDocId(endpoint) {
  */
 export function formatPushPayload({ title, body, packageId, trackingNumber, actions }) {
   return {
-    title: title || 'Deliveree Update | עדכון משלוח',
+    title: title || 'SpotLi Update | עדכון משלוח',
     body: body || '',
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
-    tag: packageId ? `pkg-${packageId}` : (trackingNumber ? `pkg-${trackingNumber}` : 'deliveree-update'),
+    tag: packageId ? `pkg-${packageId}` : (trackingNumber ? `pkg-${trackingNumber}` : 'spotli-update'),
     url: packageId ? `/?packageId=${encodeURIComponent(packageId)}` : '/',
     packageId: packageId || null,
     data: {
@@ -616,15 +616,15 @@ export const notificationService = {
    */
   sendTestNotification: async (language = 'he') => {
     const title = language === 'he'
-      ? '📦 Deliveree | התראת בדיקה'
-      : '📦 Deliveree | Test Notification';
+      ? '📦 SpotLi | התראת בדיקה'
+      : '📦 SpotLi | Test Notification';
     const body = language === 'he'
       ? 'התראות Web Push פועלות בהצלחה במכשיר שלך!'
       : 'Web Push Notifications are working successfully on your device!';
 
     return notificationService.sendWebNotification(title, {
       body,
-      tag: 'deliveree-test-notification',
+      tag: 'spotli-test-notification',
       data: { url: '/', test: true }
     });
   }

@@ -1,7 +1,7 @@
 {
-  "name": "Deliveree (Staging)",
-  "short_name": "Deliveree (Stg)",
-  "description": "Deliveree Package Tracker - Staging Preview Environment",
+  "name": "SpotLi (Staging)",
+  "short_name": "SpotLi (Stg)",
+  "description": "SpotLi Package Tracker - Staging Preview Environment",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -27,11 +27,15 @@ describe('inboundEmailHandler Unit Tests', () => {
     });
 
     it('extracts userId from usr_ format', () => {
+      expect(extractUserIdFromToAddress('usr_abc123@in.spotliapp.com')).toBe('abc123');
+      expect(extractUserIdFromToAddress('usr_user99_secrettoken@in.spotliapp.com')).toBe('user99');
       expect(extractUserIdFromToAddress('usr_abc123@in.deliveree.app')).toBe('abc123');
       expect(extractUserIdFromToAddress('usr_user99_secrettoken@in.deliveree.app')).toBe('user99');
     });
 
     it('extracts userId from .pkg format', () => {
+      expect(extractUserIdFromToAddress('user777.pkg@in.spotliapp.com')).toBe('user777');
+      expect(extractUserIdFromToAddress('user888.pkg@spotliapp.com')).toBe('user888');
       expect(extractUserIdFromToAddress('user777.pkg@in.deliveree.app')).toBe('user777');
       expect(extractUserIdFromToAddress('user888.pkg@deliveree.app')).toBe('user888');
     });

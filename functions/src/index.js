@@ -297,7 +297,7 @@ export const notifyOnNewPackage = onDocumentCreated(
       webpush,
       vapidPublicKey: vapidPublicKey.value(),
       vapidPrivateKey: vapidPrivateKey.value(),
-      vapidSubject: 'mailto:support@deliveree.app'
+      vapidSubject: 'mailto:support@spotliapp.com'
     })(event)
 );
 
@@ -319,7 +319,7 @@ export const notifyOnPackageUpdated = onDocumentUpdated(
       webpush,
       vapidPublicKey: vapidPublicKey.value(),
       vapidPrivateKey: vapidPrivateKey.value(),
-      vapidSubject: 'mailto:support@deliveree.app'
+      vapidSubject: 'mailto:support@spotliapp.com'
     })(event)
 );
 

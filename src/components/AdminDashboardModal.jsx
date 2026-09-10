@@ -186,17 +186,17 @@ export function AdminDashboardModal({
     ]);
     const header = '"ID","Type","Rating","Message","AppVersion","Timestamp","ScreenSize"';
     const csvContent = '\uFEFF' + [header, ...csvRows.map(r => r.join(','))].join('\r\n');
-    downloadBlob(csvContent, 'text/csv;charset=utf-8;', `deliveree_feedbacks_${new Date().toISOString().slice(0, 10)}.csv`);
+    downloadBlob(csvContent, 'text/csv;charset=utf-8;', `spotli_feedbacks_${new Date().toISOString().slice(0, 10)}.csv`);
   };
 
   const handleExportFeedbacksJSON = () => {
     const jsonStr = JSON.stringify(allFeedbacks, null, 2);
-    downloadBlob(jsonStr, 'application/json;charset=utf-8;', `deliveree_feedbacks_${new Date().toISOString().slice(0, 10)}.json`);
+    downloadBlob(jsonStr, 'application/json;charset=utf-8;', `spotli_feedbacks_${new Date().toISOString().slice(0, 10)}.json`);
   };
 
   const handleExportCrashesJSON = () => {
     const jsonStr = JSON.stringify(crashReports, null, 2);
-    downloadBlob(jsonStr, 'application/json;charset=utf-8;', `deliveree_crashes_${new Date().toISOString().slice(0, 10)}.json`);
+    downloadBlob(jsonStr, 'application/json;charset=utf-8;', `spotli_crashes_${new Date().toISOString().slice(0, 10)}.json`);
   };
 
   return (

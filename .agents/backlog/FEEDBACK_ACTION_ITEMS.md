@@ -1,6 +1,6 @@
-# 📋 Deliveree User Feedback Action Items & Bug Backlog
+# 📋 SpotLi User Feedback Action Items & Bug Backlog
 
-> Triaged, logged, and tracked for Deliveree Alpha Releases.
+> Triaged, logged, and tracked for SpotLi Alpha Releases.
 
 ---
 

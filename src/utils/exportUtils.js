@@ -277,7 +277,7 @@ export function generatePrintableSummary(packages, language = 'he', triggerPrint
 
   const tStatus = statusTranslations[language] || statusTranslations.en;
 
-  const titleText = isRTL ? 'דוח ריכוז משלוחים — Deliveree' : 'Deliveree — Shipment Summary Report';
+  const titleText = isRTL ? 'דוח ריכוז משלוחים — SpotLi' : 'SpotLi — Shipment Summary Report';
   const generatedAtText = isRTL ? 'הופק בתאריך:' : 'Generated On:';
   const totalCountText = isRTL ? 'סה״כ חבילות בדוח:' : 'Total Packages:';
   const activeCountText = isRTL ? 'משלוחים פעילים:' : 'Active Shipments:';
@@ -438,8 +438,8 @@ export function generatePrintableSummary(packages, language = 'he', triggerPrint
   </table>
 
   <div class="footer">
-    <span>Deliveree Package Tracker</span>
-    <span>https://deliveree.app</span>
+    <span>SpotLi Package Tracker</span>
+    <span>https://spotliapp.com</span>
   </div>
 </body>
 </html>`;

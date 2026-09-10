@@ -96,7 +96,7 @@ export function InstallPwaBanner() {
             </div>
             <div>
               <h4 className="text-sm font-semibold text-white">
-                {isRTL ? 'התקן את Deliveree בסמארטפון' : 'Install Deliveree on Your Phone'}
+                {isRTL ? 'התקן את SpotLi בסמארטפון' : 'Install SpotLi on Your Phone'}
               </h4>
               <p className="text-xs text-blue-200/80 mt-0.5">
                 {isRTL 

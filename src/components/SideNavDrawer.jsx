@@ -9,6 +9,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { APP_VERSION } from '../constants/version';
+import { APP_NAME } from '../constants/app';
 import { acquireScrollLock, releaseScrollLock } from './Modal';
 
 export function SideNavDrawer({
@@ -131,7 +132,7 @@ export function SideNavDrawer({
               <Package className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-bold text-sm text-slate-100">Deliveree Pro</h3>
+              <h3 className="font-bold text-sm text-slate-100">{APP_NAME} Pro</h3>
               <span className="text-xs text-slate-400 font-mono">v{APP_VERSION}</span>
             </div>
           </div>

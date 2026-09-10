@@ -72,7 +72,7 @@ describe('sendPushToUser', () => {
       vapidPrivateKey: 'priv'
     });
     expect(result).toEqual({ sent: 2, removed: 0 });
-    expect(webpush.setVapidDetails).toHaveBeenCalledWith('mailto:support@deliveree.app', 'pub', 'priv');
+    expect(webpush.setVapidDetails).toHaveBeenCalledWith('mailto:support@spotliapp.com', 'pub', 'priv');
     expect(webpush.sendNotification).toHaveBeenCalledTimes(2);
   });
 

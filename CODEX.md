@@ -1,12 +1,12 @@
-# CODEX.md — Deliveree Onboarding Guide for Codex & AI Agents
+# CODEX.md — SpotLi Onboarding Guide for Codex & AI Agents
 
-Welcome to **Deliveree** (`/home/sahar/Deliveree`). This document is the single-source-of-truth onboarding and operational guide for OpenAI Codex and autonomous AI agents working in this repository.
+Welcome to **SpotLi** (formerly Deliveree). This document is the single-source-of-truth onboarding and operational guide for OpenAI Codex and autonomous AI agents working in this repository.
 
 ---
 
 ## 1. Project Overview & Mental Model
 
-Deliveree is a **bilingual (Hebrew RTL / English LTR) Progressive Web App (PWA)** for tracking packages across Israeli domestic couriers and global shipping carriers in a unified dashboard.
+SpotLi is a **bilingual (Hebrew RTL / English LTR) Progressive Web App (PWA)** for tracking packages across Israeli domestic couriers and global shipping carriers in a unified dashboard.
 
 - **Stack**: React 19, Vite 8, Tailwind CSS 4, Vitest 4, Zod 4, Firebase SDK v12 (Auth, Firestore, Cloud Functions).
 - **Client Architecture**: Offline-first, client-only Single Page Application (SPA).
@@ -187,7 +187,7 @@ Git hooks are automatically configured in `.githooks/` by `npm run prepare`. `sc
 
 ## 7. Change Declarations & Release Workflow
 
-Deliveree enforces that **every PR touching shipped code (`src/`, `functions/`, `firestore.rules`) must declare its change.**
+SpotLi enforces that **every PR touching shipped code (`src/`, `functions/`, `firestore.rules`) must declare its change.**
 
 ### Declaring a Change via Changeset (Preferred)
 Create a new file in `.changes/<branch-or-feature-slug>.md`:

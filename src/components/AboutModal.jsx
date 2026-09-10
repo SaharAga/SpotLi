@@ -82,8 +82,8 @@ export function AboutModal({
             if (onShowToast) {
               onShowToast(
                 language === 'he'
-                  ? 'גרסה חדשה של Deliveree זמינה! לחץ לרענון והחלת העדכון'
-                  : 'New Deliveree update ready! Reload to apply.',
+                  ? 'גרסה חדשה של SpotLi זמינה! לחץ לרענון והחלת העדכון'
+                  : 'New SpotLi update ready! Reload to apply.',
                 'info'
               );
             }

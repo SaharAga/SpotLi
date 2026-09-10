@@ -62,7 +62,7 @@
     },
     {
       "name": "security_auditor",
-      "description": "Specialized Security Auditor subagent. Audits changes against Deliveree Security Baseline (Zero-Trust/BOLA Firestore rules, anti-ReDoS regexes, XSS input sanitization, prototype pollution guards, and secrets scanning).",
+      "description": "Specialized Security Auditor subagent. Audits changes against SpotLi Security Baseline (Zero-Trust/BOLA Firestore rules, anti-ReDoS regexes, XSS input sanitization, prototype pollution guards, and secrets scanning).",
       "role": "Security Baseline Auditor",
       "skills": [
         "owasp-security-and-rate-limiting"

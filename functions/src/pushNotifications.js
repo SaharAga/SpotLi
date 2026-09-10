@@ -53,7 +53,7 @@ export async function sendPushToUser({ db, uid, payload, webpush, vapidPublicKey
   const tokensSnap = await db.collection(PUSH_SUBSCRIPTIONS_COLLECTION).doc(uid).collection('tokens').get();
   if (tokensSnap.empty) return { sent: 0, removed: 0 };
 
-  webpush.setVapidDetails(vapidSubject || 'mailto:support@deliveree.app', vapidPublicKey, vapidPrivateKey);
+  webpush.setVapidDetails(vapidSubject || 'mailto:support@spotliapp.com', vapidPublicKey, vapidPrivateKey);
 
   const body = JSON.stringify(payload);
   let sent = 0;

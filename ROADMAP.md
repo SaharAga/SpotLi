@@ -1,7 +1,7 @@
-# Deliveree Engineering Roadmap & Architecture
+# SpotLi Engineering Roadmap & Architecture
 
 ## 1. Product Vision & Architecture Overview
-Deliveree is a modern, privacy-conscious, multi-carrier package tracking app designed for Israeli and global e-commerce consumers. It unifies order updates across Israeli couriers (Israel Post, Cheetah Delivery, HFD, BoxIt, Tapuz, Buzzr) and global shipping networks (AliExpress Cainiao, YunExpress, 4PX, DHL, FedEx, UPS, USPS, Royal Mail, Aramex, Yanwen) into an intuitive, bilingual (Hebrew RTL / English LTR), cloud-synchronized experience.
+SpotLi is a modern, privacy-conscious, multi-carrier package tracking app designed for Israeli and global e-commerce consumers. It unifies order updates across Israeli couriers (Israel Post, Cheetah Delivery, HFD, BoxIt, Tapuz, Buzzr) and global shipping networks (AliExpress Cainiao, YunExpress, 4PX, DHL, FedEx, UPS, USPS, Royal Mail, Aramex, Yanwen) into an intuitive, bilingual (Hebrew RTL / English LTR), cloud-synchronized experience.
 
 The authoritative end-state product vision and detailed Q&A specification is documented in [docs/PRODUCT_VISION.md](file:///home/sahar/Deliveree/docs/PRODUCT_VISION.md).
 
@@ -26,7 +26,7 @@ The authoritative end-state product vision and detailed Q&A specification is doc
 - [x] **Graduated Throttling & Offline Mutation Queue** (`v0.6.0`)
 - [x] **Interactive Locker & Pickup Map (`LockerMapModal.jsx`)** (`v0.6.0`)
 - [x] **Gmail OAuth 2.0 Real-Time Push Sync & 30-Day Historical Backfill** (`v0.18.3`)
-- [x] **Inbound Forwarding Email Webhook (`track@deliveree.app`)** (`v0.18.0`)
+- [x] **Inbound Forwarding Email Webhook (`track@spotliapp.com`)** (`v0.18.0`)
 - [x] **Courier Action Hub (7 Presets + Custom Editor + WhatsApp/SMS Dispatch)** (`v0.20.0`)
 - [x] **1-Click Package Quick Edit & Non-Destructive Live Binding** (`v0.20.1`)
 

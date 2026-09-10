@@ -14,7 +14,7 @@ export class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('Deliveree Error caught by ErrorBoundary:', error, errorInfo);
+    console.error('SpotLi Error caught by ErrorBoundary:', error, errorInfo);
     this.setState({ errorInfo });
     reportCrash(error, { componentName: this.props.componentName });
     if (typeof this.props.onError === 'function') {
@@ -40,7 +40,7 @@ export class ErrorBoundary extends React.Component {
       }
       keysToRemove.forEach((key) => localStorage.removeItem(key));
     } catch (e) {
-      console.error('Failed to clear Deliveree localStorage data during hard reset:', e);
+      console.error('Failed to clear SpotLi localStorage data during hard reset:', e);
     }
     window.location.reload();
   };
@@ -85,7 +85,7 @@ export class ErrorBoundary extends React.Component {
             </h2>
             
             <p className="text-xs text-slate-400 leading-relaxed">
-              {this.state.error?.message || 'An unexpected error occurred while rendering Deliveree.'}
+              {this.state.error?.message || 'An unexpected error occurred while rendering SpotLi.'}
             </p>
 
             <div className="p-3 bg-slate-950 rounded-xl text-xs font-mono text-rose-300 text-start overflow-x-auto max-h-32 border border-slate-800">

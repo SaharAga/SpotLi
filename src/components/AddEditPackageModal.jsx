@@ -338,7 +338,7 @@ export function AddEditPackageModal({
           title: getStatusMeta(status)?.label || 'Order Registered',
           titleHe: getStatusMeta(status)?.hebrewLabel || 'המשלוח נקלט במערכת',
           location: origin.trim() || 'Origin Logistics Hub',
-          description: 'Package registered into Deliveree tracker',
+          description: 'Package registered into SpotLi tracker',
           descriptionHe: 'החבילה נוספה למעקב במערכת',
           timestamp: new Date().toISOString(),
           isCompleted: true

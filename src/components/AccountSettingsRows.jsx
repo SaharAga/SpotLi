@@ -132,7 +132,7 @@ export function AccountSettingsRows({ onOpenExport, onShowToast }) {
       return;
     }
 
-    exportRawToJSON(rawPackages, true, `deliveree_backup_${user?.id || 'guest'}_${todayISO()}.json`);
+    exportRawToJSON(rawPackages, true, `spotli_backup_${user?.id || 'guest'}_${todayISO()}.json`);
     toast(he ? 'קובץ גיבוי JSON הורד בהצלחה' : 'JSON backup downloaded');
   };
 

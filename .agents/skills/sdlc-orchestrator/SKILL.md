@@ -70,7 +70,7 @@ Execute Scope Challenge: Verify issue relevance for this client-only PWA before 
 ```markdown
 View and adhere strictly to `.agents/skills/owasp-security-and-rate-limiting/SKILL.md`.
 Audit Target: [List of modified files and attack surfaces]
-Evaluate against Deliveree Security Baseline (Zero client secret leaks, Anti-ReDoS, Firestore BOLA, input sanitization).
+Evaluate against SpotLi Security Baseline (Zero client secret leaks, Anti-ReDoS, Firestore BOLA, input sanitization).
 ```
 
 ### Gate 4: QA & Build Verification Dispatch

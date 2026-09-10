@@ -1,8 +1,8 @@
 /**
- * Deliveree TypeScript Type Definitions
+ * SpotLi TypeScript Type Definitions
  * 
  * Core domain types, carrier models, lifecycle stages, category classifications,
- * Cloud Storage interfaces, and Auth contracts for Deliveree package tracker.
+ * Cloud Storage interfaces, and Auth contracts for SpotLi package tracker.
  */
 
 /**

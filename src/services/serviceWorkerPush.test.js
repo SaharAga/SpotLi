@@ -130,7 +130,7 @@ describe('Service Worker Web Push and Click Handler', () => {
 
     expect(waitUntilMock).toHaveBeenCalled();
     expect(mockRegistration.showNotification).toHaveBeenCalledWith(
-      'Deliveree | עדכון משלוח',
+      'SpotLi | עדכון משלוח',
       expect.objectContaining({
         body: 'Order Shipped'
       })
@@ -163,7 +163,7 @@ describe('Service Worker Web Push and Click Handler', () => {
     const focusMock = vi.fn().mockResolvedValue(undefined);
     const navigateMock = vi.fn().mockResolvedValue(undefined);
     mockClients.matchAll.mockResolvedValue([
-      { url: 'https://deliveree.app/', focus: focusMock, navigate: navigateMock }
+      { url: 'https://spotliapp.com/', focus: focusMock, navigate: navigateMock }
     ]);
 
     const event = {
@@ -193,7 +193,7 @@ describe('Service Worker Web Push and Click Handler', () => {
     const focusMock = vi.fn().mockResolvedValue(undefined);
     const navigateMock = vi.fn().mockResolvedValue(undefined);
     mockClients.matchAll.mockResolvedValue([
-      { url: 'https://deliveree.app/', focus: focusMock, navigate: navigateMock }
+      { url: 'https://spotliapp.com/', focus: focusMock, navigate: navigateMock }
     ]);
 
     const event = {
@@ -222,7 +222,7 @@ describe('Service Worker Web Push and Click Handler', () => {
       const focusMock = vi.fn().mockResolvedValue(undefined);
       const navigateMock = vi.fn().mockResolvedValue(undefined);
       mockClients.matchAll.mockResolvedValue([
-        { url: 'https://deliveree.app/', focus: focusMock, navigate: navigateMock }
+        { url: 'https://spotliapp.com/', focus: focusMock, navigate: navigateMock }
       ]);
 
       const event = {
