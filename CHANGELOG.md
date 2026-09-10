@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.28.0] - 2026-09-10
+
+### Added
+- Integrated official 17TRACK API (v2.2) aggregator proxy in Firebase Cloud Functions for WAF-protected couriers (Israel Post, GCX, DHL, FedEx, UPS, Cainiao) and added direct open adapter for GAASH Worldwide.
+
+- Trigger background live tracking refresh on package creation, enrich generic package titles from item names or cross-email order correlation (Tier 1 in-memory match with multi-parcel protection, Tier 2 on-demand confirmation lookup), preserve order numbers across schemas, and instruct Gemini to extract product names.
+
+- Added global-to-domestic carrier handover tracking and deduplication (uniting AliExpress/Cainiao with local courier tracking numbers without duplicate cards), direct live tracking adapters for Exelot and Cainiao, shelf number (מדף / bin index) extraction across retail pickup SMS messages and Israel Post API, and updated Firestore security rules.
+
+- Rebranded application from Deliveree to SpotLi (spotliapp.com) across HTML metadata, PWA manifests, bilingual i18n copy, legal terms, UI components, Cloud Functions push/email ingestion, agent skills, SDLC rules, documentation, and automation tooling while preserving backward compatibility for existing client storage keys and email domains. Finalized the 3D Spotlight app icon and multi-resolution logo asset suite for PWA, iOS, Android, and web favicons.
+
+### Fixed
+- Cut the interaction latency that made the UI feel unfinished. Every control now
+has an immediate press state (the app had removed the platform tap highlight
+without replacing it) and `touch-action: manipulation`, which drops the
+browser's wait-for-a-double-tap delay before firing click. The ~100
+`transition-all` declarations became a `transition-ui` utility that names only
+compositor-friendly properties, so an unrelated style change no longer schedules
+a layout pass. `backdrop-filter` came off the surfaces that animate or repaint
+on every scroll frame — the header and bottom nav are already 90–95% opaque, so
+the large blur radius was paying full cost for a near-invisible effect. Tab
+switches now jump to the top instead of smooth-scrolling while the list is
+re-rendering underneath. The one remaining infinite animation loop in the
+always-on UI (the update banner's bounce) is now a one-shot.
+
 ## [0.27.0] - 2026-09-07
 
 ### Added
