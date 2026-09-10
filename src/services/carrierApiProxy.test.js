@@ -117,6 +117,7 @@ describe('carrierApiProxy Service', () => {
 
     it('identifies which carriers have a live integration', () => {
       expect(isLiveTrackingSupported('israel-post')).toBe(true);
+      expect(isLiveTrackingSupported('gaash')).toBe(true);
       expect(isLiveTrackingSupported('exelot')).toBe(true);
       expect(isLiveTrackingSupported('cainiao')).toBe(true);
       expect(isLiveTrackingSupported('dhl')).toBe(false);
@@ -288,6 +289,36 @@ describe('carrierApiProxy Service', () => {
       expect(record.localTrackingNumber).toBe('RU0126608087Z');
       expect(record.checkpoints).toHaveLength(2);
       expect(record.status).toBe('out_for_delivery');
+    });
+
+    it('parses GAASH liveTracking payload and resolves customs and local courier handover', () => {
+      const { parse } = CARRIERS['gaash'].liveTracking;
+      const record = parse(
+        {
+          Statuses: [
+            { StatusDescription: 'החבילה שוחררה מהמכס', StatusDate: '2026-09-07T12:00:00Z', Hub: 'נתב״ג' },
+            { StatusDescription: 'החבילה נחתה בישראל', StatusDate: '2026-09-07T08:00:00Z', Hub: 'נתב״ג' }
+          ],
+          PudoDetails: {
+            DeliveryCompany: 'צ\'יטה',
+            LastMileTrackingNumber: 'CH123456',
+            Madaf: 'A-42',
+            Name: 'נקודת מסירה צ\'יטה',
+            Address: 'דיזנגוף 50, תל אביב'
+          },
+          EstimatedDeliveryDate: '2026-09-10'
+        },
+        'GAA124778035',
+        { inferStageFromText }
+      );
+      expect(record.tracked).toBe(true);
+      expect(record.carrier).toBe('gaash');
+      expect(record.status).toBe('customs');
+      expect(record.localCarrier).toBe('chita');
+      expect(record.localTrackingNumber).toBe('CH123456');
+      expect(record.shelfNumber).toBe('A-42');
+      expect(record.pickupLocation).toBe('נקודת מסירה צ\'יטה, דיזנגוף 50, תל אביב');
+      expect(record.checkpoints).toHaveLength(2);
     });
   });
 });

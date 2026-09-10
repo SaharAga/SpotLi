@@ -37,6 +37,7 @@ export type CarrierId =
   | 'royal-mail'
   | 'aramex'
   | 'yanwen'
+  | 'gaash'
   | 'other';
 
 /**

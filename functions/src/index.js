@@ -17,8 +17,10 @@ import { createGmailConnectionStatusHandler } from './gmailConnectionStatus.js';
 import { createFeatureAdoptionRollupHandler } from './featureAdoptionRollup.js';
 import { createNewPackagePushHandler } from './newPackagePush.js';
 import { createUpdatePackagePushHandler } from './updatePackagePush.js';
+import { createCarrierTrackingHandler } from './carrierProxy.js';
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
+const track17ApiKey = defineSecret('TRACK17_API_KEY');
 // Shared-secret query param that authorizes calls to the Pub/Sub push
 // endpoint — see gmailPushHandler.js for why. Set on the Pub/Sub push
 // subscription's endpoint URL as `?token=<value>`.
@@ -319,5 +321,25 @@ export const notifyOnPackageUpdated = onDocumentUpdated(
       vapidPrivateKey: vapidPrivateKey.value(),
       vapidSubject: 'mailto:support@deliveree.app'
     })(event)
+);
+
+/**
+ * Live Carrier Tracking Proxy:
+ * Queries live parcel checkpoints, customs status, and delivery milestones.
+ *
+ * 1. GAASH Worldwide is fully active ($0, direct WordPress REST API via gaashAdapter.js).
+ * 2. Israel Post, GCX, and 30+ couriers are routed to 17TRACK API (v2.2) via `TRACK17_API_KEY`.
+ */
+export const queryCarrierTracking = onCall(
+  {
+    secrets: [track17ApiKey],
+    timeoutSeconds: 30,
+    memory: '256MiB'
+  },
+  (request) =>
+    createCarrierTrackingHandler({
+      db: getFirestore(),
+      track17ApiKey: track17ApiKey.value() || process.env.TRACK17_API_KEY || ''
+    })(request)
 );
 

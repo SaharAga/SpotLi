@@ -424,6 +424,71 @@ export const CARRIERS = {
     sample: 'ZZ9482019',
     country: 'Israel'
   },
+  'gaash': {
+    id: 'gaash',
+    name: 'GAASH Worldwide',
+    hebrewName: 'געש וורלדוויד (GAASH)',
+    color: 'from-orange-600 to-amber-700',
+    badgeBg: 'bg-orange-500/10 border-orange-500/30 text-orange-400',
+    accentColor: '#ea580c',
+    logoText: 'געש',
+    website: 'https://gaashwd.com',
+    getTrackingUrl: (trackNum) => `https://gaashwd.com/?trackingNumber=${encodeURIComponent(trackNum)}`,
+    fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
+    liveTracking: {
+      endpoint: (trackNum) =>
+        `https://gaashwd.com/wp-json/gaash-parcel-status-tracker/v1/parcel-tracking-data?parcel_id=${encodeURIComponent(trackNum)}&lang=he`,
+      parse: (data, trackNum, { inferStageFromText }) => {
+        if (!data) return null;
+        const statuses = Array.isArray(data.Statuses) ? data.Statuses : [];
+        if (statuses.length === 0) return null;
+
+        const checkpoints = statuses.map((st, idx) => ({
+          id: `cp-gsh-${trackNum}-${idx}`.slice(0, 100),
+          title: st.StatusDescription || st.StatusName || st.Status || '',
+          description: st.StatusDescription || '',
+          descriptionHe: st.StatusDescription || '',
+          location: st.Location || st.Hub || 'געש',
+          timestamp: st.StatusDate && !Number.isNaN(Date.parse(st.StatusDate))
+            ? new Date(st.StatusDate).toISOString()
+            : new Date().toISOString(),
+          isCompleted: true
+        }));
+
+        const lastStatus = checkpoints[0]?.title || '';
+        const stage = inferStageFromText(lastStatus);
+        const pudo = data.PudoDetails;
+        const localCarrier = pudo?.DeliveryCompany ? mapExelotLocalCarrier(pudo.DeliveryCompany) : null;
+        const localTrackingNumber = pudo?.LastMileTrackingNumber || data.HAWB || null;
+        const shelfNumber = pudo?.Madaf || pudo?.ShelfNumber || null;
+
+        let pickupLocation = null;
+        if (pudo?.Name) {
+          pickupLocation = pudo.Address ? `${pudo.Name}, ${pudo.Address}` : pudo.Name;
+        }
+
+        return {
+          carrier: 'gaash',
+          tracked: true,
+          status: stage,
+          checkpoints,
+          location: pudo?.City || pudo?.Name || 'געש וורלדוויד',
+          estimatedDelivery: data.EstimatedDeliveryDate || null,
+          localTrackingNumber,
+          localCarrier,
+          shelfNumber,
+          pickupLocation,
+          pickupHours: pudo?.OpeningHours || null
+        };
+      }
+    },
+    patterns: [
+      rule(/^GAA[A-Z0-9]{7,15}$/i, { confidence: 'high', priority: 130 }),
+      rule(/^GAASH\d{6,12}$/i, { confidence: 'high', priority: 132 })
+    ],
+    sample: 'GAA124778035',
+    country: 'Israel / Cross-Border'
+  },
   'exelot': {
     id: 'exelot',
     name: 'Exelot',
