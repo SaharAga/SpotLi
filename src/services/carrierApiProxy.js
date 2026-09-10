@@ -15,6 +15,7 @@
 
 import { detectCarrier, sanitizeTrackingNumber } from '../utils/carrierDetector';
 import { CARRIER_LIST, getCarrier } from '../types/carriers';
+import { callFunction } from './callableClient';
 
 const CACHE_KEY_PREFIX = 'deliveree_live_track_';
 const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
@@ -223,19 +224,35 @@ async function queryCarrierLive(carrier, trackingNumber) {
     return createUntrackedRecord(carrier.id, UNTRACKED_REASONS.UNAVAILABLE);
   }
 
-  const { endpoint, parse, headers } = carrier.liveTracking;
-
+  // 1. Attempt Cloud Function proxy (which has 17TRACK API key & GAASH adapter, bypassing browser CORS and anti-bot WAFs)
   try {
-    const res = await fetchWithTimeout(endpoint(clean), {
-      headers: headers || { 'Accept': 'application/json, text/plain, */*' }
+    const res = await callFunction('queryCarrierTracking', {
+      trackingNumber: clean,
+      carrierId: carrier.id
     });
-    if (res.ok) {
-      const data = await res.json();
-      const record = parse(data, clean, { inferStageFromText });
-      if (record) return record;
+    if (res?.data?.tracked) {
+      return res.data;
     }
   } catch (err) {
-    console.info(`[CarrierProxy] ${carrier.name} gateway unreachable:`, err?.message);
+    // Cloud function proxy not available or failed; proceed to direct gateway fallback
+  }
+
+  // 2. Direct client fallback for open carriers
+  if (carrier?.liveTracking?.endpoint && carrier?.liveTracking?.parse) {
+    const { endpoint, parse, headers } = carrier.liveTracking;
+
+    try {
+      const res = await fetchWithTimeout(endpoint(clean), {
+        headers: headers || { 'Accept': 'application/json, text/plain, */*' }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const record = parse(data, clean, { inferStageFromText });
+        if (record) return record;
+      }
+    } catch (err) {
+      console.info(`[CarrierProxy] ${carrier.name} gateway unreachable:`, err?.message);
+    }
   }
 
   return createUntrackedRecord(carrier.id, UNTRACKED_REASONS.UNAVAILABLE);

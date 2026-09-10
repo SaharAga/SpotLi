@@ -424,6 +424,32 @@
         }
       ]
     },
+    "gaash": {
+      "id": "gaash",
+      "name": "GAASH Worldwide",
+      "hebrewName": "געש וורלדוויד (GAASH)",
+      "website": "https://gaashwd.com",
+      "country": "Israel / Cross-Border",
+      "domains": [
+        "gaashwd.com"
+      ],
+      "patterns": [
+        {
+          "source": "^GAA[A-Z0-9]{7,15}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 130
+        },
+        {
+          "source": "^GAASH\\d{6,12}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 132
+        }
+      ]
+    },
     "exelot": {
       "id": "exelot",
       "name": "Exelot",
@@ -1037,12 +1063,28 @@
       "priority": 126
     },
     {
+      "carrierId": "gaash",
+      "source": "^GAA[A-Z0-9]{7,15}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 130
+    },
+    {
       "carrierId": "yunexpress",
       "source": "^YT\\d{16,18}$",
       "flags": "i",
       "confidence": "high",
       "checksum": "not-applicable",
       "priority": 130
+    },
+    {
+      "carrierId": "gaash",
+      "source": "^GAASH\\d{6,12}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 132
     },
     {
       "carrierId": "exelot",
