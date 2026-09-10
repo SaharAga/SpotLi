@@ -267,7 +267,8 @@ describe('extractOrderStatusDetails', () => {
     expect(result).toEqual({
       store: 'AliExpress',
       status: 'in_transit',
-      title: expect.any(String)
+      title: expect.any(String),
+      orderNumber: '1122283942717219'
     });
   });
 

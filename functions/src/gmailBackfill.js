@@ -18,6 +18,7 @@ import {
   buildPackagesFromGmailMessageWithAiFallback,
   buildOrderStatusUpdateFromGmailMessage
 } from './gmailPackageSync.js';
+import { findExistingOrderMatch, isGenericPackageTitle } from './orderCorrelationService.js';
 import { logUsageEvent } from './analyticsEvents.js';
 import { GMAIL_AI_LIMITS, GMAIL_BACKFILL_LIMITS } from './config.js';
 import { checkAndIncrementUsage } from './guards.js';
@@ -81,10 +82,14 @@ export async function runBackfillForUser({ db, uid, refreshToken, clientSecret, 
   // by store — lets a re-run update that package's status instead of
   // creating a second untracked card for the same store.
   const storeToOrderStatusDocId = new Map();
+  const orderNumberToDocMap = new Map();
   for (const d of existingSnap.docs) {
     const data = d.data() || {};
     if (data.source === 'gmail_sync_order_status' && data.store) {
       storeToOrderStatusDocId.set(String(data.store).toUpperCase(), d.id);
+    }
+    if (data.orderNumber) {
+      orderNumberToDocMap.set(String(data.orderNumber).trim(), { id: d.id, data });
     }
   }
 
@@ -120,6 +125,7 @@ export async function runBackfillForUser({ db, uid, refreshToken, clientSecret, 
   // earlier in this same run (so a second email for the same store updates
   // that entry instead of adding a duplicate).
   const storeToNewPackageIndex = new Map();
+  const orderNumberToNewPackageIndex = new Map();
   let skipped = 0;
   let aiResolved = 0;
   // Own budget for this single backfill run — on top of, not instead of,
@@ -171,9 +177,69 @@ export async function runBackfillForUser({ db, uid, refreshToken, clientSecret, 
     }
 
     for (const pkg of pkgs) {
+      if (pkg.orderNumber) {
+        // 1. Match against packages already in Firestore
+        const match = findExistingOrderMatch(orderNumberToDocMap, pkg.orderNumber, pkg.trackingNumber);
+        if (match.matchedDocId && !match.isMultiParcel) {
+          const existingData = match.existingData || {};
+          const patch = {
+            updatedAt: new Date().toISOString(),
+            trackingNumber: pkg.trackingNumber,
+            carrier: pkg.carrier,
+            ...(pkg.status ? { status: pkg.status } : {}),
+            ...(pkg.lockerPin && !existingData.lockerPin ? { lockerPin: pkg.lockerPin, pickupCode: pkg.lockerPin } : {}),
+            ...(pkg.pickupLocation && !existingData.pickupLocation ? { pickupLocation: pkg.pickupLocation } : {}),
+            ...(pkg.pickupHours && !existingData.pickupHours ? { pickupHours: pkg.pickupHours } : {}),
+            ...(pkg.pickupPhone && !existingData.pickupPhone ? { pickupPhone: pkg.pickupPhone } : {}),
+            ...(!isGenericPackageTitle(pkg.title) && isGenericPackageTitle(existingData.title) ? { title: pkg.title } : {})
+          };
+          orderStatusUpdates.push({ docId: match.matchedDocId, patch });
+          if (pkg.trackingNumber) existingTrackingNumbers.add(pkg.trackingNumber.toUpperCase());
+          orderNumberToDocMap.set(String(pkg.orderNumber).trim(), { id: match.matchedDocId, data: { ...existingData, ...patch } });
+          skipped += 1;
+          continue;
+        }
+
+        // 2. Match against packages created earlier in this same backfill run
+        const cleanOrder = String(pkg.orderNumber).trim();
+        const earlierIndex = orderNumberToNewPackageIndex.get(cleanOrder);
+        if (earlierIndex !== undefined) {
+          const earlierPkg = packagesToSave[earlierIndex];
+          const earlierTn = earlierPkg.trackingNumber ? String(earlierPkg.trackingNumber).toUpperCase() : '';
+          const incomingTn = pkg.trackingNumber ? String(pkg.trackingNumber).toUpperCase() : '';
+
+          if (!earlierTn && incomingTn) {
+            earlierPkg.trackingNumber = pkg.trackingNumber;
+            earlierPkg.carrier = pkg.carrier;
+            if (pkg.status) earlierPkg.status = pkg.status;
+            if (pkg.lockerPin && !earlierPkg.lockerPin) earlierPkg.lockerPin = earlierPkg.pickupCode = pkg.lockerPin;
+            if (pkg.pickupLocation && !earlierPkg.pickupLocation) earlierPkg.pickupLocation = pkg.pickupLocation;
+            if (pkg.pickupHours && !earlierPkg.pickupHours) earlierPkg.pickupHours = pkg.pickupHours;
+            if (pkg.pickupPhone && !earlierPkg.pickupPhone) earlierPkg.pickupPhone = pkg.pickupPhone;
+            if (!isGenericPackageTitle(pkg.title) && isGenericPackageTitle(earlierPkg.title)) earlierPkg.title = pkg.title;
+            earlierPkg.updatedAt = new Date().toISOString();
+            if (pkg.trackingNumber) existingTrackingNumbers.add(pkg.trackingNumber.toUpperCase());
+            skipped += 1;
+            continue;
+          }
+
+          if (isGenericPackageTitle(pkg.title) && earlierPkg.title && !isGenericPackageTitle(earlierPkg.title)) {
+            pkg.title = earlierPkg.title;
+          }
+        }
+
+        if (match.isMultiParcel && isGenericPackageTitle(pkg.title) && match.existingData?.title && !isGenericPackageTitle(match.existingData.title)) {
+          pkg.title = match.existingData.title;
+        }
+      }
+
       if (pkg.source === 'gmail_sync_ai') aiResolved += 1;
       if (pkg.source === 'gmail_sync_order_status' && pkg.store) {
         storeToNewPackageIndex.set(pkg.store.toUpperCase(), packagesToSave.length);
+      }
+      if (pkg.orderNumber) {
+        orderNumberToNewPackageIndex.set(String(pkg.orderNumber).trim(), packagesToSave.length);
+        orderNumberToDocMap.set(String(pkg.orderNumber).trim(), { id: pkg.id, data: pkg });
       }
       packagesToSave.push(pkg);
       if (pkg.trackingNumber) existingTrackingNumbers.add(pkg.trackingNumber.toUpperCase());

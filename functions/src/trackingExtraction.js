@@ -666,10 +666,13 @@ export function extractOrderStatusDetails(subject = '', body = '', from = '') {
   const status = matchDeliveryStatus(subject, cleanBody);
   if (!status) return null;
 
+  const orderNumber = extractOrderNumberFromText(combinedText);
+
   return {
     store,
     status,
-    title: generateCleanTitle(subject, store, 'other')
+    title: generateCleanTitle(subject, store, 'other'),
+    ...(orderNumber ? { orderNumber } : {})
   };
 }
 
@@ -939,6 +942,16 @@ export function extractRedirectInfo(text = '') {
   return { isRedirected: false };
 }
 
+function extractOrderNumberFromText(text = '') {
+  if (!text) return undefined;
+  const match = text.match(/(?:order\s*(?:id|#|no|number)?|מספר\s*הזמנה|הזמנה\s*(?:מס|מספר|מס׳|מס'))\s*[:：#]?\s*([A-Za-z0-9-]{6,35})\b/i);
+  if (!match) return undefined;
+  const cand = match[1].trim();
+  if (cand.length < 6) return undefined;
+  if (/^(?:19|20)\d{6,}$/.test(cand)) return undefined;
+  return cand;
+}
+
 /**
  * Extracts tracking details and ranked candidates from email with multi-signal evidence scoring.
  * Backwards-compatible with all existing callers while exposing v2.0.0 additive fields.
@@ -954,6 +967,7 @@ export function extractTrackingDetails(subject = '', body = '', from = '', optio
   const htmlContent = options.html || (/<script|<html|<div|<a\s+/i.test(body) ? body : '');
   const cleanBody = sanitizeEmailHtml(body);
   const combinedText = `${subject} ${cleanBody} ${from}`.slice(0, 25000);
+  const textOrderNumber = extractOrderNumberFromText(combinedText);
   const store = detectStore(from, combinedText);
   const lockerPin = extractLockerPin(combinedText);
   const shelfNumber = extractShelfNumber(combinedText);
@@ -1226,7 +1240,7 @@ export function extractTrackingDetails(subject = '', body = '', from = '', optio
       carrier: candCarrier,
       title: candTitle,
       store: schemaShipment?.store || effectiveStore,
-      orderNumber: schemaShipment?.orderNumber || schemaShipments[0]?.orderNumber || undefined,
+      orderNumber: schemaShipment?.orderNumber || schemaShipments[0]?.orderNumber || textOrderNumber || undefined,
       deliveryStatus: schemaShipment?.status || schemaStatus || undefined,
       pickupLocation: pickupLocation || '',
       pickupHours: pickupHours || undefined,
@@ -1249,7 +1263,7 @@ export function extractTrackingDetails(subject = '', body = '', from = '', optio
     carrier,
     title,
     store: effectiveStore,
-    orderNumber: schemaShipments[0]?.orderNumber || undefined,
+    orderNumber: schemaShipments[0]?.orderNumber || textOrderNumber || undefined,
     deliveryStatus: schemaStatus || undefined,
     pickupLocation: pickupLocation || '',
     pickupHours: pickupHours || undefined,
