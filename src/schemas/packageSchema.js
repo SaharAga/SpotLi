@@ -6,6 +6,9 @@ import { toLocalISODate } from '../utils/dateUtils';
 
 export { VALID_STATUSES };
 
+/** Current package record schema version. */
+export const CURRENT_SCHEMA_VERSION = 1;
+
 /**
  * Zod schema for individual tracking checkpoint verification.
  * @type {z.ZodType<import('../types/deliveree').Checkpoint>}
@@ -53,6 +56,9 @@ export const packageSchema = z.object({
   redirectReason: z.string().max(100).optional().transform(s => (s ? sanitizeString(s, 100) : undefined)),
   store: z.string().max(100).optional().transform(s => (s ? sanitizeString(s, 100) : undefined)),
   orderNumber: z.string().max(100).optional().transform(s => (s ? sanitizeString(s, 100) : undefined)),
+  source: z.string().max(50).optional().transform(s => (s ? sanitizeString(s, 50) : undefined)),
+  confidence: z.string().max(20).optional().transform(s => (s ? sanitizeString(s, 20) : undefined)),
+  lockerPin: z.string().max(50).optional().transform(s => (s ? sanitizeString(s, 50) : undefined)),
   shelfNumber: z.string().max(50).optional().transform(s => (s ? sanitizeString(s, 50) : undefined)),
   localTrackingNumber: z.string().max(100).optional().transform(s => (s ? sanitizeString(s, 100).toUpperCase().replace(/[^A-Z0-9_-]/g, '') : undefined)),
   localCarrier: z.string().max(50).optional().transform(s => (s ? sanitizeString(s, 50).toLowerCase() : undefined)),
@@ -69,7 +75,8 @@ export const packageSchema = z.object({
   checkpoints: z.array(checkpointSchema).max(50).default([]),
   createdAt: z.string().max(50).default(() => new Date().toISOString()),
   updatedAt: z.string().max(50).default(() => new Date().toISOString()),
-  userId: z.string().max(128).optional()
+  userId: z.string().max(128).optional(),
+  schemaVersion: z.number().int().min(1).max(100).optional().default(CURRENT_SCHEMA_VERSION)
 }).strip();
 
 /**
@@ -109,9 +116,6 @@ export function validatePackageListSafe(data) {
  * one entry point — `parsePackage` / `parsePackageList` — applying exactly
  * the coercions the hand-rolled validator applied.
  * ------------------------------------------------------------------------- */
-
-/** Current package record schema version. */
-export const CURRENT_SCHEMA_VERSION = 1;
 
 /**
  * Advisory ceiling for a package list. Used only to raise an `overflow` flag —
@@ -238,6 +242,10 @@ export const repairingPackageSchema = z.preprocess(
     redirectedAt: repairedString(50),
     redirectReason: repairedString(100),
     store: repairedString(100),
+    orderNumber: repairedString(100),
+    source: repairedString(50),
+    confidence: repairedString(20),
+    lockerPin: repairedString(50),
     shelfNumber: repairedString(50),
     localTrackingNumber: z.unknown().optional().transform((value) => {
       const cleaned = sanitizeString(value, 100).toUpperCase().replace(/[^A-Z0-9_-]/g, '');

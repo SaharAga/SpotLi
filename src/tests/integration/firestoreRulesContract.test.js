@@ -47,4 +47,27 @@ describe('Firestore package rules contract', () => {
   it('still enforces the status allowlist on writes', () => {
     expect(rules).toMatch(/data\.status is string && data\.status in validStatuses/);
   });
+
+  it('allows all package fields produced by schema and ingestion pipelines', () => {
+    const match = rules.match(/let allowedKeys = \[([\s\S]*?)\];/);
+    expect(match, 'allowedKeys block not found in firestore.rules').not.toBeNull();
+
+    const allowedKeys = new Set([...match[1].matchAll(/'([^']+)'/g)].map((m) => m[1]));
+
+    const requiredKeys = [
+      'id', 'title', 'titleHe', 'trackingNumber', 'carrier', 'carrierName',
+      'status', 'category', 'orderDate', 'expectedDeliveryDate', 'origin',
+      'destination', 'notes', 'notesHe', 'isPinned', 'isArchived',
+      'checkpoints', 'pickupCode', 'pickupLocation', 'pickupHours', 'pickupPhone',
+      'pickupDeadline', 'returnDeadline', 'returnNotes',
+      'isRedirected', 'originalPickupLocation', 'redirectedAt', 'redirectReason',
+      'store', 'orderNumber', 'createdAt', 'updatedAt', 'userId',
+      'shelfNumber', 'localTrackingNumber', 'localCarrier', 'aliases', 'customsDetails',
+      'source', 'confidence', 'lockerPin', 'schemaVersion'
+    ];
+
+    for (const key of requiredKeys) {
+      expect(allowedKeys.has(key), `Key "${key}" must be allowlisted in firestore.rules`).toBe(true);
+    }
+  });
 });
