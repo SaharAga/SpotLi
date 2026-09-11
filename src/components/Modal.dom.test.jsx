@@ -362,6 +362,17 @@ describe('Modal — structure and ARIA', () => {
     expect(dialog.firstElementChild.className).toContain('max-w-sm');
   });
 
+  it('sets data-flush-bottom attribute when flushBottom is true', () => {
+    render(
+      <Modal isOpen onClose={() => {}} ariaLabel="d" flushBottom>
+        <p>body</p>
+      </Modal>
+    );
+
+    const dialog = getDialog();
+    expect(dialog.firstElementChild.getAttribute('data-flush-bottom')).toBe('true');
+  });
+
   it('catches a crash in its content instead of taking the app down', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     function Boom() {

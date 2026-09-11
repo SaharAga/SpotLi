@@ -98,6 +98,7 @@ export function Modal({
    * decided about. `compact` keeps those centred at every width.
    */
   compact = false,
+  flushBottom = false,
   style,
   dir,
   layer = 'base',
@@ -261,7 +262,7 @@ export function Modal({
       onClick={handleClick}
       onKeyDownCapture={handleKeyDownCapture}
     >
-      <div ref={panelRef} tabIndex={-1} data-modal-panel={compact ? undefined : ""} className={panelClasses} style={style} dir={dir}>
+      <div ref={panelRef} tabIndex={-1} data-modal-panel={compact ? undefined : ""} data-flush-bottom={flushBottom ? "true" : undefined} className={panelClasses} style={style} dir={dir}>
         <ErrorBoundary compact componentName={componentName} onReset={requestClose}>
           {children}
         </ErrorBoundary>
