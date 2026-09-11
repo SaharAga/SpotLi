@@ -1327,28 +1327,40 @@ export function DashboardContent() {
         <OnboardingModal
           isOpen={isOpen}
           onClose={() => {
-            if (typeof window !== 'undefined' && window.localStorage) {
-              window.localStorage.setItem(STORAGE_KEYS.ONBOARDING_TOUR_SEEN, 'true');
+            try {
+              if (typeof window !== 'undefined' && window.localStorage) {
+                window.localStorage.setItem(STORAGE_KEYS.ONBOARDING_TOUR_SEEN, 'true');
+              }
+            } catch {
+              // Ignore storage errors
             }
             closeModal(MODAL.ONBOARDING);
           }}
           onGetStartedGoogle={() => {
-            if (typeof window !== 'undefined' && window.localStorage) {
-              window.localStorage.setItem(STORAGE_KEYS.ONBOARDING_TOUR_SEEN, 'true');
+            try {
+              if (typeof window !== 'undefined' && window.localStorage) {
+                window.localStorage.setItem(STORAGE_KEYS.ONBOARDING_TOUR_SEEN, 'true');
+              }
+            } catch {
+              // Ignore storage errors
             }
             try {
               if (typeof window !== 'undefined' && window.sessionStorage) {
                 window.sessionStorage.setItem('spotli_post_auth_wizard_pending', 'true');
               }
             } catch {
-              // Ignore
+              // Ignore storage errors
             }
             closeModal(MODAL.ONBOARDING);
             openModal(MODAL.AUTH, { initialMode: 'signin' });
           }}
           onStartManual={() => {
-            if (typeof window !== 'undefined' && window.localStorage) {
-              window.localStorage.setItem(STORAGE_KEYS.ONBOARDING_TOUR_SEEN, 'true');
+            try {
+              if (typeof window !== 'undefined' && window.localStorage) {
+                window.localStorage.setItem(STORAGE_KEYS.ONBOARDING_TOUR_SEEN, 'true');
+              }
+            } catch {
+              // Ignore storage errors
             }
             closeModal(MODAL.ONBOARDING);
             openModal(MODAL.SMART_IMPORT);
@@ -1364,9 +1376,13 @@ export function DashboardContent() {
           isOpen={isOpen}
           onClose={() => closeModal(MODAL.POST_AUTH_WIZARD)}
           onComplete={() => {
-            const uid = user?.id || user?.uid;
-            if (uid && typeof window !== 'undefined' && window.localStorage) {
-              window.localStorage.setItem(STORAGE_KEYS.ONBOARDING_WIZARD_COMPLETED_PREFIX + uid, 'true');
+            try {
+              const uid = user?.id || user?.uid;
+              if (uid && typeof window !== 'undefined' && window.localStorage) {
+                window.localStorage.setItem(STORAGE_KEYS.ONBOARDING_WIZARD_COMPLETED_PREFIX + uid, 'true');
+              }
+            } catch {
+              // Ignore storage errors
             }
             closeModal(MODAL.POST_AUTH_WIZARD);
           }}
@@ -1448,7 +1464,7 @@ export function DashboardContent() {
             <div className="h-6 w-48 bg-slate-800 rounded-xl mb-3" />
             <div className="h-4 w-72 bg-slate-800/60 rounded-lg" />
           </div>
-        ) : !user && !isDemoMode ? (
+        ) : !user && !isDemoMode && packages.length === 0 ? (
           /* GUEST / NEW USER WELCOME ONBOARDING GATE */
           <FirstTimeEmptyState
             onConnectGmail={() => {

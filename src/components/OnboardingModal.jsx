@@ -149,19 +149,23 @@ export function OnboardingModal({
     >
       {/* Header bar with Skip button */}
       <div className="px-6 pt-5 pb-2 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center">
           {slides.map((_, idx) => (
             <button
               key={idx}
               type="button"
               onClick={() => setCurrentSlide(idx)}
-              className={`h-2 rounded-full transition-all cursor-pointer ${
-                idx === currentSlide 
-                  ? 'w-6 bg-blue-500' 
-                  : 'w-2 bg-slate-700 hover:bg-slate-600'
-              }`}
+              className="p-3 min-h-[48px] flex items-center justify-center cursor-pointer"
               aria-label={`Slide ${idx + 1}`}
-            />
+            >
+              <span
+                className={`h-2 rounded-full transition-all block ${
+                  idx === currentSlide 
+                    ? 'w-6 bg-blue-500' 
+                    : 'w-2 bg-slate-700 hover:bg-slate-600'
+                }`}
+              />
+            </button>
           ))}
         </div>
         <button
@@ -244,7 +248,7 @@ export function OnboardingModal({
             <button
               type="button"
               onClick={handlePrev}
-              className="self-center flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200 px-3 py-1 transition-colors cursor-pointer min-h-[36px]"
+              className="self-center flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200 px-4 py-2.5 transition-colors cursor-pointer min-h-[48px]"
             >
               {isRTL ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
               <span>{t('onboarding.prev')}</span>

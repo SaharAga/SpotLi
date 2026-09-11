@@ -69,4 +69,19 @@ describe('useFeatureNudges Hook Tests', () => {
     const { result: remounted } = renderHook(() => useFeatureNudges({ packages: samplePackages, user: null }));
     expect(remounted.current.activeNudge).toBeNull();
   });
+
+  it('allows temporary dismissal to re-show after the 14-day cooldown expires', () => {
+    const samplePackages = [{ id: 'pkg-1', title: 'Order', status: 'in_transit' }];
+    // Set a dismissal from 15 days ago
+    const fifteenDaysAgo = Date.now() - (15 * 24 * 60 * 60 * 1000);
+    localStorage.setItem(STORAGE_KEYS.FEATURE_NUDGES, JSON.stringify({
+      push_notifications: { dismissedAt: fifteenDaysAgo, permanent: false }
+    }));
+
+    const { result } = renderHook(() => useFeatureNudges({ packages: samplePackages, user: null }));
+    expect(result.current.activeNudge).toEqual({
+      id: 'push_notifications',
+      type: 'push'
+    });
+  });
 });

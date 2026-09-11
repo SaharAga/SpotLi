@@ -9,6 +9,8 @@ import { getConnectedServices } from '../services/emailSyncService';
  * 1. Strictly at most 1 nudge per session.
  * 2. Permanent suppression if "Don't show again" is clicked.
  */
+const NUDGE_COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000; // 14-day re-prompt cooldown for temporary dismissal
+
 export function useFeatureNudges({ packages = [], user = null }) {
   const [sessionDismissed, setSessionDismissed] = useState(false);
   const [storageNudges, setStorageNudges] = useState(() => {
@@ -22,7 +24,11 @@ export function useFeatureNudges({ packages = [], user = null }) {
   });
 
   const isPermanentlyDismissed = useCallback((id) => {
-    return Boolean(storageNudges[id]?.permanent || storageNudges[id]?.dismissedAt);
+    if (storageNudges[id]?.permanent) return true;
+    if (storageNudges[id]?.dismissedAt) {
+      return (Date.now() - storageNudges[id].dismissedAt) < NUDGE_COOLDOWN_MS;
+    }
+    return false;
   }, [storageNudges]);
 
   const activeNudge = useMemo(() => {
