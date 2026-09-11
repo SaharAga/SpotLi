@@ -285,7 +285,67 @@ export const translations = {
       callCourier: 'Call Courier',
       callPickupPoint: 'Call Pickup Point',
       phoneCopied: 'Phone number copied!'
-    }
+    },
+    onboarding: {
+      skip: 'Skip',
+      next: 'Next',
+      prev: 'Back',
+      getStarted: 'Get Started with Google',
+      startManual: 'Start Tracking Manually',
+      slide1Tag: 'Automated Sync',
+      slide1Title: 'Hands-Free Delivery Tracking',
+      slide1Desc: 'Connect Gmail to automatically detect tracking emails from Amazon, AliExpress, and Israeli couriers — zero copy-pasting.',
+      slide2Tag: 'Instant Fallback',
+      slide2Title: 'Smart SMS & Link Import',
+      slide2Desc: 'Received a text or WhatsApp with a tracking link? Just paste it. SpotLi automatically extracts the courier, code, and locker details.',
+      slide3Tag: 'Last-Mile Pickup',
+      slide3Title: 'Sunlight-Proof Pickup PINs & Waze',
+      slide3Desc: 'When your delivery is ready, open oversized high-contrast PINs with screen wake lock and 1-tap navigation directly to the pickup point.'
+    },
+    wizard: {
+      step: 'Step {current} of {total}',
+      step1Title: 'Connect Gmail Auto-Sync',
+      step1Desc: 'Let SpotLi securely check your inbox for package dispatches and tracking updates.',
+      connectGmailBtn: 'Connect Gmail',
+      gmailConnected: 'Gmail Connected!',
+      connecting: 'Connecting...',
+      step2Title: 'Real-Time Delivery Alerts',
+      step2Desc: 'Never miss a pickup. Get instant notifications when your package is in transit, arrives at a locker, or has a pickup code ready.',
+      enableNotificationsBtn: 'Turn On Delivery Alerts',
+      notificationsEnabled: 'Alerts Enabled!',
+      enabling: 'Enabling...',
+      iosPwaHint: 'On iPhone? Add SpotLi to your Home Screen to enable push alerts.',
+      skipStep: 'Maybe Later',
+      finishBtn: 'Go to My Deliveries'
+    },
+    firstTimeEmpty: {
+      welcomeTitle: 'Start Tracking Your Deliveries',
+      welcomeSubtitle: 'Choose how you want to get started with SpotLi:',
+      gmailTileTitle: 'Connect Gmail Auto-Sync',
+      gmailTileBadge: 'Recommended',
+      gmailTileDesc: 'Automatically detect and track deliveries from your emails without typing anything.',
+      smsTileTitle: 'Paste SMS or Link',
+      smsTileDesc: 'Paste a courier notification to extract tracking number, status, and locker PIN.',
+      demoTileTitle: 'Explore with Demo Package',
+      demoTileDesc: 'Test out the live locker PIN mode, navigation links, and tracking timeline right now.',
+      demoBadge: 'Demo Delivery',
+      removeDemo: 'Remove Demo',
+      demoLoadedToast: 'Demo package loaded! Explore the card details and locker mode.'
+    },
+    nudges: {
+      dismiss: 'Dismiss',
+      dontShowAgain: 'Don’t show again',
+      pushTitle: 'Never miss a delivery update',
+      pushDesc: 'Enable push alerts to get notified the second your package is ready at the pickup point.',
+      pushAction: 'Turn On Alerts',
+      gmailTitle: 'Tired of manual pasting?',
+      gmailDesc: 'Connect Gmail to automatically import deliveries from Amazon, AliExpress, and couriers.',
+      gmailAction: 'Connect Gmail',
+      lockerTitle: 'Picking up your package?',
+      lockerDesc: 'Tap the locker pickup button on your card for sunlight-proof giant PINs and Waze directions.',
+      lockerAction: 'View Pickup Mode'
+    },
+    appTourMenu: 'App Tour'
   },
   he: {
     appTitle: 'SpotLi',
@@ -570,6 +630,66 @@ export const translations = {
       callCourier: 'התקשר לשליח',
       callPickupPoint: 'התקשר לנקודת האיסוף',
       phoneCopied: 'מספר הטלפון הועתק!'
-    }
+    },
+    onboarding: {
+      skip: 'דלג',
+      next: 'הבא',
+      prev: 'חזור',
+      getStarted: 'התחברות מהירה עם Google',
+      startManual: 'התחל מעקב ידני',
+      slide1Tag: 'סנכרון אוטומטי',
+      slide1Title: 'מעקב חבילות אוטומטי וללא מאמץ',
+      slide1Desc: 'חבר את חשבון ה-Gmail והחבילות מ-Amazon, עליאקספרס וחברות השילוח יופיעו אוטומטית — ללא צורך בהעתקת מספרים.',
+      slide2Tag: 'גיבוי חכם ומיידי',
+      slide2Title: 'ייבוא חכם של הודעות SMS וקישורים',
+      slide2Desc: 'קיבלת SMS או הודעת וואטסאפ עם קישור מעקב? פשוט הדבק כאן. המערכת תזהה את חברת השילוח, קוד האיסוף ומיקום הלוקר תוך שניות.',
+      slide3Tag: 'איסוף מהיר מהלוקר',
+      slide3Title: 'קודי איסוף ענקיים וניווט מהיר ב-Waze',
+      slide3Desc: 'כשהחבילה ממתינה, לחץ לצפייה בקוד איסוף ענק עם מסך בהיר שלא כבה בשמש, וניווט ישיר ב-Waze לנקודת האיסוף.'
+    },
+    wizard: {
+      step: 'שלב {current} מתוך {total}',
+      step1Title: 'חיבור סנכרון אוטומטי מ-Gmail',
+      step1Desc: 'אפשר ל-SpotLi לסרוק עדכוני משלוח מתיבת המייל שלך בצורה מאובטחת.',
+      connectGmailBtn: 'חבר את Gmail',
+      gmailConnected: 'Gmail מחובר בהצלחה!',
+      connecting: 'מתחבר...',
+      step2Title: 'התראות משלוח בזמן אמת',
+      step2Desc: 'אל תפספס אף איסוף. קבל התראה ברגע שהחבילה מגיעה ללוקר, יוצאת לחלוקה או מלווה בקוד איסוף.',
+      enableNotificationsBtn: 'הפעל התראות משלוח',
+      notificationsEnabled: 'ההתראות הופעלו!',
+      enabling: 'מפעיל התראות...',
+      iosPwaHint: 'משתמש באייפון? הוסף את SpotLi למסך הבית כדי לקבל התראות.',
+      skipStep: 'אולי מאוחר יותר',
+      finishBtn: 'קדימה, לחבילות שלי'
+    },
+    firstTimeEmpty: {
+      welcomeTitle: 'התחל לעקוב אחר החבילות שלך',
+      welcomeSubtitle: 'בחר כיצד תרצה להתחיל להשתמש ב-SpotLi:',
+      gmailTileTitle: 'סנכרון אוטומטי מ-Gmail',
+      gmailTileBadge: 'מומלץ',
+      gmailTileDesc: 'איתור ומעקב אוטומטי של חבילות מהאימייל ללא צורך בהקלדה.',
+      smsTileTitle: 'הדבק SMS או קישור מעקב',
+      smsTileDesc: 'הדבק הודעת שליחים לחילוץ מספר מעקב, סטטוס וקוד לוקר.',
+      demoTileTitle: 'התנסה עם חבילת הדגמה',
+      demoTileDesc: 'בדוק מיד את מצב קוד האיסוף ללוקר, קישורי הניווט וציר הזמן של החבילה.',
+      demoBadge: 'חבילת הדגמה',
+      removeDemo: 'הסר הדגמה',
+      demoLoadedToast: 'חבילת הדגמה נטענה! מוזמן לחקור את הכרטיס ומצב האיסוף.'
+    },
+    nudges: {
+      dismiss: 'סגור',
+      dontShowAgain: 'אל תציג שוב',
+      pushTitle: 'אל תפספס עדכונים על החבילה שלך',
+      pushDesc: 'הפעל התראות כדי לקבל עדכון מיידי ברגע שהחבילה מוכנה לאיסוף בנקודה.',
+      pushAction: 'הפעל התראות',
+      gmailTitle: 'נמאס לך להעתיק מספרי מעקב ידנית?',
+      gmailDesc: 'חבר את Gmail כדי לייבא אוטומטית חבילות מ-Amazon, עליאקספרס וחברות משלוח.',
+      gmailAction: 'חבר את Gmail',
+      lockerTitle: 'יוצא לאסוף את החבילה?',
+      lockerDesc: 'לחץ על כפתור האיסוף בכרטיס החבילה לצפייה בקוד ענק שלא כבה בשמש וניווט ישיר ב-Waze.',
+      lockerAction: 'צפה במצב איסוף'
+    },
+    appTourMenu: 'מדריך שימוש וסיור'
   }
 };

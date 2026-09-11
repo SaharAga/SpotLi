@@ -72,9 +72,14 @@ const DeleteConfirmDialog = lazyModal(() => import('./components/DeleteConfirmDi
 const AutoArchivePromptModal = lazyModal(() => import('./components/AutoArchivePromptModal'), 'AutoArchivePromptModal');
 const NavigationChoiceModal = lazyModal(() => import('./components/NavigationChoiceModal'), 'NavigationChoiceModal');
 const FullScreenLockerModal = lazyModal(() => import('./components/FullScreenLockerModal'), 'FullScreenLockerModal');
+const OnboardingModal = lazyModal(() => import('./components/OnboardingModal'), 'OnboardingModal');
+const PostAuthSetupWizard = lazyModal(() => import('./components/PostAuthSetupWizard'), 'PostAuthSetupWizard');
 
 import { Toast } from './components/Toast';
 import { InstallPwaBanner } from './components/InstallPwaBanner';
+import { FirstTimeEmptyState } from './components/FirstTimeEmptyState';
+import { FeatureNudgeBanner } from './components/FeatureNudgeBanner';
+import { useFeatureNudges } from './hooks/useFeatureNudges';
 import { deliveryService } from './services/deliveryService';
 import { useLanguage, LanguageProvider } from './context/LanguageContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -83,6 +88,7 @@ import { isAdminUser } from './constants/admin';
 import { getCarrier } from './types/carriers';
 import { getTabPredicate, ARCHIVED_TAB } from './types/stages';
 import { STORAGE_KEYS } from './constants/storageKeys';
+import { LEGAL_VERSION } from './constants/legalVersion';
 import { APP_NAME, APP_COPYRIGHT } from './constants/app';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -116,7 +122,9 @@ export const MODAL = {
   AUTO_ARCHIVE: 'autoArchive',
   DELETE_CONFIRM: 'deleteConfirm',
   NAVIGATION_CHOICE: 'navigationChoice',
-  FULL_SCREEN_LOCKER: 'fullScreenLocker'
+  FULL_SCREEN_LOCKER: 'fullScreenLocker',
+  ONBOARDING: 'onboarding',
+  POST_AUTH_WIZARD: 'postAuthWizard'
 };
 
 /**
@@ -518,6 +526,40 @@ export function DashboardContent() {
     }
   }, []);
 
+  // Check for First-Visit Onboarding Tour (only for new unauthenticated visitors with 0 packages)
+  useEffect(() => {
+    if (user || loading || packages.length > 0) return;
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const hasSeenTour = localStorage.getItem(STORAGE_KEYS.ONBOARDING_TOUR_SEEN);
+        if (!hasSeenTour) {
+          openModal(MODAL.ONBOARDING);
+        }
+      }
+    } catch {
+      // Ignore
+    }
+  }, [user, loading, packages.length, openModal]);
+
+  // Check for Post-Auth Setup Wizard (runs once newly signed in user has accepted legal terms)
+  useEffect(() => {
+    if (!user || loading) return;
+    if (user.legalAcceptedVersion !== LEGAL_VERSION) return;
+    try {
+      if (typeof window !== 'undefined' && window.sessionStorage && window.localStorage) {
+        const wizardKey = STORAGE_KEYS.ONBOARDING_WIZARD_COMPLETED_PREFIX + (user.id || user.uid);
+        const hasCompletedWizard = localStorage.getItem(wizardKey);
+        const isPending = sessionStorage.getItem('spotli_post_auth_wizard_pending');
+        if (isPending && !hasCompletedWizard) {
+          sessionStorage.removeItem('spotli_post_auth_wizard_pending');
+          openModal(MODAL.POST_AUTH_WIZARD);
+        }
+      }
+    } catch {
+      // Ignore
+    }
+  }, [user, loading, openModal]);
+
   // Toast notifications
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(null);
@@ -537,6 +579,38 @@ export function DashboardContent() {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     };
   }, []);
+
+  // Contextual Feature Adoption Nudges
+  const { activeNudge, dismissNudge, suppressPermanently } = useFeatureNudges({
+    packages,
+    user
+  });
+
+  const handleNudgeAction = useCallback((type) => {
+    if (type === 'push') {
+      notificationService.requestNotificationPermission(user?.id || user?.uid).then((perm) => {
+        if (perm === 'granted') {
+          showToast(language === 'he' ? 'התראות הופעלו בהצלחה!' : 'Notifications enabled!', 'success');
+        }
+      });
+      dismissNudge('push_notifications');
+    } else if (type === 'gmail') {
+      if (user) {
+        openModal(MODAL.INGESTION_GUIDE);
+      } else {
+        openModal(MODAL.AUTH);
+      }
+      dismissNudge('gmail_sync');
+    } else if (type === 'locker') {
+      const lockerPkg = packages.find(
+        (p) => (p.pickupCode && p.status === 'ready_for_pickup') || p.locationType === 'locker'
+      );
+      if (lockerPkg) {
+        openModal(MODAL.FULL_SCREEN_LOCKER, lockerPkg);
+      }
+      dismissNudge('locker_mode');
+    }
+  }, [user, language, showToast, dismissNudge, openModal, packages]);
 
   // A rejected localStorage write (quota exhausted, private mode) used to be
   // indistinguishable from a successful one: state updated, nothing reached
@@ -1106,6 +1180,7 @@ export function DashboardContent() {
           packages={packages}
           onExportData={handleExportData}
           onOpenExport={() => openModal(MODAL.EXPORT)}
+          onOpenAppTour={() => openModal(MODAL.ONBOARDING)}
           onOpenAuth={() => openModal(MODAL.AUTH, { initialMode: 'signin' })}
           onShowToast={showToast}
         />
@@ -1244,6 +1319,60 @@ export function DashboardContent() {
           }}
         />
       )
+    },
+    {
+      id: MODAL.ONBOARDING,
+      componentName: 'OnboardingModal',
+      render: (isOpen) => (
+        <OnboardingModal
+          isOpen={isOpen}
+          onClose={() => {
+            if (typeof window !== 'undefined' && window.localStorage) {
+              window.localStorage.setItem(STORAGE_KEYS.ONBOARDING_TOUR_SEEN, 'true');
+            }
+            closeModal(MODAL.ONBOARDING);
+          }}
+          onGetStartedGoogle={() => {
+            if (typeof window !== 'undefined' && window.localStorage) {
+              window.localStorage.setItem(STORAGE_KEYS.ONBOARDING_TOUR_SEEN, 'true');
+            }
+            try {
+              if (typeof window !== 'undefined' && window.sessionStorage) {
+                window.sessionStorage.setItem('spotli_post_auth_wizard_pending', 'true');
+              }
+            } catch {
+              // Ignore
+            }
+            closeModal(MODAL.ONBOARDING);
+            openModal(MODAL.AUTH, { initialMode: 'signin' });
+          }}
+          onStartManual={() => {
+            if (typeof window !== 'undefined' && window.localStorage) {
+              window.localStorage.setItem(STORAGE_KEYS.ONBOARDING_TOUR_SEEN, 'true');
+            }
+            closeModal(MODAL.ONBOARDING);
+            openModal(MODAL.SMART_IMPORT);
+          }}
+        />
+      )
+    },
+    {
+      id: MODAL.POST_AUTH_WIZARD,
+      componentName: 'PostAuthSetupWizard',
+      render: (isOpen) => (
+        <PostAuthSetupWizard
+          isOpen={isOpen}
+          onClose={() => closeModal(MODAL.POST_AUTH_WIZARD)}
+          onComplete={() => {
+            const uid = user?.id || user?.uid;
+            if (uid && typeof window !== 'undefined' && window.localStorage) {
+              window.localStorage.setItem(STORAGE_KEYS.ONBOARDING_WIZARD_COMPLETED_PREFIX + uid, 'true');
+            }
+            closeModal(MODAL.POST_AUTH_WIZARD);
+          }}
+          onShowToast={showToast}
+        />
+      )
     }
   ];
 
@@ -1284,6 +1413,7 @@ export function DashboardContent() {
           }
         }}
         onOpenAbout={() => openModal(MODAL.ABOUT)}
+        onOpenAppTour={() => openModal(MODAL.ONBOARDING)}
         onOpenFeedback={() => openModal(MODAL.FEEDBACK)}
         onOpenAdminFeedback={isAdminUser(user) ? () => openModal(MODAL.ADMIN_FEEDBACK) : undefined}
         onOpenExport={() => openModal(MODAL.EXPORT)}
@@ -1320,65 +1450,33 @@ export function DashboardContent() {
           </div>
         ) : !user && !isDemoMode ? (
           /* GUEST / NEW USER WELCOME ONBOARDING GATE */
-          <div className="max-w-2xl mx-auto my-6 sm:my-12 p-6 sm:p-10 bg-gradient-to-b from-slate-900/90 to-slate-950/90 border border-slate-800/80 rounded-3xl shadow-2xl text-center animate-in fade-in slide-in-from-bottom-6">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-600/30">
-              <Sparkles className="w-8 h-8 sm:w-10 sm:h-10" />
-            </div>
-
-            <h2 className="text-xl sm:text-3xl font-extrabold text-white tracking-tight mb-2">
-              {isRTL ? `ברוכים הבאים ל-${APP_NAME}` : `Welcome to ${APP_NAME}`}
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto mb-8 leading-relaxed">
-              {isRTL 
-                ? 'מעקב חכם אחר כל החבילות והמשלוחים שלך בישראל ובעולם עם סנכרון ענן אוטומטי.'
-                : 'Smart tracking for all your shipments and deliveries with automatic real-time cloud sync.'}
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md mx-auto mb-8">
-              <div className="p-3.5 bg-slate-950/60 border border-slate-800 rounded-2xl text-start flex items-center gap-3">
-                <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
-                <span className="text-xs text-slate-300 font-medium">
-                  {isRTL ? 'סנכרון ענן מאובטח' : 'Zero-Trust Cloud Sync'}
-                </span>
-              </div>
-              <div className="p-3.5 bg-slate-950/60 border border-slate-800 rounded-2xl text-start flex items-center gap-3">
-                <Sparkles className="w-5 h-5 text-blue-400 shrink-0" />
-                <span className="text-xs text-slate-300 font-medium">
-                  {isRTL ? 'זיהוי SMS וספקים אוטומטי' : 'Carrier Auto-Detection'}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto mb-4">
-              <button
-                onClick={() => openModal(MODAL.AUTH, { initialMode: 'signin' })}
-                className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-blue-500/25 transition-ui flex items-center justify-center gap-2 cursor-pointer min-h-[48px]"
-              >
-                <LogIn className="w-4 h-4" />
-                <span>{isRTL ? 'התחבר לחשבון שלך' : 'Sign In to Your Account'}</span>
-              </button>
-              <button
-                onClick={() => openModal(MODAL.AUTH, { initialMode: 'register' })}
-                className="w-full py-3.5 px-6 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs sm:text-sm border border-slate-700 transition-ui flex items-center justify-center gap-2 cursor-pointer min-h-[48px]"
-              >
-                <UserPlus className="w-4 h-4 text-blue-400" />
-                <span>{isRTL ? 'יצירת חשבון חדש' : 'Create New Account'}</span>
-              </button>
-            </div>
-
-            {/* Direct Demo Trigger for testing without sign in */}
-            <div className="pt-4 border-t border-slate-800/80">
-              <button
-                onClick={handleLaunchDemoMode}
-                className="text-xs text-indigo-400 hover:text-indigo-300 underline font-medium cursor-pointer p-2 min-h-[48px]"
-              >
-                {isRTL ? 'או צפה בהדגמה אינטראקטיבית עם חבילות לדוגמה' : 'Or explore the interactive demo with mock packages'}
-              </button>
-            </div>
-          </div>
+          <FirstTimeEmptyState
+            onConnectGmail={() => {
+              try {
+                if (typeof window !== 'undefined' && window.sessionStorage) {
+                  window.sessionStorage.setItem('spotli_post_auth_wizard_pending', 'true');
+                }
+              } catch {
+                // Ignore
+              }
+              openModal(MODAL.AUTH, { initialMode: 'signin' });
+            }}
+            onStartSmartImport={() => openModal(MODAL.SMART_IMPORT)}
+            onLoadDemoPackage={handleLaunchDemoMode}
+          />
         ) : (
           /* AUTHENTICATED OR DEMO-MODE DASHBOARD */
           <>
+            {/* Contextual Feature Adoption Banner */}
+            {activeNudge && (
+              <FeatureNudgeBanner
+                nudge={activeNudge}
+                onAction={handleNudgeAction}
+                onDismiss={dismissNudge}
+                onSuppressPermanently={suppressPermanently}
+              />
+            )}
+
             {/* Metric Cards */}
             <StatsCards
               packages={nonArchivedPackages}
@@ -1405,38 +1503,50 @@ export function DashboardContent() {
 
             {/* Package Content List / Table */}
             {filteredPackages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 px-4 bg-slate-900/40 border border-slate-800 rounded-3xl text-center animate-fade-in my-4">
-                <div className="w-16 h-16 rounded-3xl bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-500 mb-4 shadow-inner">
-                  <Inbox className="w-8 h-8" />
+              packages.length === 0 ? (
+                <FirstTimeEmptyState
+                  onConnectGmail={() => {
+                    if (user) {
+                      openModal(MODAL.POST_AUTH_WIZARD);
+                    } else {
+                      try {
+                        if (typeof window !== 'undefined' && window.sessionStorage) {
+                          window.sessionStorage.setItem('spotli_post_auth_wizard_pending', 'true');
+                        }
+                      } catch {
+                        // Ignore
+                      }
+                      openModal(MODAL.AUTH, { initialMode: 'signin' });
+                    }
+                  }}
+                  onStartSmartImport={() => openModal(MODAL.SMART_IMPORT)}
+                  onLoadDemoPackage={handleLaunchDemoMode}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 px-4 bg-slate-900/40 border border-slate-800 rounded-3xl text-center animate-fade-in my-4">
+                  <div className="w-16 h-16 rounded-3xl bg-slate-800/80 border border-slate-700 flex items-center justify-center text-slate-500 mb-4 shadow-inner">
+                    <Inbox className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-base font-bold text-slate-200 mb-1">
+                    {t('filters.noPackages')}
+                  </h3>
+                  <p className="text-xs text-slate-400 max-w-sm mb-6">
+                    {language === 'he' ? 'נסה לשנות את הסינון או מונחי החיפוש' : 'Try adjusting your search or active filters'}
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    <button
+                      onClick={() => {
+                        setSearchQuery('');
+                        setSelectedCarrier('all');
+                        setActiveTab('all');
+                      }}
+                      className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-ui cursor-pointer min-h-[48px]"
+                    >
+                      {t('filters.clearFilters')}
+                    </button>
+                  </div>
                 </div>
-                <h3 className="text-base font-bold text-slate-200 mb-1">
-                  {t('filters.noPackages')}
-                </h3>
-                <p className="text-xs text-slate-400 max-w-sm mb-6">
-                  {searchQuery || selectedCarrier !== 'all' || activeTab !== 'all'
-                    ? (language === 'he' ? 'נסה לשנות את הסינון או מונחי החיפוש' : 'Try adjusting your search or active filters')
-                    : (language === 'he' ? 'אין עדיין חבילות במעקב. הוסף חבילה ראשונה!' : 'No packages tracked yet. Add your first delivery!')}
-                </p>
-                <div className="flex flex-wrap items-center justify-center gap-3">
-                  <button
-                    onClick={() => {
-                      setSearchQuery('');
-                      setSelectedCarrier('all');
-                      setActiveTab('all');
-                    }}
-                    className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-ui cursor-pointer min-h-[48px]"
-                  >
-                    {t('filters.clearFilters')}
-                  </button>
-                  <button
-                    onClick={() => openModal(MODAL.SMART_IMPORT)}
-                    className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-ui shadow-md shadow-blue-500/20 cursor-pointer min-h-[48px]"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>{t('addPackage')}</span>
-                  </button>
-                </div>
-              </div>
+              )
             ) : viewMode === 'grid' ? (
               <div className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-5 animate-fade-in">
                 {/* auto-fit (not auto-fill) collapses unused column tracks to

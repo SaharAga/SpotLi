@@ -25,6 +25,10 @@ describe('Storage Keys Constants', () => {
     expect(STORAGE_KEYS.LIVE_TRACK_PREFIX).toBe('deliveree_live_track_');
     expect(STORAGE_KEYS.PREFERRED_NAV_APP).toBe('deliveree_preferred_nav_app');
     expect(STORAGE_KEYS.SORT_BY).toBe('deliveree_sort_by');
+    expect(STORAGE_KEYS.ONBOARDING_TOUR_SEEN).toBe('deliveree_onboarding_tour_seen_v1');
+    expect(STORAGE_KEYS.ONBOARDING_WIZARD_COMPLETED_PREFIX).toBe('deliveree_wizard_completed_');
+    expect(STORAGE_KEYS.FEATURE_NUDGES).toBe('deliveree_feature_nudges_v1');
+    expect(STORAGE_KEYS.HAS_SEEN_DEMO).toBe('deliveree_has_seen_demo_v1');
   });
 
   describe('isAppStorageKey', () => {

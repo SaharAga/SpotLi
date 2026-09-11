@@ -23,6 +23,7 @@ export function Navbar({
   onOpenConnectModal,
   onOpenAuth,
   onOpenAbout,
+  onOpenAppTour,
   onOpenFeedback,
   onOpenAdminFeedback,
   onOpenExport,
@@ -312,6 +313,7 @@ export function Navbar({
         onOpenFeedback={onOpenFeedback}
         onOpenAdminFeedback={onOpenAdminFeedback}
         onOpenAbout={onOpenAbout}
+        onOpenAppTour={onOpenAppTour}
         onOpenExport={onOpenExport}
         onOpenLockerMap={onOpenLockerMap}
         onImportData={onImportData}

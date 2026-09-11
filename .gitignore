@@ -51,3 +51,5 @@ service-account*.json
 
 # Local review of your own messages — never committed.
 .message-review.json
+
+strix/
