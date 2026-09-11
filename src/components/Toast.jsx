@@ -30,17 +30,31 @@ export function Toast({ toast, onClose }) {
       role={isError ? 'alert' : 'status'}
       aria-live={isError ? 'assertive' : 'polite'}
     >
-      <div className={`flex items-center justify-between p-4 rounded-xl border shadow-2xl transition-ui duration-300 ${borderColors[toast.type || 'info']}`}>
-        <div className="flex items-center gap-3">
+      <div className={`flex items-center justify-between p-3 sm:p-4 rounded-xl border shadow-2xl transition-ui duration-300 ${borderColors[toast.type || 'info']}`}>
+        <div className="flex items-center gap-3 min-w-0">
           {icons[toast.type || 'info']}
           <p className="text-sm font-medium">{toast.message}</p>
         </div>
-        <button
-          onClick={onClose}
-          className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2 shrink-0 ms-3">
+          {toast.action && (
+            <button
+              onClick={() => {
+                toast.action.onClick?.();
+                onClose();
+              }}
+              className="px-3.5 py-2 min-h-[48px] text-xs sm:text-sm font-bold rounded-lg bg-white/20 hover:bg-white/30 active:scale-95 text-white transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-white/40 flex items-center justify-center cursor-pointer"
+            >
+              {toast.action.label}
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            aria-label="Close notification"
+            className="p-3 min-w-[48px] min-h-[48px] flex items-center justify-center rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   );

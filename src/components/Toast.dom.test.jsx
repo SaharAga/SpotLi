@@ -25,4 +25,33 @@ describe('Toast accessibility', () => {
     expect(region).toHaveAttribute('aria-live', 'polite');
     expect(region).toHaveTextContent('Saved!');
   });
+
+  it('renders an interactive action button when toast.action is provided', () => {
+    const handleAction = vi.fn();
+    const handleClose = vi.fn();
+    render(
+      <Toast
+        toast={{
+          type: 'info',
+          message: 'Package archived',
+          action: { label: 'Undo', onClick: handleAction }
+        }}
+        onClose={handleClose}
+      />
+    );
+
+    const actionBtn = screen.getByRole('button', { name: 'Undo' });
+    expect(actionBtn).toBeInTheDocument();
+    actionBtn.click();
+    expect(handleAction).toHaveBeenCalledTimes(1);
+    expect(handleClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onClose when close button is clicked', () => {
+    const handleClose = vi.fn();
+    render(<Toast toast={{ type: 'info', message: 'Hello' }} onClose={handleClose} />);
+    const closeBtn = screen.getByLabelText('Close notification');
+    closeBtn.click();
+    expect(handleClose).toHaveBeenCalledTimes(1);
+  });
 });
