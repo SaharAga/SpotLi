@@ -103,10 +103,26 @@ export function createGmailOAuthStartHandler({ clientSecret }) {
 export function createGmailOAuthCallbackHandler({ db, clientSecret, runBackfill }) {
   return async function handler(req, res) {
     const appBaseUrl = (process.env.APP_BASE_URL || '').replace(/\/$/, '');
-    const redirectError = () => res.redirect(`${appBaseUrl}/?gmail=error`);
+    const { code, state, error } = req.query;
+
+    let returnBaseUrl = appBaseUrl;
+    let statePayload = null;
+
+    if (state) {
+      statePayload = verifyStateToken({ token: String(state), secret: clientSecret });
+      if (statePayload?.returnOrigin) {
+        // Re-validate rather than trust the token's returnOrigin blindly —
+        // it's HMAC-signed so it can't have been tampered with, but this
+        // keeps the allowlist logic in one place and covers an APP_BASE_URL
+        // rotation between the start and callback requests.
+        returnBaseUrl = validateReturnOrigin(appBaseUrl, statePayload.returnOrigin) || appBaseUrl;
+      }
+    }
+
+    const redirectError = () => res.redirect(`${returnBaseUrl}/?gmail=error`);
+    const redirectConnected = () => res.redirect(`${returnBaseUrl}/?gmail=connected`);
 
     try {
-      const { code, state, error } = req.query;
       if (error) {
         console.warn('[gmailOAuthCallback] Google returned an error:', error);
         return redirectError();
@@ -115,18 +131,11 @@ export function createGmailOAuthCallbackHandler({ db, clientSecret, runBackfill 
         return redirectError();
       }
 
-      const statePayload = verifyStateToken({ token: String(state), secret: clientSecret });
       if (!statePayload) {
         console.warn('[gmailOAuthCallback] Invalid or expired state token');
         return redirectError();
       }
       const { uid } = statePayload;
-      // Re-validate rather than trust the token's returnOrigin blindly —
-      // it's HMAC-signed so it can't have been tampered with, but this
-      // keeps the allowlist logic in one place and covers an APP_BASE_URL
-      // rotation between the start and callback requests.
-      const returnBaseUrl = validateReturnOrigin(appBaseUrl, statePayload.returnOrigin) || appBaseUrl;
-      const redirectConnected = () => res.redirect(`${returnBaseUrl}/?gmail=connected`);
 
       const oauth2Client = createOAuth2Client({ clientSecret });
       const { tokens } = await oauth2Client.getToken(String(code));

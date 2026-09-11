@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cleanConfigValue } from './firebase';
+import { cleanConfigValue, resolveAuthDomain } from './firebase';
 
 describe('cleanConfigValue', () => {
   it('strips the trailing CRLF that broke Google sign-in in production', () => {
@@ -36,5 +36,51 @@ describe('cleanConfigValue', () => {
     // Guards isFirebaseConfigured: "   " must not read as a configured value.
     expect(cleanConfigValue('   ')).toBe('');
     expect(Boolean(cleanConfigValue('   '))).toBe(false);
+  });
+});
+
+describe('resolveAuthDomain', () => {
+  const configuredDomain = 'deliveree-app-2a938.firebaseapp.com';
+  const projectId = 'deliveree-app-2a938';
+
+  it('uses window hostname on Firebase Hosting staging preview channels', () => {
+    const stagingHost = 'deliveree-app-2a938--staging-puww5giq.web.app';
+    expect(resolveAuthDomain(configuredDomain, stagingHost, projectId)).toBe(stagingHost);
+  });
+
+  it('uses window hostname on production Firebase Hosting web.app domain', () => {
+    const prodHost = 'deliveree-app-2a938.web.app';
+    expect(resolveAuthDomain(configuredDomain, prodHost, projectId)).toBe(prodHost);
+  });
+
+  it('uses window hostname on production Firebase Hosting firebaseapp.com domain', () => {
+    const prodHost = 'deliveree-app-2a938.firebaseapp.com';
+    expect(resolveAuthDomain(configuredDomain, prodHost, projectId)).toBe(prodHost);
+  });
+
+  it('uses window hostname on known custom domains', () => {
+    expect(resolveAuthDomain(configuredDomain, 'spotliapp.com', projectId)).toBe('spotliapp.com');
+    expect(resolveAuthDomain(configuredDomain, 'www.spotliapp.com', projectId)).toBe('www.spotliapp.com');
+    expect(resolveAuthDomain(configuredDomain, 'deliveree.app', projectId)).toBe('deliveree.app');
+  });
+
+  it('falls back to configured domain for localhost development', () => {
+    expect(resolveAuthDomain(configuredDomain, 'localhost', projectId)).toBe(configuredDomain);
+    expect(resolveAuthDomain(configuredDomain, '127.0.0.1', projectId)).toBe(configuredDomain);
+  });
+
+  it('falls back to configured domain for unrelated external hostnames', () => {
+    expect(resolveAuthDomain(configuredDomain, 'malicious-site.com', projectId)).toBe(configuredDomain);
+    expect(resolveAuthDomain(configuredDomain, 'other-project.web.app', projectId)).toBe(configuredDomain);
+  });
+
+  it('falls back to configured domain when window/hostname is undefined', () => {
+    expect(resolveAuthDomain(configuredDomain, undefined, projectId)).toBe(configuredDomain);
+    expect(resolveAuthDomain(configuredDomain, '', projectId)).toBe(configuredDomain);
+  });
+
+  it('cleans whitespace from configuredDomain if fallback is used', () => {
+    expect(resolveAuthDomain('  deliveree-app-2a938.firebaseapp.com \n', 'localhost', projectId))
+      .toBe('deliveree-app-2a938.firebaseapp.com');
   });
 });

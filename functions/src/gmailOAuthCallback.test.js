@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { validateReturnOrigin } from './gmailOAuthCallback.js';
+import { createGmailOAuthCallbackHandler, validateReturnOrigin } from './gmailOAuthCallback.js';
+import { createStateToken } from './gmailStateToken.js';
 
 const PROD = 'https://deliveree-app-2a938.web.app';
 
@@ -47,5 +48,87 @@ describe('validateReturnOrigin', () => {
     expect(validateReturnOrigin(PROD, '')).toBeNull();
     expect(validateReturnOrigin(PROD, undefined)).toBeNull();
     expect(validateReturnOrigin(PROD, null)).toBeNull();
+  });
+});
+
+describe('createGmailOAuthCallbackHandler', () => {
+  const clientSecret = 'test-secret-key-123';
+  const stagingOrigin = 'https://deliveree-app-2a938--staging.web.app';
+
+  it('redirects error to returnOrigin when a valid state token carries a staging origin', async () => {
+    process.env.APP_BASE_URL = PROD;
+    const handler = createGmailOAuthCallbackHandler({
+      db: {},
+      clientSecret
+    });
+
+    const state = createStateToken({
+      uid: 'user123',
+      secret: clientSecret,
+      returnOrigin: stagingOrigin
+    });
+
+    let redirectedTo = null;
+    const req = {
+      query: {
+        error: 'access_denied',
+        state
+      }
+    };
+    const res = {
+      redirect: (url) => {
+        redirectedTo = url;
+      }
+    };
+
+    await handler(req, res);
+    expect(redirectedTo).toBe(`${stagingOrigin}/?gmail=error`);
+  });
+
+  it('redirects error to appBaseUrl when state token is missing', async () => {
+    process.env.APP_BASE_URL = PROD;
+    const handler = createGmailOAuthCallbackHandler({
+      db: {},
+      clientSecret
+    });
+
+    let redirectedTo = null;
+    const req = {
+      query: {
+        error: 'access_denied'
+      }
+    };
+    const res = {
+      redirect: (url) => {
+        redirectedTo = url;
+      }
+    };
+
+    await handler(req, res);
+    expect(redirectedTo).toBe(`${PROD}/?gmail=error`);
+  });
+
+  it('redirects error to appBaseUrl when state token is invalid', async () => {
+    process.env.APP_BASE_URL = PROD;
+    const handler = createGmailOAuthCallbackHandler({
+      db: {},
+      clientSecret
+    });
+
+    let redirectedTo = null;
+    const req = {
+      query: {
+        code: 'dummy-code',
+        state: 'invalid-state-token'
+      }
+    };
+    const res = {
+      redirect: (url) => {
+        redirectedTo = url;
+      }
+    };
+
+    await handler(req, res);
+    expect(redirectedTo).toBe(`${PROD}/?gmail=error`);
   });
 });
