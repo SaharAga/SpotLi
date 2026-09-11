@@ -32,26 +32,32 @@ describe('OnboardingModal Component Tests', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('renders Slide 1 (Gmail Auto-Sync) on mount', () => {
+  it('renders Slide 1 (Welcome & Overview) on mount', () => {
     renderComponent();
-    expect(screen.getByText(/Hands-Free Delivery Tracking/i)).toBeInTheDocument();
-    expect(screen.getByText(/Automated Sync/i)).toBeInTheDocument();
+    expect(screen.getByText(/All Your Deliveries — In One Smart Place/i)).toBeInTheDocument();
+    expect(screen.getByText(/Welcome to SpotLi/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /See How It Works/i })).toBeInTheDocument();
   });
 
-  it('navigates through all 3 slides using Next and Back buttons', () => {
+  it('navigates through all 4 slides using Next and Back buttons', () => {
     renderComponent();
 
-    // Slide 1 -> Slide 2
-    const nextBtn = screen.getByRole('button', { name: /Next/i });
-    fireEvent.click(nextBtn);
+    // Slide 1 (Welcome) -> Slide 2 (Gmail)
+    const seeHowItWorksBtn = screen.getByRole('button', { name: /See How It Works/i });
+    fireEvent.click(seeHowItWorksBtn);
+    expect(screen.getByText(/Hands-Free Delivery Tracking/i)).toBeInTheDocument();
+
+    // Slide 2 -> Slide 3 (SMS)
+    const nextBtn1 = screen.getByRole('button', { name: /Next/i });
+    fireEvent.click(nextBtn1);
     expect(screen.getByText(/Smart SMS & Link Import/i)).toBeInTheDocument();
 
-    // Slide 2 -> Slide 3
+    // Slide 3 -> Slide 4 (Pickup)
     const nextBtn2 = screen.getByRole('button', { name: /Next/i });
     fireEvent.click(nextBtn2);
     expect(screen.getByText(/Sunlight-Proof Pickup PINs/i)).toBeInTheDocument();
 
-    // Slide 3 -> Slide 2 (Back)
+    // Slide 4 -> Slide 3 (Back)
     const backBtn = screen.getByRole('button', { name: /Back/i });
     fireEvent.click(backBtn);
     expect(screen.getByText(/Smart SMS & Link Import/i)).toBeInTheDocument();
@@ -66,7 +72,8 @@ describe('OnboardingModal Component Tests', () => {
 
   it('calls onGetStartedGoogle when primary CTA clicked on last slide', () => {
     renderComponent();
-    // Go to slide 3
+    // Go to slide 4
+    fireEvent.click(screen.getByRole('button', { name: /See How It Works/i }));
     fireEvent.click(screen.getByRole('button', { name: /Next/i }));
     fireEvent.click(screen.getByRole('button', { name: /Next/i }));
 
@@ -77,7 +84,8 @@ describe('OnboardingModal Component Tests', () => {
 
   it('calls onStartManual when secondary CTA clicked on last slide', () => {
     renderComponent();
-    // Go to slide 3
+    // Go to slide 4
+    fireEvent.click(screen.getByRole('button', { name: /See How It Works/i }));
     fireEvent.click(screen.getByRole('button', { name: /Next/i }));
     fireEvent.click(screen.getByRole('button', { name: /Next/i }));
 
@@ -88,7 +96,8 @@ describe('OnboardingModal Component Tests', () => {
 
   it('renders correctly in Hebrew with proper translations', () => {
     renderComponent({}, 'he');
-    expect(screen.getByText('מעקב חבילות אוטומטי וללא מאמץ')).toBeInTheDocument();
+    expect(screen.getByText('כל המשלוחים והחבילות שלך — במקום אחד')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'גלה איך זה עובד' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'דלג' })).toBeInTheDocument();
   });
 });
