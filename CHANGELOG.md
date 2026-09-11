@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.28.1] - 2026-09-11
+
+### Fixed
+- Fixed cross-device sync and persistence failures for packages ingested from Gmail or email by allowlisting `source`, `confidence`, `lockerPin`, `orderNumber`, and `schemaVersion` in Firestore security rules and package schemas.
+
 ## [0.28.0] - 2026-09-10
 
 ### Added
