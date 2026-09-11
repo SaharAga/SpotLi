@@ -36,6 +36,15 @@ function applyMutation(state, mutation) {
     const idx = nextState.findIndex(p => p.id === mutation.payload.id);
     if (idx >= 0) nextState[idx] = { ...nextState[idx], ...mutation.payload };
     else nextState.push(mutation.payload);
+  } else if (mutation.type === MUTATION_TYPES.STATUS_CHANGE) {
+    const idx = nextState.findIndex(p => p.id === mutation.payload.packageId);
+    if (idx >= 0) {
+      nextState[idx] = {
+        ...nextState[idx],
+        status: mutation.payload.newStatus,
+        updatedAt: new Date().toISOString()
+      };
+    }
   } else if (mutation.type === MUTATION_TYPES.DELETE) {
     nextState = nextState.filter(p => p.id !== mutation.payload.id);
   } else if (mutation.type === 'UPDATE_ALL') {
