@@ -16,6 +16,26 @@ export class ErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     console.error('SpotLi Error caught by ErrorBoundary:', error, errorInfo);
     this.setState({ errorInfo });
+
+    const isChunkError =
+      error?.name === 'ChunkLoadError' ||
+      /Failed to fetch dynamically imported module|error loading dynamically imported module/i.test(
+        error?.message || ''
+      );
+
+    if (isChunkError && typeof window !== 'undefined') {
+      try {
+        const reloadKey = 'spotli_chunk_reload_attempted';
+        if (typeof sessionStorage !== 'undefined' && !sessionStorage.getItem(reloadKey)) {
+          sessionStorage.setItem(reloadKey, 'true');
+          window.location.reload();
+          return;
+        }
+      } catch {
+        // Ignore storage or reload failures
+      }
+    }
+
     reportCrash(error, { componentName: this.props.componentName });
     if (typeof this.props.onError === 'function') {
       this.props.onError(error, errorInfo);

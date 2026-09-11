@@ -156,6 +156,7 @@ function setOfflineQueue(queue) {
  * @returns {Promise<boolean>}
  */
 async function uploadToFirestore(payload) {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.MODE === 'test' && !isTestReportingEnabled) return false;
   if (!isFirebaseConfigured || !db) return false;
   try {
     const { collection, doc, setDoc } = await import('firebase/firestore');
@@ -226,6 +227,16 @@ function markSeen(seen) {
   }
 }
 
+let isTestReportingEnabled = false;
+
+/**
+ * Test-only utility to enable crash reporting mock checks in unit tests.
+ * @param {boolean} val
+ */
+export function _enableTestReporting(val = true) {
+  isTestReportingEnabled = val;
+}
+
 /**
  * Reports a caught or uncaught error as an anonymous crash report.
  *
@@ -241,6 +252,11 @@ function markSeen(seen) {
  * @returns {Promise<void>}
  */
 export async function reportCrash(error, { componentName } = {}) {
+  // Never upload synthetic test runner errors to production telemetry
+  if (typeof import.meta !== 'undefined' && import.meta.env?.MODE === 'test' && !isTestReportingEnabled) {
+    return;
+  }
+
   try {
     const seen = getSeenSignatures();
     if (seen.size >= MAX_REPORTS_PER_SESSION) return;
@@ -287,6 +303,24 @@ export function initGlobalCrashReporting() {
   });
 
   window.addEventListener('unhandledrejection', (event) => {
+    const error = event?.reason;
+    const isChunkError =
+      error?.name === 'ChunkLoadError' ||
+      /Failed to fetch dynamically imported module|error loading dynamically imported module/i.test(
+        error?.message || ''
+      );
+    if (isChunkError) {
+      try {
+        const reloadKey = 'spotli_chunk_reload_attempted';
+        if (typeof sessionStorage !== 'undefined' && !sessionStorage.getItem(reloadKey)) {
+          sessionStorage.setItem(reloadKey, 'true');
+          window.location.reload();
+          return;
+        }
+      } catch {
+        // Ignore storage errors
+      }
+    }
     reportCrash(event?.reason, { componentName: 'unhandledrejection' });
   });
 

@@ -29,7 +29,8 @@ const {
   reportCrash,
   initGlobalCrashReporting,
   groupCrashReports,
-  OFFLINE_CRASH_QUEUE_KEY
+  OFFLINE_CRASH_QUEUE_KEY,
+  _enableTestReporting
 } = await import('./crashReportService');
 
 describe('buildCrashReport', () => {
@@ -61,6 +62,7 @@ describe('buildCrashReport', () => {
 
 describe('reportCrash', () => {
   beforeEach(() => {
+    _enableTestReporting(true);
     setDocMock.mockClear().mockResolvedValue(undefined);
     sessionStorage.clear();
     localStorage.clear();
@@ -96,6 +98,14 @@ describe('reportCrash', () => {
       await reportCrash(new Error(`boom-${i}`), { componentName: 'Loop' });
     }
     expect(setDocMock).toHaveBeenCalledTimes(20);
+  });
+
+  it('no-ops when test reporting is disabled to prevent polluting telemetry', async () => {
+    _enableTestReporting(false);
+    await reportCrash(new Error('boom'), { componentName: 'PackageCard' });
+    expect(setDocMock).not.toHaveBeenCalled();
+    const queue = JSON.parse(localStorage.getItem(OFFLINE_CRASH_QUEUE_KEY) || '[]');
+    expect(queue).toHaveLength(0);
   });
 });
 

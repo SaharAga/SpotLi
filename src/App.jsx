@@ -24,8 +24,36 @@ import { deriveMood } from './utils/ambientMood';
  * what lets Rollup see the edge and split the chunk — a computed specifier
  * would silently fall back to bundling everything.
  */
+const CHUNK_RELOAD_KEY = 'spotli_chunk_reload_attempted';
+
+const isChunkFetchError = (err) => {
+  return (
+    err?.name === 'ChunkLoadError' ||
+    /Failed to fetch dynamically imported module|error loading dynamically imported module/i.test(
+      err?.message || ''
+    )
+  );
+};
+
 const lazyModal = (loader, exportName) =>
-  lazy(() => loader().then((mod) => ({ default: mod[exportName] })));
+  lazy(async () => {
+    try {
+      const mod = await loader();
+      return { default: mod[exportName] };
+    } catch (err) {
+      if (isChunkFetchError(err) && typeof window !== 'undefined') {
+        try {
+          if (typeof sessionStorage !== 'undefined' && !sessionStorage.getItem(CHUNK_RELOAD_KEY)) {
+            sessionStorage.setItem(CHUNK_RELOAD_KEY, 'true');
+            window.location.reload();
+          }
+        } catch {
+          // Ignore storage or reload failures
+        }
+      }
+      throw err;
+    }
+  });
 
 const PackageDetailModal = lazyModal(() => import('./components/PackageDetailModal'), 'PackageDetailModal');
 const AddEditPackageModal = lazyModal(() => import('./components/AddEditPackageModal'), 'AddEditPackageModal');
@@ -480,17 +508,28 @@ export function DashboardContent() {
     notificationService.updateAppBadge(activeCount);
   }, [packages]);
 
+  useEffect(() => {
+    try {
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem(CHUNK_RELOAD_KEY);
+      }
+    } catch {
+      // Ignore storage errors
+    }
+  }, []);
+
   // Toast notifications
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(null);
 
-  const showToast = useCallback((message, type = 'info') => {
+  const showToast = useCallback((message, type = 'info', action = null) => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    setToast({ message, type });
+    setToast({ message, type, action });
+    const duration = action ? 5000 : 3500;
     toastTimerRef.current = setTimeout(() => {
       setToast(null);
       toastTimerRef.current = null;
-    }, 3500);
+    }, duration);
   }, []);
 
   useEffect(() => {
@@ -680,21 +719,36 @@ export function DashboardContent() {
   }, [commit]);
 
   const handleToggleArchive = useCallback((id) => {
-    const updated = packagesRef.current.map(p => {
-      if (p.id === id) {
-        const nextArchived = !p.isArchived;
-        showToast(
-          nextArchived
-            ? (language === 'he' ? 'החבילה הועברה לארכיון' : 'Package archived')
-            : (language === 'he' ? 'החבילה הוחזרה מהארכיון' : 'Package unarchived'),
-          'info'
-        );
-        return { ...p, isArchived: nextArchived };
-      }
-      return p;
-    });
-    const changedPkg = updated.find(p => p.id === id);
-    if (changedPkg) commit({ type: MUTATION_TYPES.UPDATE, payload: changedPkg });
+    const existing = packagesRef.current.find(p => p.id === id);
+    if (!existing) return;
+
+    const nextArchived = !existing.isArchived;
+    const undoAction = nextArchived
+      ? {
+          label: language === 'he' ? 'בטל' : 'Undo',
+          onClick: () => {
+            const pkgToRestore = packagesRef.current.find(p => p.id === id);
+            if (pkgToRestore) {
+              commit({
+                type: MUTATION_TYPES.UPDATE,
+                payload: { ...pkgToRestore, isArchived: false, updatedAt: new Date().toISOString() }
+              });
+              showToast(language === 'he' ? 'הפעולה בוטלה' : 'Archiving undone', 'info');
+            }
+          }
+        }
+      : null;
+
+    showToast(
+      nextArchived
+        ? (language === 'he' ? 'החבילה הועברה לארכיון' : 'Package archived')
+        : (language === 'he' ? 'החבילה הוחזרה מהארכיון' : 'Package unarchived'),
+      'info',
+      undoAction
+    );
+
+    const changedPkg = { ...existing, isArchived: nextArchived, updatedAt: new Date().toISOString() };
+    commit({ type: MUTATION_TYPES.UPDATE, payload: changedPkg });
   }, [language, showToast, commit]);
 
   const handleStatusChange = useCallback((id, newStatus) => {
