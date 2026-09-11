@@ -27,6 +27,8 @@ export function createNewPackagePushHandler({ db, webpush, vapidPublicKey, vapid
     const uid = event.params?.uid;
     if (!uid) return;
 
+    console.log('[newPackagePush] Triggered for package', pkg.id, 'uid', uid, 'source', pkg.source);
+
     const { title, body } = formatPushTitleAndBody(pkg);
     const payload = {
       title,

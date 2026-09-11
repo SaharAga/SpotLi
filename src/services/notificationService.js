@@ -338,9 +338,10 @@ export const notificationService = {
     // must stop claiming to be. Only ever narrowed for a signed-in user —
     // a guest has no server side to be registered with.
     if (uid) {
-      const prefs = notificationService.getPreferences();
-      if (prefs.pushEnabled !== result.serverRegistered) {
-        notificationService.savePreferences({ pushEnabled: result.serverRegistered });
+      if (result.serverRegistered) {
+        notificationService.savePreferences({ pushEnabled: true });
+      } else if (result.reason === 'permission-not-granted') {
+        notificationService.savePreferences({ pushEnabled: false });
       }
     }
     return result;
