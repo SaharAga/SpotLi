@@ -49,9 +49,10 @@ describe('PostAuthSetupWizard Component Tests', () => {
     );
   };
 
-  it('renders Step 1 (Gmail sync) on initial open', () => {
+  it('renders Step 1 (Gmail sync) on initial open with SSO explanation card', () => {
     renderComponent();
     expect(screen.getByText(/Connect Gmail Auto-Sync/i)).toBeInTheDocument();
+    expect(screen.getByText(/One-time Google authorization for auto-sync/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Connect Gmail/i })).toBeInTheDocument();
   });
 

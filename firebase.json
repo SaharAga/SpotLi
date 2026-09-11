@@ -9,6 +9,14 @@
     ],
     "rewrites": [
       {
+        "source": "/gmailOAuthCallback",
+        "function": {
+          "functionId": "gmailOAuthCallback",
+          "region": "us-central1",
+          "pinTag": true
+        }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

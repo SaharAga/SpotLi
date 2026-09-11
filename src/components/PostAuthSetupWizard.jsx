@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Mail, Bell, Sparkles, CheckCircle2, ChevronRight, ChevronLeft, 
-  ArrowRight, ArrowLeft, Loader2, Info
+  ArrowRight, ArrowLeft, Loader2, Info, ShieldCheck
 } from 'lucide-react';
 import { Modal } from './Modal';
 import { useLanguage } from '../context/LanguageContext';
@@ -134,9 +134,27 @@ export function PostAuthSetupWizard({
             <h3 className="text-lg font-bold text-white mb-1.5">
               {t('wizard.step1Title')}
             </h3>
-            <p className="text-xs text-slate-300 max-w-sm mb-6 leading-relaxed">
+            <p className="text-xs text-slate-300 max-w-sm mb-4 leading-relaxed">
               {t('wizard.step1Desc')}
             </p>
+
+            {/* Google Re-Auth / Auto-Ingestion Clarification */}
+            <div className="w-full max-w-sm mb-6 p-3.5 bg-slate-950/70 border border-amber-500/30 rounded-2xl text-[11px] text-slate-300 text-start flex items-start gap-3 shadow-inner">
+              <div className="w-6 h-6 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0 mt-0.5">
+                <ShieldCheck className="w-3.5 h-3.5" />
+              </div>
+              <div className="leading-relaxed">
+                <div className="text-slate-100 font-bold mb-0.5 flex items-center gap-1.5">
+                  <span>{t('wizard.ssoExplanationTitle')}</span>
+                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-semibold uppercase tracking-wider">
+                    {t('wizard.ssoExplanationBadge')}
+                  </span>
+                </div>
+                <div className="text-slate-400">
+                  {t('wizard.ssoExplanationDesc')}
+                </div>
+              </div>
+            </div>
 
             {isGmailConnected ? (
               <div className="w-full p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center gap-2 text-emerald-300 text-xs font-bold mb-6">

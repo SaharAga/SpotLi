@@ -468,6 +468,19 @@ export function DashboardContent() {
         );
       }
 
+      // 6. Safeguard against client landing directly on /gmailOAuthCallback
+      if (url.pathname === '/gmailOAuthCallback' || url.pathname.startsWith('/gmailOAuthCallback/')) {
+        if (params.get('code') || params.get('error')) {
+          showToast(
+            language === 'he'
+              ? 'חיבור ה-Gmail לא הושלם. נסה שוב מתוך הגדרות האפליקציה.'
+              : 'Gmail connection could not be completed. Please try again from settings.',
+            'error'
+          );
+        }
+        window.history.replaceState({}, '', '/');
+      }
+
       // Clean up share/action query params from URL without reload
       if (action || tabParam || shareTitle || shareText || shareUrl || pkgIdParam || gmailResult) {
         const cleanParams = new URLSearchParams(window.location.search);
