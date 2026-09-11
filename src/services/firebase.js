@@ -42,69 +42,16 @@ function cleanConfigValue(value) {
   return typeof value === 'string' ? value.trim() : value;
 }
 
-/**
- * Dynamically resolves the authDomain for Firebase Authentication.
- *
- * In Firebase Auth, OAuth popups and redirects route through authDomain to
- * complete the handshake (via `/__/auth/handler` and `/__/auth/iframe`).
- * When running on Firebase Hosting (such as staging preview channels like
- * `deliveree-app-2a938--staging-*.web.app` or custom domains), setting
- * authDomain to the current hosting origin (window.location.hostname)
- * makes the auth flow completely same-origin. This avoids cross-origin
- * third-party cookie blocking and prevents redirects from accidentally
- * bouncing users back to production.
- *
- * For local development (localhost) or unconfigured/non-hosting environments,
- * it safely falls back to the configured domain (e.g. VITE_FIREBASE_AUTH_DOMAIN).
- *
- * @param {string} configuredDomain The static authDomain from env
- * @param {string} [currentHostname] Optional hostname override (defaults to window.location.hostname)
- * @param {string} [projectId] Optional projectId override (defaults to VITE_FIREBASE_PROJECT_ID)
- * @returns {string}
- */
-function resolveAuthDomain(
-  configuredDomain,
-  currentHostname = typeof window !== 'undefined' ? window.location?.hostname : undefined,
-  projectId = cleanConfigValue(import.meta.env?.VITE_FIREBASE_PROJECT_ID)
-) {
-  const cleaned = cleanConfigValue(configuredDomain);
-  if (typeof currentHostname !== 'string' || !currentHostname) {
-    return cleaned;
-  }
-
-  const host = currentHostname.trim().toLowerCase();
-  const allowedCustomDomains = new Set(['spotliapp.com', 'www.spotliapp.com', 'deliveree.app']);
-  if (allowedCustomDomains.has(host)) {
-    return host;
-  }
-
-  if (projectId) {
-    const cleanProjectId = projectId.trim().toLowerCase();
-    const isProjectHosting =
-      host === `${cleanProjectId}.web.app` ||
-      host === `${cleanProjectId}.firebaseapp.com` ||
-      (host.startsWith(`${cleanProjectId}--`) &&
-        (host.endsWith('.web.app') || host.endsWith('.firebaseapp.com')));
-    if (isProjectHosting) {
-      return host;
-    }
-  } else if (host.endsWith('.web.app') || host.endsWith('.firebaseapp.com')) {
-    return host;
-  }
-
-  return cleaned;
-}
-
 const firebaseConfig = {
   apiKey: cleanConfigValue(import.meta.env.VITE_FIREBASE_API_KEY),
-  authDomain: resolveAuthDomain(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN),
+  authDomain: cleanConfigValue(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN),
   projectId: cleanConfigValue(import.meta.env.VITE_FIREBASE_PROJECT_ID),
   storageBucket: cleanConfigValue(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET),
   messagingSenderId: cleanConfigValue(import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID),
   appId: cleanConfigValue(import.meta.env.VITE_FIREBASE_APP_ID),
 };
 
-export { cleanConfigValue, resolveAuthDomain };
+export { cleanConfigValue };
 
 export const isFirebaseConfigured = Boolean(
   firebaseConfig.apiKey &&
