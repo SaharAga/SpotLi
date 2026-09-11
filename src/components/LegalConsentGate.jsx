@@ -28,11 +28,22 @@ export function LegalConsentGate({ onShowToast }) {
   const needsConsent = !!(user && user.legalAcceptedVersion !== LEGAL_VERSION);
   if (!needsConsent) return null;
 
+  const isTermsUpdate = Boolean(user && user.legalAcceptedVersion);
+
   const handleContinue = async () => {
     if (!agreedToTerms || isSubmitting) return;
     setIsSubmitting(true);
     try {
       await acceptLegalTerms(aiOptIn);
+      if (!isTermsUpdate) {
+        try {
+          if (typeof window !== 'undefined' && window.sessionStorage) {
+            sessionStorage.setItem('spotli_post_auth_wizard_pending', 'true');
+          }
+        } catch {
+          // Ignore storage errors
+        }
+      }
       if (onShowToast) {
         onShowToast(
           language === 'he' ? 'תודה, אפשר להמשיך!' : 'Thanks, you’re all set!',
@@ -64,9 +75,13 @@ export function LegalConsentGate({ onShowToast }) {
                   {language === 'he' ? 'לפני שממשיכים' : 'Before you continue'}
                 </h2>
                 <p className="text-xs text-slate-400">
-                  {language === 'he'
-                    ? 'עדכנו את תנאי השימוש ומדיניות הפרטיות'
-                    : 'We’ve updated the Terms of Use & Privacy Policy'}
+                  {isTermsUpdate
+                    ? (language === 'he'
+                        ? `עדכנו את תנאי השימוש ומדיניות הפרטיות (${LEGAL_VERSION})`
+                        : `We’ve updated the Terms of Use & Privacy Policy (${LEGAL_VERSION})`)
+                    : (language === 'he'
+                        ? 'תנאי השימוש ומדיניות הפרטיות'
+                        : 'Terms of Use & Privacy Policy')}
                 </p>
               </div>
             </div>
@@ -74,9 +89,13 @@ export function LegalConsentGate({ onShowToast }) {
 
           <div className="p-6 space-y-4 text-xs">
             <p className="text-slate-300 leading-relaxed">
-              {language === 'he'
-                ? 'כדי להמשיך להשתמש בחשבון שלך, יש לאשר את תנאי השימוש ומדיניות הפרטיות המעודכנים.'
-                : 'To keep using your account, please review and agree to the current Terms of Use and Privacy Policy.'}
+              {isTermsUpdate
+                ? (language === 'he'
+                    ? 'עדכנו את התנאים. החבילות וההגדרות השמורות שלך ללא שינוי — יש לאשר את תנאי השימוש ומדיניות הפרטיות המעודכנים כדי להמשיך.'
+                    : 'We updated our terms. Your saved packages and settings remain unchanged — please review and agree to the updated terms to continue.')
+                : (language === 'he'
+                    ? 'כדי להפעיל את החשבון שלך ולסנכרן חבילות, יש לאשר את תנאי השימוש ומדיניות הפרטיות.'
+                    : 'To activate your account and sync packages, please review and agree to our Terms of Use and Privacy Policy.')}
             </p>
 
             <div className="flex gap-3">

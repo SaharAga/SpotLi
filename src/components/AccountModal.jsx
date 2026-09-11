@@ -93,6 +93,7 @@ export function AccountModal({
   onOpenFeedback,
   onOpenAdminFeedback,
   onOpenAbout,
+  onOpenAppTour,
   onImportData,
   onExportData,
   onShowToast,
@@ -652,6 +653,9 @@ export function AccountModal({
                 <div className="flex flex-col gap-2">
                   <AccountRow icon={MessageSquare} label={he ? 'משוב ודיווח באגים' : 'Feedback'} onClick={go(onOpenFeedback)} />
                   <AccountRow icon={Info} label={he ? 'אודות' : 'About'} onClick={go(onOpenAbout)} />
+                  {onOpenAppTour && (
+                    <AccountRow icon={Sparkles} label={he ? 'מדריך שימוש וסיור' : 'App Tour'} onClick={go(onOpenAppTour)} />
+                  )}
                 </div>
               </Section>
 

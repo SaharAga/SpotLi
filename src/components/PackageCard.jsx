@@ -361,9 +361,16 @@ function PackageCardImpl({
             </div>
           </div>
 
-          <span className={`shrink-0 inline-flex items-center px-2 py-1 rounded-lg text-xs font-semibold border ${stage.badgeClass}`}>
-            {language === 'he' ? stage.hebrewLabel : stage.label}
-          </span>
+          <div className="shrink-0 flex items-center gap-1.5">
+            {pkg.isDemo && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                {t('firstTimeEmpty.demoBadge')}
+              </span>
+            )}
+            <span className={`inline-flex items-center px-2 py-1 rounded-lg text-xs font-semibold border ${stage.badgeClass}`}>
+              {language === 'he' ? stage.hebrewLabel : stage.label}
+            </span>
+          </div>
         </div>
 
         {/* Pickup Location & Same-Location Bundling Tag */}

@@ -266,6 +266,7 @@ export function validatePackage(pkg) {
     notesHe,
     isPinned,
     isArchived,
+    isDemo: Boolean(safeObj.isDemo),
     checkpoints,
     createdAt,
     updatedAt,

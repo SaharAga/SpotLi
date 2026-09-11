@@ -24,6 +24,7 @@ export function SideNavDrawer({
   onOpenFeedback,
   onOpenAdminFeedback,
   onOpenAbout,
+  onOpenAppTour,
   onOpenExport,
   onOpenLockerMap,
   onImportData,
@@ -200,6 +201,17 @@ export function SideNavDrawer({
                 <Link2 className="w-4 h-4 text-blue-400 shrink-0" />
                 <span className="font-semibold">{language === 'he' ? 'מדריך קליטה אוטומטית' : 'Automatic Ingestion Guide'}</span>
               </button>
+
+              {/* App Tour */}
+              {onOpenAppTour && (
+                <button
+                  onClick={() => handleNavClick(onOpenAppTour)}
+                  className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-800 text-slate-200 text-start cursor-pointer transition-colors min-h-[48px]"
+                >
+                  <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span className="font-semibold">{t('appTourMenu')}</span>
+                </button>
+              )}
 
               {/* Insights */}
               <button

@@ -227,6 +227,13 @@ export function AuthModal({
     try {
       if (activeTab === 'register') {
         await registerWithEmail(cleanEmail, cleanPassword, cleanName, { aiTrainingOptIn: aiOptIn });
+        try {
+          if (typeof window !== 'undefined' && window.sessionStorage) {
+            sessionStorage.setItem('spotli_post_auth_wizard_pending', 'true');
+          }
+        } catch {
+          // Ignore storage errors
+        }
         if (onShowToast) onShowToast(language === 'he' ? 'החשבון נוצר בהצלחה!' : 'Account created successfully!', 'success');
       } else {
         await loginWithEmail(cleanEmail, cleanPassword);

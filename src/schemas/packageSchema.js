@@ -72,6 +72,7 @@ export const packageSchema = z.object({
   }).optional(),
   isPinned: z.boolean().default(false),
   isArchived: z.boolean().default(false),
+  isDemo: z.boolean().optional().default(false),
   checkpoints: z.array(checkpointSchema).max(50).default([]),
   createdAt: z.string().max(50).default(() => new Date().toISOString()),
   updatedAt: z.string().max(50).default(() => new Date().toISOString()),
@@ -272,6 +273,7 @@ export const repairingPackageSchema = z.preprocess(
     }),
     isPinned: z.unknown().optional().transform(Boolean),
     isArchived: z.unknown().optional().transform(Boolean),
+    isDemo: z.unknown().optional().transform(Boolean),
     checkpoints: z.unknown().optional().transform((value) => {
       if (!Array.isArray(value)) return [];
       const out = [];
