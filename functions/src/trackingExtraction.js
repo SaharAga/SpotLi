@@ -421,6 +421,31 @@ const FALSE_POSITIVES = [
   /^(?:202[0-9]|2030)$/
 ];
 
+export const METADATA_WORDS = new Set([
+  'UPDATE', 'UPDATES', 'DETAILS', 'DETAIL', 'STATUS', 'INFO', 'INFORMATION',
+  'ALERT', 'ALERTS', 'NOTIFICATION', 'NOTIFICATIONS', 'MESSAGE', 'MESSAGES',
+  'NUMBER', 'NUMBERS', 'CODE', 'CODES', 'LINK', 'LINKS', 'ONLINE', 'CENTER',
+  'SERVICE', 'SERVICES', 'DELIVERY', 'DELIVERIES', 'SHIPMENT', 'SHIPMENTS',
+  'PACKAGE', 'PACKAGES', 'PARCEL', 'PARCELS', 'TRACK', 'TRACKING', 'REPORT',
+  'SUMMARY', 'CUSTOMER', 'SUPPORT', 'CONFIRMATION', 'RECEIPT', 'PORTAL', 'LOGISTICS',
+  'CARRIER', 'CARRIERS', 'DEVELOPER', 'DEVELOPERS', 'ACCOUNT', 'INVOICE', 'BILLING'
+]);
+
+export const PROMOTIONAL_MARKERS = [
+  /מבצע/, /הנחה/, /קופון/, /בתוקף\s*עד/, /קנו\s*עכשיו/, /הצטרפו/, /להסרה/,
+  /דרגו\s*אותנו/, /סקר/, /שביעות\s*רצון/, /איך\s*היה\s*השירות/, /נשמח\s*למשוב/,
+  /\bcoupon\b/i, /\bpromo\b/i, /\bdiscount\b/i, /\b\d{1,2}%\s*off\b/i,
+  /\bsale\b/i, /\bunsubscribe\b/i, /\bsurvey\b/i, /\brate\s+(?:us|your)\b/i,
+  /\bshop\s+now\b/i, /\blimited\s+time\b/i, /\bdear\s+developer\b/i,
+  /\btracking\s+api\b/i, /\ball-in-one\s+package\s+tracking\b/i,
+  /\bsupported\s+carriers\b/i
+];
+
+export function isPromotionalContext(text = '') {
+  if (!text || typeof text !== 'string') return false;
+  return PROMOTIONAL_MARKERS.some((marker) => marker.test(text));
+}
+
 /**
  * Compiled rules from generated spec.
  */
@@ -509,9 +534,14 @@ function evaluateChecksum(value, checksumAlgorithm) {
 export function isFalsePositive(candidate, context = '') {
   if (!candidate || candidate.length < 5 || candidate.length > 45) return true;
   const trimmed = candidate.trim();
+  if (METADATA_WORDS.has(trimmed.toUpperCase())) return true;
   if (FALSE_POSITIVES.some((re) => re.test(trimmed))) return true;
   const clean = trimmed.replace(/[\s-]/g, '');
+  if (METADATA_WORDS.has(clean.toUpperCase())) return true;
   if (FALSE_POSITIVES.some((re) => re.test(clean))) return true;
+
+  // Real tracking numbers ALWAYS contain at least one digit
+  if (!/\d/.test(clean)) return true;
 
   // OTP Verification Code Guard: 4-8 digits immediately next to verification keywords
   if (/^\d{4,8}$/.test(clean) && context) {
@@ -1068,7 +1098,7 @@ export function extractTrackingDetails(subject = '', body = '', from = '', optio
   }
 
   // 2. Scan Labeled Patterns
-  const labeledRegex = /(?:tracking\s*(?:number|id|code|no|#)?|מספר\s*מעקב|מס['׳`״]\s*מעקב|קוד\s*מעקב|דבר\s*דואר(?:\s*שמספרו)?|חבילתך\s*במספר|חבילה\s*מספר|מספר\s*משלוח|waybill|awb|consign(?:ment)?|ברקוד(?:\s*משלוח)?)[\s:=#-]+([A-Za-z0-9_-]{6,35})/gi;
+  const labeledRegex = /(?:tracking\s*(?:number|id|code|no|#)?|מספר\s*מעקב|מס['׳`״’‘]?\s*מעקב|קוד\s*מעקב|דבר\s*דואר(?:\s*שמספרו)?|חבילתך\s*במספר|חבילה\s*מספר|מספר\s*משלוח|waybill|awb|consign(?:ment)?|ברקוד(?:\s*משלוח)?)[\s:=#-]+([A-Za-z0-9_-]{6,35})/gi;
   let labeledMatch;
 
   while ((labeledMatch = labeledRegex.exec(combinedText)) !== null) {
@@ -1095,30 +1125,41 @@ export function extractTrackingDetails(subject = '', body = '', from = '', optio
     const windowEnd = Math.min(combinedText.length, end + 150);
     const localContext = combinedText.slice(windowStart, windowEnd).toLowerCase();
 
+    let formatMatch = matchedCarrier !== 'other';
+
     if (matchedCarrier === 'other') {
-      if (localContext.includes('dhl')) matchedCarrier = 'dhl';
-      else if (localContext.includes('fedex')) matchedCarrier = 'fedex';
-      else if (localContext.includes('ups')) matchedCarrier = 'ups';
-      else if (/chita|cheetah|צ['׳`״]?יטה/i.test(localContext)) matchedCarrier = 'chita';
-      else if (/hfd|epost|אי-?פוסט/i.test(localContext)) matchedCarrier = 'hfd';
-      else if (/boxit|בוקסיט/i.test(localContext)) matchedCarrier = 'boxit';
-      else if (/buzzr|באזר/i.test(localContext)) matchedCarrier = 'buzzr';
-      else if (/tapuz|תפוז/i.test(localContext)) matchedCarrier = 'tapuz';
-      else if (/israel\s*post|דואר\s*ישראל/i.test(localContext)) matchedCarrier = 'israel-post';
-      else if (localContext.includes('amazon') || /tba\d+/i.test(cleanVal)) matchedCarrier = 'amazon';
+      const candidateRule = COMPILED_RULES.find(
+        (r) => r.re.test(cleanVal) && localContext.includes(r.carrierId.toLowerCase())
+      );
+      if (candidateRule) {
+        matchedCarrier = candidateRule.carrierId;
+        checksum = evaluateChecksum(cleanVal, candidateRule.checksum);
+        formatMatch = true;
+      } else if (localContext.includes('amazon') || /^TBA\d+/i.test(cleanVal)) {
+        matchedCarrier = 'amazon';
+        formatMatch = true;
+      } else if (/^\d{6,10}$/.test(cleanVal)) {
+        if (/chita|cheetah|צ['׳`״]?יטה/i.test(localContext)) { matchedCarrier = 'chita'; formatMatch = true; }
+        else if (/hfd|epost|אי-?פוסט/i.test(localContext)) { matchedCarrier = 'hfd'; formatMatch = true; }
+        else if (/boxit|בוקסיט/i.test(localContext)) { matchedCarrier = 'boxit'; formatMatch = true; }
+        else if (/buzzr|באזר/i.test(localContext)) { matchedCarrier = 'buzzr'; formatMatch = true; }
+        else if (/tapuz|תפוז/i.test(localContext)) { matchedCarrier = 'tapuz'; formatMatch = true; }
+        else if (/israel\s*post|דואר\s*ישראל/i.test(localContext)) { matchedCarrier = 'israel-post'; formatMatch = true; }
+      }
     }
 
     let score = 0.70;
-    if (matchedCarrier !== 'other') score += 0.15;
+    if (formatMatch) score += 0.15;
     if (checksum === 'pass') score += 0.15;
     if (checksum === 'fail') score -= 0.10; // modest penalty for placeholder test fixtures
+    if (isPromotionalContext(combinedText) && !formatMatch) score -= 0.25;
 
     if (!candidatesMap.has(cleanVal)) {
       candidatesMap.set(cleanVal, {
         id: `cand_${candidatesMap.size + 1}`,
         value: cleanVal,
         carrierCandidates: [matchedCarrier],
-        formatMatch: matchedCarrier !== 'other',
+        formatMatch,
         checksum,
         urlDomainMatch: false,
         labelProximity: 1.0,

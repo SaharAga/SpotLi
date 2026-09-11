@@ -51,7 +51,10 @@ export async function sendPushToUser({ db, uid, payload, webpush, vapidPublicKey
   }
 
   const tokensSnap = await db.collection(PUSH_SUBSCRIPTIONS_COLLECTION).doc(uid).collection('tokens').get();
-  if (tokensSnap.empty) return { sent: 0, removed: 0 };
+  if (tokensSnap.empty) {
+    console.warn(`[pushNotifications] No push tokens found for uid ${uid} — skipping push delivery`);
+    return { sent: 0, removed: 0 };
+  }
 
   webpush.setVapidDetails(vapidSubject || 'mailto:support@spotliapp.com', vapidPublicKey, vapidPrivateKey);
 
@@ -70,6 +73,7 @@ export async function sendPushToUser({ db, uid, payload, webpush, vapidPublicKey
         if (statusCode === 404 || statusCode === 410) {
           await doc.ref.delete();
           removed += 1;
+          console.warn(`[pushNotifications] Stale token removed for ${uid} (FCM status ${statusCode})`);
         } else {
           console.error('[pushNotifications] Send failed for', uid, statusCode, err?.message);
         }
@@ -77,5 +81,6 @@ export async function sendPushToUser({ db, uid, payload, webpush, vapidPublicKey
     })
   );
 
+  console.log(`[pushNotifications] Finished sending to uid ${uid}: sent=${sent}, removed=${removed}`);
   return { sent, removed };
 }

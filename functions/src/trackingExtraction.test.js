@@ -631,6 +631,36 @@ describe('extractAllTrackingDetails', () => {
     expect(pkgs[0].store).toBe('AliExpress');
     expect(pkgs[0].deliveryStatus).toBe('out_for_delivery');
   });
+
+  it('ignores promotional developer onboarding emails like 17TRACK API newsletters', () => {
+    const subject = '❣️Day1:  Get to know our supported carriers, shall we? ❯';
+    const body = `
+      17TRACK
+      ALL-IN-ONE PACKAGE TRACKING
+      Dear developer!
+      For a great tracking API, you want to look for trackability, accuracy and timliness ~😊
+
+      The good news is, We support the tracking of 3502 mainstream carriers worldwide.
+      including 99.9% of UPU members and commercial services such as DHL and FedEx.
+
+      Our tracking info is identical to the carrier's website, for 100% authenticity!
+      We push tracking updates automatically, no need for repeated quiries.
+
+      List of Carriers Supported
+      https://t.17track.net/en#nums=
+      https://api.17track.net/
+    `;
+    const from = '17TRACK <api@17track.net>';
+    const pkgs = extractAllTrackingDetails(subject, body, from);
+    expect(pkgs).toEqual([]);
+  });
+
+  it('does not capture common words following bare tracking as tracking numbers', () => {
+    const text = 'We push tracking updates automatically and provide tracking information for all users.';
+    const pkgs = extractAllTrackingDetails('Newsletter', text, 'info@example.com');
+    expect(pkgs).toEqual([]);
+  });
 });
+
 
 

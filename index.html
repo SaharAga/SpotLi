@@ -25,7 +25,7 @@
       })();
     </script>
 
-    <!-- Instant Hard Cache Purge & Service Worker Reset -->
+    <!-- Instant Hard Cache Purge on Version Bump (preserves Service Worker & Push Subscriptions) -->
     <script>
       (function() {
         var APP_CURRENT_VER = '__APP_VERSION__';
@@ -34,7 +34,7 @@
           if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(function(registrations) {
               for (var i = 0; i < registrations.length; i++) {
-                registrations[i].unregister();
+                registrations[i].update().catch(function() {});
               }
             }).catch(function() {});
           }
@@ -46,7 +46,6 @@
             }).catch(function() {});
           }
           localStorage.setItem('spotli_app_build_version', APP_CURRENT_VER);
-          // Cache version synchronized cleanly without abrupt reload
         }
       })();
     </script>
