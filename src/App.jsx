@@ -272,7 +272,7 @@ export function DashboardContent() {
   // updateUserPreferences was used by the auto-archive prompt handlers below
   // without ever being pulled off the context, so confirming or declining the
   // prompt threw ReferenceError for any signed-in user.
-  const { user, loading, triggerCloudSync, updateUserPreferences } = useAuth();
+  const { user, loading, triggerCloudSync, updateUserPreferences, loginWithGoogle } = useAuth();
 
   const {
     packages,
@@ -1349,7 +1349,7 @@ export function DashboardContent() {
             }
             closeModal(MODAL.ONBOARDING);
           }}
-          onGetStartedGoogle={() => {
+          onGetStartedGoogle={async () => {
             try {
               if (typeof window !== 'undefined' && window.localStorage) {
                 window.localStorage.setItem(STORAGE_KEYS.ONBOARDING_TOUR_SEEN, 'true');
@@ -1365,7 +1365,12 @@ export function DashboardContent() {
               // Ignore storage errors
             }
             closeModal(MODAL.ONBOARDING);
-            openModal(MODAL.AUTH, { initialMode: 'signin' });
+            try {
+              await loginWithGoogle();
+            } catch (err) {
+              console.warn('[Onboarding] Direct Google sign-in failed, falling back to auth modal:', err);
+              openModal(MODAL.AUTH, { initialMode: 'signin' });
+            }
           }}
           onStartManual={() => {
             try {

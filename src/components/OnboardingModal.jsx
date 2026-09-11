@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Mail, MessageSquareText, MapPin, ChevronRight, ChevronLeft, 
-  Sparkles, Sun, CheckCircle2, ArrowRight
+  Sparkles, Sun, CheckCircle2, ArrowRight, Package
 } from 'lucide-react';
 import { Modal } from './Modal';
 import { useLanguage } from '../context/LanguageContext';
@@ -18,6 +18,59 @@ export function OnboardingModal({
   if (!isOpen) return null;
 
   const slides = [
+    {
+      id: 'welcome',
+      tag: t('onboarding.slide0Tag'),
+      tagColor: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
+      title: t('onboarding.slide0Title'),
+      desc: t('onboarding.slide0Desc'),
+      icon: Package,
+      accentGradient: 'from-blue-600/20 via-indigo-600/10 to-transparent',
+      illustration: (
+        <div className="w-full bg-slate-900/95 border border-slate-700/80 rounded-3xl p-5 sm:p-6 shadow-2xl relative overflow-hidden text-start space-y-3.5">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-400 shrink-0 shadow-inner">
+                <Package className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-sm font-bold text-white">SpotLi Hub</div>
+                <div className="text-xs text-slate-400">
+                  {language === 'he' ? '3 חבילות במעקב פעיל' : '3 active shipments'}
+                </div>
+              </div>
+            </div>
+            <span className="flex items-center gap-1.5 text-xs text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>{language === 'he' ? 'מסונכרן' : 'Live Sync'}</span>
+            </span>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 text-xs">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                <span className="font-bold text-slate-200 truncate">Amazon</span>
+                <span className="text-slate-400 font-mono text-[11px] truncate">#AMZ-9382</span>
+              </div>
+              <span className="text-amber-400 font-semibold shrink-0">
+                {language === 'he' ? 'בדרך לארץ' : 'In Transit'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 text-xs">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+                <span className="font-bold text-slate-200 truncate">{language === 'he' ? 'צ\'יטה / לוקר' : 'Cheetah / Locker'}</span>
+                <span className="text-slate-400 font-mono text-[11px] truncate">#CH-4821</span>
+              </div>
+              <span className="text-emerald-400 font-semibold shrink-0">
+                {language === 'he' ? 'מוכן לאיסוף' : 'Ready for Pickup'}
+              </span>
+            </div>
+          </div>
+        </div>
+      )
+    },
     {
       id: 'gmail-sync',
       tag: t('onboarding.slide1Tag'),
@@ -225,7 +278,7 @@ export function OnboardingModal({
               onClick={handleNext}
               className="flex-1 w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm sm:text-base font-bold transition-all shadow-lg shadow-blue-500/25 cursor-pointer min-h-[52px]"
             >
-              <span>{t('onboarding.next')}</span>
+              <span>{currentSlide === 0 ? t('onboarding.seeHowItWorks') : t('onboarding.next')}</span>
               {isRTL ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
             </button>
           </div>
