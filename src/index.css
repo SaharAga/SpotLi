@@ -459,6 +459,10 @@
       animation: sheetSlideUp 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
+    [data-modal-panel][data-flush-bottom="true"] {
+      padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    }
+
     /* The panel is now the viewport, so whatever inside it was scrolling
        should fill the space rather than stop at an old max-height. */
     [data-modal-panel] > * {
