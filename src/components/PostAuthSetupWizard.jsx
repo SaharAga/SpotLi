@@ -6,7 +6,7 @@ import {
 import { Modal } from './Modal';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { connectGmail, getConnectedServices } from '../services/emailSyncService';
+import { connectGmail, getConnectedServices, getGmailConnectionStatus } from '../services/emailSyncService';
 import { notificationService } from '../services/notificationService';
 
 export function PostAuthSetupWizard({
@@ -29,6 +29,13 @@ export function PostAuthSetupWizard({
     const services = getConnectedServices(user);
     if (services.gmail) {
       setIsGmailConnected(true);
+    }
+    if (user) {
+      getGmailConnectionStatus().then((status) => {
+        if (status?.connected) {
+          setIsGmailConnected(true);
+        }
+      }).catch(() => {});
     }
     if (typeof window !== 'undefined' && 'Notification' in window) {
       setPushStatus(window.Notification.permission || 'default');

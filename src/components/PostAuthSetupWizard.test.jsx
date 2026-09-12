@@ -7,10 +7,12 @@ import { renderWithLanguage } from '../test-utils/renderWithProviders';
 
 const mockConnectGmail = vi.fn();
 const mockRequestNotificationPermission = vi.fn();
+const mockGetGmailConnectionStatus = vi.fn().mockResolvedValue({ connected: false });
 
 vi.mock('../services/emailSyncService', () => ({
   connectGmail: () => mockConnectGmail(),
-  getConnectedServices: () => ({ gmail: false, outlook: false, accounts: [] })
+  getConnectedServices: () => ({ gmail: false, outlook: false, accounts: [] }),
+  getGmailConnectionStatus: () => mockGetGmailConnectionStatus()
 }));
 
 vi.mock('../services/notificationService', () => ({

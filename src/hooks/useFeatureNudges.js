@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { STORAGE_KEYS } from '../constants/storageKeys';
-import { getConnectedServices } from '../services/emailSyncService';
+import { getConnectedServices, getGmailConnectionStatus } from '../services/emailSyncService';
 
 /**
  * Registry of contextual feature adoption nudges.
@@ -22,6 +22,32 @@ export function useFeatureNudges({ packages = [], user = null }) {
       return {};
     }
   });
+
+  const [isGmailConnected, setIsGmailConnected] = useState(() => {
+    return Boolean(getConnectedServices(user).gmail);
+  });
+
+  // Verify server-side Gmail connection status if user is signed in
+  useEffect(() => {
+    if (!user) {
+      setIsGmailConnected(false);
+      return;
+    }
+    const local = getConnectedServices(user);
+    if (local.gmail) {
+      setIsGmailConnected(true);
+      return;
+    }
+    let isMounted = true;
+    getGmailConnectionStatus().then((status) => {
+      if (isMounted && status?.connected) {
+        setIsGmailConnected(true);
+      }
+    }).catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   const isPermanentlyDismissed = useCallback((id) => {
     if (storageNudges[id]?.permanent) return true;
@@ -48,7 +74,7 @@ export function useFeatureNudges({ packages = [], user = null }) {
     // 2. Gmail Sync Nudge (User is signed in and tracking manually, but Gmail not connected)
     if (!isPermanentlyDismissed('gmail_sync') && user && packages.length >= 1) {
       const services = getConnectedServices(user);
-      if (!services.gmail) {
+      if (!services.gmail && !isGmailConnected) {
         return {
           id: 'gmail_sync',
           type: 'gmail'
