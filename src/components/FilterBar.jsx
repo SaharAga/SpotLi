@@ -112,7 +112,14 @@ export function FilterBar({
           went: a view mode is a preference you set once, not something you
           reach for on every search. */}
       <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 min-w-0 overflow-x-auto no-scrollbar">
+        {/*
+          The fade is the scroll affordance. `no-scrollbar` hides the bar, so a
+          chip cut in half by the container edge read as a broken layout rather
+          than as "there is more this way" — at 390px the Delivered chip is
+          always the one sliced. Masked on the inline-end edge, mirrored for
+          RTL since a mask does not follow writing direction on its own.
+        */}
+        <div className="flex items-center gap-1.5 min-w-0 overflow-x-auto no-scrollbar [mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)] rtl:[mask-image:linear-gradient(to_left,black_calc(100%-2rem),transparent)]">
           {chips.map((chip) => {
             const isOn = activeTab === chip.id;
             return (

@@ -36,7 +36,14 @@ __pycache__/
 # Agent-to-Agent Local Sync
 .agent_sync/
 .agent-sync*
-.claude/
+
+# Claude Code: per-machine state stays out, but the SessionStart hook and the
+# settings that register it are shared config — they have to be committed or a
+# fresh session starts without functions/ dependencies installed.
+.claude/*
+!.claude/hooks/
+!.claude/settings.json
+.claude/settings.local.json
 
 # Real user messages pulled for parser evaluation — never committed.
 .parser-corpus-real.json

@@ -408,6 +408,17 @@ export function DashboardContent() {
 
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
 
+  /*
+   * At most one promotional banner at a time.
+   *
+   * The install prompt, the feature nudge, the demo bar, the KPI row, search
+   * and the filter chips all stack above the list, and together they pushed
+   * every package below the fold on a 390px screen — a package tracker whose
+   * first screen shows no packages. The install banner wins while it is up
+   * (it expires after 7 days and on dismissal); the nudge waits its turn.
+   */
+  const [isInstallBannerVisible, setIsInstallBannerVisible] = useState(false);
+
   // Mutable mirrors of state that handlers need to *read* but must not be
   // re-created for. Keeping them out of the dependency arrays below is what
   // lets the memoized list components see stable props across a keystroke or
@@ -1270,15 +1281,36 @@ export function DashboardContent() {
       id: MODAL.ACCOUNT,
       componentName: 'AccountModal',
       render: (isOpen, payload) => (
+        /*
+          The one Account screen. Navbar used to render a second copy of this
+          component from its own `isAccountSheetOpen` state for the bottom-bar
+          tab — with a *richer* prop set than this one, so the two entry points
+          offered different rows. Being outside the router also meant it pushed
+          no history entry, so the Android back gesture left the app instead of
+          closing the sheet.
+
+          `initialTab` defaults to null, not 'profile': null is the root
+          settings list, which is where the bottom-bar Account tab has always
+          landed. Only the "open my profile" entry point asks for the profile
+          sub-page, and it passes initialTab explicitly.
+        */
         <AccountModal
           isOpen={isOpen}
           onClose={() => closeModal(MODAL.ACCOUNT)}
-          initialTab={payload?.initialTab ?? 'profile'}
+          initialTab={payload?.initialTab ?? null}
           packages={packages}
           onExportData={handleExportData}
+          onImportData={handleImportData}
           onOpenExport={() => openModal(MODAL.EXPORT)}
           onOpenAppTour={() => openModal(MODAL.ONBOARDING)}
           onOpenAuth={() => openModal(MODAL.AUTH, { initialMode: 'signin' })}
+          onOpenSmartImport={() => openModal(MODAL.SMART_IMPORT)}
+          onOpenConnectModal={() => openModal(MODAL.INGESTION_GUIDE)}
+          onOpenAnalytics={() => openModal(MODAL.ANALYTICS)}
+          onOpenLockerMap={() => openModal(MODAL.LOCKER_MAP)}
+          onOpenFeedback={() => openModal(MODAL.FEEDBACK)}
+          onOpenAdminFeedback={isAdminUser(user) ? () => openModal(MODAL.ADMIN_FEEDBACK) : undefined}
+          onOpenAbout={() => openModal(MODAL.ABOUT)}
           onShowToast={showToast}
         />
       )
@@ -1566,15 +1598,13 @@ export function DashboardContent() {
         onOpenAdminFeedback={isAdminUser(user) ? () => openModal(MODAL.ADMIN_FEEDBACK) : undefined}
         onOpenExport={() => openModal(MODAL.EXPORT)}
         onOpenLockerMap={() => openModal(MODAL.LOCKER_MAP)}
-        onExportData={handleExportData}
         onImportData={handleImportData}
         onResetData={handleResetData}
         onShowToast={showToast}
-        packages={packages}
       />
 
       {/* Dismissable Top PWA Installation Banner */}
-      <InstallPwaBanner />
+      <InstallPwaBanner onVisibilityChange={setIsInstallBannerVisible} />
 
       {/* Main Container */}
       {/* `relative` with NO z-index on purpose. It only needs to paint above
@@ -1585,8 +1615,14 @@ export function DashboardContent() {
           opened underneath them.
 
           pb clears the fixed bottom tab bar (BottomNav) plus the home
-          indicator inset; the bar is lg:hidden, so the padding is too. */}
-      <main className="relative flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] lg:pb-6">
+          indicator inset; the bar is lg:hidden, so the padding is too.
+
+          It also has to clear the Feedback FAB, which floats higher than the
+          bar (bottom-[5.5rem] + a 3rem button). At 6rem the padding cleared
+          only the bar, so the FAB sat on top of the last package card with no
+          way to scroll it free. 9.25rem = the FAB's offset, its height, and a
+          gap. */}
+      <main className="relative flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-[calc(9.25rem+env(safe-area-inset-bottom,0px))] lg:pb-6">
         {loading && !user ? (
           /* SLEEK INITIAL COLD-START SKELETON / LOADING STATE */
           <div className="max-w-2xl mx-auto my-12 p-8 sm:p-12 bg-slate-900/40 border border-slate-800/60 rounded-3xl text-center flex flex-col items-center justify-center animate-pulse">
@@ -1616,7 +1652,7 @@ export function DashboardContent() {
           /* AUTHENTICATED OR DEMO-MODE DASHBOARD */
           <>
             {/* Contextual Feature Adoption Banner */}
-            {activeNudge && (
+            {activeNudge && !isInstallBannerVisible && (
               <FeatureNudgeBanner
                 nudge={activeNudge}
                 onAction={handleNudgeAction}
