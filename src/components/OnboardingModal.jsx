@@ -10,7 +10,10 @@ export function OnboardingModal({
   isOpen,
   onClose,
   onGetStartedGoogle,
-  onStartManual
+  onStartManual,
+  onSignIn,
+  onSignInEmail,
+  onTryDemo
 }) {
   const { t, isRTL, language } = useLanguage();
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -226,10 +229,10 @@ export function OnboardingModal({
         </div>
         <button
           type="button"
-          onClick={onClose}
-          className="text-xs font-bold text-slate-400 hover:text-slate-200 transition-colors px-3 py-2 rounded-xl hover:bg-slate-800/80 min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer"
+          onClick={onSignIn || onClose}
+          className="text-xs font-bold text-blue-400 hover:text-blue-300 transition-colors px-3 py-2 rounded-xl hover:bg-slate-800/80 min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer"
         >
-          {t('onboarding.skip')}
+          {onSignIn ? t('onboarding.signIn') : t('onboarding.skip')}
         </button>
       </div>
 
@@ -284,27 +287,40 @@ export function OnboardingModal({
           </div>
         ) : (
           <div className="w-full flex flex-col gap-3">
-            <div className="w-full flex flex-col sm:flex-row items-center gap-3">
-              <button
-                type="button"
-                onClick={onStartManual}
-                className="w-full sm:w-1/2 flex items-center justify-center px-5 py-3.5 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-sm font-bold border border-slate-700 transition-colors cursor-pointer min-h-[52px]"
-              >
-                {t('onboarding.startManual')}
-              </button>
+            <div className="w-full flex flex-col gap-2.5">
               <button
                 type="button"
                 onClick={onGetStartedGoogle}
-                className="w-full sm:w-1/2 flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-black transition-all shadow-lg shadow-blue-500/25 cursor-pointer min-h-[52px]"
+                className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm sm:text-base font-black transition-all shadow-lg shadow-blue-500/25 cursor-pointer min-h-[52px]"
               >
                 <Sparkles className="w-4 h-4" />
-                <span>{t('onboarding.getStarted')}</span>
+                <span>{t('onboarding.continueWithGoogle') || t('onboarding.getStarted')}</span>
               </button>
+
+              <button
+                type="button"
+                onClick={onSignInEmail || onStartManual}
+                className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-bold border border-slate-700/80 transition-colors cursor-pointer min-h-[48px]"
+              >
+                <Mail className="w-4 h-4 text-slate-400" />
+                <span>{t('onboarding.continueWithEmail')}</span>
+              </button>
+
+              {onTryDemo && (
+                <button
+                  type="button"
+                  onClick={onTryDemo}
+                  className="w-full flex items-center justify-center text-xs text-slate-400 hover:text-slate-200 py-1.5 transition-colors cursor-pointer min-h-[48px]"
+                >
+                  <span>{t('onboarding.tryDemo')}</span>
+                </button>
+              )}
             </div>
+
             <button
               type="button"
               onClick={handlePrev}
-              className="self-center flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200 py-2 transition-colors cursor-pointer min-h-[48px]"
+              className="self-center flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200 py-1 transition-colors cursor-pointer min-h-[48px]"
             >
               {isRTL ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
               <span>{t('onboarding.prev')}</span>

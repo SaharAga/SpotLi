@@ -63,7 +63,15 @@ describe('OnboardingModal Component Tests', () => {
     expect(screen.getByText(/Smart SMS & Link Import/i)).toBeInTheDocument();
   });
 
-  it('calls onClose when Skip is clicked', () => {
+  it('calls onSignIn when Sign In header button is clicked', () => {
+    const onSignIn = vi.fn();
+    renderComponent({ onSignIn });
+    const signInBtn = screen.getByRole('button', { name: /Sign In/i });
+    fireEvent.click(signInBtn);
+    expect(onSignIn).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onClose when Skip is clicked without onSignIn prop', () => {
     renderComponent();
     const skipBtn = screen.getByRole('button', { name: /Skip/i });
     fireEvent.click(skipBtn);
@@ -77,27 +85,42 @@ describe('OnboardingModal Component Tests', () => {
     fireEvent.click(screen.getByRole('button', { name: /Next/i }));
     fireEvent.click(screen.getByRole('button', { name: /Next/i }));
 
-    const googleBtn = screen.getByRole('button', { name: /Get Started with Google/i });
+    const googleBtn = screen.getByRole('button', { name: /Continue with Google|Get Started with Google/i });
     fireEvent.click(googleBtn);
     expect(onGetStartedGoogle).toHaveBeenCalledTimes(1);
   });
 
-  it('calls onStartManual when secondary CTA clicked on last slide', () => {
-    renderComponent();
+  it('calls onSignInEmail when secondary CTA clicked on last slide', () => {
+    const onSignInEmail = vi.fn();
+    renderComponent({ onSignInEmail });
     // Go to slide 4
     fireEvent.click(screen.getByRole('button', { name: /See How It Works/i }));
     fireEvent.click(screen.getByRole('button', { name: /Next/i }));
     fireEvent.click(screen.getByRole('button', { name: /Next/i }));
 
-    const manualBtn = screen.getByRole('button', { name: /Start Tracking Manually/i });
-    fireEvent.click(manualBtn);
-    expect(onStartManual).toHaveBeenCalledTimes(1);
+    const emailBtn = screen.getByRole('button', { name: /Continue with Email/i });
+    fireEvent.click(emailBtn);
+    expect(onSignInEmail).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onTryDemo when demo option clicked on last slide', () => {
+    const onTryDemo = vi.fn();
+    renderComponent({ onTryDemo });
+    // Go to slide 4
+    fireEvent.click(screen.getByRole('button', { name: /See How It Works/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Next/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Next/i }));
+
+    const demoBtn = screen.getByRole('button', { name: /explore with demo package/i });
+    fireEvent.click(demoBtn);
+    expect(onTryDemo).toHaveBeenCalledTimes(1);
   });
 
   it('renders correctly in Hebrew with proper translations', () => {
-    renderComponent({}, 'he');
+    const onSignIn = vi.fn();
+    renderComponent({ onSignIn }, 'he');
     expect(screen.getByText('כל המשלוחים והחבילות שלך — במקום אחד')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'גלה איך זה עובד' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'דלג' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'התחבר' })).toBeInTheDocument();
   });
 });
