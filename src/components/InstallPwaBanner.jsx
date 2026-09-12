@@ -8,7 +8,13 @@ import { FEATURE_IDS } from '../constants/featureIds';
 
 const STORAGE_DISMISS_KEY = STORAGE_KEYS.PWA_BANNER_DISMISSED;
 
-export function InstallPwaBanner() {
+/**
+ * @param {object} props
+ * @param {(visible: boolean) => void} [props.onVisibilityChange] Reports whether
+ *   the banner is on screen, so the caller can avoid stacking a second
+ *   promotional banner underneath it.
+ */
+export function InstallPwaBanner({ onVisibilityChange } = {}) {
   const { isRTL } = useLanguage();
   const { user } = useAuth();
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -78,7 +84,16 @@ export function InstallPwaBanner() {
     localStorage.setItem(STORAGE_DISMISS_KEY, Date.now().toString());
   };
 
-  if (isStandalone || dismissed) {
+  const isVisible = !isStandalone && !dismissed;
+
+  // Reported rather than inferred by the caller: the decision depends on
+  // standalone mode, a 7-day dismissal window and `beforeinstallprompt`, none
+  // of which App can see.
+  useEffect(() => {
+    if (onVisibilityChange) onVisibilityChange(isVisible);
+  }, [isVisible, onVisibilityChange]);
+
+  if (!isVisible) {
     return null;
   }
 

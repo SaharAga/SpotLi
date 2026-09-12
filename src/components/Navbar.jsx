@@ -10,8 +10,7 @@ import { BottomNav, TAB_FOR_MODAL } from './BottomNav';
 
 // The two tab destinations that ARE modals. Kept here rather than imported
 // from App.jsx, which imports this file — that cycle is what the ids avoid.
-const MODAL_IDS = { ANALYTICS: 'analytics', ACTIVITY: 'activity' };
-import { AccountSheet } from './AccountSheet';
+const MODAL_IDS = { ANALYTICS: 'analytics', ACTIVITY: 'activity', ACCOUNT: 'account' };
 
 export function Navbar({
   isDemoMode,
@@ -30,15 +29,12 @@ export function Navbar({
   onOpenLockerMap,
   onImportData,
   onResetData,
-  onExportData,
-  packages = [],
   onShowToast
 }) {
   const { language, t } = useLanguage();
   const { user } = useAuth();
 
   const [isSideDrawerOpen, setIsSideDrawerOpen] = useState(false);
-  const [isAccountSheetOpen, setIsAccountSheetOpen] = useState(false);
   const [isAddActionSheetOpen, setIsAddActionSheetOpen] = useState(false);
 
   /**
@@ -50,7 +46,6 @@ export function Navbar({
    * or the OS back gesture. Tabs are not a stack; each one is a destination.
    */
   const switchTab = (modalId, afterSwitch) => () => {
-    setIsAccountSheetOpen(false);
     setIsSideDrawerOpen(false);
     setIsAddActionSheetOpen(false);
     // One atomic stack replacement, not close-then-open — see goToTab in
@@ -306,7 +301,7 @@ export function Navbar({
         isDemoMode={isDemoMode}
         onClose={() => setIsSideDrawerOpen(false)}
         onOpenAuth={onOpenAuth}
-        onOpenSettings={() => { setIsSideDrawerOpen(false); setIsAccountSheetOpen(true); }}
+        onOpenSettings={switchTab(MODAL_IDS.ACCOUNT)}
         onOpenSmartImport={onOpenSmartImport}
         onOpenConnectModal={onOpenConnectModal}
         onOpenAnalytics={onOpenAnalytics}
@@ -321,37 +316,19 @@ export function Navbar({
         onShowToast={onShowToast}
       />
 
-      <AccountSheet
-        isOpen={isAccountSheetOpen}
-        onClose={() => setIsAccountSheetOpen(false)}
-        onOpenAuth={onOpenAuth}
-        onOpenSmartImport={onOpenSmartImport}
-        onOpenConnectModal={onOpenConnectModal}
-        onOpenAnalytics={onOpenAnalytics}
-        onOpenExport={onOpenExport}
-        onOpenLockerMap={onOpenLockerMap}
-        onOpenFeedback={onOpenFeedback}
-        onOpenAdminFeedback={onOpenAdminFeedback}
-        onOpenAbout={onOpenAbout}
-        onImportData={onImportData}
-        onExportData={onExportData}
-        onShowToast={onShowToast}
-        packages={packages}
-      />
-
       {/* Mobile bottom tab bar. Lives here rather than in App because this
           component already owns the drawer and the add sheet the bar opens;
           wiring it from App would mean lifting both into App state.
           Hidden whenever a drill-down modal is open (detail, addEdit, smartImport, etc.)
           or when the add action sheet is open, giving the sub-modal full-screen height. */}
-      {(!activeModal || activeModal === MODAL_IDS.ANALYTICS || activeModal === MODAL_IDS.ACTIVITY || activeModal === 'account' || isAccountSheetOpen) && !isAddActionSheetOpen && (
+      {(!activeModal || activeModal === MODAL_IDS.ANALYTICS || activeModal === MODAL_IDS.ACTIVITY || activeModal === MODAL_IDS.ACCOUNT) && !isAddActionSheetOpen && (
         <BottomNav
-          activeTab={isAccountSheetOpen ? 'account' : (TAB_FOR_MODAL[activeModal] || 'status')}
+          activeTab={TAB_FOR_MODAL[activeModal] || 'status'}
           onOpenStatus={switchTab(null)}
           onOpenInsights={switchTab(MODAL_IDS.ANALYTICS)}
           onOpenAdd={() => setIsAddActionSheetOpen(true)}
           onOpenActivity={switchTab(MODAL_IDS.ACTIVITY)}
-          onOpenAccount={switchTab(null, () => setIsAccountSheetOpen(true))}
+          onOpenAccount={switchTab(MODAL_IDS.ACCOUNT)}
         />
       )}
     </>

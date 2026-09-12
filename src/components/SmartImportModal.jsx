@@ -467,7 +467,14 @@ export function SmartImportModal({
               <span className="text-xs font-semibold text-slate-400 block mb-1.5">
                 {language === 'he' ? 'או בחר דוגמת הודעה מוכנה לבדיקה:' : 'Or try a sample message:'}
               </span>
-              <div className="flex flex-wrap gap-2">
+              {/*
+                A grid, not flex-wrap. The three labels are long enough that
+                each took its own line anyway, but at whatever width its own
+                text happened to need — three left-aligned pills of three
+                different widths, which reads as a layout accident rather than
+                a set of equivalent choices.
+              */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {sampleSMS.map((s, idx) => (
                   <button
                     key={idx}

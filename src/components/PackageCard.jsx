@@ -292,13 +292,27 @@ function PackageCardImpl({
           </div>
 
           <div className="min-w-0 flex-1">
-            <h3 className="text-sm font-semibold text-slate-100 group-hover:text-blue-400 transition-colors line-clamp-1">
+            {/*
+              Two lines, not one. The title is the only thing that tells two
+              cards apart — the status badge beside it repeats across most of
+              the list — and on a 390px screen `line-clamp-1` next to a badge
+              reading "Out for Delivery / Pickup" left about seven characters,
+              so "Sony WH-1000XM5 Headphones" rendered as "Sony W…".
+            */}
+            <h3 className="text-sm font-semibold text-slate-100 group-hover:text-blue-400 transition-colors line-clamp-2">
               {itemTitle}
             </h3>
-            <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-0.5 truncate">
+            {/*
+              Wraps rather than truncating. On one line the tracking number won
+              the space and the carrier lost all of it — "AliExpress / Cainiao"
+              was allotted a single pixel, and "Cheetah Delivery (Chita)"
+              rendered as "Che…". Both identify the parcel, so neither gets cut
+              to nothing; the row takes a second line instead.
+            */}
+            <div className="flex flex-wrap items-center gap-x-1.5 text-xs text-slate-400 mt-0.5">
               <span className="font-mono"><bdi dir="ltr">{pkg.trackingNumber}</bdi></span>
               <span className="opacity-50">·</span>
-              <span className="truncate">
+              <span className="min-w-0 truncate">
                 {store ? (language === 'he' ? store.hebrewName : store.name) + ' — ' : ''}
                 {language === 'he' ? carrier.hebrewName : carrier.name}
               </span>
@@ -361,13 +375,13 @@ function PackageCardImpl({
             </div>
           </div>
 
-          <div className="shrink-0 flex items-center gap-1.5">
+          <div className="shrink-0 flex items-start gap-1.5 max-w-[42%]">
             {pkg.isDemo && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
                 {t('firstTimeEmpty.demoBadge')}
               </span>
             )}
-            <span className={`inline-flex items-center px-2 py-1 rounded-lg text-xs font-semibold border ${stage.badgeClass}`}>
+            <span className={`inline-flex items-center px-2 py-1 rounded-lg text-xs font-semibold border text-end leading-tight ${stage.badgeClass}`}>
               {language === 'he' ? stage.hebrewLabel : stage.label}
             </span>
           </div>
@@ -417,9 +431,16 @@ function PackageCardImpl({
 
         {/* Row 2: expected date + quick actions, all on one line */}
         <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800">
-          <div className="flex items-center gap-1.5 text-xs text-slate-400 min-w-0">
+          {/*
+            `flex-wrap` and a non-shrinking date: the date and the
+            days-remaining pill both used to compete with the action icons on
+            one line, and the date lost — "Aug 20, 2026" rendered as "A…",
+            which tells the user strictly less than showing nothing. Both now
+            wrap to a second line before either gets cut.
+          */}
+          <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-400 min-w-0">
             <Calendar className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">{formatDate(pkg.expectedDeliveryDate, language)}</span>
+            <span className="shrink-0 whitespace-nowrap">{formatDate(pkg.expectedDeliveryDate, language)}</span>
             {daysInfo && pkg.status !== 'delivered' && (
               <span
                 className={`shrink-0 text-xs px-1.5 py-0.2 rounded-md font-bold ${
