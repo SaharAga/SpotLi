@@ -130,6 +130,22 @@ accidentally committed secrets (`scripts/pre_commit_secrets_check.js`). Don't by
   honours `prefers-color-scheme`; an explicit toggle pins it. Tests must therefore pin a
   language rather than relying on a default — use `renderWithLanguage`.
 - Mobile touch targets must stay ≥ 48×48px (`.min-h-touch`).
+- **Theming is a palette inversion, not a set of `dark:` variants.** The app is
+  written dark-first, and `.light` in `index.css` swaps in an *inverted* slate scale
+  (`--color-slate-900` becomes a light panel, `--color-slate-100` becomes near-black
+  ink). So `bg-slate-900` means "panel" and `text-slate-100` means "heading ink" in
+  **both** themes, and almost nothing needs a `dark:` prefix. The corollary is the
+  rule that matters: **never use a literal `text-white`/`text-black` for ink on a
+  slate surface** — literals do not invert, and the whole light theme once shipped
+  with white-on-white headings on the first screen a new user saw. White ink is only
+  correct on a *saturated* background (`bg-blue-600`, a gradient, `from-blue-900/90`),
+  because those families are not inverted and stay dark in light mode.
+  `src/tests/integration/themeClassContract.test.js` enforces this, with an
+  allowlist for the handful of genuine exceptions; it also rejects utilities
+  Tailwind v4 removed (`bg-opacity-*` and friends), which emit no CSS and fail
+  silently. Components that behave differently per theme are tested with
+  `renderWithTheme` — note jsdom loads no stylesheets, so tests there can assert
+  classes and behaviour but never computed colours.
 - **Ambient chrome**: `deriveMood` (`src/utils/ambientMood.js`) turns the package list into one
   of `calm | today | stuck`; `App` puts it on `data-mood` and the `[data-mood]` blocks in
   `index.css` set `--chrome-line` / `--chrome-wash` / `--chrome-mark`. Exactly four surfaces
