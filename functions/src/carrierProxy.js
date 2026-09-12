@@ -17,11 +17,30 @@
  *    - Normalizes checkpoints and stages into Deliveree schema.
  */
 
+import { HttpsError } from 'firebase-functions/v2/https';
 import { fetchGaashTracking } from './gaashAdapter.js';
-import { assertAuthenticated } from './guards.js';
+import { assertAuthenticated, checkAndIncrementUsage } from './guards.js';
+import { CARRIER_TRACKING_LIMITS } from './config.js';
 
 const TRACK17_GET_INFO_URL = 'https://api.17track.net/track/v2.2/gettrackinfo';
 const TRACK17_REGISTER_URL = 'https://api.17track.net/track/v2.2/register';
+const FETCH_TIMEOUT_MS = 6000;
+
+/**
+ * Fetch with strict timeout controller to prevent Cloud Function worker hangs.
+ */
+async function fetchWithTimeout(url, options = {}, timeoutMs = FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timer);
+    return res;
+  } catch (err) {
+    clearTimeout(timer);
+    throw err;
+  }
+}
 
 /**
  * 17TRACK carrier ID mapping for top Israeli and international couriers
@@ -90,7 +109,7 @@ export async function registerWith17Track(trackingNumber, carrierCode, apiKey) {
       payload[0].carrier = carrierCode;
     }
 
-    const res = await fetch(TRACK17_REGISTER_URL, {
+    const res = await fetchWithTimeout(TRACK17_REGISTER_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -132,7 +151,7 @@ export async function query17TrackApi(trackingNumber, carrierId, apiKey) {
   }
 
   try {
-    let res = await fetch(TRACK17_GET_INFO_URL, {
+    let res = await fetchWithTimeout(TRACK17_GET_INFO_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -157,7 +176,7 @@ export async function query17TrackApi(trackingNumber, carrierId, apiKey) {
       const registered = await registerWith17Track(trackingNumber, carrierCode, apiKey);
       if (registered) {
         // Re-query after registration
-        res = await fetch(TRACK17_GET_INFO_URL, {
+        res = await fetchWithTimeout(TRACK17_GET_INFO_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -167,6 +186,12 @@ export async function query17TrackApi(trackingNumber, carrierId, apiKey) {
         });
         if (res.ok) {
           data = await res.json();
+        } else {
+          return {
+            carrier: carrierId,
+            tracked: false,
+            reason: `upstream-17track-http-${res.status}`
+          };
         }
       }
     }
@@ -234,9 +259,9 @@ export async function query17TrackApi(trackingNumber, carrierId, apiKey) {
  * @param {object} [options.db] - Optional Firestore instance
  * @param {string} [options.track17ApiKey] - Optional 17TRACK API key
  */
-export function createCarrierTrackingHandler({ db: _db, track17ApiKey = '' } = {}) {
+export function createCarrierTrackingHandler({ db, track17ApiKey = '' } = {}) {
   return async (request) => {
-    assertAuthenticated(request);
+    const userId = assertAuthenticated(request);
 
     const data = request.data || {};
     const trackingNumber = String(data.trackingNumber || '').trim();
@@ -252,24 +277,46 @@ export function createCarrierTrackingHandler({ db: _db, track17ApiKey = '' } = {
       };
     }
 
+    if (trackingNumber.length > 100) {
+      throw new HttpsError('invalid-argument', 'trackingNumber exceeds 100 characters.');
+    }
+
+    const isGaash = carrierId === 'gaash' || /^GAA[A-Z0-9]{7,15}$/i.test(trackingNumber);
+    if (!isGaash && !track17ApiKey) {
+      return {
+        carrier: carrierId || 'other',
+        tracked: false,
+        reason: 'api-key-required',
+        message: 'Direct live query for this carrier requires a 17TRACK API key.',
+        status: null,
+        checkpoints: []
+      };
+    }
+
+    // Rate-limit check only runs for valid, actionable requests
+    if (db && typeof db.runTransaction === 'function') {
+      const usage = await checkAndIncrementUsage(db, userId, {
+        collection: 'carrierUsage',
+        userLimit: CARRIER_TRACKING_LIMITS.PER_USER_DAILY_CALLS,
+        globalLimit: CARRIER_TRACKING_LIMITS.GLOBAL_DAILY_CALLS
+      });
+
+      if (!usage.allowed) {
+        throw new HttpsError(
+          'resource-exhausted',
+          usage.reason === 'user-limit'
+            ? 'Daily live carrier tracking limit reached for your account.'
+            : 'Daily live carrier tracking limit reached for SpotLi.'
+        );
+      }
+    }
+
     // 1. Direct Open Carrier: GAASH Worldwide ($0, No API Key, No Bot Blockers)
-    if (carrierId === 'gaash' || /^GAA[A-Z0-9]{7,15}$/i.test(trackingNumber)) {
+    if (isGaash) {
       return fetchGaashTracking(trackingNumber);
     }
 
     // 2. Carriers requiring 17TRACK API (Israel Post, GCX, DHL, FedEx, etc.)
-    if (track17ApiKey) {
-      return query17TrackApi(trackingNumber, carrierId, track17ApiKey);
-    }
-
-    // 3. Honest status when external aggregator key is missing
-    return {
-      carrier: carrierId || 'other',
-      tracked: false,
-      reason: 'api-key-required',
-      message: 'Direct live query for this carrier requires a 17TRACK API key.',
-      status: null,
-      checkpoints: []
-    };
+    return query17TrackApi(trackingNumber, carrierId, track17ApiKey);
   };
 }

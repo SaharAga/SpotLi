@@ -62,3 +62,14 @@ export const GMAIL_BACKFILL_LIMITS = Object.freeze({
   PER_USER_DAILY_CALLS: 5,
   GLOBAL_DAILY_CALLS: 500
 });
+
+/**
+ * Budget for carrier tracking live proxy calls (carrierProxy.js).
+ * Bounds external API credits (17TRACK paid quota) and prevents
+ * automated abuse or scraping of courier endpoints.
+ */
+export const CARRIER_TRACKING_LIMITS = Object.freeze({
+  PER_USER_DAILY_CALLS: 50,
+  GLOBAL_DAILY_CALLS: 2000
+});
+

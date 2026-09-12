@@ -236,5 +236,21 @@ describe('carrierProxy', () => {
       expect(res.tracked).toBe(false);
       expect(res.reason).toBe('api-key-required');
     });
+
+    it('rejects with resource-exhausted when daily carrier tracking limit is reached', async () => {
+      const mockDb = {
+        collection: () => ({ doc: () => ({}) }),
+        runTransaction: async (fn) => fn({
+          get: async () => ({ exists: true, data: () => ({ count: 50 }) }),
+          set: () => {}
+        })
+      };
+
+      const handler = createCarrierTrackingHandler({ db: mockDb, track17ApiKey: 'test-key' });
+      await expect(handler({
+        auth: { uid: 'spammer_user' },
+        data: { trackingNumber: 'RR123456789IL', carrierId: 'israel-post' }
+      })).rejects.toThrow(/limit reached/i);
+    });
   });
 });
