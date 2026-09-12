@@ -99,7 +99,7 @@ function PackageTableImpl({
                     </span>
                     <button
                       onClick={(e) => handleCopy(pkg.id, pkg.trackingNumber, e)}
-                      className="text-slate-500 hover:text-white transition-colors"
+                      className="text-slate-500 hover:text-slate-100 transition-colors"
                       title={t('card.copyTracking')}
                     >
                       {copiedId === pkg.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -161,7 +161,7 @@ function PackageTableImpl({
                     </a>
                     <button
                       onClick={() => onEdit(pkg)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors"
                       title={t('card.edit')}
                     >
                       <Edit3 className="w-4 h-4" />

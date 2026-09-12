@@ -475,7 +475,7 @@ function PackageCardImpl({
                   setMenuOpen(!menuOpen);
                 }}
                 title={t('card.viewDetails')}
-                className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
+                className="p-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
               >
                 <MoreVertical className="w-3.5 h-3.5" />
               </button>
@@ -494,7 +494,7 @@ function PackageCardImpl({
                         setMenuOpen(false);
                         handleCopy(e);
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white min-h-[48px]"
+                      className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-slate-100 min-h-[48px]"
                     >
                       {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                       <span>{t('card.copyTracking')}</span>
@@ -519,7 +519,7 @@ function PackageCardImpl({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }}
-                      className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white min-h-[48px]"
+                      className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-slate-100 min-h-[48px]"
                     >
                       <ArrowUpRight className="w-3.5 h-3.5" />
                       <span>{t('card.viewCarrier')}</span>
@@ -531,7 +531,7 @@ function PackageCardImpl({
                         setMenuOpen(false);
                         onTogglePin(pkg.id);
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white min-h-[48px]"
+                      className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-slate-100 min-h-[48px]"
                     >
                       <Pin className={`w-3.5 h-3.5 ${pkg.isPinned ? 'fill-blue-400 text-blue-400' : ''}`} />
                       <span>{pkg.isPinned ? t('card.unpin') : t('card.pin')}</span>
@@ -543,7 +543,7 @@ function PackageCardImpl({
                         setMenuOpen(false);
                         onEdit(pkg);
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white min-h-[48px]"
+                      className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-slate-100 min-h-[48px]"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
                       <span>{t('card.edit')}</span>
@@ -555,7 +555,7 @@ function PackageCardImpl({
                         setMenuOpen(false);
                         onToggleArchive(pkg.id);
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-white min-h-[48px]"
+                      className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-slate-100 min-h-[48px]"
                     >
                       <Archive className="w-3.5 h-3.5" />
                       <span>{pkg.isArchived ? t('card.unarchive') : t('card.archive')}</span>

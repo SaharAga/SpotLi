@@ -8,7 +8,7 @@ import { NAV_APPS, getPreferredNavigationApp, setPreferredNavigationApp, clearPr
 import { STORAGE_KEYS } from '../constants/storageKeys';
 import { exportRawToJSON } from '../utils/exportUtils';
 import { deliveryService } from '../services/deliveryService';
-import { todayISO } from '../utils/dateUtils';
+import { todayISO, setDateFormatPreference } from '../utils/dateUtils';
 import { Section, SettingRow, Toggle, ModalHeader } from './ui/Primitives';
 
 /**
@@ -60,6 +60,19 @@ function Picker({ isOpen, onClose, title, options, value, onSelect }) {
   );
 }
 
+/**
+ * A guest has no `user.preferences` to read the date format back out of, so
+ * their choice lives in localStorage — the same fallback this file already
+ * uses for the auto-archive toggle.
+ */
+function readGuestDateFormat() {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.DATE_FORMAT) || 'DD/MM/YYYY';
+  } catch {
+    return 'DD/MM/YYYY';
+  }
+}
+
 export function AccountSettingsRows({ onOpenExport, onShowToast }) {
   const { language, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
@@ -74,7 +87,7 @@ export function AccountSettingsRows({ onOpenExport, onShowToast }) {
   }, []);
 
   const prefs = user?.preferences || {
-    dateFormat: 'DD/MM/YYYY',
+    dateFormat: readGuestDateFormat(),
     autoArchiveDelivered: false
   };
 
@@ -241,6 +254,11 @@ export function AccountSettingsRows({ onOpenExport, onShowToast }) {
         value={prefs.dateFormat}
         onSelect={(v) => {
           savePref({ dateFormat: v });
+          // Applied and persisted here too: `savePref` only writes for a
+          // signed-in user, and the module-level formatters need telling
+          // straight away so already-rendered dates pick the change up.
+          try { localStorage.setItem(STORAGE_KEYS.DATE_FORMAT, v); } catch { /* storage disabled */ }
+          setDateFormatPreference(v);
           toast(he ? 'פורמט תאריכים עודכן' : 'Date format updated');
         }}
       />

@@ -315,7 +315,7 @@ export function AuthModal({
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
+            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -366,7 +366,7 @@ export function AuthModal({
                       logout();
                       if (onShowToast) onShowToast(language === 'he' ? 'התנתקת מהחשבון' : 'Logged out', 'info');
                     }}
-                    className="flex items-center gap-2 text-slate-300 hover:text-white font-semibold text-xs cursor-pointer min-h-[48px] px-3 py-2 rounded-xl hover:bg-slate-800 transition-colors"
+                    className="flex items-center gap-2 text-slate-300 hover:text-slate-100 font-semibold text-xs cursor-pointer min-h-[48px] px-3 py-2 rounded-xl hover:bg-slate-800 transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
                     <span>{language === 'he' ? 'התנתק מהחשבון' : 'Sign Out'}</span>
@@ -458,7 +458,7 @@ export function AuthModal({
                       setFormError('');
                       setFormSuccess('');
                     }}
-                    className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white cursor-pointer"
+                    className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-slate-100 cursor-pointer"
                   >
                     <ArrowLeft className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
                   </button>

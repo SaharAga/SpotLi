@@ -17,7 +17,7 @@ export function FirstTimeEmptyState({
           <Sparkles className="w-3.5 h-3.5" />
           <span>{language === 'he' ? 'ברוכים הבאים ל-SpotLi' : 'Welcome to SpotLi'}</span>
         </div>
-        <h2 className="text-xl sm:text-2xl font-black text-white mb-2 tracking-tight">
+        <h2 className="text-xl sm:text-2xl font-black text-slate-100 mb-2 tracking-tight">
           {t('firstTimeEmpty.welcomeTitle')}
         </h2>
         <p className="text-xs sm:text-sm text-slate-400">
@@ -40,7 +40,7 @@ export function FirstTimeEmptyState({
             <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-4 shadow-md">
               <Mail className="w-6 h-6" />
             </div>
-            <h3 className="text-sm font-bold text-white mb-1.5">
+            <h3 className="text-sm font-bold text-slate-100 mb-1.5">
               {t('firstTimeEmpty.gmailTileTitle')}
             </h3>
             <p className="text-xs text-slate-400 leading-relaxed mb-6">
@@ -64,7 +64,7 @@ export function FirstTimeEmptyState({
             <div className="w-12 h-12 rounded-2xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400 mb-4 shadow-md">
               <MessageSquareText className="w-6 h-6" />
             </div>
-            <h3 className="text-sm font-bold text-white mb-1.5">
+            <h3 className="text-sm font-bold text-slate-100 mb-1.5">
               {t('firstTimeEmpty.smsTileTitle')}
             </h3>
             <p className="text-xs text-slate-400 leading-relaxed mb-6">
@@ -88,7 +88,7 @@ export function FirstTimeEmptyState({
             <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-4 shadow-md">
               <Sparkles className="w-6 h-6" />
             </div>
-            <h3 className="text-sm font-bold text-white mb-1.5">
+            <h3 className="text-sm font-bold text-slate-100 mb-1.5">
               {t('firstTimeEmpty.demoTileTitle')}
             </h3>
             <p className="text-xs text-slate-400 leading-relaxed mb-6">
@@ -99,7 +99,7 @@ export function FirstTimeEmptyState({
           <button
             type="button"
             onClick={onLoadDemoPackage}
-            className="w-full flex items-center justify-center gap-1.5 px-4 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-semibold border border-slate-700 transition-all cursor-pointer min-h-[48px]"
+            className="w-full flex items-center justify-center gap-1.5 px-4 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-slate-100 text-xs font-semibold border border-slate-700 transition-all cursor-pointer min-h-[48px]"
           >
             <span>{t('firstTimeEmpty.demoTileTitle')}</span>
           </button>

@@ -100,6 +100,8 @@ import {
   getGmailConnectionStatus 
 } from './services/emailSyncService';
 import { notificationService } from './services/notificationService';
+import { applyServiceWorkerUpdate } from './services/serviceWorkerRegistration';
+import { setDateFormatPreference } from './utils/dateUtils';
 import { recordFeatureUse } from './services/featureUsageService';
 import { FEATURE_IDS } from './constants/featureIds';
 
@@ -146,73 +148,133 @@ export const MODAL = {
  */
 export function useModalRouter() {
   const [stack, setStack] = useState([]);
-  const stackRef = useRef(stack);
-  stackRef.current = stack;
 
-  // OS Native Back Swipe & Browser History navigation support
+  /**
+   * The stack, readable synchronously.
+   *
+   * Every mutator writes this *before* calling `setStack`, so two mutations in
+   * one tick (open Lockers from Package Details, say) each see the result of
+   * the one before instead of the last rendered value.
+   */
+  const stackRef = useRef(stack);
+
+  /**
+   * Browser history holds at most ONE entry for this router — a sentinel that
+   * exists while any screen is open — and never one entry per screen.
+   *
+   * Mirroring the stack depth into history is what broke before: `openModal`
+   * pushed an entry even when re-opening a screen already in the stack, and
+   * `closeModal(id)` dropped a screen that was not on top without unwinding
+   * its entry. History depth and stack depth drifted apart in both directions,
+   * and `history.go(-stack.length)` then either stranded dead entries (Back
+   * appearing to do nothing for several presses) or over-rewound past the
+   * app's own entry and navigated the user clean out of SpotLi.
+   *
+   * One sentinel cannot drift. Back pops the top screen and — while screens
+   * remain — re-arms itself, so each press closes exactly one screen and the
+   * press after the last one leaves the app, which is what a user expects.
+   */
+  const hasSentinelRef = useRef(false);
+
+  /**
+   * `history.back()` is asynchronous: the `popstate` it causes arrives after
+   * the handler that asked for it. Without this counter that echo looks
+   * exactly like a Back gesture and pops a second screen.
+   */
+  const pendingSelfPopRef = useRef(0);
+
+  const pushSentinel = useCallback(() => {
+    if (typeof window === 'undefined' || hasSentinelRef.current) return;
+    try {
+      window.history.pushState({ modalRouter: true }, '', window.location.href);
+      hasSentinelRef.current = true;
+    } catch {
+      // A history quota error just means Back leaves the app as it normally would.
+    }
+  }, []);
+
+  const popSentinel = useCallback(() => {
+    if (typeof window === 'undefined' || !hasSentinelRef.current) return;
+    hasSentinelRef.current = false;
+    pendingSelfPopRef.current += 1;
+    try {
+      window.history.back();
+    } catch {
+      pendingSelfPopRef.current -= 1;
+    }
+  }, []);
+
+  /**
+   * The single place the stack changes.
+   *
+   * History is touched here, *outside* the `setStack` updater. React
+   * re-invokes updater functions in StrictMode, so a `history.back()` living
+   * inside one ran twice per close and walked the browser back past the app
+   * itself — a blank page instead of a dismissed dialog.
+   */
+  const commit = useCallback((compute) => {
+    const prev = stackRef.current;
+    const next = compute(prev);
+    if (next === prev) return;
+
+    stackRef.current = next;
+    setStack(next);
+
+    if (prev.length === 0 && next.length > 0) pushSentinel();
+    else if (prev.length > 0 && next.length === 0) popSentinel();
+  }, [pushSentinel, popSentinel]);
+
+  // OS native back gesture / browser Back button.
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
 
     const handlePopState = () => {
-      if (stackRef.current.length > 0) {
-        setStack((prev) => prev.slice(0, -1));
+      if (pendingSelfPopRef.current > 0) {
+        pendingSelfPopRef.current -= 1;
+        return;
       }
+
+      // A real Back gesture consumed the sentinel.
+      hasSentinelRef.current = false;
+
+      const prev = stackRef.current;
+      if (prev.length === 0) return;
+
+      const next = prev.slice(0, -1);
+      stackRef.current = next;
+      setStack(next);
+
+      if (next.length > 0) pushSentinel();
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [pushSentinel]);
 
   // Re-opening a modal already in the stack moves it to the top rather than
   // duplicating it.
   const openModal = useCallback((id, payload = null) => {
-    if (typeof window !== 'undefined') {
-      try {
-        window.history.pushState({ modalRouter: true, modalId: id }, '', window.location.href);
-      } catch {
-        // Ignore
-      }
-    }
-    setStack((prev) => [...prev.filter((entry) => entry.id !== id), { id, payload }]);
-  }, []);
+    commit((prev) => [...prev.filter((entry) => entry.id !== id), { id, payload }]);
+  }, [commit]);
 
   const closeModal = useCallback((id) => {
-    setStack((prev) => {
-      const nextStack = id ? prev.filter((entry) => entry.id !== id) : prev.slice(0, -1);
-      if (
-        typeof window !== 'undefined' &&
-        window.history.state?.modalRouter &&
-        (!id || window.history.state?.modalId === id)
-      ) {
-        try {
-          window.history.back();
-        } catch {
-          // Ignore
-        }
-      }
-      return nextStack;
+    commit((prev) => {
+      const next = id ? prev.filter((entry) => entry.id !== id) : prev.slice(0, -1);
+      return next.length === prev.length ? prev : next;
     });
-  }, []);
+  }, [commit]);
 
   /**
    * Switches to a tab: the stack becomes exactly this one screen, or empty.
    *
-   * Not `closeAllModals()` then `openModal()`. Closing rewinds history with
-   * `history.go(-n)`, which fires `popstate` ASYNCHRONOUSLY — after the open
-   * had already run — and the popstate handler then popped the screen just
-   * opened. Lockers looked like it did nothing. Doing it in one update, with
-   * a single forward history entry, removes the race entirely.
+   * Not `closeAllModals()` then `openModal()`. Two commits in a row would
+   * unwind the sentinel and immediately re-arm it, and the `popstate` from
+   * that unwind lands after the open — which is how tapping Lockers used to
+   * look like it did nothing. One commit, one sentinel, no race.
    */
   const goToTab = useCallback((id = null, payload = null) => {
-    if (typeof window !== 'undefined') {
-      try {
-        window.history.pushState({ modalRouter: true, modalId: id }, '', window.location.href);
-      } catch {
-        // Ignore
-      }
-    }
-    setStack(id ? [{ id, payload }] : []);
-  }, []);
+    commit(() => (id ? [{ id, payload }] : []));
+  }, [commit]);
 
   /**
    * Empties the stack — what a bottom-bar tab does.
@@ -221,37 +283,24 @@ export function useModalRouter() {
    * still sitting underneath whatever you had open, so the only ways back
    * were the X or the OS back gesture. A tab now returns you to its own
    * screen rather than layering another one on top.
-   *
-   * History is unwound entry by entry so the OS back button stays consistent
-   * with what is on screen — dropping the stack without rewinding would leave
-   * back gestures replaying screens you already dismissed.
    */
   const closeAllModals = useCallback(() => {
-    setStack((prev) => {
-      if (prev.length === 0) return prev;
-      if (typeof window !== 'undefined' && window.history.state?.modalRouter) {
-        try {
-          window.history.go(-prev.length);
-        } catch {
-          // Ignore
-        }
-      }
-      return [];
-    });
-  }, []);
+    commit((prev) => (prev.length === 0 ? prev : []));
+  }, [commit]);
 
   // Updates the payload of an already-open modal, and does nothing if it is
   // closed — which is exactly the `if (selectedDetailPackage?.id === x)`
   // guard that used to be written out at each call site.
   const setModalPayload = useCallback((id, next) => {
-    setStack((prev) =>
-      prev.map((entry) =>
+    commit((prev) => {
+      if (!prev.some((entry) => entry.id === id)) return prev;
+      return prev.map((entry) =>
         entry.id === id
           ? { ...entry, payload: typeof next === 'function' ? next(entry.payload) : next }
           : entry
-      )
-    );
-  }, []);
+      );
+    });
+  }, [commit]);
 
   const isModalOpen = useCallback((id) => stack.some((entry) => entry.id === id), [stack]);
   const getModalPayload = useCallback(
@@ -529,11 +578,25 @@ export function DashboardContent() {
     return () => window.removeEventListener('sw-update-ready', handleSwUpdate);
   }, []);
 
+  // Hands over to the waiting service worker and reloads onto the fresh
+  // bundle. A bare reload would come back on the OLD worker, which is still
+  // the controlling one until it is told to step aside.
   const handleApplyUpdate = () => {
-    if (typeof window !== 'undefined') {
-      window.location.reload();
-    }
+    applyServiceWorkerUpdate();
   };
+
+  /*
+   * Keep the shared date formatters on the signed-in user's preference.
+   *
+   * main.jsx seeds this from localStorage before the first paint; this picks
+   * up the cloud-synced value once auth resolves, so the setting follows the
+   * account across devices rather than only applying on the device it was
+   * changed on.
+   */
+  useEffect(() => {
+    const stored = user?.preferences?.dateFormat;
+    if (stored) setDateFormatPreference(stored);
+  }, [user?.preferences?.dateFormat]);
 
   // Synchronize PWA App Badge with count of active (non-delivered, non-archived) packages
   useEffect(() => {
@@ -1471,7 +1534,7 @@ export function DashboardContent() {
       {isDemoMode && !user && (
         <div className="bg-gradient-to-r from-indigo-900/90 to-blue-900/90 border-b border-indigo-500/30 px-4 py-2.5 text-center text-xs font-semibold text-indigo-200 flex items-center justify-center gap-2">
           <PlayCircle className="w-4 h-4 text-indigo-400 shrink-0" />
-          <span>{isRTL ? 'אתה צופה בגרסת הדגמה חיה (?demo=true)' : 'You are viewing the Interactive Demo (?demo=true)'}</span>
+          <span>{isRTL ? 'אתה צופה בגרסת הדגמה חיה' : "You're viewing the interactive demo"}</span>
           <button 
             onClick={() => openModal(MODAL.AUTH, { initialMode: 'signin' })}
             className="underline ms-2 text-white hover:text-blue-300 cursor-pointer font-bold"

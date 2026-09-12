@@ -148,7 +148,7 @@ export function FullScreenLockerModal({
             {isBundled ? <Layers className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+            <h2 className="text-base sm:text-lg font-black text-slate-100 flex items-center gap-2">
               <span>
                 {isBundled
                   ? (language === 'he' ? `איסוף מרוכז (${bundledList.length} חבילות)` : `Bundled Pickup (${bundledList.length} Packages)`)
@@ -170,7 +170,7 @@ export function FullScreenLockerModal({
 
         <button
           onClick={onClose}
-          className="p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
+          className="p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
           aria-label={t('common.close') || 'Close'}
         >
           <X className="w-5 h-5" />
@@ -319,7 +319,7 @@ export function FullScreenLockerModal({
             <button
               type="button"
               onClick={handleNavigate}
-              className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-blue-400 hover:text-white transition-colors shrink-0 cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
+              className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-blue-400 hover:text-slate-100 transition-colors shrink-0 cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
               title={t('lockerMode.navigate')}
             >
               <Navigation className="w-4 h-4" />

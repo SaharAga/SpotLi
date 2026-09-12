@@ -61,7 +61,7 @@ export function FeatureNudgeBanner({
             <IconComponent className="w-5 h-5" />
           </div>
           <div className="min-w-0 pr-6 sm:pr-0">
-            <h4 className="text-xs sm:text-sm font-bold text-white mb-0.5">
+            <h4 className="text-xs sm:text-sm font-bold text-slate-100 mb-0.5">
               {config.title}
             </h4>
             <p className="text-xs text-slate-300 leading-relaxed">
@@ -95,7 +95,7 @@ export function FeatureNudgeBanner({
       <button
         type="button"
         onClick={() => onDismiss(nudge.id)}
-        className="absolute top-3 end-3 p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
+        className="absolute top-3 end-3 p-2 rounded-xl text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
         aria-label={t('nudges.dismiss')}
       >
         <X className="w-4 h-4" />

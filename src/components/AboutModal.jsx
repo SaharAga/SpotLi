@@ -176,7 +176,7 @@ export function AboutModal({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 id="about-modal-title" className="text-base sm:text-lg font-black tracking-tight text-white">
+                <h2 id="about-modal-title" className="text-base sm:text-lg font-black tracking-tight text-slate-100">
                   {t('appTitle')}
                 </h2>
                 <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-bold border border-blue-500/30 uppercase tracking-wider">
@@ -191,7 +191,7 @@ export function AboutModal({
 
           <button
             onClick={onClose}
-            className="order-first me-3 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
+            className="order-first me-3 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
             aria-label="Back"
           >
             <ArrowLeft className="w-5 h-5 rtl:rotate-180" aria-hidden="true" />
@@ -244,7 +244,7 @@ export function AboutModal({
                 onClick={handleClearCacheAndForceRefresh}
                 disabled={isForceRefreshing}
                 title={language === 'he' ? 'נקה מטמון ורענן אפליקציה' : 'Clear Cache & Force Reload'}
-                className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-semibold text-xs border border-slate-700 transition-ui cursor-pointer min-h-[48px] shrink-0"
+                className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 font-semibold text-xs border border-slate-700 transition-ui cursor-pointer min-h-[48px] shrink-0"
               >
                 <RefreshCw className={`w-3 h-3 ${isForceRefreshing ? 'animate-spin' : ''}`} />
                 <span>{language === 'he' ? 'איפוס מטמון 🧹' : 'Clear Cache 🧹'}</span>

@@ -4,7 +4,7 @@ import confetti from 'canvas-confetti';
 import { getCarrier } from '../types/carriers';
 import { detectStore } from '../utils/storeDetector';
 import { copyToClipboard } from '../utils/clipboard';
-import { STAGES, CATEGORIES, getStatusMeta } from '../types/stages';
+import { STAGES, CATEGORIES, getStatusMeta, getPipelineStageId } from '../types/stages';
 import { useLanguage } from '../context/LanguageContext';
 import { Button, ModalFooter, Pill, Title } from './ui/Primitives';
 import { formatDate, formatDateTime, getDaysRemaining } from '../utils/dateUtils';
@@ -59,7 +59,7 @@ export function PackageDetailModal({
 
   const carrier = getCarrier(pkg.carrier);
   const store = detectStore(pkg);
-  const currentStageIndex = STAGES.findIndex(s => s.id === pkg.status);
+  const currentStageIndex = STAGES.findIndex(s => s.id === getPipelineStageId(pkg.status));
   const isLinearStage = currentStageIndex !== -1;
   const effectiveIndex = isLinearStage ? currentStageIndex : 0;
   const currentStage = STAGES[effectiveIndex];
@@ -296,10 +296,28 @@ export function PackageDetailModal({
       componentName="PackageDetailModal"
       className="relative w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8 max-h-[90vh] flex flex-col"
     >
-        {/* Header with Carrier Brand Color Banner */}
-        <div className={`p-4 sm:p-6 border-b border-slate-800/80 bg-gradient-to-r ${carrier.color} bg-opacity-10 relative flex items-start justify-between gap-3 sm:gap-4 flex-wrap`}>
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2 flex-wrap">
+        {/*
+          Header with Carrier Brand Color Banner.
+
+          The carrier gradient is a 10% wash on its own layer rather than a
+          `bg-opacity-10` on the header itself: `bg-opacity-*` was removed in
+          Tailwind v4, so that class emitted nothing and every carrier's full
+          brand gradient painted at full strength — Israel Post turned the
+          header of an ordinary package into a wall of alarm red.
+        */}
+        <div className="p-4 sm:p-6 border-b border-slate-800/80 relative flex flex-col gap-3">
+          <div
+            aria-hidden="true"
+            className={`pointer-events-none absolute inset-0 bg-gradient-to-r ${carrier.color} opacity-10`}
+          />
+          {/*
+            Chips and controls share the top row; the title gets a row of its
+            own underneath. Sharing one row with the button group left a long
+            name like "Keychron K2 Wireless Keyboard" about 120px to wrap in,
+            one word per line.
+          */}
+          <div className="relative flex items-start justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 flex-wrap min-w-0">
               {store && (
                 <span className={`px-2.5 py-1 rounded-xl text-xs font-bold border shadow-sm ${store.badgeBg} ${store.borderColor} ${store.textColor}`}>
                   {language === 'he' ? store.hebrewName : store.name}
@@ -310,22 +328,26 @@ export function PackageDetailModal({
               </span>
               <Pill>{language === 'he' ? category.hebrewLabel : category.label}</Pill>
             </div>
-            <Title className="mt-2 text-xl sm:text-2xl">{itemTitle}</Title>
-          </div>
 
-          <button
-            onClick={onClose}
-            className="shrink-0 me-3 p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
-            aria-label={language === 'he' ? 'חזרה' : 'Back'}
-          >
-            <ArrowLeft className="w-5 h-5 rtl:rotate-180" aria-hidden="true" />
-          </button>
-          <div className="flex flex-1 min-w-0 items-center gap-2">
+            {/*
+              Back and the action buttons are one shrink-proof group. They used
+              to be separate flex children, with the action group on `flex-1
+              min-w-0` while its buttons refused to shrink — so at 390px the
+              Edit button was pushed off the right edge of the screen.
+            */}
+            <div className="flex shrink-0 items-center gap-2">
+            <button
+              onClick={onClose}
+              className="shrink-0 p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-slate-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
+              aria-label={language === 'he' ? 'חזרה' : 'Back'}
+            >
+              <ArrowLeft className="w-5 h-5 rtl:rotate-180" aria-hidden="true" />
+            </button>
             {onEdit && (
               <button
                 type="button"
                 onClick={() => onEdit(pkg)}
-                className="p-2.5 px-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white transition-ui flex items-center gap-1.5 border border-slate-700/80 shadow-sm min-h-[48px] cursor-pointer"
+                className="p-2.5 px-3.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-slate-100 transition-ui flex items-center gap-1.5 border border-slate-700/80 shadow-sm min-h-[48px] cursor-pointer"
                 title={language === 'he' ? 'עריכת פרטי חבילה' : 'Edit package details'}
                 aria-label={language === 'he' ? 'עריכת פרטי חבילה' : 'Edit package details'}
               >
@@ -348,7 +370,10 @@ export function PackageDetailModal({
                 <span className="text-xs font-semibold">{language === 'he' ? 'מחיקה' : 'Delete'}</span>
               </button>
             )}
+            </div>
           </div>
+
+          <Title className="relative text-xl sm:text-2xl">{itemTitle}</Title>
         </div>
 
         {/* Modal Body */}
@@ -521,7 +546,7 @@ export function PackageDetailModal({
                             <button
                               type="button"
                               onClick={() => onOpenLockerMode(pkg)}
-                              className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500/25 hover:bg-emerald-500/40 text-emerald-200 hover:text-white border border-emerald-500/40 text-xs font-bold transition-ui shadow-sm cursor-pointer min-h-[48px]"
+                              className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500/25 hover:bg-emerald-500/40 text-emerald-200 hover:text-slate-100 border border-emerald-500/40 text-xs font-bold transition-ui shadow-sm cursor-pointer min-h-[48px]"
                               title={language === 'he' ? 'פתח מצב לוקר מוגדל' : 'Open Full-Screen Locker Mode'}
                             >
                               <Maximize2 className="w-3.5 h-3.5" />
@@ -623,7 +648,7 @@ export function PackageDetailModal({
                   {pkg.pickupPhone && (
                     <a
                       href={`tel:${pkg.pickupPhone}`}
-                      className="flex justify-center items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-800/40 hover:bg-emerald-700/50 text-emerald-200 hover:text-white text-xs font-bold transition-ui min-h-[48px] border border-emerald-500/30"
+                      className="flex justify-center items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-800/40 hover:bg-emerald-700/50 text-emerald-200 hover:text-slate-100 text-xs font-bold transition-ui min-h-[48px] border border-emerald-500/30"
                       title={language === 'he' ? `התקשר: ${pkg.pickupPhone}` : `Call: ${pkg.pickupPhone}`}
                     >
                       <Phone className="w-3.5 h-3.5" />
@@ -852,7 +877,7 @@ export function PackageDetailModal({
                 </div>
                 <button
                   onClick={handleCopy}
-                  className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                  className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 transition-colors"
                   title={t('card.copyTracking')}
                 >
                   {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
@@ -877,7 +902,7 @@ export function PackageDetailModal({
                       const success = await copyToClipboard(pkg.localTrackingNumber);
                       if (success && onShowToast) onShowToast(language === 'he' ? 'מספר מעקב מקומי הועתק' : 'Local tracking number copied', 'success');
                     }}
-                    className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+                    className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-100 transition-colors"
                     title={language === 'he' ? 'העתק מספר מעקב מקומי' : 'Copy local tracking'}
                   >
                     <Copy className="w-3.5 h-3.5" />

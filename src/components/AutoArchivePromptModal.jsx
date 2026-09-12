@@ -58,7 +58,7 @@ export function AutoArchivePromptModal({
           <button
             type="button"
             onClick={onConfirm}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-hover shadow-md hover:shadow-primary/25 transition-ui flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium shadow-md shadow-blue-600/25 transition-ui flex items-center justify-center gap-2"
           >
             <Check className="w-4 h-4" />
             {t("autoArchive.confirmYes")}

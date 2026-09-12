@@ -69,7 +69,7 @@ export function AdminScreenshotLightbox({
           <div className="flex items-center gap-2">
             <button
               onClick={toggleZoom}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
+              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
               title={language === 'he' ? 'שנה תקריב' : 'Toggle zoom'}
               aria-label="Toggle zoom"
             >
@@ -78,7 +78,7 @@ export function AdminScreenshotLightbox({
 
             <button
               onClick={handleDownload}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
+              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
               title={language === 'he' ? 'הורד תמונה' : 'Download image'}
               aria-label="Download image"
             >
@@ -87,7 +87,7 @@ export function AdminScreenshotLightbox({
 
             <button
               onClick={onClose}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
+              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
               title={language === 'he' ? 'סגור' : 'Close'}
               aria-label="Close"
             >

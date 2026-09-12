@@ -4,8 +4,8 @@
 
 | Attribute | Value |
 | :--- | :--- |
-| **Version** | `v0.26.1` |
-| **Release Date** | 2026-09-05 |
+| **Version** | `v0.30.0` |
+| **Release Date** | 2026-09-12 |
 | **Release Channel** | `alpha` |
 | **Firebase Schema Version** | `1.0.0` |
 | **Build Target** | React 19 + Vite 8 + Tailwind CSS 4 PWA |
@@ -78,11 +78,11 @@ To balance deep specialization with clean communication boundaries, agents are o
 ## 3. Quality Gates & Verification Metrics
 
 ```
-[Quality Gate Pipeline — v0.25.0]
+[Quality Gate Pipeline — v0.30.0]
 ├─ 1. Static Linting & Syntax: 0 errors (`npm run lint` exits 0). react-perf
 │     runs at `warn` as a standing worklist, so warnings are expected output.
 ├─ 2. Type & Contract Verification: 100% compliant schemas (Zod + TypeScript)
-├─ 3. Automated Testbench Suite: 1,485 / 1,485 Tests Passing (142/142 Suites: 124 root + 18 functions)
+├─ 3. Automated Testbench Suite: 1,614 / 1,614 Tests Passing (153/153 Suites: 132 root + 21 functions)
 ├─ 4. Property-Based Invariants: 20 Formal Theorems Proven (fast-check across 6,000+ iterations)
 ├─ 5. Enterprise Security Audit: OWASP ASVS L3 Hardened (CVSS 0.0)
 ├─ 6. Production Build: 0 errors (Vite 8 production bundle generated in ~490ms)
@@ -90,9 +90,9 @@ To balance deep specialization with clean communication boundaries, agents are o
 ```
 
 ### Metrics Summary:
-* **Active Test Suites**: 142 suites (124 frontend/integration + 18 Cloud Functions).
-* **Total Executed Tests**: 1,485 tests (1,254 root + 231 functions).
-* **Test Pass Rate**: **100.0% (1,485 passed, 0 failed, 0 skipped)**.
+* **Active Test Suites**: 153 suites (132 frontend/integration + 21 Cloud Functions).
+* **Total Executed Tests**: 1,614 tests (1,345 root + 269 functions).
+* **Test Pass Rate**: **100.0% (1,614 passed, 0 failed, 0 skipped)**.
 * **Held-Out Corpus Accuracy**: **100.0% Precision / 100.0% Recall / 100.0% Specificity** across 77 cases (45/45 verified, 1/1 probable, 0 errors).
 * **Synthetic Benchmark Scorecard**: **72/72 tests passing (100% precision, 0% false positives)**.
 * **Lint Violations**: **0 errors**; `npm run lint` exits 0. Warnings are not zero and are not meant to be — the four `react-perf/jsx-no-new-*` rules are enabled at `warn` as a worklist. See `AGENTS.md` §9.1.

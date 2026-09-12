@@ -30,7 +30,7 @@ export function LegalDocumentModal({ isOpen, onClose, docType = 'terms' }) {
         <div className="p-5 sm:p-6 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-blue-600/10 to-indigo-600/10 shrink-0">
           <button
             onClick={onClose}
-            className="shrink-0 me-3 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
+            className="shrink-0 me-3 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
             aria-label="Back"
           >
             <ArrowLeft className="w-5 h-5 rtl:rotate-180" aria-hidden="true" />

@@ -1206,8 +1206,13 @@ export function parseSmartText(rawText) {
     title = `${detectedStore} Order`;
     titleHe = `הזמנה מ-${detectedStoreHe || detectedStore}`;
   } else if (bestTracking) {
-    title = `Package ${bestTracking.slice(0, 8)}...`;
-    titleHe = `חבילה ${bestTracking.slice(0, 8)}...`;
+    // The whole tracking number, not the first eight characters plus a
+    // literal ellipsis. This string is the package's stored name, and
+    // CourierActionHub interpolates it into the WhatsApp/SMS message a user
+    // sends a courier — "pick up package for Package RS948219..." names
+    // nothing the courier can act on. The list view truncates for display.
+    title = `Package ${bestTracking}`;
+    titleHe = `חבילה ${bestTracking}`;
   } else {
     title = 'New Tracked Package';
     titleHe = 'חבילה חדשה למעקב';
@@ -1292,10 +1297,10 @@ export function parseSmartText(rawText) {
     if (orderedCandidates.length > 1) {
       candTitle = detectedStore
         ? `${detectedStore} Order #${idx + 1} (${tn.slice(-4)})`
-        : `Package ${tn.slice(0, 8)}...`;
+        : `Package ${tn}`;
       candTitleHe = detectedStore
         ? `הזמנה מ-${detectedStoreHe || detectedStore} #${idx + 1} (${tn.slice(-4)})`
-        : `חבילה ${tn.slice(0, 8)}...`;
+        : `חבילה ${tn}`;
     }
 
     allPackages.push({

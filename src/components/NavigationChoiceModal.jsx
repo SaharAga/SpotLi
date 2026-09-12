@@ -97,7 +97,7 @@ export function NavigationChoiceModal({
             <Navigation className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base sm:text-lg font-bold text-white">
+            <h3 className="text-base sm:text-lg font-bold text-slate-100">
               {t('navigation.title') || 'Choose Navigation App'}
             </h3>
             <p className="text-xs text-slate-400">
@@ -107,7 +107,7 @@ export function NavigationChoiceModal({
         </div>
         <button
           onClick={onClose}
-          className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
+          className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
           aria-label="Close"
         >
           <X className="w-5 h-5" />
@@ -158,7 +158,7 @@ export function NavigationChoiceModal({
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs sm:text-sm font-bold text-slate-100 group-hover:text-white">
+                    <span className="text-xs sm:text-sm font-bold text-slate-100 group-hover:text-slate-100">
                       {appName}
                     </span>
                     {isPreferred && (
