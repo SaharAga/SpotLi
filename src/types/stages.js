@@ -136,6 +136,29 @@ export const STATUS_DEFINITIONS = Object.freeze({
     color: 'amber',
     badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/30'
   },
+  /*
+   * Not a member of STAGES. STAGES is the linear stepper every package walks,
+   * and only some deliveries are ever collected from a locker or branch — so
+   * this sits alongside `exception` and `returned_to_sender` as a real status
+   * that is not a pipeline step, which `isLinearStage` in PackageDetailModal
+   * already handles.
+   *
+   * It existed everywhere except here: smartParser returns it for a Hebrew
+   * "ממתינה לאיסוף" SMS, PackageCard, PackageDetailModal, FullScreenLockerModal
+   * and locationBundling all branch on it, and about twenty tests assert it —
+   * but it was absent from VALID_STATUSES and from firestore.rules, so it
+   * could never be saved and a pasted pickup notice landed on "Order Placed".
+   */
+  ready_for_pickup: {
+    id: 'ready_for_pickup',
+    key: 'ready_for_pickup',
+    label: 'Ready for Pickup',
+    hebrewLabel: 'ממתין לאיסוף',
+    desc: 'Waiting at a locker, branch or pickup point to be collected',
+    hebrewDesc: 'ממתין לאיסוף בלוקר, בנקודת חלוקה או בסניף',
+    color: 'teal',
+    badgeClass: 'bg-teal-500/10 text-teal-400 border-teal-500/30'
+  },
   delivered: {
     id: 'delivered',
     key: 'delivered',
@@ -179,6 +202,23 @@ export const STATUS_DEFINITIONS = Object.freeze({
 });
 
 /**
+ * Maps a status onto the linear pipeline step that represents it.
+ *
+ * `ready_for_pickup` is a real status but not a member of STAGES, so a plain
+ * `STAGES.findIndex` misses it and callers fall back to index 0 — the stepper
+ * pointed at "Order Placed" for a parcel the header already described as
+ * waiting at a locker. It belongs on the `out_for_delivery` step, which is
+ * labelled "Out for Delivery / Pickup" precisely because it covers both.
+ *
+ * @param {string|null|undefined} statusId
+ * @returns {string|null|undefined} A STAGES id, or the input when it has no
+ *   pipeline step (`exception`, `returned_to_sender`, `archived`).
+ */
+export function getPipelineStageId(statusId) {
+  return statusId === 'ready_for_pickup' ? 'out_for_delivery' : statusId;
+}
+
+/**
  * Returns metadata for any valid status. Falls back to ordered.
  * Safe against Object.prototype properties.
  *
@@ -197,6 +237,7 @@ export function getStatusMeta(statusId) {
  */
 export const SELECTABLE_STATUSES = [
   ...STAGES,
+  STATUS_DEFINITIONS.ready_for_pickup,
   STATUS_DEFINITIONS.returned_to_sender,
   STATUS_DEFINITIONS.exception
 ];
@@ -226,7 +267,8 @@ export const TAB_PREDICATES = {
     pkg.status !== 'returned_to_sender',
   in_transit: (pkg) =>
     pkg.status === 'in_transit' || pkg.status === 'shipped' || pkg.status === 'ordered',
-  out_for_delivery: (pkg) => pkg.status === 'out_for_delivery',
+  out_for_delivery: (pkg) =>
+    pkg.status === 'out_for_delivery' || pkg.status === 'ready_for_pickup',
   delivered: (pkg) => pkg.status === 'delivered',
   customs: (pkg) =>
     pkg.status === 'customs' ||

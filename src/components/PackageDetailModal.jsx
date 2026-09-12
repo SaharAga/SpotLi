@@ -4,7 +4,7 @@ import confetti from 'canvas-confetti';
 import { getCarrier } from '../types/carriers';
 import { detectStore } from '../utils/storeDetector';
 import { copyToClipboard } from '../utils/clipboard';
-import { STAGES, CATEGORIES, getStatusMeta } from '../types/stages';
+import { STAGES, CATEGORIES, getStatusMeta, getPipelineStageId } from '../types/stages';
 import { useLanguage } from '../context/LanguageContext';
 import { Button, ModalFooter, Pill, Title } from './ui/Primitives';
 import { formatDate, formatDateTime, getDaysRemaining } from '../utils/dateUtils';
@@ -59,7 +59,7 @@ export function PackageDetailModal({
 
   const carrier = getCarrier(pkg.carrier);
   const store = detectStore(pkg);
-  const currentStageIndex = STAGES.findIndex(s => s.id === pkg.status);
+  const currentStageIndex = STAGES.findIndex(s => s.id === getPipelineStageId(pkg.status));
   const isLinearStage = currentStageIndex !== -1;
   const effectiveIndex = isLinearStage ? currentStageIndex : 0;
   const currentStage = STAGES[effectiveIndex];

@@ -41,8 +41,9 @@ service cloud.firestore {
       // check in src/tests/integration/firestoreRulesContract.test.js fails if
       // they drift.
       let validStatuses = [
-        'ordered', 'shipped', 'in_transit', 'customs', 
-        'out_for_delivery', 'delivered', 'exception', 'returned_to_sender', 'archived'
+        'ordered', 'shipped', 'in_transit', 'customs',
+        'out_for_delivery', 'ready_for_pickup', 'delivered', 'exception',
+        'returned_to_sender', 'archived'
       ];
 
       return data.keys().hasOnly(allowedKeys) &&

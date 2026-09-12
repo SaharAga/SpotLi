@@ -7,7 +7,8 @@ import {
   STAGES,
   STATUS_DEFINITIONS,
   getStatusMeta,
-  SELECTABLE_STATUSES
+  SELECTABLE_STATUSES,
+  getPipelineStageId
 } from './stages';
 
 // The bucketing rules used to be written out three times — an if-chain in
@@ -28,6 +29,7 @@ const ALL_STATUSES = [
   'in_transit',
   'customs',
   'out_for_delivery',
+  'ready_for_pickup',
   'delivered',
   'exception',
   'returned_to_sender'
@@ -79,6 +81,7 @@ describe('TAB_PREDICATES', () => {
       in_transit: true,
       customs: false,
       out_for_delivery: true,
+      ready_for_pickup: true,
       delivered: false,
       exception: false,
       returned_to_sender: false
@@ -95,6 +98,7 @@ describe('TAB_PREDICATES', () => {
       in_transit: true,
       customs: false,
       out_for_delivery: false,
+      ready_for_pickup: false,
       delivered: false,
       exception: false,
       returned_to_sender: false
@@ -106,7 +110,11 @@ describe('TAB_PREDICATES', () => {
 
   it('out_for_delivery, delivered and customs match their statuses', () => {
     for (const status of ALL_STATUSES) {
-      expect(TAB_PREDICATES.out_for_delivery(pkg(status))).toBe(status === 'out_for_delivery');
+      // The bucket is the "Out for Delivery / Pickup" one: a parcel waiting at
+      // a locker belongs in it just as much as one on a courier's van.
+      expect(TAB_PREDICATES.out_for_delivery(pkg(status))).toBe(
+        status === 'out_for_delivery' || status === 'ready_for_pickup'
+      );
       expect(TAB_PREDICATES.delivered(pkg(status))).toBe(status === 'delivered');
       expect(TAB_PREDICATES.customs(pkg(status))).toBe(
         status === 'customs' || status === 'exception' || status === 'returned_to_sender'
@@ -218,3 +226,41 @@ describe('STATUS_DEFINITIONS', () => {
   });
 });
 
+
+
+describe('getPipelineStageId', () => {
+  // `ready_for_pickup` is a real, persistable status but not a member of
+  // STAGES, so a plain STAGES.findIndex misses it and the caller falls back to
+  // index 0 — the stepper pointed at "Order Placed" for a parcel the header
+  // already described as waiting at a locker.
+  it('maps ready_for_pickup onto the out_for_delivery step', () => {
+    expect(getPipelineStageId('ready_for_pickup')).toBe('out_for_delivery');
+    expect(STAGES.findIndex((s) => s.id === getPipelineStageId('ready_for_pickup')))
+      .toBe(STAGES.findIndex((s) => s.id === 'out_for_delivery'));
+  });
+
+  it('leaves every other status untouched', () => {
+    for (const status of ALL_STATUSES) {
+      if (status === 'ready_for_pickup') continue;
+      expect(getPipelineStageId(status)).toBe(status);
+    }
+    expect(getPipelineStageId(null)).toBeNull();
+  });
+});
+
+describe('ready_for_pickup as a first-class status', () => {
+  it('has full display metadata', () => {
+    const def = STATUS_DEFINITIONS.ready_for_pickup;
+    expect(def.id).toBe('ready_for_pickup');
+    expect(def.label).toBeTruthy();
+    expect(def.hebrewLabel).toBeTruthy();
+    expect(getStatusMeta('ready_for_pickup')).toBe(def);
+  });
+
+  it('is user-selectable and falls in the pickup bucket', () => {
+    expect(SELECTABLE_STATUSES.map((s) => s.id)).toContain('ready_for_pickup');
+    expect(TAB_PREDICATES.out_for_delivery(pkg('ready_for_pickup'))).toBe(true);
+    expect(TAB_PREDICATES.delivered(pkg('ready_for_pickup'))).toBe(false);
+    expect(TAB_PREDICATES.active(pkg('ready_for_pickup'))).toBe(true);
+  });
+});

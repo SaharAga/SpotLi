@@ -38,3 +38,11 @@ Account → Date format now actually changes how dates render; it was stored and
 cloud-synced but never read. The auto-archive confirm button no longer relies on
 an undefined `bg-primary` utility, and the demo banner no longer quotes a URL
 query parameter at the user.
+
+Finished landing `ready_for_pickup` as a real delivery status. The parser
+returned it for a Hebrew "ממתינה לאיסוף" pickup SMS and four components plus
+~20 tests already branched on it, but it was missing from `VALID_STATUSES` and
+from the `firestore.rules` allowlist — so it could never be saved and a pasted
+pickup notice landed on "Order Placed". It now has display metadata, transition
+rules, a filter bucket and a stepper position, and Smart Import sets the stage
+the message actually describes.

@@ -18,6 +18,7 @@ export const VALID_STATUSES = /** @type {const} */ ([
   'in_transit',
   'customs',
   'out_for_delivery',
+  'ready_for_pickup',
   'delivered',
   'exception',
   'returned_to_sender',

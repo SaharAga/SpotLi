@@ -1,12 +1,12 @@
 import React from 'react';
-import { STAGES } from '../types/stages';
+import { STAGES, getPipelineStageId } from '../types/stages';
 import { useLanguage } from '../context/LanguageContext';
 import { Check } from 'lucide-react';
 
 export function QuickTimeline({ currentStatus }) {
   const { language } = useLanguage();
   
-  const currentStageIndex = STAGES.findIndex(s => s.id === currentStatus);
+  const currentStageIndex = STAGES.findIndex(s => s.id === getPipelineStageId(currentStatus));
   const effectiveIndex = currentStageIndex === -1 ? 0 : currentStageIndex;
 
   return (
