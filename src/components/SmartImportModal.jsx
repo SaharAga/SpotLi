@@ -23,7 +23,7 @@ import { FEATURE_IDS } from '../constants/featureIds';
  */
 function mapAiResultToParsed(aiResult, isGroundedCandidate = false) {
   const carrierObj = getCarrier(aiResult.carrier);
-  const title = aiResult.title || (aiResult.trackingNumber ? `Package ${aiResult.trackingNumber.slice(0, 8)}...` : '');
+  const title = aiResult.title || (aiResult.trackingNumber ? `Package ${aiResult.trackingNumber}` : '');
   return {
     title,
     titleHe: title,
@@ -696,7 +696,7 @@ export function SmartImportModal({
         <div className="p-4 border-t border-slate-800 bg-slate-950/80 flex justify-end">
           <button
             onClick={onClose}
-            className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition-colors cursor-pointer min-h-[48px] min-w-[80px]"
+            className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 text-xs font-semibold transition-colors cursor-pointer min-h-[48px] min-w-[80px]"
           >
             {t('modal.cancel')}
           </button>

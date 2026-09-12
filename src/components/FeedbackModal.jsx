@@ -168,7 +168,7 @@ export function FeedbackModal({
           </div>
           <button
             onClick={onClose}
-            className="order-first me-3 p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
+            className="order-first me-3 p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
             aria-label="Back"
           >
             <ArrowLeft className="w-5 h-5 rtl:rotate-180" aria-hidden="true" />

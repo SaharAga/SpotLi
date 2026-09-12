@@ -37,7 +37,7 @@ export function OnboardingModal({
                 <Package className="w-5 h-5" />
               </div>
               <div>
-                <div className="text-sm font-bold text-white">SpotLi Hub</div>
+                <div className="text-sm font-bold text-slate-100">SpotLi Hub</div>
                 <div className="text-xs text-slate-400">
                   {language === 'he' ? '3 חבילות במעקב פעיל' : '3 active shipments'}
                 </div>
@@ -131,7 +131,7 @@ export function OnboardingModal({
           </div>
           <div className="bg-blue-950/40 border border-blue-500/30 rounded-2xl p-4 flex items-center justify-between shadow-xl">
             <div>
-              <div className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+              <div className="text-sm sm:text-base font-bold text-slate-100 flex items-center gap-2">
                 <span>{language === 'he' ? 'צ\'יטה שליחויות' : 'Cheetah Delivery'}</span>
                 <span className="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-mono font-bold">CH-849201</span>
               </div>
@@ -166,7 +166,7 @@ export function OnboardingModal({
           <div className="text-xs uppercase font-black tracking-widest text-emerald-400 mb-1.5">
             {language === 'he' ? 'קוד איסוף ללוקר' : 'Locker Pickup PIN'}
           </div>
-          <div className="text-3xl sm:text-4xl font-mono font-black tracking-widest text-white py-2.5 bg-slate-950/90 rounded-2xl border border-emerald-500/30 shadow-inner my-2">
+          <div className="text-3xl sm:text-4xl font-mono font-black tracking-widest text-slate-100 py-2.5 bg-slate-950/90 rounded-2xl border border-emerald-500/30 shadow-inner my-2">
             7 3 9 1 0
           </div>
           <div className="mt-3 flex items-center justify-center gap-2">
@@ -246,7 +246,7 @@ export function OnboardingModal({
           </span>
 
           {/* Title */}
-          <h2 className="text-2xl sm:text-3xl font-black text-white mb-3 tracking-tight leading-snug px-2">
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-100 mb-3 tracking-tight leading-snug px-2">
             {slide.title}
           </h2>
 
@@ -270,7 +270,7 @@ export function OnboardingModal({
               <button
                 type="button"
                 onClick={handlePrev}
-                className="flex items-center justify-center gap-1.5 px-4 py-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white text-sm font-bold transition-all border border-slate-700/60 cursor-pointer min-h-[52px] shrink-0"
+                className="flex items-center justify-center gap-1.5 px-4 py-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-slate-100 text-sm font-bold transition-all border border-slate-700/60 cursor-pointer min-h-[52px] shrink-0"
               >
                 {isRTL ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
                 <span>{t('onboarding.prev')}</span>

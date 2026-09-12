@@ -107,7 +107,7 @@ export function InstallPwaBanner() {
           </div>
           <button
             onClick={handleDismiss}
-            className="text-blue-300 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors shrink-0"
+            className="text-blue-300 hover:text-slate-100 p-1 rounded-lg hover:bg-white/10 transition-colors shrink-0"
             aria-label="Dismiss banner"
           >
             <X className="w-4 h-4" />
@@ -126,7 +126,7 @@ export function InstallPwaBanner() {
           </button>
           <button
             onClick={handleDismiss}
-            className="px-3 py-2 text-xs font-medium text-blue-200 hover:text-white hover:bg-white/10 rounded-xl transition-colors cursor-pointer"
+            className="px-3 py-2 text-xs font-medium text-blue-200 hover:text-slate-100 hover:bg-white/10 rounded-xl transition-colors cursor-pointer"
           >
             {isRTL ? 'לא עכשיו' : 'Not now'}
           </button>
@@ -138,7 +138,7 @@ export function InstallPwaBanner() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
           <div className={`bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-sm w-full shadow-2xl text-slate-100 animate-modal-pop ${isRTL ? 'text-right' : 'text-left'}`}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-white flex items-center gap-2">
+              <h3 className="text-base font-semibold text-slate-100 flex items-center gap-2">
                 <Smartphone className="w-5 h-5 text-blue-400" />
                 {isIOS 
                   ? (isRTL ? 'התקנה באייפון (iOS)' : 'Install on iPhone (iOS)')
@@ -146,7 +146,7 @@ export function InstallPwaBanner() {
               </h3>
               <button 
                 onClick={() => setShowIOSGuide(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg"
+                className="text-slate-400 hover:text-slate-100 p-1 rounded-lg"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -166,7 +166,7 @@ export function InstallPwaBanner() {
                   <span className="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 font-bold flex items-center justify-center shrink-0 text-xs">2</span>
                   <span>
                     {isRTL ? 'גלול למטה ובחר ' : 'Scroll down and tap '}
-                    <strong className="text-white">"{isRTL ? 'הוסף למסך הבית' : 'Add to Home Screen'}"</strong>
+                    <strong className="text-slate-100">"{isRTL ? 'הוסף למסך הבית' : 'Add to Home Screen'}"</strong>
                     <PlusSquare className="w-4 h-4 inline text-blue-400 mx-1" />
                   </span>
                 </li>
@@ -174,7 +174,7 @@ export function InstallPwaBanner() {
                   <span className="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 font-bold flex items-center justify-center shrink-0 text-xs">3</span>
                   <span>
                     {isRTL ? 'לחץ על ' : 'Tap '}
-                    <strong className="text-white">"{isRTL ? 'הוסף' : 'Add'}"</strong>
+                    <strong className="text-slate-100">"{isRTL ? 'הוסף' : 'Add'}"</strong>
                     {isRTL ? ' בפינה העליונה' : ' in the top right corner'}
                   </span>
                 </li>
@@ -191,7 +191,7 @@ export function InstallPwaBanner() {
                   <span className="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 font-bold flex items-center justify-center shrink-0 text-xs">2</span>
                   <span>
                     {isRTL ? 'בחר ' : 'Select '}
-                    <strong className="text-white">"{isRTL ? 'התקן אפליקציה' : 'Install app'}"</strong>
+                    <strong className="text-slate-100">"{isRTL ? 'התקן אפליקציה' : 'Install app'}"</strong>
                   </span>
                 </li>
                 <li className="flex items-center gap-3">

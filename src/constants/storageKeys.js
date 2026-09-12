@@ -12,6 +12,7 @@ export const STORAGE_KEYS = Object.freeze({
   THEME: 'deliveree_theme',
   APP_BUILD_VERSION: 'deliveree_app_build_version',
   AUTO_ARCHIVE_DELIVERED: 'deliveree_auto_archive_delivered',
+  DATE_FORMAT: 'deliveree_date_format',
   AUTO_ARCHIVE_PROMPTED: 'deliveree_auto_archive_prompted',
   PWA_BANNER_DISMISSED: 'deliveree_pwa_banner_dismissed',
   OFFLINE_SYNC_QUEUE: 'deliveree_offline_sync_queue',

@@ -80,7 +80,7 @@ export function Navbar({
             /* Desktop only. On a phone the top-left corner is the worst
                reach for a thumb, so the drawer is opened from the bottom
                bar's Account tab instead. */
-            className="shrink-0 hidden lg:flex p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] items-center justify-center"
+            className="shrink-0 hidden lg:flex p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] items-center justify-center"
             aria-label="Open Navigation Menu"
             title={language === 'he' ? 'תפריט' : 'Menu'}
           >
@@ -138,7 +138,7 @@ export function Navbar({
           {/* User Account / Profile */}
           <button
             onClick={onOpenAuth}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer min-h-[48px]"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px]"
           >
             {user ? (
               <>
@@ -246,7 +246,7 @@ export function Navbar({
               </h3>
               <button
                 onClick={() => setIsAddActionSheetOpen(false)}
-                className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer"
+                className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-slate-100 min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer"
                 aria-label={language === 'he' ? 'סגור' : 'Close'}
               >
                 <X className="w-4 h-4" />

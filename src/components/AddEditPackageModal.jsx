@@ -689,7 +689,7 @@ export function AddEditPackageModal({
                   d.setDate(d.getDate() + 14);
                   setReturnDeadline(toLocalISODate(d));
                 }}
-                className="px-3 min-h-[48px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition-colors"
+                className="px-3 min-h-[48px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 text-xs font-semibold transition-colors"
               >
                 +14 {language === 'he' ? 'ימים' : 'days'}
               </button>
@@ -700,7 +700,7 @@ export function AddEditPackageModal({
                   d.setDate(d.getDate() + 30);
                   setReturnDeadline(toLocalISODate(d));
                 }}
-                className="px-3 min-h-[48px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition-colors"
+                className="px-3 min-h-[48px] rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 text-xs font-semibold transition-colors"
               >
                 +30 {language === 'he' ? 'ימים' : 'days'}
               </button>
@@ -740,7 +740,7 @@ export function AddEditPackageModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition-colors min-h-[48px] cursor-pointer"
+            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 text-xs font-semibold transition-colors min-h-[48px] cursor-pointer"
           >
             {t('modal.cancel')}
           </button>

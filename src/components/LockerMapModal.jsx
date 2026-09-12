@@ -184,7 +184,7 @@ export function LockerMapModal({
         <div className="p-5 border-b border-slate-800 flex items-center justify-between gap-4 bg-slate-950/50">
           <button
             onClick={onClose}
-            className="shrink-0 me-3 flex shrink-0 items-center justify-center min-h-[48px] min-w-[48px] rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none"
+            className="shrink-0 me-3 flex shrink-0 items-center justify-center min-h-[48px] min-w-[48px] rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-slate-100 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none"
             aria-label={isRTL ? 'חזרה' : 'Back'}
           >
             <ArrowLeft className="w-5 h-5 rtl:rotate-180" aria-hidden="true" />
@@ -194,7 +194,7 @@ export function LockerMapModal({
               <MapPin className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-bold text-white">
+              <h3 className="text-base sm:text-lg font-bold text-slate-100">
                 {isRTL ? 'איתור נקודת איסוף ולוקרים' : 'Pickup Points & Locker Locator'}
               </h3>
               <p className="text-xs text-slate-400">
@@ -431,7 +431,7 @@ export function LockerMapModal({
                       href={getWazeUrl(activePoint.lat, activePoint.lng)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 hover:text-white text-xs font-bold border border-cyan-500/30 transition-ui cursor-pointer min-h-[48px]"
+                      className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 hover:text-slate-100 text-xs font-bold border border-cyan-500/30 transition-ui cursor-pointer min-h-[48px]"
                     >
                       <Navigation className="w-3.5 h-3.5" />
                       <span>Waze</span>

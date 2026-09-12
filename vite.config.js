@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
@@ -18,6 +19,19 @@ function injectAppVersion() {
     name: 'inject-app-version',
     transformIndexHtml(html) {
       return html.replace(/__APP_VERSION__/g, pkg.version);
+    },
+    /**
+     * public/sw.js is copied verbatim, so it never went through any transform
+     * and its `__APP_VERSION__` placeholder would ship as a literal — leaving
+     * every release sharing one cache name, and a stale shell cached forever.
+     * Rewrite the emitted copy for the same reason index.html is rewritten.
+     */
+    writeBundle(options) {
+      const outDir = options.dir || 'dist';
+      const swPath = resolve(outDir, 'sw.js');
+      if (!existsSync(swPath)) return;
+      const source = readFileSync(swPath, 'utf8');
+      writeFileSync(swPath, source.replace(/__APP_VERSION__/g, pkg.version));
     }
   };
 }

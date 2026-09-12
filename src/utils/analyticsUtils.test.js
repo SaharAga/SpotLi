@@ -161,6 +161,40 @@ describe('analyticsUtils - Multi-Currency & Turnaround Calculations', () => {
       expect(metrics.avgTransitDays).toBeGreaterThan(0);
     });
 
+    it('counts an undelivered package past its expected date against both rates', () => {
+      const dayMs = 24 * 60 * 60 * 1000;
+      const past = new Date(Date.now() - 20 * dayMs).toISOString();
+      const future = new Date(Date.now() + 10 * dayMs).toISOString();
+
+      const packages = [
+        // Delivered on time.
+        { id: '1', status: 'delivered', orderDate: past, updatedAt: past, expectedDeliveryDate: past, carrier: 'dhl' },
+        // Still moving, and still inside its promised window — neutral.
+        { id: '2', status: 'in_transit', expectedDeliveryDate: future, carrier: 'ups' },
+        // Twenty days past its promised date: a miss, not a neutral.
+        { id: '3', status: 'in_transit', expectedDeliveryDate: past, carrier: 'israel-post' },
+        { id: '4', status: 'customs', expectedDeliveryDate: past, carrier: 'cainiao' }
+      ];
+
+      const metrics = calculateDeliveryMetrics(packages);
+      expect(metrics.overdueCount).toBe(2);
+      // 1 on-time delivery out of (1 delivered + 2 overdue).
+      expect(metrics.onTimeRate).toBe(33);
+      // (4 total - 0 exceptions - 2 overdue) / 4.
+      expect(metrics.deliverySuccessRate).toBe(50);
+    });
+
+    it('leaves rates at 100% when nothing is overdue or excepted', () => {
+      const future = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString();
+      const metrics = calculateDeliveryMetrics([
+        { id: '1', status: 'in_transit', expectedDeliveryDate: future, carrier: 'ups' },
+        { id: '2', status: 'delivered', carrier: 'dhl' }
+      ]);
+      expect(metrics.overdueCount).toBe(0);
+      expect(metrics.onTimeRate).toBe(100);
+      expect(metrics.deliverySuccessRate).toBe(100);
+    });
+
     it('handles empty package list without crashing or NaN', () => {
       const metrics = calculateDeliveryMetrics([]);
       expect(metrics.totalCount).toBe(0);

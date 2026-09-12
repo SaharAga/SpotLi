@@ -1,5 +1,6 @@
 import { getCarrier } from '../types/carriers';
 import { STAGES } from '../types/stages';
+import { isOverdue } from './dateUtils';
 
 /**
  * Supported currency keys and their display symbols / metadata
@@ -308,6 +309,7 @@ export function calculateMultiCurrencyBreakdown(packages = []) {
  *   activeCount: number,
  *   customsCount: number,
  *   exceptionCount: number,
+ *   overdueCount: number,
  *   deliverySuccessRate: number,
  *   onTimeRate: number,
  *   avgTransitDays: number,
@@ -323,6 +325,7 @@ export function calculateDeliveryMetrics(packages = [], transitDays = null) {
       activeCount: 0,
       customsCount: 0,
       exceptionCount: 0,
+      overdueCount: 0,
       deliverySuccessRate: 100,
       onTimeRate: 100,
       avgTransitDays: 0,
@@ -335,6 +338,7 @@ export function calculateDeliveryMetrics(packages = [], transitDays = null) {
   let deliveredCount = 0;
   let customsCount = 0;
   let exceptionCount = 0;
+  let overdueCount = 0;
   let onTimeDeliveredCount = 0;
   const transitTimes = [];
   const carrierCounts = {};
@@ -372,20 +376,40 @@ export function calculateDeliveryMetrics(packages = [], transitDays = null) {
       } else {
         onTimeDeliveredCount += 1;
       }
-    } else if (status === 'customs') {
-      customsCount += 1;
-    } else if (status === 'exception') {
-      exceptionCount += 1;
+    } else {
+      // Still in flight. A shipment whose promised date has passed is the one
+      // thing the user is actually worried about, so it has to register here.
+      if (isOverdue(pkg.expectedDeliveryDate)) overdueCount += 1;
+
+      if (status === 'customs') {
+        customsCount += 1;
+      } else if (status === 'exception') {
+        exceptionCount += 1;
+      }
     }
   }
 
   const activeCount = totalCount - deliveredCount;
-  const deliverySuccessRate = totalCount > 0 
-    ? Math.round(((totalCount - exceptionCount) / totalCount) * 100)
+
+  /*
+   * Both rates used to look only at packages that had already been delivered:
+   * success was `1 - exceptions/total` and on-time divided by `deliveredCount`
+   * alone. A shipment sitting twenty-five days past its promised date counted
+   * towards neither, so Insights reported "100% on-time" directly over a list
+   * captioned "24 days overdue" — the two screens contradicted each other and
+   * the number nobody could trust was the headline one.
+   *
+   * An overdue shipment is now a miss in both: it is off the on-time tally,
+   * and it counts against success alongside a hard exception. A package that
+   * is merely still in transit, within its window, stays neutral.
+   */
+  const deliverySuccessRate = totalCount > 0
+    ? Math.round(((totalCount - exceptionCount - overdueCount) / totalCount) * 100)
     : 100;
 
-  const onTimeRate = deliveredCount > 0
-    ? Math.round((onTimeDeliveredCount / deliveredCount) * 100)
+  const onTimeDenominator = deliveredCount + overdueCount;
+  const onTimeRate = onTimeDenominator > 0
+    ? Math.round((onTimeDeliveredCount / onTimeDenominator) * 100)
     : 100;
 
   const avgTransitDays = transitTimes.length > 0
@@ -406,6 +430,7 @@ export function calculateDeliveryMetrics(packages = [], transitDays = null) {
     activeCount,
     customsCount,
     exceptionCount,
+    overdueCount,
     deliverySuccessRate,
     onTimeRate,
     avgTransitDays,

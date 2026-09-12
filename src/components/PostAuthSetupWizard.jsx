@@ -113,7 +113,7 @@ export function PostAuthSetupWizard({
             <Sparkles className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-white">
+            <h2 className="text-sm font-bold text-slate-100">
               {language === 'he' ? 'הגדרת חשבון מהירה' : 'Quick Account Setup'}
             </h2>
             <p className="text-[11px] text-slate-400">
@@ -139,7 +139,7 @@ export function PostAuthSetupWizard({
               <Mail className="w-8 h-8" />
             </div>
 
-            <h3 className="text-lg font-bold text-white mb-1.5">
+            <h3 className="text-lg font-bold text-slate-100 mb-1.5">
               {t('wizard.step1Title')}
             </h3>
             <p className="text-xs text-slate-300 max-w-sm mb-4 leading-relaxed">
@@ -196,7 +196,7 @@ export function PostAuthSetupWizard({
               <Bell className="w-8 h-8" />
             </div>
 
-            <h3 className="text-lg font-bold text-white mb-1.5">
+            <h3 className="text-lg font-bold text-slate-100 mb-1.5">
               {t('wizard.step2Title')}
             </h3>
             <p className="text-xs text-slate-300 max-w-sm mb-6 leading-relaxed">

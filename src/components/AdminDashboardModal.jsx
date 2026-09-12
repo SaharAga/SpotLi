@@ -227,7 +227,7 @@ export function AdminDashboardModal({
 
           <button
             onClick={onClose}
-            className="shrink-0 me-3 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
+            className="shrink-0 me-3 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
             aria-label="Back"
           >
             <ArrowLeft className="w-5 h-5 rtl:rotate-180" aria-hidden="true" />
@@ -237,7 +237,7 @@ export function AdminDashboardModal({
               <button
                 onClick={loadAllTelemetry}
                 disabled={isLoading}
-                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center disabled:opacity-50"
+                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center disabled:opacity-50"
                 title={language === 'he' ? 'רענן נתונים מהענן' : 'Refresh cloud data'}
                 aria-label="Refresh"
               >
