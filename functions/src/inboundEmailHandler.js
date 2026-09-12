@@ -22,6 +22,8 @@ import {
 
 export { sanitizeEmailHtml, extractTrackingDetails, extractAllTrackingDetails, inferDeliveryStatus, shouldAdvanceStatus };
 
+const MAX_INBOUND_PACKAGES_PER_EMAIL = 10;
+
 /**
  * Constant-time comparison of two tokens using SHA-256 hashes to prevent timing attacks.
  * @param {string} a
@@ -79,13 +81,20 @@ export function createInboundEmailHandler({ db, webhookToken }) {
       return;
     }
 
-    // Enforce webhook secret token verification: fail closed
-    const providedToken =
-      req.query?.token ||
+    // Enforce webhook secret token verification: fail closed.
+    // Headers (x-webhook-token or Bearer) are prioritized over query parameters
+    // to prevent sensitive token exposure in intermediate access/proxy logs.
+    const headerToken =
       req.headers?.['x-webhook-token'] ||
       (typeof req.headers?.authorization === 'string' && req.headers.authorization.startsWith('Bearer ')
         ? req.headers.authorization.slice(7).trim()
         : null);
+
+    let providedToken = headerToken;
+    if (!providedToken && req.query?.token) {
+      console.warn('[InboundEmailHandler] Deprecation warning: Webhook token passed via URL query parameter. Use x-webhook-token or Authorization header instead.');
+      providedToken = req.query.token;
+    }
 
     if (!webhookToken || !providedToken || !safeCompareTokens(providedToken, webhookToken)) {
       res.status(401).json({ error: 'Unauthorized' });
@@ -122,7 +131,9 @@ export function createInboundEmailHandler({ db, webhookToken }) {
       }
 
       const allExtracted = extractAllTrackingDetails(subject, cleanText, '', { html: rawHtml });
-      const verifiedPackages = allExtracted.filter((pkg) => pkg.trackingNumber && pkg.status === 'verified');
+      const verifiedPackages = allExtracted
+        .filter((pkg) => pkg.trackingNumber && pkg.status === 'verified')
+        .slice(0, MAX_INBOUND_PACKAGES_PER_EMAIL);
 
       // Forwarded email is an unattended ingestion path. Only the extractor's
       // strongest, deterministic tier may cross this boundary.

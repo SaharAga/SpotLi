@@ -267,6 +267,12 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Carrier tracking proxy usage/rate-limit counters (functions/src/carrierProxy.js).
+    // Written only by Cloud Functions via the Admin SDK.
+    match /carrierUsage/{docId} {
+      allow read, write: if false;
+    }
+
     // Gmail OAuth connections (functions/src/gmailAuth.js) — refresh
     // tokens and sync cursors for the Gmail auto-sync feature. Written only
     // by Cloud Functions via the Admin SDK, which bypasses these rules
