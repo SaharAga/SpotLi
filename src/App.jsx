@@ -1349,6 +1349,39 @@ export function DashboardContent() {
             }
             closeModal(MODAL.ONBOARDING);
           }}
+          onSignIn={() => {
+            try {
+              if (typeof window !== 'undefined' && window.sessionStorage) {
+                window.sessionStorage.setItem('spotli_post_auth_wizard_pending', 'true');
+              }
+            } catch {
+              // Ignore storage errors
+            }
+            closeModal(MODAL.ONBOARDING);
+            openModal(MODAL.AUTH, { initialMode: 'signin' });
+          }}
+          onSignInEmail={() => {
+            try {
+              if (typeof window !== 'undefined' && window.sessionStorage) {
+                window.sessionStorage.setItem('spotli_post_auth_wizard_pending', 'true');
+              }
+            } catch {
+              // Ignore storage errors
+            }
+            closeModal(MODAL.ONBOARDING);
+            openModal(MODAL.AUTH, { initialMode: 'signin' });
+          }}
+          onTryDemo={() => {
+            try {
+              if (typeof window !== 'undefined' && window.localStorage) {
+                window.localStorage.setItem(STORAGE_KEYS.ONBOARDING_TOUR_SEEN, 'true');
+              }
+            } catch {
+              // Ignore storage errors
+            }
+            closeModal(MODAL.ONBOARDING);
+            handleLaunchDemoMode();
+          }}
           onGetStartedGoogle={async () => {
             try {
               if (typeof window !== 'undefined' && window.localStorage) {
