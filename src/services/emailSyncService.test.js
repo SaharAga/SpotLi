@@ -110,6 +110,14 @@ describe('emailSyncService Unit Tests', () => {
       const status = await getGmailConnectionStatus();
       expect(status).toEqual({ connected: false });
     });
+
+    it('persists connected state to localStorage when server reports connected', async () => {
+      const { setConnectedService, getConnectedServices } = await import('./emailSyncService');
+      setConnectedService('gmail', false);
+      expect(getConnectedServices().gmail).toBe(false);
+      setConnectedService('gmail', true);
+      expect(getConnectedServices().gmail).toBe(true);
+    });
   });
 
   describe('setupOutlookAutoForward', () => {

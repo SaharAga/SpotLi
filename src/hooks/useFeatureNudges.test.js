@@ -4,8 +4,12 @@ import { renderHook, act } from '@testing-library/react';
 import { useFeatureNudges } from './useFeatureNudges';
 import { STORAGE_KEYS } from '../constants/storageKeys';
 
+const mockGetGmailConnectionStatus = vi.fn().mockResolvedValue({ connected: false });
+const mockGetConnectedServices = vi.fn(() => ({ gmail: false, outlook: false, accounts: [] }));
+
 vi.mock('../services/emailSyncService', () => ({
-  getConnectedServices: vi.fn(() => ({ gmail: false, outlook: false, accounts: [] }))
+  getConnectedServices: () => mockGetConnectedServices(),
+  getGmailConnectionStatus: () => mockGetGmailConnectionStatus()
 }));
 
 describe('useFeatureNudges Hook Tests', () => {
@@ -40,6 +44,16 @@ describe('useFeatureNudges Hook Tests', () => {
       id: 'gmail_sync',
       type: 'gmail'
     });
+  });
+
+  it('does not suggest gmail sync when gmail is already connected', () => {
+    window.Notification = { permission: 'granted' };
+    mockGetConnectedServices.mockReturnValueOnce({ gmail: true, outlook: false, accounts: [] });
+    const samplePackages = [{ id: 'pkg-1', title: 'Order', status: 'in_transit' }];
+    const user = { uid: 'u123', email: 'user@test.com' };
+
+    const { result } = renderHook(() => useFeatureNudges({ packages: samplePackages, user }));
+    expect(result.current.activeNudge).toBeNull();
   });
 
   it('dismisses nudge for the current session when dismissNudge is called', () => {

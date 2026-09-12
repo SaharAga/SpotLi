@@ -93,7 +93,12 @@ import { APP_NAME, APP_COPYRIGHT } from './constants/app';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { usePackages, MUTATION_TYPES } from './hooks/usePackages';
-import { triggerGmailBackfill } from './services/emailSyncService';
+import { 
+  triggerGmailBackfill, 
+  setConnectedService, 
+  addConnectedAccount, 
+  getGmailConnectionStatus 
+} from './services/emailSyncService';
 import { notificationService } from './services/notificationService';
 import { recordFeatureUse } from './services/featureUsageService';
 import { FEATURE_IDS } from './constants/featureIds';
@@ -433,6 +438,15 @@ export function DashboardContent() {
       const gmailResult = params.get('gmail');
       if (gmailResult === 'connected') {
         recordFeatureUse(FEATURE_IDS.GMAIL_SYNC, { uid: user?.id || null });
+        setConnectedService('gmail', true);
+        if (user?.email) {
+          addConnectedAccount({
+            email: user.email,
+            service: 'gmail',
+            status: 'active',
+            connectedAt: new Date().toISOString()
+          });
+        }
         showToast(
           language === 'he'
             ? 'Gmail חובר בהצלחה! אישורי הזמנות יסונכרנו אוטומטית 🎉'
@@ -538,6 +552,13 @@ export function DashboardContent() {
       // Ignore storage errors
     }
   }, []);
+
+  // Background-reconcile Gmail connection status with server on authentication
+  useEffect(() => {
+    const uid = user?.id || user?.uid;
+    if (!uid) return;
+    getGmailConnectionStatus().catch(() => {});
+  }, [user]);
 
   // Check for First-Visit Onboarding Tour (only for new unauthenticated visitors with 0 packages)
   useEffect(() => {

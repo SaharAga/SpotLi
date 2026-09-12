@@ -310,7 +310,21 @@ export async function getGmailConnectionStatus() {
     // shared default keeps a broken App Check from parking the account screen
     // on "Checking status…" for half a minute before it gives up.
     const res = await callFunction('gmailConnectionStatus', undefined, { timeoutMs: 12000 });
-    return res?.data || { connected: false };
+    const data = res?.data || { connected: false };
+    if (data.connected) {
+      setConnectedService('gmail', true);
+      if (data.emailAddress) {
+        addConnectedAccount({
+          email: data.emailAddress,
+          service: 'gmail',
+          status: 'active',
+          connectedAt: data.connectedAt || new Date().toISOString()
+        });
+      }
+    } else if (data && !data.connected) {
+      setConnectedService('gmail', false);
+    }
+    return data;
   } catch (err) {
     console.warn('[EmailSyncService] getGmailConnectionStatus error:', err);
     return { connected: false };
