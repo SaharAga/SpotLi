@@ -92,6 +92,7 @@ export function PostAuthSetupWizard({
     <Modal
       componentName="PostAuthSetupWizard"
       layer="base"
+      flushBottom={true}
       overlayClassName="bg-slate-950/85 backdrop-blur-sm"
       className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-6 flex flex-col text-slate-100"
       closeOnBackdrop={false}
@@ -124,9 +125,9 @@ export function PostAuthSetupWizard({
       </div>
 
       {/* Wizard Body */}
-      <div className="p-6 flex-1 flex flex-col items-center text-center">
+      <div className="p-6 flex-1 flex flex-col items-center justify-center text-center overflow-y-auto">
         {step === 1 ? (
-          <div className="w-full flex flex-col items-center animate-fade-in">
+          <div className="w-full max-w-sm flex flex-col items-center animate-fade-in my-auto">
             <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-4 shadow-lg shadow-amber-950/30">
               <Mail className="w-8 h-8" />
             </div>
@@ -157,7 +158,7 @@ export function PostAuthSetupWizard({
             </div>
 
             {isGmailConnected ? (
-              <div className="w-full p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center gap-2 text-emerald-300 text-xs font-bold mb-6">
+              <div className="w-full p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center gap-2 text-emerald-300 text-xs font-bold mb-4">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                 <span>{t('wizard.gmailConnected')}</span>
               </div>
@@ -183,7 +184,7 @@ export function PostAuthSetupWizard({
             )}
           </div>
         ) : (
-          <div className="w-full flex flex-col items-center animate-fade-in">
+          <div className="w-full max-w-sm flex flex-col items-center animate-fade-in my-auto">
             <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400 mb-4 shadow-lg shadow-blue-950/30">
               <Bell className="w-8 h-8" />
             </div>
@@ -203,7 +204,7 @@ export function PostAuthSetupWizard({
             )}
 
             {pushStatus === 'granted' ? (
-              <div className="w-full p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center gap-2 text-emerald-300 text-xs font-bold mb-6">
+              <div className="w-full p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center gap-2 text-emerald-300 text-xs font-bold mb-4">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                 <span>{t('wizard.notificationsEnabled')}</span>
               </div>
@@ -232,24 +233,22 @@ export function PostAuthSetupWizard({
       </div>
 
       {/* Footer Navigation */}
-      <div className="p-5 border-t border-slate-800 bg-slate-950/40 flex items-center justify-between gap-3">
-        {step === 2 ? (
+      <div className="p-4 sm:p-5 border-t border-slate-800 bg-slate-950/40 flex items-center justify-between gap-3 shrink-0">
+        {step === 2 && (
           <button
             type="button"
             onClick={() => setStep(1)}
-            className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200 px-3 py-2 rounded-xl transition-colors cursor-pointer min-h-[48px]"
+            className="flex-1 max-w-[140px] flex items-center justify-center gap-1 text-xs sm:text-sm font-semibold text-slate-400 hover:text-slate-200 px-4 py-3 rounded-2xl bg-slate-800/80 hover:bg-slate-700 transition-colors cursor-pointer min-h-[48px]"
           >
             {isRTL ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
             <span>{t('onboarding.prev')}</span>
           </button>
-        ) : (
-          <div />
         )}
 
         <button
           type="button"
           onClick={handleNextStep}
-          className="flex items-center gap-1.5 px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-all border border-slate-700 cursor-pointer min-h-[48px]"
+          className={`${step === 2 ? 'flex-1' : 'w-full'} flex items-center justify-center gap-1.5 px-6 py-3.5 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white text-xs sm:text-sm font-bold transition-all border border-slate-700/80 cursor-pointer min-h-[48px]`}
         >
           <span>{step === 1 ? t('onboarding.next') : t('wizard.finishBtn')}</span>
           {isRTL ? <ArrowLeft className="w-3.5 h-3.5" /> : <ArrowRight className="w-3.5 h-3.5" />}
