@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.30.0] - 2026-09-12
+
+### Added
+- Transitioned onboarding into an account-first gated flow with direct Sign In in header, Google/Email/Demo options on completion, and seamless hand-off to the authenticated setup wizard.
+
+- Added welcoming Hero Overview slide as Slide 1 of OnboardingModal ("All Your Deliveries in One Smart Place") with dedicated "See How It Works" CTA, and enabled direct 1-click Google authentication from the onboarding tour to eliminate blank-state friction.
+
+- Added two-phase hybrid onboarding (visual 3-slide cold-start tour and post-auth delivery setup wizard), an interactive first-time empty state with live demo package simulation, and a non-spammy contextual feature adoption engine with permanent suppression controls.
+
+### Fixed
+- Restored dynamic authDomain resolution for staging preview channels to keep authentication same-origin and preserved direct user gesture context for Google sign-in in OnboardingModal.
+
+- Resolved Firebase Auth same-origin domain dynamically to current hosting channel hostname to prevent cross-origin blank page stalls on staging, and aligned server-side OAuth error redirects with the client origin to prevent unwanted production redirects.
+
+- Synchronize server-verified Gmail connection status with localStorage in getGmailConnectionStatus, App startup, and useFeatureNudges to eliminate false-positive "Connect Gmail" adoption banners.
+
+- Added Firebase Hosting rewrite for `/gmailOAuthCallback` Cloud Function to prevent blank page on OAuth return, added client-side safeguard route handling in `App.jsx`, and enhanced `PostAuthSetupWizard` with clear copy explaining the dedicated one-time Google permission for mailbox auto-ingestion.
+
+- Enhanced `OnboardingModal` with full-width primary action buttons (`w-full`), added `flushBottom` prop to `Modal` to eliminate artificial mobile bottom spacing, and upgraded slide layout and typography with larger fonts, bolder headlines, and richer preview cards.
+
+- Ensure PostAuthSetupWizard stretches flush to viewport bottom on mobile via flushBottom={true}, center body content vertically, and make footer navigation full-width.
+
+- Removed `pinTag: true` from `/gmailOAuthCallback` rewrite in `firebase.json` so Firebase Hosting deploys route traffic to the deployed function without unintentionally attempting to rebuild and redeploy Cloud Functions during Hosting channel deploys.
+
+- Reverted authDomain dynamic resolution back to canonical Firebase authDomain to resolve Google OAuth 400 redirect_uri_mismatch error.
+
 ## [0.29.0] - 2026-09-11
 
 ### Added
