@@ -1354,21 +1354,18 @@ export function DashboardContent() {
               if (typeof window !== 'undefined' && window.localStorage) {
                 window.localStorage.setItem(STORAGE_KEYS.ONBOARDING_TOUR_SEEN, 'true');
               }
-            } catch {
-              // Ignore storage errors
-            }
-            try {
               if (typeof window !== 'undefined' && window.sessionStorage) {
                 window.sessionStorage.setItem('spotli_post_auth_wizard_pending', 'true');
               }
             } catch {
               // Ignore storage errors
             }
-            closeModal(MODAL.ONBOARDING);
             try {
-              await loginWithGoogle();
+              const u = await loginWithGoogle();
+              closeModal(MODAL.ONBOARDING);
             } catch (err) {
               console.warn('[Onboarding] Direct Google sign-in failed, falling back to auth modal:', err);
+              closeModal(MODAL.ONBOARDING);
               openModal(MODAL.AUTH, { initialMode: 'signin' });
             }
           }}
