@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { useFeatureNudges } from './useFeatureNudges';
 import { STORAGE_KEYS } from '../constants/storageKeys';
 
@@ -54,6 +54,43 @@ describe('useFeatureNudges Hook Tests', () => {
 
     const { result } = renderHook(() => useFeatureNudges({ packages: samplePackages, user }));
     expect(result.current.activeNudge).toBeNull();
+  });
+
+/**
+   * The local flag and the server are two separate sources, and only the
+   * first one resolves before paint. The test above covers the local flag;
+   * these cover the server answer arriving afterwards, which is the case
+   * that actually broke — the nudge memo was built while the flag was still
+   * false and never rebuilt, so a connected user kept being told to connect.
+   */
+  it('stops suggesting gmail sync once the server confirms the connection', async () => {
+    window.Notification = { permission: 'granted' };
+    mockGetConnectedServices.mockReturnValue({ gmail: false, outlook: false, accounts: [] });
+    mockGetGmailConnectionStatus.mockResolvedValueOnce({ connected: true });
+    const samplePackages = [{ id: 'pkg-1', title: 'Order', status: 'in_transit' }];
+    const user = { uid: 'u123', email: 'user@test.com' };
+
+    const { result } = renderHook(() => useFeatureNudges({ packages: samplePackages, user }));
+    expect(result.current.activeNudge).toEqual({ id: 'gmail_sync', type: 'gmail' });
+
+    await waitFor(() => {
+      expect(result.current.activeNudge).toBeNull();
+    });
+  });
+
+  it('reports the resolved connection state to callers', async () => {
+    mockGetConnectedServices.mockReturnValue({ gmail: false, outlook: false, accounts: [] });
+    mockGetGmailConnectionStatus.mockResolvedValueOnce({ connected: true });
+    const user = { uid: 'u123', email: 'user@test.com' };
+
+    // The empty-state onboarding gate reads this to decide whether to offer a
+    // connection the user already has.
+    const { result } = renderHook(() => useFeatureNudges({ packages: [], user }));
+    expect(result.current.isGmailConnected).toBe(false);
+
+    await waitFor(() => {
+      expect(result.current.isGmailConnected).toBe(true);
+    });
   });
 
   it('dismisses nudge for the current session when dismissNudge is called', () => {

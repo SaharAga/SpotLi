@@ -72,6 +72,10 @@ export function useFeatureNudges({ packages = [], user = null }) {
     }
 
     // 2. Gmail Sync Nudge (User is signed in and tracking manually, but Gmail not connected)
+    // isGmailConnected is in this memo's dependency list deliberately: the
+    // server confirmation below resolves *after* first paint, and without the
+    // dependency the memo kept the value it was built with, so an already
+    // connected user was still nudged to connect Gmail.
     if (!isPermanentlyDismissed('gmail_sync') && user && packages.length >= 1) {
       const services = getConnectedServices(user);
       if (!services.gmail && !isGmailConnected) {
@@ -96,7 +100,7 @@ export function useFeatureNudges({ packages = [], user = null }) {
     }
 
     return null;
-  }, [packages, user, sessionDismissed, isPermanentlyDismissed]);
+  }, [packages, user, sessionDismissed, isPermanentlyDismissed, isGmailConnected]);
 
   const dismissNudge = useCallback((id) => {
     setSessionDismissed(true);
@@ -133,6 +137,10 @@ export function useFeatureNudges({ packages = [], user = null }) {
   return {
     activeNudge,
     dismissNudge,
-    suppressPermanently
+    suppressPermanently,
+    // Exposed because the empty-state onboarding gate needs the same answer.
+    // Resolving it here once — rather than letting each consumer call
+    // getGmailConnectionStatus itself — keeps it to one callable per session.
+    isGmailConnected
   };
 }

@@ -689,7 +689,7 @@ export function DashboardContent() {
   }, []);
 
   // Contextual Feature Adoption Nudges
-  const { activeNudge, dismissNudge, suppressPermanently } = useFeatureNudges({
+  const { activeNudge, dismissNudge, suppressPermanently, isGmailConnected } = useFeatureNudges({
     packages,
     user
   });
@@ -1705,6 +1705,7 @@ export function DashboardContent() {
                   }}
                   onStartSmartImport={() => openModal(MODAL.SMART_IMPORT)}
                   onLoadDemoPackage={handleLaunchDemoMode}
+                  isGmailConnected={isGmailConnected}
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center py-16 px-4 bg-slate-900/40 border border-slate-800 rounded-3xl text-center animate-fade-in my-4">
