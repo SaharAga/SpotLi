@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Smartphone, Sparkles, CheckCircle2, Copy, RefreshCw, Plus, Trash2, ArrowLeft, ChevronDown } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -18,12 +18,17 @@ import { Modal } from './Modal';
 export function IngestionGuideModal({
   isOpen,
   onClose,
+  onOpenSmartImport,
+  onOpenAuth,
   onShowToast
 }) {
   const { language } = useLanguage();
   const { user, loginWithGoogle } = useAuth();
   
   const [copiedEmail, setCopiedEmail] = useState(false);
+  const copyEmailTimerRef = useRef(null);
+  const [copiedFilter, setCopiedFilter] = useState(false);
+  const copyFilterTimerRef = useRef(null);
   const [showQR, setShowQR] = useState(false);
   const [showForwarding, setShowForwarding] = useState(false);
   const [selectedGuide, setSelectedGuide] = useState('gmail'); // 'gmail' | 'outlook' | 'icloud' | 'yahoo'
@@ -99,6 +104,13 @@ export function IngestionGuideModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, userUid]);
 
+  useEffect(() => {
+    return () => {
+      if (copyEmailTimerRef.current) clearTimeout(copyEmailTimerRef.current);
+      if (copyFilterTimerRef.current) clearTimeout(copyFilterTimerRef.current);
+    };
+  }, []);
+
   if (!isOpen) return null;
 
   const appOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://spotliapp.com';
@@ -110,7 +122,25 @@ export function IngestionGuideModal({
     if (success) {
       setCopiedEmail(true);
       if (onShowToast) onShowToast(language === 'he' ? 'כתובת האימייל הועתקה ללוח' : 'Email copied to clipboard', 'success');
-      setTimeout(() => setCopiedEmail(false), 2500);
+      if (copyEmailTimerRef.current) clearTimeout(copyEmailTimerRef.current);
+      copyEmailTimerRef.current = setTimeout(() => setCopiedEmail(false), 2500);
+    } else if (onShowToast) {
+      onShowToast(language === 'he' ? 'ההעתקה ללוח נכשלה' : 'Failed to copy to clipboard', 'error');
+    }
+  };
+
+  const handleCopyFilter = async () => {
+    const success = await copyToClipboard(DEFAULT_FORWARDING_FILTER_QUERY);
+    if (success) {
+      setCopiedFilter(true);
+      if (onShowToast) {
+        onShowToast(
+          language === 'he' ? 'שאילתת המסנן הועתקה ללוח' : 'Filter query copied to clipboard',
+          'success'
+        );
+      }
+      if (copyFilterTimerRef.current) clearTimeout(copyFilterTimerRef.current);
+      copyFilterTimerRef.current = setTimeout(() => setCopiedFilter(false), 2500);
     } else if (onShowToast) {
       onShowToast(language === 'he' ? 'ההעתקה ללוח נכשלה' : 'Failed to copy to clipboard', 'error');
     }
@@ -261,6 +291,7 @@ export function IngestionGuideModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      labelledBy="ingestion-guide-title"
       componentName="IngestionGuideModal"
       overlayClassName="p-3 sm:p-4"
       className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-6 max-h-[92vh] flex flex-col"
@@ -272,7 +303,7 @@ export function IngestionGuideModal({
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-slate-100">
+            <h2 id="ingestion-guide-title" className="text-base sm:text-lg font-bold text-slate-100">
               {language === 'he' ? 'קליטת משלוחים אוטומטית' : 'Automatic Shipment Ingestion'}
             </h2>
             <p className="text-xs text-slate-400">
@@ -283,7 +314,7 @@ export function IngestionGuideModal({
         <button
           onClick={onClose}
           className="order-first me-3 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
-          aria-label="Back"
+          aria-label={language === 'he' ? 'חזרה' : 'Back'}
         >
           <ArrowLeft className="w-5 h-5 rtl:rotate-180" aria-hidden="true" />
         </button>
@@ -413,11 +444,11 @@ export function IngestionGuideModal({
                       </div>
                       <button
                         onClick={() => handleDisconnectAccount(acc.email)}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 transition-colors cursor-pointer text-xs font-semibold shrink-0 ml-1"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 transition-colors cursor-pointer text-xs font-semibold shrink-0 ml-1 min-h-[40px]"
                         title={language === 'he' ? 'נתק חשבון' : 'Unlink account'}
                         aria-label={`Unlink ${acc.email}`}
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 className="w-3.5 h-3.5" />
                         <span>{language === 'he' ? 'נתק' : 'Unlink'}</span>
                       </button>
                     </div>
@@ -432,10 +463,10 @@ export function IngestionGuideModal({
                     </div>
                     <button
                       onClick={() => handleDisconnectService(connectedServices.gmail ? 'gmail' : 'outlook')}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 transition-colors cursor-pointer text-xs font-semibold"
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 transition-colors cursor-pointer text-xs font-semibold min-h-[40px]"
                       aria-label="Unlink service"
                     >
-                      <Trash2 className="w-3 h-3" />
+                      <Trash2 className="w-3.5 h-3.5" />
                       <span>{language === 'he' ? 'נתק' : 'Unlink'}</span>
                     </button>
                   </div>
@@ -475,6 +506,7 @@ export function IngestionGuideModal({
             type="button"
             onClick={() => setShowForwarding((v) => !v)}
             aria-expanded={showForwarding}
+            aria-controls="forwarding-guide-section"
             className="w-full flex items-center gap-3 p-4 sm:p-5 text-start cursor-pointer hover:bg-slate-900/60 transition-colors min-h-[48px] focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none"
           >
             <div className="min-w-0 flex-1">
@@ -494,29 +526,67 @@ export function IngestionGuideModal({
           </button>
         
           {showForwarding && (
-          <div className="p-4 sm:p-5 pt-0 space-y-4">
-          {/* Email Copy Card */}
-          <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between gap-2">
-            <div className="min-w-0">
-              <span className="text-xs text-slate-500 block uppercase font-bold">
-                {language === 'he' ? 'כתובת ההעברה הייחודית שלך:' : 'Your Private Ingestion Address:'}
-              </span>
-              <span className="font-mono text-xs text-blue-400 font-semibold truncate block select-all">
-                {ingestionEmail}
-              </span>
+          <div id="forwarding-guide-section" className="p-4 sm:p-5 pt-0 space-y-4">
+          {/* Email Copy Card / Guest Sign-in Gate */}
+          {!userUid ? (
+            <div className="p-4 bg-slate-900 rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-500/5 to-transparent space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center shrink-0 text-amber-400 mt-0.5">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="text-xs text-amber-400 font-bold block uppercase tracking-wider">
+                    {language === 'he' ? 'נדרשת התחברות לכתובת ייחודית' : 'Account required for forwarding'}
+                  </span>
+                  <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                    {language === 'he'
+                      ? 'כתובת ההעברה האישית משויכת לחשבון שלך כדי לנתב חבילות ישירות אליך. התחברו כדי להפיק את הכתובת הייחודית שלכם.'
+                      : 'Your forwarding address is linked to your account to securely route incoming packages. Sign in to generate your unique address.'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (onOpenAuth) {
+                    onOpenAuth({ initialMode: 'signin', reason: 'gmail_sync' });
+                  } else if (loginWithGoogle) {
+                    await loginWithGoogle();
+                  }
+                }}
+                className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 cursor-pointer min-h-[48px]"
+              >
+                <span>{language === 'he' ? 'התחברות להפקת כתובת אישית' : 'Sign in to generate address'}</span>
+              </button>
             </div>
-            <button
-              onClick={handleCopyEmail}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 min-h-[48px]"
-            >
-              {copiedEmail ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedEmail ? (language === 'he' ? 'הועתק!' : 'Copied!') : (language === 'he' ? 'העתק' : 'Copy')}</span>
-            </button>
-          </div>
+          ) : (
+            <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <span className="text-xs text-slate-500 block uppercase font-bold">
+                  {language === 'he' ? 'כתובת ההעברה הייחודית שלך:' : 'Your Private Ingestion Address:'}
+                </span>
+                <span className="font-mono text-xs text-blue-400 font-semibold truncate block select-all">
+                  <bdi dir="ltr">{ingestionEmail}</bdi>
+                </span>
+              </div>
+              <button
+                onClick={handleCopyEmail}
+                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 min-h-[48px]"
+                aria-label={language === 'he' ? 'העתק כתובת אימייל פרטית' : 'Copy private ingestion email'}
+              >
+                {copiedEmail ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedEmail ? (language === 'he' ? 'הועתק!' : 'Copied!') : (language === 'he' ? 'העתק' : 'Copy')}</span>
+              </button>
+            </div>
+          )}
 
           {/* Interactive Guides Tab Bar */}
           <div className="space-y-3 pt-2">
-            <div className="flex gap-1.5 p-1 bg-slate-900 rounded-xl border border-slate-800 overflow-x-auto">
+            <div
+              role="tablist"
+              aria-label={language === 'he' ? 'מדריכי ספקי דוא״ל' : 'Email provider guides'}
+              className="flex gap-1.5 p-1 bg-slate-900 rounded-xl border border-slate-800 overflow-x-auto"
+            >
               {[
                 { id: 'gmail', label: 'Gmail' },
                 { id: 'outlook', label: 'Outlook / Hotmail' },
@@ -525,6 +595,10 @@ export function IngestionGuideModal({
               ].map((tab) => (
                 <button
                   key={tab.id}
+                  id={`ingestion-tab-${tab.id}`}
+                  role="tab"
+                  aria-selected={selectedGuide === tab.id}
+                  aria-controls={`ingestion-panel-${tab.id}`}
                   onClick={() => setSelectedGuide(tab.id)}
                   className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold whitespace-nowrap transition-ui cursor-pointer min-h-[48px] ${
                     selectedGuide === tab.id
@@ -538,16 +612,32 @@ export function IngestionGuideModal({
             </div>
 
             {/* Guide Step Details */}
-            <div className="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800/80 space-y-2 text-xs text-slate-300">
+            <div
+              role="tabpanel"
+              id={`ingestion-panel-${selectedGuide}`}
+              aria-labelledby={`ingestion-tab-${selectedGuide}`}
+              className="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800/80 space-y-2 text-xs text-slate-300"
+            >
               {selectedGuide === 'gmail' && (
-                <ol className="list-decimal list-inside space-y-1.5 leading-relaxed">
+                <ol className="list-decimal list-inside space-y-2 leading-relaxed">
                   <li>{language === 'he' ? 'פתחו את Gmail במחשב ולחצו על גלגל השיניים (הגדרות) ⚙️.' : 'Open Gmail on desktop and click the Settings gear ⚙️.'}</li>
                   <li>{language === 'he' ? 'עברו ללשונית "מסננים וכתובות חסומות" ולחצו "צור מסנן חדש".' : 'Go to "Filters and Blocked Addresses" and click "Create a new filter".'}</li>
                   <li>
-                    {language === 'he' ? 'בשדה "כולל את המילים", הזינו:' : 'In the "Has the words" field, enter:'}
-                    <code className="block my-1 p-1.5 bg-slate-950 rounded text-blue-400 font-mono text-xs select-all break-all">
-                      {DEFAULT_FORWARDING_FILTER_QUERY}
-                    </code>
+                    <span>{language === 'he' ? 'בשדה "כולל את המילים", הזינו:' : 'In the "Has the words" field, enter:'}</span>
+                    <div className="my-2 p-2.5 bg-slate-950 rounded-xl border border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                      <code className="flex-1 font-mono text-xs text-blue-400 select-all break-all" dir="ltr">
+                        {DEFAULT_FORWARDING_FILTER_QUERY}
+                      </code>
+                      <button
+                        type="button"
+                        onClick={handleCopyFilter}
+                        className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer shrink-0 min-h-[40px] transition-colors"
+                        aria-label={language === 'he' ? 'העתק שאילתת מסנן' : 'Copy filter query'}
+                      >
+                        {copiedFilter ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{copiedFilter ? (language === 'he' ? 'הועתק!' : 'Copied!') : (language === 'he' ? 'העתק מסנן' : 'Copy Filter')}</span>
+                      </button>
+                    </div>
                   </li>
                   <li>{language === 'he' ? 'סמנו "העבר אל" ובחרו בכתובת ה-SpotLi שהעתקתם למעלה.' : 'Check "Forward it to" and enter your SpotLi address above.'}</li>
                 </ol>
@@ -600,6 +690,8 @@ export function IngestionGuideModal({
 
             <button
               onClick={() => setShowQR(!showQR)}
+              aria-expanded={showQR}
+              aria-controls="pwa-qr-section"
               className="px-3 py-1 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs cursor-pointer min-h-[48px]"
             >
               {showQR ? (language === 'he' ? 'הסתר QR' : 'Hide QR') : (language === 'he' ? 'סרוק QR' : 'Scan QR')}
@@ -607,7 +699,7 @@ export function IngestionGuideModal({
           </div>
 
           {showQR && (
-            <div className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-slate-950 rounded-2xl border border-slate-800 animate-fade-in">
+            <div id="pwa-qr-section" className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-slate-950 rounded-2xl border border-slate-800 animate-fade-in">
               <div className="p-2 bg-white rounded-xl shadow-lg shrink-0">
                 <img src={qrCodeImageUrl} alt="QR Code" className="w-32 h-32" />
               </div>

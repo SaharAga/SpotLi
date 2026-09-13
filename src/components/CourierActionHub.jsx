@@ -222,20 +222,22 @@ export function CourierActionHub({ pkg, onShowToast }) {
             <button
               type="button"
               onClick={handleResetPresets}
-              className="p-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-slate-100 transition-colors"
+              className="p-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-slate-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer"
               title={isHe ? 'שחזר הודעות ברירת מחדל' : 'Restore default presets'}
+              aria-label={isHe ? 'שחזר הודעות ברירת מחדל' : 'Restore default presets'}
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <RotateCcw className="w-4 h-4 rtl:scale-x-[-1]" />
             </button>
           )}
 
           <button
             type="button"
             onClick={handleOpenNew}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-xs font-semibold text-emerald-300 transition-colors min-h-[48px] cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-xs font-semibold text-emerald-300 transition-colors min-h-[48px] cursor-pointer"
             title={isHe ? 'הוסף תגובה חדשה' : 'Add custom template'}
+            aria-label={isHe ? 'הוסף תגובה חדשה' : 'Add custom template'}
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4" />
             <span>{isHe ? 'תגובה חדשה' : 'New Message'}</span>
           </button>
         </div>
@@ -246,19 +248,21 @@ export function CourierActionHub({ pkg, onShowToast }) {
         <form
           ref={formRef}
           onSubmit={handleSaveCustom}
-          className="p-3.5 rounded-xl bg-slate-900 border-2 border-emerald-500/60 shadow-lg shadow-emerald-950/40 flex flex-col gap-2.5 animate-fade-in"
+          aria-label={editingId ? (isHe ? 'עריכת תגובה' : 'Edit Response') : (isHe ? 'יצירת תגובה חדשה' : 'Create New Response')}
+          className="p-4 rounded-xl bg-slate-900 border-2 border-emerald-500/60 shadow-lg shadow-emerald-950/40 flex flex-col gap-3 animate-fade-in"
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" />
+              <Sparkles className="w-4 h-4" />
               {editingId ? (isHe ? 'עריכת תגובה' : 'Edit Response') : (isHe ? 'יצירת תגובה חדשה' : 'Create New Response')}
             </span>
             <button
               type="button"
               onClick={() => setIsCreatingCustom(false)}
-              className="p-1 text-slate-400 hover:text-slate-100 cursor-pointer"
+              aria-label={isHe ? 'סגור' : 'Close'}
+              className="p-2 text-slate-400 hover:text-slate-100 cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center rounded-lg"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </button>
           </div>
 
@@ -268,7 +272,8 @@ export function CourierActionHub({ pkg, onShowToast }) {
             value={customLabel}
             onChange={(e) => setCustomLabel(e.target.value)}
             placeholder={isHe ? 'שם התגובה (למשל: השאר במרפסת, במשרד...)' : 'Response Title (e.g. Leave on Balcony)'}
-            className="p-2.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+            aria-label={isHe ? 'שם התגובה' : 'Response Title'}
+            className="p-3 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 min-h-[48px]"
             required
           />
 
@@ -276,54 +281,55 @@ export function CourierActionHub({ pkg, onShowToast }) {
             value={customText}
             onChange={(e) => setCustomText(e.target.value)}
             placeholder={isHe ? 'טקסט ההודעה לשליח (ניתן לשלב משתנים למטה)...' : 'Courier message text (you can insert variables below)...'}
-            className="p-2.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 min-h-[75px]"
+            aria-label={isHe ? 'טקסט ההודעה לשליח' : 'Courier message text'}
+            className="p-3 rounded-lg bg-slate-950 border border-slate-700 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 min-h-[85px]"
             required
           />
 
           {/* Quick Variable Insert Pills */}
-          <div className="flex flex-wrap items-center gap-1.5 text-xs">
-            <span className="text-slate-400">{isHe ? 'הוסף משתנה:' : 'Insert variable:'}</span>
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="text-slate-400 font-medium">{isHe ? 'הוסף משתנה:' : 'Insert variable:'}</span>
             <button
               type="button"
               onClick={() => insertPlaceholder('{gateCode}')}
-              className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 cursor-pointer"
+              className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 cursor-pointer min-h-[40px] inline-flex items-center"
             >
               {isHe ? '+ קוד שער' : '+ Gate Code'}
             </button>
             <button
               type="button"
               onClick={() => insertPlaceholder('{tracking}')}
-              className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700 cursor-pointer"
+              className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700 cursor-pointer min-h-[40px] inline-flex items-center"
             >
               {isHe ? '+ מספר מעקב' : '+ Tracking'}
             </button>
             <button
               type="button"
               onClick={() => insertPlaceholder('{pickupCode}')}
-              className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 cursor-pointer"
+              className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 cursor-pointer min-h-[40px] inline-flex items-center"
             >
               {isHe ? '+ קוד איסוף' : '+ PIN'}
             </button>
             <button
               type="button"
               onClick={() => insertPlaceholder('{pickupLocation}')}
-              className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-purple-300 border border-slate-700 cursor-pointer"
+              className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-purple-300 border border-slate-700 cursor-pointer min-h-[40px] inline-flex items-center"
             >
               {isHe ? '+ מיקום איסוף' : '+ Location'}
             </button>
           </div>
 
-          <div className="flex items-center justify-end gap-2 mt-1">
+          <div className="flex items-center justify-end gap-3 mt-1">
             <button
               type="button"
               onClick={() => setIsCreatingCustom(false)}
-              className="px-3 py-1.5 rounded-lg text-xs text-slate-400 hover:text-slate-100 cursor-pointer"
+              className="px-4 py-2.5 rounded-xl text-xs text-slate-400 hover:text-slate-100 cursor-pointer min-h-[48px] inline-flex items-center"
             >
               {isHe ? 'ביטול' : 'Cancel'}
             </button>
             <button
               type="submit"
-              className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-sm cursor-pointer"
+              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/20 cursor-pointer min-h-[48px] inline-flex items-center"
             >
               {isHe ? 'שמור תגובה' : 'Save Response'}
             </button>
@@ -332,7 +338,11 @@ export function CourierActionHub({ pkg, onShowToast }) {
       )}
 
       {/* Template Selection Tabs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div
+        role="tablist"
+        aria-label={isHe ? 'תבניות תגובה לשליח' : 'Courier response templates'}
+        className="grid grid-cols-2 sm:grid-cols-4 gap-2"
+      >
         {allTemplates.map((opt) => {
           const Icon = opt.icon;
           const isActive = (activeTemplate?.id || selectedType) === opt.id;
@@ -340,6 +350,10 @@ export function CourierActionHub({ pkg, onShowToast }) {
             <button
               type="button"
               key={opt.id}
+              role="tab"
+              id={`courier-tab-${opt.id}`}
+              aria-selected={isActive}
+              aria-controls="courier-message-preview"
               onClick={() => {
                 triggerHapticFeedback(10);
                 setSelectedType(opt.id);
@@ -359,42 +373,50 @@ export function CourierActionHub({ pkg, onShowToast }) {
 
       {/* Gate Code Inline Input */}
       {selectedType === TEMPLATE_TYPES.GATE_CODE && (
-        <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-900 border border-slate-800">
+        <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-900 border border-slate-800 min-h-[48px]">
           <KeyRound className="w-4 h-4 text-amber-400 shrink-0" />
           <input
             type="text"
             value={gateCode}
             onChange={(e) => setGateCode(e.target.value)}
             placeholder={isHe ? 'הזן קוד כניסה לבניין (למשל 1423#)' : 'Enter entrance/gate code (e.g. 1423#)'}
-            className="w-full bg-transparent text-xs text-slate-100 placeholder-slate-500 focus:outline-none"
+            aria-label={isHe ? 'קוד כניסה לשער' : 'Gate code'}
+            className="w-full bg-transparent text-xs text-slate-100 placeholder-slate-500 focus:outline-none min-h-[36px]"
           />
         </div>
       )}
 
       {/* Message Preview Box */}
-      <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300 leading-relaxed font-sans whitespace-pre-line relative">
+      <div
+        id="courier-message-preview"
+        role="tabpanel"
+        aria-labelledby={`courier-tab-${activeTemplate?.id || selectedType}`}
+        tabIndex={0}
+        className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300 leading-relaxed font-sans whitespace-pre-line relative focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500/50"
+      >
         <div className="flex items-center justify-between mb-1.5">
           <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">
             {isHe ? 'תצוגה מקדימה של ההודעה:' : 'Message Preview:'}
           </span>
           {activeTemplate && (
             <span className="text-xs px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 font-medium">
-              {activeTemplate.label}
+              <bdi dir="auto">{activeTemplate.label}</bdi>
             </span>
           )}
         </div>
         
-        {currentMessage}
+        <bdi dir="auto" className="block">{currentMessage}</bdi>
 
         {/* Message Actions: Edit & Delete Toolbar */}
         <div className="flex items-center justify-end gap-2 pt-2.5 mt-2.5 border-t border-slate-800/80">
           <button
             type="button"
             onClick={handleOpenEditActive}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 text-xs font-medium transition-colors cursor-pointer min-h-[48px]"
+            className="flex items-center gap-1 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 text-xs font-medium transition-colors cursor-pointer min-h-[48px]"
             title={isHe ? 'ערוך תגובה זו' : 'Edit this message'}
+            aria-label={isHe ? 'ערוך תגובה זו' : 'Edit this message'}
           >
-            <Edit3 className="w-3 h-3 text-blue-400" />
+            <Edit3 className="w-3.5 h-3.5 text-blue-400" />
             <span>{isHe ? 'ערוך תגובה זו' : 'Edit Message'}</span>
           </button>
 
@@ -402,10 +424,11 @@ export function CourierActionHub({ pkg, onShowToast }) {
             <button
               type="button"
               onClick={handleDeleteActive}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-medium transition-colors cursor-pointer min-h-[48px]"
+              className="flex items-center gap-1 px-3 py-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-medium transition-colors cursor-pointer min-h-[48px]"
               title={isHe ? 'מחק / הסר תגובה זו' : 'Delete / hide this message'}
+              aria-label={isHe ? 'מחק / הסר תגובה זו' : 'Delete / hide this message'}
             >
-              <Trash2 className="w-3 h-3" />
+              <Trash2 className="w-3.5 h-3.5" />
               <span>{isHe ? 'הסר' : 'Remove'}</span>
             </button>
           )}
@@ -419,7 +442,7 @@ export function CourierActionHub({ pkg, onShowToast }) {
           onClick={handleWhatsApp}
           className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-ui shadow-md shadow-emerald-600/20 min-h-[48px] cursor-pointer"
         >
-          <Send className="w-4 h-4" />
+          <Send className="w-4 h-4 rtl:scale-x-[-1]" />
           <span>{isHe ? 'שלח בוואטסאפ' : 'WhatsApp'}</span>
         </button>
 
@@ -428,7 +451,7 @@ export function CourierActionHub({ pkg, onShowToast }) {
           onClick={handleSms}
           className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-slate-100 text-xs font-bold transition-ui border border-slate-700 min-h-[48px] cursor-pointer"
         >
-          <ExternalLink className="w-4 h-4" />
+          <ExternalLink className="w-4 h-4 rtl:scale-x-[-1]" />
           <span>{isHe ? 'שלח ב-SMS' : 'SMS'}</span>
         </button>
 

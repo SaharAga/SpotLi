@@ -140,4 +140,66 @@ describe('NavigationChoiceModal', () => {
     expect(screen.getByText(/מוביט \(Moovit\)/i)).toBeInTheDocument();
     expect(screen.getByText(/זכור את בחירתי לפעמים הבאות/i)).toBeInTheDocument();
   });
+
+  it('links dialog aria-labelledby to modal title, renders localized close button, and sets group role', () => {
+    const { unmount } = renderWithLanguage(
+      <NavigationChoiceModal
+        isOpen={true}
+        onClose={vi.fn()}
+        location="Sarona Market"
+      />,
+      'en'
+    );
+
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveAttribute('aria-labelledby', 'navigation-choice-title');
+    const title = document.getElementById('navigation-choice-title');
+    expect(title).toBeInTheDocument();
+    expect(title).toHaveTextContent('Choose Navigation App');
+
+    expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Choose Navigation App' })).toBeInTheDocument();
+
+    unmount();
+
+    // Verify Hebrew localized close button
+    renderWithLanguage(
+      <NavigationChoiceModal
+        isOpen={true}
+        onClose={vi.fn()}
+        location="שרונה מרקט"
+      />,
+      'he'
+    );
+    expect(screen.getByRole('button', { name: 'סגור' })).toBeInTheDocument();
+  });
+
+  it('isolates destination and GPS coordinates inside bdi tags and marks preferred app with aria-current', () => {
+    localStorage.setItem(STORAGE_KEYS.PREFERRED_NAV_APP, NAV_APPS.WAZE);
+
+    renderWithLanguage(
+      <NavigationChoiceModal
+        isOpen={true}
+        onClose={vi.fn()}
+        location="Sarona Market (Boxit Locker)"
+        lat={32.0711}
+        lng={34.7865}
+      />
+    );
+
+    const destinationEl = screen.getByText('Sarona Market (Boxit Locker)');
+    expect(destinationEl.tagName.toLowerCase()).toBe('bdi');
+    expect(destinationEl).toHaveAttribute('dir', 'auto');
+
+    const gpsEl = screen.getByText(/GPS: 32.0711, 34.7865/i);
+    expect(gpsEl.tagName.toLowerCase()).toBe('bdi');
+    expect(gpsEl).toHaveAttribute('dir', 'ltr');
+
+    const wazeBtn = screen.getByRole('button', { name: /Waze.*Default/i });
+    expect(wazeBtn).toHaveAttribute('aria-current', 'true');
+
+    const googleBtn = screen.getByRole('button', { name: /Google Maps/i });
+    expect(googleBtn).not.toHaveAttribute('aria-current');
+  });
 });
+

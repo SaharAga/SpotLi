@@ -195,4 +195,10 @@ describe('AuthModal (rendered)', () => {
     const { container } = renderWithLanguage(<AuthModal isOpen={false} onClose={vi.fn()} />);
     expect(container).toBeEmptyDOMElement();
   });
+
+  it('renders educational banner when reason is gmail_sync', () => {
+    renderWithLanguage(<AuthModal isOpen initialMode="signin" reason="gmail_sync" onClose={vi.fn()} />);
+    expect(screen.getByText(/Connect with Google for Gmail Sync|חיבור עם Google לסנכרון Gmail/i)).toBeInTheDocument();
+    expect(screen.getByText(/Google Account is required to automatically connect/i)).toBeInTheDocument();
+  });
 });

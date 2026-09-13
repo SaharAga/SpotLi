@@ -2,6 +2,7 @@
 import { describe, it, expect, vi } from "vitest";
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
+import "@testing-library/jest-dom";
 import { AutoArchivePromptModal } from "./AutoArchivePromptModal";
 import { LanguageProvider } from "../context/LanguageContext";
 
@@ -41,4 +42,31 @@ describe("AutoArchivePromptModal", () => {
     fireEvent.click(noButton);
     expect(handleDecline).toHaveBeenCalledTimes(1);
   });
+
+  it("links dialog aria-labelledby to title and provides header close button", () => {
+    const handleDecline = vi.fn();
+
+    const { unmount } = renderWithContext(
+      <AutoArchivePromptModal isOpen={true} onConfirm={vi.fn()} onDecline={handleDecline} />
+    );
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveAttribute("aria-labelledby", "auto-archive-title");
+    const title = document.getElementById("auto-archive-title");
+    expect(title).toBeInTheDocument();
+
+    const closeBtn = screen.getByRole("button", { name: "Close" });
+    expect(closeBtn).toBeInTheDocument();
+    fireEvent.click(closeBtn);
+    expect(handleDecline).toHaveBeenCalledTimes(1);
+
+    unmount();
+
+    localStorage.setItem("deliveree_lang", "he");
+    renderWithContext(
+      <AutoArchivePromptModal isOpen={true} onConfirm={vi.fn()} onDecline={handleDecline} />
+    );
+    expect(screen.getByRole("button", { name: "סגור" })).toBeInTheDocument();
+  });
 });
+

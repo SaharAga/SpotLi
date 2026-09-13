@@ -278,15 +278,20 @@ export const INITIAL_PACKAGES = [
     trackingNumber: 'BOX920194',
     carrier: 'boxit',
     carrierName: 'BoxIt',
-    status: 'delivered',
+    status: 'ready_for_pickup',
     category: 'clothing',
     orderDate: '2026-08-10',
     expectedDeliveryDate: '2026-08-17',
+    pickupCode: '8492',
+    shelfNumber: '42',
+    pickupLocation: 'שרונה מרקט, קומה 1-, תל אביב (לוקר Boxit)',
+    pickupHours: '24/7',
+    pickupDeadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
     origin: 'London, UK',
     destination: 'BoxIt Locker 42, Tel Aviv',
     notes: 'Awaiting locker pickup. Locker code: 8492',
     notesHe: 'ממתין לאיסוף בלוקר בוקסיט סניף שרונה. קוד: 8492',
-    isPinned: false,
+    isPinned: true,
     isArchived: false,
     checkpoints: [
       {
@@ -302,6 +307,43 @@ export const INITIAL_PACKAGES = [
     ],
     createdAt: '2026-08-10T14:00:00Z',
     updatedAt: '2026-08-17T11:20:00Z'
+  },
+  {
+    id: 'pkg-8',
+    title: 'Zara Casual Linen Shorts',
+    titleHe: 'מכנסי פשתן קצרים Zara',
+    trackingNumber: 'BOX920551',
+    carrier: 'boxit',
+    carrierName: 'BoxIt',
+    status: 'ready_for_pickup',
+    category: 'clothing',
+    orderDate: '2026-08-11',
+    expectedDeliveryDate: '2026-08-17',
+    pickupCode: '5128',
+    shelfNumber: '19',
+    pickupLocation: 'שרונה מרקט, קומה 1-, תל אביב (לוקר Boxit)',
+    pickupHours: '24/7',
+    pickupDeadline: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString(),
+    origin: 'Madrid, Spain',
+    destination: 'BoxIt Locker 19, Tel Aviv',
+    notes: 'Awaiting locker pickup at Sarona Market. Code: 5128',
+    notesHe: 'ממתין לאיסוף בלוקר שרונה מרקט. קוד: 5128',
+    isPinned: false,
+    isArchived: false,
+    checkpoints: [
+      {
+        id: 'cp-8-1',
+        title: 'Deposited in Locker',
+        titleHe: 'הופקד בלוקר האוטומטי',
+        description: 'Package ready for pickup',
+        descriptionHe: 'החבילה הופקדה בלוקר וממתינה לאיסוף',
+        location: 'Sarona BoxIt Terminal',
+        timestamp: '2026-08-17T12:00:00Z',
+        isCompleted: true
+      }
+    ],
+    createdAt: '2026-08-11T10:00:00Z',
+    updatedAt: '2026-08-17T12:00:00Z'
   }
 ];
 

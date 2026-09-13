@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   X, Sparkles, CheckCircle2, ArrowRight,
   AlertCircle, ImagePlus, Trash2, Loader2, ShieldAlert, Flag
@@ -85,6 +85,13 @@ export function SmartImportModal({
   // instead of a new reporting system.
   const [isReportingWrong, setIsReportingWrong] = useState(false);
   const [reportedWrong, setReportedWrong] = useState(false);
+  const resultRef = useRef(null);
+
+  useEffect(() => {
+    if (hasSearched && !isAiParsing && parsed && typeof resultRef.current?.scrollIntoView === 'function') {
+      resultRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [hasSearched, isAiParsing, parsed]);
 
   const matchedExistingPackage = React.useMemo(() => {
     if (!parsed || !parsed.trackingNumber) return null;
@@ -394,6 +401,10 @@ export function SmartImportModal({
       text: 'שלום, דבר דואר שמספרו RS948219483IL נמסר לחלוקה ביחידת הדואר דיזנגוף סנטר. שעות פתיחה: 08:00-19:00.'
     },
     {
+      label: language === 'he' ? 'דוגמת לוקר Boxit / צ\'יטה' : 'Boxit / Cheetah Locker Example',
+      text: 'בוקסיט: חבילתך BOX920194 הופקדה בלוקר שרונה מרקט קומה 1-. קוד לאיסוף: 8492'
+    },
+    {
       label: language === 'he' ? 'דוגמת הודעת AliExpress / קאיניאו' : 'AliExpress / Cainiao Example',
       text: 'AliExpress update: Your order for "Mechanical Keyboard" (LP00582910482CN) has arrived at the destination sorting facility in Israel.'
     },
@@ -418,10 +429,12 @@ export function SmartImportModal({
       isOpen={isOpen}
       onClose={onClose}
       componentName="SmartImportModal"
+      labelledBy="smart-import-title"
       className="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8"
     >
         {/* Header */}
         <ModalHeader
+          titleId="smart-import-title"
           title={language === 'he' ? 'ייבוא חכם מהודעה או טקסט' : 'Smart Import from Message or Text'}
           subtitle={language === 'he'
             ? 'הדבק טקסט, הודעת SMS או אימייל לחילוץ פרטי משלוח'
@@ -436,7 +449,7 @@ export function SmartImportModal({
             <button
               type="button"
               onClick={() => onSwitchToManual(rawText)}
-              className="text-xs font-semibold text-slate-400 hover:text-blue-400 underline underline-offset-2 transition-colors cursor-pointer"
+              className="text-xs font-semibold text-slate-400 hover:text-blue-400 underline underline-offset-2 transition-colors cursor-pointer min-h-[48px] inline-flex items-center"
             >
               {language === 'he' ? 'להזין ידנית במקום זאת' : 'Enter details manually instead'}
             </button>
@@ -474,7 +487,7 @@ export function SmartImportModal({
                 different widths, which reads as a layout accident rather than
                 a set of equivalent choices.
               */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {sampleSMS.map((s, idx) => (
                   <button
                     key={idx}
@@ -532,7 +545,9 @@ export function SmartImportModal({
                     className="w-full max-h-40 object-contain bg-slate-900"
                   />
                   <div className="flex items-center justify-between px-3 py-2 text-xs text-slate-400">
-                    <span>{screenshot.width}×{screenshot.height} • {Math.round(screenshot.bytes / 1024)}KB</span>
+                    <span>
+                      <bdi dir="ltr">{screenshot.width}×{screenshot.height} • {Math.round(screenshot.bytes / 1024)}KB</bdi>
+                    </span>
                     <button
                       type="button"
                       onClick={() => {
@@ -542,7 +557,8 @@ export function SmartImportModal({
                           setParsed(null);
                         }
                       }}
-                      className="flex items-center gap-1 text-rose-400 hover:text-rose-300 font-semibold cursor-pointer"
+                      className="flex items-center gap-1 text-rose-400 hover:text-rose-300 font-semibold cursor-pointer min-h-[48px] px-2.5 rounded-lg"
+                      aria-label={language === 'he' ? 'הסר צילום מסך' : 'Remove screenshot'}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>{language === 'he' ? 'הסר' : 'Remove'}</span>
@@ -584,11 +600,11 @@ export function SmartImportModal({
 
           {/* Parsed Result Display */}
           {hasSearched && !isAiParsing && (
-            <div className="animate-fade-in pt-2">
+            <div ref={resultRef} className="animate-fade-in pt-2">
               {parsed && parsed.trackingNumber ? (
-                <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 space-y-3">
+                <div className="p-4 rounded-2xl bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/30 space-y-3">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs">
+                    <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
                       <CheckCircle2 className="w-4 h-4" />
                       <span>{t('smartModal.parsedSuccess')}</span>
                     </div>
@@ -623,7 +639,9 @@ export function SmartImportModal({
 
                     <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
                       <span className="text-xs text-slate-500 uppercase font-bold">{t('modal.trackingNum')}</span>
-                      <p className="font-mono font-bold text-blue-400 mt-0.5">{parsed.trackingNumber}</p>
+                      <p className="font-mono font-bold text-blue-600 dark:text-blue-400 mt-0.5">
+                        <bdi dir="ltr">{parsed.trackingNumber}</bdi>
+                      </p>
                     </div>
 
                     <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
@@ -636,14 +654,25 @@ export function SmartImportModal({
                     {parsed.pickupLocation && (
                       <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
                         <span className="text-xs text-slate-500 uppercase font-bold">{language === 'he' ? 'נקודת איסוף' : 'Pickup Point'}</span>
-                        <p className="font-semibold text-amber-300 mt-0.5">{parsed.pickupLocation}</p>
+                        <p className="font-semibold text-amber-600 dark:text-amber-300 mt-0.5">{parsed.pickupLocation}</p>
+                      </div>
+                    )}
+
+                    {(parsed.pickupCode || parsed.lockerPin) && (
+                      <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+                        <span className="text-xs text-slate-500 uppercase font-bold">{language === 'he' ? 'קוד איסוף / PIN' : 'Pickup PIN'}</span>
+                        <p className="font-mono font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                          <bdi dir="ltr">{parsed.pickupCode || parsed.lockerPin}</bdi>
+                        </p>
                       </div>
                     )}
 
                     {parsed.shelfNumber && (
                       <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
                         <span className="text-xs text-slate-500 uppercase font-bold">{language === 'he' ? 'מספר מדף' : 'Shelf Number'}</span>
-                        <p className="font-mono font-bold text-amber-300 mt-0.5">{parsed.shelfNumber}</p>
+                        <p className="font-mono font-bold text-amber-600 dark:text-amber-300 mt-0.5">
+                          <bdi dir="ltr">{parsed.shelfNumber}</bdi>
+                        </p>
                       </div>
                     )}
                   </div>
@@ -653,7 +682,7 @@ export function SmartImportModal({
                       type="button"
                       onClick={handleReportWrongParse}
                       disabled={isReportingWrong || reportedWrong}
-                      className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-rose-400 transition-colors cursor-pointer disabled:cursor-default disabled:hover:text-slate-500"
+                      className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-rose-400 transition-colors cursor-pointer disabled:cursor-default disabled:hover:text-slate-500 min-h-[48px] px-2.5 rounded-xl"
                     >
                       {isReportingWrong ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -662,8 +691,8 @@ export function SmartImportModal({
                       )}
                       <span>
                         {reportedWrong
-                          ? (language === 'he' ? 'הדיווח נשלח, תודה' : 'Reported, thanks')
-                          : (language === 'he' ? 'זה לא נכון?' : 'This wasn’t right?')}
+                           ? (language === 'he' ? 'הדיווח נשלח, תודה' : 'Reported, thanks')
+                           : (language === 'he' ? 'זה לא נכון?' : 'This wasn’t right?')}
                       </span>
                     </button>
 
@@ -674,14 +703,14 @@ export function SmartImportModal({
                       className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/20 transition-ui cursor-pointer min-h-[48px]"
                     >
                       <span>{language === 'he' ? 'המשך להוספת חבילה זו למעקב' : 'Add this Package to Tracker'}</span>
-                      <ArrowRight className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
+                      <ArrowRight className="w-4 h-4 rtl:rotate-180" />
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="p-4 rounded-2xl bg-rose-950/40 border border-rose-500/30 space-y-3">
-                  <div className="flex items-center gap-3 text-rose-300 text-xs">
-                    <AlertCircle className="w-5 h-5 shrink-0 text-rose-400" />
+                <div className="p-4 rounded-2xl bg-rose-500/10 dark:bg-rose-950/40 border border-rose-500/30 space-y-3">
+                  <div className="flex items-center gap-3 text-rose-700 dark:text-rose-300 text-xs">
+                    <AlertCircle className="w-5 h-5 shrink-0 text-rose-600 dark:text-rose-400" />
                     <span>{t('smartModal.noMatchAlert')}</span>
                   </div>
                   {onSwitchToManual && (

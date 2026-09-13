@@ -284,7 +284,7 @@ describe('AccountModal — preferred navigation app', () => {
     // A row that shows its value and opens a picker, not an inline select:
     // one geometry for every setting is what makes the list read as one screen.
     await user.click(screen.getByRole('button', { name: /Navigation app/i }));
-    await user.click(screen.getByRole('button', { name: /Waze/i }));
+    await user.click(screen.getByRole('radio', { name: /Waze/i }));
 
     expect(localStorage.getItem('deliveree_preferred_nav_app')).toBe('waze');
     expect(onShowToast).toHaveBeenCalledWith(
@@ -352,5 +352,39 @@ describe('AccountModal — push subscription uid plumbing', () => {
     );
 
     expect(await screen.findByText(/Subscription registered on server/i)).toBeTruthy();
+  });
+});
+
+describe('AccountModal — accessibility & form semantics', () => {
+  it('renders Picker options as an accessible radiogroup with aria-checked states', async () => {
+    const user = userEvent.setup();
+    renderWithLanguage(
+      <AccountModal isOpen onClose={vi.fn()} onShowToast={vi.fn()} />
+    );
+
+    await user.click(screen.getByRole('button', { name: /Navigation app/i }));
+
+    const radiogroup = screen.getByRole('radiogroup', { name: /Navigation app/i });
+    expect(radiogroup).toBeTruthy();
+
+    const radios = within(radiogroup).getAllByRole('radio');
+    expect(radios.length).toBeGreaterThanOrEqual(4);
+
+    // One should have aria-checked="true" (default or current value)
+    const checkedRadios = radios.filter((r) => r.getAttribute('aria-checked') === 'true');
+    expect(checkedRadios.length).toBe(1);
+  });
+
+  it('associates the delete confirmation label with its input via htmlFor and id', async () => {
+    const user = userEvent.setup();
+    renderWithLanguage(
+      <AccountModal isOpen onClose={vi.fn()} onShowToast={vi.fn()} />
+    );
+
+    await user.click(screen.getByRole('button', { name: /Delete account/i }));
+
+    const deleteInput = screen.getByLabelText(/To confirm, type "DELETE":/i);
+    expect(deleteInput).toBeTruthy();
+    expect(deleteInput.id).toBe('account-delete-confirm');
   });
 });

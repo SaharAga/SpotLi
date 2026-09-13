@@ -46,7 +46,7 @@ export function AnalyticsModal({
   const fastestCarrier = leaderboard.find(c => c.avgDays > 0);
 
   // Top carrier by volume
-  let topCarrierId = 'israel-post';
+  let topCarrierId = null;
   let topCarrierCount = 0;
   Object.entries(metrics.carrierDistribution).forEach(([cid, data]) => {
     if (data.count > topCarrierCount) {
@@ -54,7 +54,7 @@ export function AnalyticsModal({
       topCarrierId = cid;
     }
   });
-  const topCarrierObj = getCarrier(topCarrierId);
+  const topCarrierObj = topCarrierId ? getCarrier(topCarrierId) : null;
 
   // SVG Circular Gauge calculations for Success / On-Time Ring Indicator
   const ringRadius = 38;
@@ -124,7 +124,7 @@ export function AnalyticsModal({
               </span>
               <div className="flex items-baseline gap-1 mt-1">
                 <p className="text-2xl font-extrabold text-emerald-400">
-                  {metrics.avgTransitDays}
+                  <bdi dir="ltr">{metrics.avgTransitDays}</bdi>
                 </p>
                 <span className="text-xs text-slate-400 font-medium">
                   {t('insights.daysAvg')}
@@ -138,7 +138,7 @@ export function AnalyticsModal({
                 {t('insights.topCarrier')}
               </span>
               <p className="text-base font-bold text-amber-400 mt-1 truncate">
-                {language === 'he' ? topCarrierObj.hebrewName : topCarrierObj.name}
+                {topCarrierObj ? (language === 'he' ? topCarrierObj.hebrewName : topCarrierObj.name) : '—'}
               </p>
             </div>
           </div>
@@ -228,7 +228,7 @@ export function AnalyticsModal({
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between text-xs">
                       <span className="text-slate-300 font-medium">{t('insights.delivered')}</span>
-                      <span className="text-emerald-400 font-bold">{metrics.deliveredCount} / {metrics.totalCount}</span>
+                      <span className="text-emerald-400 font-bold"><bdi dir="ltr">{metrics.deliveredCount} / {metrics.totalCount}</bdi></span>
                     </div>
                   </div>
                 </div>
@@ -243,7 +243,7 @@ export function AnalyticsModal({
                       <span className="text-indigo-300 font-bold truncate">
                         {fastestCarrier 
                           ? `${language === 'he' ? fastestCarrier.carrierHebrewName : fastestCarrier.carrierName} (${fastestCarrier.avgDays} ${t('insights.days')})`
-                          : (language === 'he' ? 'דואר ישראל (8 ימים)' : 'Israel Post (8 days)')}
+                          : '—'}
                       </span>
                     </div>
                   </div>
@@ -335,10 +335,10 @@ export function AnalyticsModal({
                   </div>
                   <div>
                     <p className="text-xl font-extrabold text-slate-100 tracking-tight">
-                      {cur.symbol}{cur.total.toLocaleString(language === 'he' ? 'he-IL' : 'en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                      <bdi dir="ltr">{cur.symbol}{cur.total.toLocaleString(language === 'he' ? 'he-IL' : 'en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</bdi>
                     </p>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      {cur.count} {t('insights.packages')}
+                      <bdi dir="ltr">{cur.count}</bdi> {t('insights.packages')}
                     </p>
                   </div>
                 </div>
@@ -359,26 +359,32 @@ export function AnalyticsModal({
               <span>{t('insights.carrierDistribution')}</span>
             </h3>
 
-            <div className="space-y-3">
-              {Object.entries(metrics.carrierDistribution).map(([carrierId, data]) => {
-                const carrier = getCarrier(carrierId);
+            {Object.keys(metrics.carrierDistribution).length === 0 ? (
+              <p className="text-xs text-slate-400 text-center py-4">
+                {t('insights.noCarrierDistribution')}
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {Object.entries(metrics.carrierDistribution).map(([carrierId, data]) => {
+                  const carrier = getCarrier(carrierId);
 
-                return (
-                  <div key={carrierId} className="space-y-1.5">
-                    <div className="flex justify-between text-xs font-semibold">
-                      <span className="text-slate-300">{language === 'he' ? carrier.hebrewName : carrier.name}</span>
-                      <span className="text-slate-400">{data.count} ({data.percentage}%)</span>
+                  return (
+                    <div key={carrierId} className="space-y-1.5">
+                      <div className="flex justify-between text-xs font-semibold">
+                        <span className="text-slate-300">{language === 'he' ? carrier.hebrewName : carrier.name}</span>
+                        <span className="text-slate-400"><bdi dir="ltr">{data.count} ({data.percentage}%)</bdi></span>
+                      </div>
+                      <div className="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800/50">
+                        <div
+                          className={`h-full bg-gradient-to-r ${carrier.color} rounded-full transition-ui duration-500`}
+                          style={{ width: `${data.percentage}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800/50">
-                      <div
-                        className={`h-full bg-gradient-to-r ${carrier.color} rounded-full transition-ui duration-500`}
-                        style={{ width: `${data.percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Status Breakdown */}
@@ -400,7 +406,7 @@ export function AnalyticsModal({
                       {language === 'he' ? s.hebrewLabel : s.label}
                     </span>
                     <span className="text-xl font-bold text-slate-200 mt-1">
-                      {count}
+                      <bdi dir="ltr">{count}</bdi>
                     </span>
                   </div>
                 );

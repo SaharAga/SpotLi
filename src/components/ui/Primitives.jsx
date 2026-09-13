@@ -26,9 +26,9 @@ const FOCUS =
   'focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 focus:outline-none';
 
 /** Screen/section title. Rubik for display, matching the home header. */
-export function Title({ children, className = '' }) {
+export function Title({ children, className = '', id, ...rest }) {
   return (
-    <h2 className={`font-display text-xl font-semibold tracking-tight text-slate-100 ${className}`}>
+    <h2 id={id} className={`font-display text-xl font-semibold tracking-tight text-slate-100 ${className}`} {...rest}>
       {children}
     </h2>
   );
@@ -219,12 +219,12 @@ export function BackButton({ onClick, label, className = '' }) {
  * navigating deserves the same affordance at every width. An X means "dismiss
  * this thing on top of the page" — these are pages.
  */
-export function ModalHeader({ title, subtitle, onClose, closeLabel = 'Back', actions }) {
+export function ModalHeader({ title, subtitle, onClose, closeLabel = 'Back', actions, titleId }) {
   return (
     <div className="flex items-center gap-3 p-4 sm:p-6 border-b border-slate-800">
       {onClose && <BackButton onClick={onClose} label={closeLabel} className="shrink-0" />}
       <div className="min-w-0 flex-1 flex flex-col gap-1">
-        <Title>{title}</Title>
+        <Title id={titleId}>{title}</Title>
         {subtitle && <p className="text-sm text-slate-400 leading-relaxed">{subtitle}</p>}
       </div>
       {actions}
@@ -256,7 +256,19 @@ export function ModalFooter({ children, className = '' }) {
  * value in place (a switch), so it gets no chevron and does not swallow the
  * control's own clicks.
  */
-export function SettingRow({ icon: Icon, label, value, hint, onClick, control, tone = 'default', disabled }) {
+export function SettingRow({
+  icon: Icon,
+  label,
+  value,
+  hint,
+  onClick,
+  control,
+  tone = 'default',
+  disabled,
+  role,
+  'aria-checked': ariaChecked,
+  ...rest
+}) {
   const tones = {
     default: 'text-slate-100',
     danger: 'text-rose-400',
@@ -297,10 +309,10 @@ export function SettingRow({ icon: Icon, label, value, hint, onClick, control, t
   // itself interactive (a Toggle) passes no onClick, so it stays a plain div
   // and never nests one interactive element inside another.
   if (!onClick) {
-    return <div className={base}>{body}</div>;
+    return <div className={base} role={role} aria-checked={ariaChecked} {...rest}>{body}</div>;
   }
   return (
-    <button type="button" onClick={onClick} disabled={disabled} className={base}>
+    <button type="button" onClick={onClick} disabled={disabled} role={role} aria-checked={ariaChecked} className={base} {...rest}>
       {body}
     </button>
   );

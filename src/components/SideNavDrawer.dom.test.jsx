@@ -5,11 +5,13 @@ import userEvent from '@testing-library/user-event';
 import { SideNavDrawer } from './SideNavDrawer';
 import { renderWithLanguage } from '../test-utils/renderWithProviders';
 
+const mockAuth = {
+  user: null,
+  logout: vi.fn()
+};
+
 vi.mock('../context/AuthContext', () => ({
-  useAuth: () => ({
-    user: null,
-    logout: vi.fn()
-  })
+  useAuth: () => mockAuth
 }));
 
 vi.mock('../context/ThemeContext', () => ({
@@ -67,5 +69,22 @@ describe('SideNavDrawer Ergonomics & Scroll Lock (#136)', () => {
 
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders user details when signed in and triggers onOpenAuth on click', async () => {
+    const user = userEvent.setup();
+    mockAuth.user = { name: 'סער אגא', email: 'sahar.test@example.com' };
+    const onOpenAuth = vi.fn();
+    renderWithLanguage(
+      <SideNavDrawer isOpen={true} onClose={onClose} onOpenAuth={onOpenAuth} />
+    );
+
+    expect(screen.getByText('סער אגא')).toBeInTheDocument();
+    expect(screen.getByText('sahar.test@example.com')).toBeInTheDocument();
+
+    await user.click(screen.getByText('סער אגא'));
+    expect(onOpenAuth).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
+    mockAuth.user = null;
   });
 });

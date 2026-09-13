@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { X, MessageSquare, Star, Trash2, Bug, Lightbulb, Heart, RefreshCw, CloudOff, Cloud, AlertTriangle, ShieldCheck, TrendingDown, TrendingUp, BarChart3, Activity, Download, Cpu, Smartphone, Search, Filter, Layers, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { MessageSquare, Star, Trash2, Bug, Lightbulb, Heart, RefreshCw, CloudOff, Cloud, AlertTriangle, ShieldCheck, TrendingDown, TrendingUp, BarChart3, Activity, Download, Cpu, Smartphone, Search, Filter, Layers, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { isAdminUser } from '../constants/admin';
@@ -204,46 +204,50 @@ export function AdminDashboardModal({
       className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in overflow-y-auto"
       role="dialog"
       aria-modal="true"
+      aria-labelledby="admin-dashboard-title"
     >
       <div className="relative w-full max-w-5xl max-h-[92vh] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col my-auto">
         {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-indigo-900/30 via-slate-900 to-purple-900/30">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20">
+        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between gap-3 bg-gradient-to-r from-indigo-900/30 via-slate-900 to-purple-900/30">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2.5 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20 shrink-0">
               <ShieldCheck className="w-5 h-5" />
             </div>
-            <div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
+            <div className="min-w-0">
+              <h2 id="admin-dashboard-title" className="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2 flex-wrap">
                 <span>{language === 'he' ? 'מרכז ניהול ומדדי איכות' : 'Admin Telemetry & Quality Center'}</span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/30">
-                  v{APP_VERSION}
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-semibold border border-indigo-500/30">
+                  <bdi dir="ltr">v{APP_VERSION}</bdi>
                 </span>
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-400 truncate">
                 {language === 'he' ? 'מעקב תקלות, דוחות קריסה, חוויית משתמש וביצועי מנוע הפיענוח' : 'Issue trends, crash reports, UX satisfaction & smart parser telemetry'}
               </p>
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="shrink-0 me-3 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
-            aria-label="Back"
-          >
-            <ArrowLeft className="w-5 h-5 rtl:rotate-180" aria-hidden="true" />
-          </button>
-          <div className="flex flex-1 min-w-0 items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {isAdmin && (
               <button
+                type="button"
                 onClick={loadAllTelemetry}
                 disabled={isLoading}
                 className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center disabled:opacity-50"
                 title={language === 'he' ? 'רענן נתונים מהענן' : 'Refresh cloud data'}
-                aria-label="Refresh"
+                aria-label={language === 'he' ? 'רענן' : 'Refresh'}
               >
                 <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
               </button>
             )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
+              aria-label={language === 'he' ? 'חזרה' : 'Back'}
+              title={language === 'he' ? 'חזרה' : 'Back'}
+            >
+              <ArrowLeft className="w-5 h-5 rtl:rotate-180" aria-hidden="true" />
+            </button>
           </div>
         </div>
 
@@ -289,13 +293,22 @@ export function AdminDashboardModal({
         </div>
 
         {/* Tab Navigation */}
-        <div className="px-4 sm:px-6 pt-3 flex items-center gap-1 sm:gap-2 border-b border-slate-800 overflow-x-auto">
+        <div
+          role="tablist"
+          aria-label={language === 'he' ? 'לשוניות מרכז ניהול' : 'Admin Telemetry Tabs'}
+          className="px-4 sm:px-6 pt-3 flex items-center gap-1 sm:gap-2 border-b border-slate-800 overflow-x-auto"
+        >
           <button
+            type="button"
+            role="tab"
+            id="admin-tab-trends"
+            aria-selected={activeTab === 'trends'}
+            aria-controls="admin-panel-trends"
             onClick={() => setActiveTab('trends')}
             className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-ui cursor-pointer min-h-[48px] flex items-center gap-1.5 whitespace-nowrap ${
               activeTab === 'trends'
-                ? 'bg-slate-800/90 text-indigo-300 border-b-2 border-indigo-400'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                ? 'bg-slate-800/90 text-indigo-600 dark:text-indigo-300 border-b-2 border-indigo-600 dark:border-indigo-400'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-800/40'
             }`}
           >
             <BarChart3 className="w-3.5 h-3.5" />
@@ -303,11 +316,16 @@ export function AdminDashboardModal({
           </button>
 
           <button
+            type="button"
+            role="tab"
+            id="admin-tab-feedback"
+            aria-selected={activeTab === 'feedback'}
+            aria-controls="admin-panel-feedback"
             onClick={() => setActiveTab('feedback')}
             className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-ui cursor-pointer min-h-[48px] flex items-center gap-1.5 whitespace-nowrap ${
               activeTab === 'feedback'
-                ? 'bg-slate-800/90 text-indigo-300 border-b-2 border-indigo-400'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                ? 'bg-slate-800/90 text-indigo-600 dark:text-indigo-300 border-b-2 border-indigo-600 dark:border-indigo-400'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-800/40'
             }`}
           >
             <MessageSquare className="w-3.5 h-3.5" />
@@ -318,11 +336,16 @@ export function AdminDashboardModal({
           </button>
 
           <button
+            type="button"
+            role="tab"
+            id="admin-tab-crashes"
+            aria-selected={activeTab === 'crashes'}
+            aria-controls="admin-panel-crashes"
             onClick={() => setActiveTab('crashes')}
             className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-ui cursor-pointer min-h-[48px] flex items-center gap-1.5 whitespace-nowrap ${
               activeTab === 'crashes'
-                ? 'bg-slate-800/90 text-orange-300 border-b-2 border-orange-400'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                ? 'bg-slate-800/90 text-orange-600 dark:text-orange-300 border-b-2 border-orange-600 dark:border-orange-400'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-800/40'
             }`}
           >
             <AlertTriangle className="w-3.5 h-3.5" />
@@ -333,11 +356,16 @@ export function AdminDashboardModal({
           </button>
 
           <button
+            type="button"
+            role="tab"
+            id="admin-tab-parser"
+            aria-selected={activeTab === 'parser'}
+            aria-controls="admin-panel-parser"
             onClick={() => setActiveTab('parser')}
             className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-ui cursor-pointer min-h-[48px] flex items-center gap-1.5 whitespace-nowrap ${
               activeTab === 'parser'
-                ? 'bg-slate-800/90 text-blue-300 border-b-2 border-blue-400'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                ? 'bg-slate-800/90 text-blue-600 dark:text-blue-300 border-b-2 border-blue-600 dark:border-blue-400'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-800/40'
             }`}
           >
             <Cpu className="w-3.5 h-3.5" />
@@ -348,11 +376,16 @@ export function AdminDashboardModal({
           </button>
 
           <button
+            type="button"
+            role="tab"
+            id="admin-tab-adoption"
+            aria-selected={activeTab === 'adoption'}
+            aria-controls="admin-panel-adoption"
             onClick={() => setActiveTab('adoption')}
             className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-ui cursor-pointer min-h-[48px] flex items-center gap-1.5 whitespace-nowrap ${
               activeTab === 'adoption'
-                ? 'bg-slate-800/90 text-purple-300 border-b-2 border-purple-400'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                ? 'bg-slate-800/90 text-purple-600 dark:text-purple-300 border-b-2 border-purple-600 dark:border-purple-400'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-800/40'
             }`}
           >
             <Activity className="w-3.5 h-3.5" />
@@ -360,11 +393,16 @@ export function AdminDashboardModal({
           </button>
 
           <button
+            type="button"
+            role="tab"
+            id="admin-tab-system"
+            aria-selected={activeTab === 'system'}
+            aria-controls="admin-panel-system"
             onClick={() => setActiveTab('system')}
             className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-ui cursor-pointer min-h-[48px] flex items-center gap-1.5 whitespace-nowrap ${
               activeTab === 'system'
-                ? 'bg-slate-800/90 text-emerald-300 border-b-2 border-emerald-400'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                ? 'bg-slate-800/90 text-emerald-600 dark:text-emerald-300 border-b-2 border-emerald-600 dark:border-emerald-400'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-800/40'
             }`}
           >
             <Download className="w-3.5 h-3.5" />
@@ -373,7 +411,13 @@ export function AdminDashboardModal({
         </div>
 
         {/* Main Content Viewport */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 text-slate-200 space-y-6">
+        <div
+          role="tabpanel"
+          id={`admin-panel-${activeTab}`}
+          aria-labelledby={`admin-tab-${activeTab}`}
+          tabIndex={0}
+          className="flex-1 overflow-y-auto p-4 sm:p-6 text-slate-200 space-y-6"
+        >
           {/* TAB 1: OVERVIEW & TRENDS */}
           {activeTab === 'trends' && (
             <div className="space-y-6">
@@ -566,13 +610,13 @@ export function AdminDashboardModal({
                 {/* Search and Star Filter */}
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1 sm:w-48">
-                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <Search className="w-3.5 h-3.5 absolute start-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
                     <input
                       type="text"
                       placeholder={language === 'he' ? 'חיפוש בתוכן...' : 'Search feedback...'}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl ps-9 pe-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 min-h-[48px]"
                     />
                   </div>
 
@@ -623,7 +667,7 @@ export function AdminDashboardModal({
                           </span>
                         </div>
                         <span className="text-xs text-slate-500 font-mono">
-                          {fb.timestamp ? new Date(fb.timestamp).toLocaleString() : ''}
+                          <bdi dir="auto">{fb.timestamp ? new Date(fb.timestamp).toLocaleString() : ''}</bdi>
                         </span>
                       </div>
 
@@ -659,7 +703,7 @@ export function AdminDashboardModal({
                             <Cloud className="w-3 h-3 text-emerald-400" title="Synced from cloud" />
                           )}
                         </span>
-                        <span>📱 {fb.screenWidth}x{fb.screenHeight} • v{fb.appVersion || APP_VERSION}</span>
+                        <span><bdi dir="ltr">📱 {fb.screenWidth}x{fb.screenHeight} • v{fb.appVersion || APP_VERSION}</bdi></span>
                       </div>
                     </div>
                   ))}
@@ -710,7 +754,7 @@ export function AdminDashboardModal({
                           )}
                         </div>
                         <span className="text-xs text-slate-500 font-mono">
-                          {language === 'he' ? 'נצפה לאחרונה:' : 'Last seen:'} {group.lastSeen ? new Date(group.lastSeen).toLocaleString() : ''}
+                          {language === 'he' ? 'נצפה לאחרונה:' : 'Last seen:'} <bdi dir="auto">{group.lastSeen ? new Date(group.lastSeen).toLocaleString() : ''}</bdi>
                         </span>
                       </div>
 
@@ -720,7 +764,7 @@ export function AdminDashboardModal({
 
                       <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
                         <span className="font-mono">Sig: {group.signature}</span>
-                        <span>Version: v{group.appVersion || APP_VERSION}</span>
+                        <span>Version: <bdi dir="ltr">v{group.appVersion || APP_VERSION}</bdi></span>
                       </div>
                     </div>
                   ))}

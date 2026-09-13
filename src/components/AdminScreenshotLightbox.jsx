@@ -51,6 +51,7 @@ export function AdminScreenshotLightbox({
       className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-slate-950/90 backdrop-blur-md animate-fade-in"
       role="dialog"
       aria-modal="true"
+      aria-labelledby="screenshot-lightbox-title"
       onClick={onClose}
     >
       <div
@@ -60,7 +61,7 @@ export function AdminScreenshotLightbox({
         {/* Header Bar */}
         <div className="p-3 sm:p-4 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between z-10">
           <div className="flex items-center gap-2 text-slate-300 text-xs font-semibold">
-            <span>{language === 'he' ? 'צילום מסך מצורף' : 'Attached Screenshot'}</span>
+            <span id="screenshot-lightbox-title">{language === 'he' ? 'צילום מסך מצורף' : 'Attached Screenshot'}</span>
             <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-mono">
               {zoomLevel}x
             </span>

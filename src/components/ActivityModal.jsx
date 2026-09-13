@@ -1,10 +1,59 @@
 import React, { useMemo } from 'react';
-import { Package, MapPin, Clock, Inbox } from 'lucide-react';
+import { Package, MapPin, Clock, Inbox, CheckCircle2, Truck, AlertCircle } from 'lucide-react';
 import { Modal } from './Modal';
 import { useLanguage } from '../context/LanguageContext';
 import { getCarrier } from '../types/carriers';
 import { buildActivityFeed, groupActivityByDay, dayLabel } from '../utils/activityFeed';
 import { Title, Button } from './ui/Primitives';
+
+/**
+ * Returns contextual icon and color styling based on checkpoint stage.
+ */
+function getCheckpointPresentation(event) {
+  const title = (event.title || '').toLowerCase();
+  const titleHe = (event.titleHe || '').toLowerCase();
+  const desc = (event.description || '').toLowerCase();
+  const descHe = (event.descriptionHe || '').toLowerCase();
+  const text = `${title} ${titleHe} ${desc} ${descHe}`;
+
+  // 1. Ready for pickup / Locker
+  if (/pickup|locker|איסוף|לוקר|ממתינה לאיסוף|סניף/.test(text)) {
+    return {
+      Icon: MapPin,
+      badgeColor: 'bg-emerald-500/12 text-emerald-400 dark:text-emerald-300 border border-emerald-500/20'
+    };
+  }
+
+  // 2. Delivered
+  if (/delivered|נמסר|נאסף|המסירה הושלמה/.test(text)) {
+    return {
+      Icon: CheckCircle2,
+      badgeColor: 'bg-blue-500/12 text-blue-400 dark:text-blue-300 border border-blue-500/20'
+    };
+  }
+
+  // 3. Out for delivery / Courier on route
+  if (/out for delivery|שליח|חלוקה|יצאה למסירה|בדרך ליעד/.test(text)) {
+    return {
+      Icon: Truck,
+      badgeColor: 'bg-purple-500/12 text-purple-400 dark:text-purple-300 border border-purple-500/20'
+    };
+  }
+
+  // 4. Customs hold / action
+  if (/customs|מכס|שחרור ממכס|בדיקת מכס/.test(text)) {
+    return {
+      Icon: AlertCircle,
+      badgeColor: 'bg-amber-500/12 text-amber-400 dark:text-amber-300 border border-amber-500/20'
+    };
+  }
+
+  // Default In Transit / Sorting / Scanned / Shipped
+  return {
+    Icon: Package,
+    badgeColor: 'bg-blue-500/12 text-blue-400 dark:text-blue-300 border border-blue-500/20'
+  };
+}
 
 /**
  * Activity — what moved since you last looked.
@@ -58,9 +107,9 @@ export function ActivityModal({ isOpen, onClose, packages = [], onOpenPackage })
           </p>
         </div>
         <div className="hidden lg:block shrink-0">
-          <Button onClick={onClose} >
-          {he ? 'סגור' : 'Close'}
-        </Button>
+          <Button onClick={onClose}>
+            {he ? 'סגור' : 'Close'}
+          </Button>
         </div>
       </div>
 
@@ -90,27 +139,39 @@ export function ActivityModal({ isOpen, onClose, packages = [], onOpenPackage })
                 <div className="flex flex-col gap-2">
                   {day.items.map((event) => {
                     const carrier = getCarrier(event.carrier);
+                    const { Icon, badgeColor } = getCheckpointPresentation(event);
+                    const eventTitle = he ? event.titleHe : event.title;
+                    const pkgTitle = he ? event.packageTitleHe : event.packageTitle;
+                    const desc = he ? event.descriptionHe : event.description;
+                    const showDesc = desc && desc.trim() !== '' && desc.trim() !== eventTitle.trim();
+
                     return (
                       <button
                         key={event.id}
                         type="button"
                         onClick={() => onOpenPackage && onOpenPackage(event.packageId)}
+                        aria-label={`${eventTitle} — ${pkgTitle}`}
                         className="w-full flex items-start gap-3 p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:bg-slate-800 hover:border-slate-700 transition-colors cursor-pointer text-start min-h-[48px] focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none"
                       >
-                        <span className="w-9 h-9 shrink-0 rounded-xl bg-blue-500/12 text-blue-400 flex items-center justify-center">
-                          <Package className="w-4 h-4" aria-hidden="true" />
+                        <span className={`w-9 h-9 shrink-0 rounded-xl ${badgeColor} flex items-center justify-center`}>
+                          <Icon className="w-4 h-4" aria-hidden="true" />
                         </span>
 
                         <span className="min-w-0 flex-1 flex flex-col gap-1">
                           <span className="text-sm font-bold text-slate-100 leading-snug">
-                            {he ? event.titleHe : event.title}
+                            {eventTitle}
                           </span>
                           <span className="text-xs text-slate-400 truncate">
-                            {he ? event.packageTitleHe : event.packageTitle}
+                            {pkgTitle}
                             {carrier && (
                               <> · {he ? carrier.hebrewName : carrier.name}</>
                             )}
                           </span>
+                          {showDesc && (
+                            <span className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                              {desc}
+                            </span>
+                          )}
                           {event.location && (
                             <span className="text-xs text-slate-500 flex items-center gap-1.5 truncate">
                               <MapPin className="w-3 h-3 shrink-0" aria-hidden="true" />

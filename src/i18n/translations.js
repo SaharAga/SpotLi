@@ -37,6 +37,7 @@ export const translations = {
       expectedDate: 'Expected Delivery',
       title: 'Item Title',
       status: 'Status',
+      moreFilters: 'More filters and sorting options',
       gridView: 'Grid',
       tableView: 'Table',
       showArchived: 'Show Archived',
@@ -64,6 +65,7 @@ export const translations = {
       refreshStatus: 'Refresh Status',
       rateLimited: 'Rate limited (wait cooldown)',
       viewDetails: 'View Details',
+      moreActions: 'Package actions',
       expectedOn: 'Expected:',
       orderedOn: 'Ordered:',
       route: 'Route:',
@@ -181,6 +183,7 @@ export const translations = {
       currencyBreakdownDesc: 'Total shipment values partitioned by native currency',
       noCurrencyData: 'No price or currency details detected in packages yet',
       noLeaderboardData: 'No delivered shipments available to benchmark carrier transit times',
+      noCarrierDistribution: 'No carrier distribution data available yet',
       carrierDistribution: 'Shipment Distribution by Carrier',
       stageDistribution: 'Shipment Stages Breakdown',
       onTime: 'On-Time',
@@ -264,6 +267,11 @@ export const translations = {
     locationBundling: {
       bundleBannerTitleSingle: '1 other package waiting here!',
       bundleBannerTitleMultiple: '{count} other packages waiting here!',
+      dashboardBannerTitle: 'Bundled Pickup Available!',
+      dashboardBannerSubtitle: '{count} packages waiting at the same spot: {location}',
+      openClusterPins: 'View Pickup Codes ({count})',
+      myActivePickups: 'Your Packages Ready for Pickup',
+      openLockerMode: 'Open Locker Mode (Big Digits)',
       storePickupTitle: 'Store Pickup Details',
       collectAll: 'Mark All as Collected ({count})',
       collectAllSuccess: '{count} packages marked as collected! 🎉',
@@ -297,6 +305,8 @@ export const translations = {
       continueWithEmail: 'Continue with Email',
       tryDemo: 'Or explore with demo package',
       startManual: 'Start Tracking Manually',
+      progress: 'Tour progress',
+      slideIndicator: 'Slide {current} of {total}',
       slide0Tag: 'Welcome to SpotLi',
       slide0Title: 'All Your Deliveries — In One Smart Place',
       slide0Desc: 'No more digging through text messages or lost tracking emails. SpotLi automatically gathers and tracks all your packages in real time.',
@@ -356,7 +366,17 @@ export const translations = {
       lockerDesc: 'Tap the locker pickup button on your card for sunlight-proof giant PINs and Waze directions.',
       lockerAction: 'View Pickup Mode'
     },
-    appTourMenu: 'App Tour'
+    appTourMenu: 'App Tour',
+    offline: {
+      offlineTitle: "You're offline",
+      offlineDesc: 'Changes will save locally and sync automatically.',
+      pendingChanges: '{count} change pending sync',
+      pendingChangesPlural: '{count} changes pending sync',
+      backOnline: 'Back online',
+      syncComplete: 'All changes synced successfully!',
+      syncNow: 'Sync Now',
+      dismiss: 'Dismiss offline alert'
+    }
   },
   he: {
     appTitle: 'SpotLi',
@@ -393,6 +413,7 @@ export const translations = {
       expectedDate: 'תאריך הגעה משוער',
       title: 'שם הפריט',
       status: 'סטטוס',
+      moreFilters: 'אפשרויות סינון ומיון נוספות',
       gridView: 'תצוגת כרטיסים',
       tableView: 'תצוגת טבלה',
       showArchived: 'הצג ארכיון',
@@ -420,6 +441,7 @@ export const translations = {
       refreshStatus: 'רענן סטטוס',
       rateLimited: 'ממתין להפוגה בין בדיקות',
       viewDetails: 'פרטים וציר זמן',
+      moreActions: 'פעולות לחבילה',
       expectedOn: 'הגעה משוערת:',
       orderedOn: 'הוזמן בתאריך:',
       route: 'מסלול:',
@@ -537,6 +559,7 @@ export const translations = {
       currencyBreakdownDesc: 'סיכום שווי משלוחים מחולק לפי מטבע מקורי',
       noCurrencyData: 'טרם זוהו פרטי מחיר או מטבע בחבילות שלך',
       noLeaderboardData: 'אין עדיין משלוחים שנמסרו למדידת מהירות חברות השילוח',
+      noCarrierDistribution: 'אין עדיין נתוני התפלגות חברות שילוח',
       carrierDistribution: 'התפלגות לפי חברת שילוח',
       stageDistribution: 'התפלגות לפי שלב משלוח',
       onTime: 'בזמן',
@@ -620,6 +643,11 @@ export const translations = {
     locationBundling: {
       bundleBannerTitleSingle: 'עוד חבילה אחת ממתינה בנקודה זו!',
       bundleBannerTitleMultiple: 'עוד {count} חבילות ממתינות בנקודה זו!',
+      dashboardBannerTitle: 'איסוף מרוכז זמין!',
+      dashboardBannerSubtitle: '{count} חבילות ממתינות באותו מיקום: {location}',
+      openClusterPins: 'הצג קודי איסוף ({count})',
+      myActivePickups: 'החבילות שלך שממתינות לאיסוף',
+      openLockerMode: 'פתח מסך איסוף מוגדל',
       storePickupTitle: 'פרטי איסוף בחנות',
       collectAll: 'סמן את כולן כנאספו ({count})',
       collectAllSuccess: '{count} חבילות סומנו כנאספו בהצלחה! 🎉',
@@ -653,6 +681,8 @@ export const translations = {
       continueWithEmail: 'המשך עם אימייל',
       tryDemo: 'או התנסה בחבילת הדגמה',
       startManual: 'התחל מעקב ידני',
+      progress: 'התקדמות הסיור',
+      slideIndicator: 'שקף {current} מתוך {total}',
       slide0Tag: 'ברוכים הבאים ל-SpotLi',
       slide0Title: 'כל המשלוחים והחבילות שלך — במקום אחד',
       slide0Desc: 'בלי לחפש קודי איסוף ב-SMS ובלי לאבד מספרי מעקב במייל. SpotLi מרכזת ומעדכנת עבורך את כל החבילות באופן אוטומטי.',
@@ -712,6 +742,16 @@ export const translations = {
       lockerDesc: 'לחץ על כפתור האיסוף בכרטיס החבילה לצפייה בקוד ענק שלא כבה בשמש וניווט ישיר ב-Waze.',
       lockerAction: 'צפה במצב איסוף'
     },
-    appTourMenu: 'מדריך שימוש וסיור'
+    appTourMenu: 'מדריך שימוש וסיור',
+    offline: {
+      offlineTitle: 'אתה במצב לא מקוון',
+      offlineDesc: 'השינויים יישמרו מקומית ויסונכרנו אוטומטית.',
+      pendingChanges: 'שינוי {count} ממתין לסנכרון',
+      pendingChangesPlural: '{count} שינויים ממתינים לסנכרון',
+      backOnline: 'חזרת לאינטרנט',
+      syncComplete: 'כל השינויים סונכרנו בהצלחה!',
+      syncNow: 'סנכרן כעת',
+      dismiss: 'סגור התראת מצב לא מקוון'
+    }
   }
 };

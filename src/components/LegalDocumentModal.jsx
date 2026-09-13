@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, FileText, ArrowLeft } from 'lucide-react';
+import { FileText, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { TERMS_CONTENT, PRIVACY_CONTENT } from '../constants/legal';
 import { Modal } from './Modal';
@@ -25,13 +25,15 @@ export function LegalDocumentModal({ isOpen, onClose, docType = 'terms' }) {
       componentName="LegalDocumentModal"
       layer="top"
       overlayClassName="bg-slate-950/85"
+      labelledBy="legal-doc-title"
       className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8 max-h-[85vh] flex flex-col"
     >
         <div className="p-5 sm:p-6 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-blue-600/10 to-indigo-600/10 shrink-0">
           <button
+            type="button"
             onClick={onClose}
             className="shrink-0 me-3 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
-            aria-label="Back"
+            aria-label={language === 'he' ? 'חזרה' : 'Back'}
           >
             <ArrowLeft className="w-5 h-5 rtl:rotate-180" aria-hidden="true" />
           </button>
@@ -40,8 +42,10 @@ export function LegalDocumentModal({ isOpen, onClose, docType = 'terms' }) {
               <FileText className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-100">{content.title}</h2>
-              <p className="text-xs text-slate-400">{content.updated}</p>
+              <h2 id="legal-doc-title" className="text-base sm:text-lg font-bold text-slate-100">{content.title}</h2>
+              <p className="text-xs text-slate-400">
+                <bdi dir="auto">{content.updated}</bdi>
+              </p>
             </div>
           </div>
         </div>
@@ -59,7 +63,7 @@ export function LegalDocumentModal({ isOpen, onClose, docType = 'terms' }) {
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-ui cursor-pointer min-h-[48px]"
+            className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-ui cursor-pointer min-h-[48px] min-w-[80px] flex items-center justify-center"
           >
             {language === 'he' ? 'סגור' : 'Close'}
           </button>

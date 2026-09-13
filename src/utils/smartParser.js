@@ -404,7 +404,7 @@ const GENERIC_TRACKING_PARAMS = [
  */
 const HEBREW_CARRIER_PHRASES = [
   { carrierId: 'chita', patterns: [/מחברת\s*צ['׳`״’‘]יטה/i, /מצ['׳`״’‘]יטה/i, /חברת\s*צ['׳`״’‘]יטה/i, /צ['׳`״’‘]יטה\s*שליחויות/i, /שליחויות\s*צ['׳`״’‘]יטה/i, /שליח\s*צ['׳`״’‘]יטה/i, /צ['׳`״’‘]יטה\s*שופס/i, /צ['׳`״’‘]יטה/i, /chita/i] },
-  { carrierId: 'israel-post', patterns: [/מדואר\s*ישראל/i, /דואר\s*ישראל/i, /מחברת\s*דואר\s*ישראל/i, /דבר\s*דואר/i, /חבילת\s*דואר/i, /סניף\s*הדואר/i, /סוכנות\s*(?:ה)?דואר/i, /מרכז\s*המסירה\s*בדואר/i, /יחידת\s*(?:ה)?דואר/i] },
+  { carrierId: 'israel-post', patterns: [/מדואר\s*ישראל/i, /דואר\s*ישראל/i, /מחברת\s*דואר\s*ישראל/i, /israel\s*post/i, /israelpost/i] },
   { carrierId: 'hfd', patterns: [/מחברת\s*HFD/i, /מ-?HFD/i, /אי-?פוסט/i, /HFD\s*שליחויות/i, /e-?post/i, /משלוח\s*HFD/i, /HFD/i] },
   { carrierId: 'boxit', patterns: [/מחברת\s*בוקסיט/i, /מ-?BoxIt/i, /בוקסיט/i, /boxit/i, /חבילת\s*בוקסיט/i] },
   { carrierId: 'buzzr', patterns: [/באזר\s*שליחויות/i, /מחברת\s*באזר/i, /מבאזר/i, /משלוח\s*Buzzr/i, /משלוח\s*באזר/i, /buzzr/i] },
@@ -420,6 +420,10 @@ const HEBREW_CARRIER_PHRASES = [
   { carrierId: 'zigzag', patterns: [/זיגזג\s*שליחויות/i, /שליח\s*זיגזג/i, /זיגזג/i, /zigzag/i] },
   { carrierId: 'orian', patterns: [/אוריאן/i, /orian/i] },
   { carrierId: 'exelot', patterns: [/אקסלוט/i, /exelot/i] },
+  // Generic Israeli postal phrases — placed after named couriers so messages like
+  // "בר הפצה - דבר דואר BAR..." correctly attribute to the named courier rather
+  // than defaulting to Israel Post.
+  { carrierId: 'israel-post', patterns: [/דבר\s*דואר/i, /חבילת\s*דואר/i, /סניף\s*הדואר/i, /סוכנות\s*(?:ה)?דואר/i, /מרכז\s*המסירה\s*בדואר/i, /יחידת\s*(?:ה)?דואר/i] },
   // Global carriers. Israeli users receive these notifications in English as
   // often as in Hebrew, and without a brand phrase their bare-digit waybills
   // (DHL 10, FedEx 12) have no corroboration at all.
@@ -1320,6 +1324,7 @@ export function parseSmartText(rawText) {
       pickupLocation: effectivePickupLocation,
       pickupHours,
       pickupPhone,
+      pickupCode: lockerPin,
       lockerPin,
       shelfNumber,
       isRedirected: redirectInfo.isRedirected || false,
@@ -1352,6 +1357,7 @@ export function parseSmartText(rawText) {
     pickupLocation: effectivePickupLocation,
     pickupHours,
     pickupPhone,
+    pickupCode: lockerPin,
     lockerPin,
     shelfNumber,
     isRedirected: redirectInfo.isRedirected || false,

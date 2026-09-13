@@ -1,4 +1,5 @@
 /** @vitest-environment jsdom */
+import '@testing-library/jest-dom';
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -108,8 +109,57 @@ describe('AdminDashboardModal Component Tests', () => {
     const handleClose = vi.fn();
     renderDashboard({ onClose: handleClose });
 
-    const closeBtn = screen.getByLabelText('Back');
+    const closeBtn = screen.getByLabelText(/back|חזרה/i);
     fireEvent.click(closeBtn);
     expect(handleClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('connects dialog aria-labelledby and provides tablist and tab WAI-ARIA semantics', () => {
+    renderDashboard();
+
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveAttribute('aria-labelledby', 'admin-dashboard-title');
+    const title = document.getElementById('admin-dashboard-title');
+    expect(title).toBeInTheDocument();
+
+    const tablist = screen.getByRole('tablist');
+    expect(tablist).toBeInTheDocument();
+
+    const tabs = screen.getAllByRole('tab');
+    expect(tabs.length).toBe(6);
+
+    const trendsTab = screen.getByRole('tab', { name: /overview & trends|מגמות ואיכות/i });
+    expect(trendsTab).toHaveAttribute('aria-selected', 'true');
+    expect(trendsTab).toHaveAttribute('aria-controls', 'admin-panel-trends');
+
+    const feedbackTab = screen.getByRole('tab', { name: /user feedback|משובי בודקים/i });
+    expect(feedbackTab).toHaveAttribute('aria-selected', 'false');
+    expect(feedbackTab).toHaveAttribute('aria-controls', 'admin-panel-feedback');
+
+    fireEvent.click(feedbackTab);
+    expect(feedbackTab).toHaveAttribute('aria-selected', 'true');
+    expect(trendsTab).toHaveAttribute('aria-selected', 'false');
+
+    const panel = screen.getByRole('tabpanel');
+    expect(panel).toHaveAttribute('id', 'admin-panel-feedback');
+    expect(panel).toHaveAttribute('aria-labelledby', 'admin-tab-feedback');
+  });
+
+  it('enforces >= 48px touch targets on tabs, search input, and filter controls', () => {
+    renderDashboard();
+
+    const tabs = screen.getAllByRole('tab');
+    for (const tab of tabs) {
+      expect(tab.className).toContain('min-h-[48px]');
+    }
+
+    const feedbackTab = screen.getByRole('tab', { name: /user feedback|משובי בודקים/i });
+    fireEvent.click(feedbackTab);
+
+    const searchInput = screen.getByPlaceholderText(/search feedback|חיפוש בתוכן/i);
+    expect(searchInput.className).toContain('min-h-[48px]');
+
+    const ratingSelect = screen.getByRole('combobox');
+    expect(ratingSelect.className).toContain('min-h-[48px]');
   });
 });
