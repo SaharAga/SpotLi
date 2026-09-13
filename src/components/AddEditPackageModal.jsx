@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Sparkles, Package, AlertTriangle, ExternalLink, MapPin, Key, ShoppingBag, Wand2 } from 'lucide-react';
+import { Sparkles, AlertTriangle, ExternalLink, MapPin, Key, ShoppingBag, Wand2 } from 'lucide-react';
 import { CARRIER_LIST, getCarrier } from '../types/carriers.js';
-import { STAGES, CATEGORIES, SELECTABLE_STATUSES, getStatusMeta } from '../types/stages.js';
+import { CATEGORIES, SELECTABLE_STATUSES, getStatusMeta } from '../types/stages.js';
 import { toLocalISODate } from '../utils/dateUtils';
 import { findPackageByTrackingNumber } from '../services/deliveryService.js';
 import { detectCarrier } from '../utils/carrierDetector.js';
@@ -359,10 +359,12 @@ export function AddEditPackageModal({
       isOpen={isOpen}
       onClose={onClose}
       componentName="AddEditPackageModal"
+      labelledBy="add-edit-package-title"
       className="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8"
     >
       {/* Header */}
       <ModalHeader
+        titleId="add-edit-package-title"
         title={editPackage ? t('modal.editPackage') : t('modal.addNew')}
         onClose={onClose}
         closeLabel={language === 'he' ? 'חזרה' : 'Back'}
@@ -414,28 +416,28 @@ export function AddEditPackageModal({
             <div className="mt-2.5 p-2.5 bg-slate-950/80 border border-blue-500/25 rounded-2xl flex flex-wrap items-center justify-between gap-2 text-xs animate-fade-in">
               <div className="flex flex-wrap items-center gap-1.5">
                 {liveIntelligence.store && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-500/15 text-purple-300 border border-purple-500/25 font-medium">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-500/10 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/25 font-medium">
                     <ShoppingBag className="w-3.5 h-3.5" />
                     <span>{language === 'he' && liveIntelligence.storeHe ? liveIntelligence.storeHe : liveIntelligence.store}</span>
                   </span>
                 )}
                 {liveIntelligence.pickupLocation && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 font-medium">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25 font-medium">
                     <MapPin className="w-3.5 h-3.5" />
                     <span>{liveIntelligence.pickupLocation}</span>
                   </span>
                 )}
                 {liveIntelligence.lockerPin && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/25 font-mono font-medium">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 dark:border-amber-500/25 font-mono font-medium">
                     <Key className="w-3.5 h-3.5" />
-                    <span>{t('modal.detectedPin')}: {liveIntelligence.lockerPin}</span>
+                    <span>{t('modal.detectedPin')}: <bdi dir="ltr">{liveIntelligence.lockerPin}</bdi></span>
                   </span>
                 )}
               </div>
               <button
                 type="button"
                 onClick={handleApplySmartDetection}
-                className="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 hover:text-blue-200 border border-blue-500/30 rounded-xl font-semibold transition-ui flex items-center gap-1.5 min-h-[48px] cursor-pointer"
+                className="px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 dark:bg-blue-600/20 dark:hover:bg-blue-600/30 text-blue-700 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-200 border border-blue-500/30 rounded-xl font-semibold transition-ui flex items-center gap-1.5 min-h-[48px] cursor-pointer"
               >
                 <Wand2 className="w-3.5 h-3.5" />
                 <span>{t('modal.applyAllAction')}</span>
@@ -444,12 +446,12 @@ export function AddEditPackageModal({
           )}
 
           {duplicatePackage && (
-            <div className="mt-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between gap-2 text-xs text-amber-400 animate-fade-in">
+            <div className="mt-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between gap-2 text-xs text-amber-700 dark:text-amber-400 animate-fade-in">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
                 <span>
                   {t('modal.duplicateTrackingWarning')}
-                  {duplicatePackage.title ? ` ("${duplicatePackage.title}")` : ''}
+                  {duplicatePackage.title ? <bdi dir="auto"> ("{duplicatePackage.title}")</bdi> : ''}
                 </span>
               </div>
               {onOpenExisting && (
@@ -459,7 +461,7 @@ export function AddEditPackageModal({
                     onOpenExisting(duplicatePackage);
                     onClose();
                   }}
-                  className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg font-medium transition-colors shrink-0 flex items-center gap-1 min-h-[48px] cursor-pointer"
+                  className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-800 dark:text-amber-300 rounded-lg font-medium transition-colors shrink-0 flex items-center gap-1 min-h-[48px] cursor-pointer"
                 >
                   <span>{t('modal.openExistingPackage')}</span>
                   <ExternalLink className="w-3 h-3" />
@@ -587,10 +589,16 @@ export function AddEditPackageModal({
           <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
             {t('modal.status')}
           </label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <div
+            role="radiogroup"
+            aria-label={t('modal.status')}
+            className="grid grid-cols-2 sm:grid-cols-3 gap-2"
+          >
             {SELECTABLE_STATUSES.map((s) => (
               <button
                 type="button"
+                role="radio"
+                aria-checked={status === s.id}
                 key={s.id}
                 onClick={() => setStatus(s.id)}
                 className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-ui text-center min-h-[48px] cursor-pointer ${

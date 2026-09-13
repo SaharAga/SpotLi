@@ -199,4 +199,55 @@ describe('AddEditPackageModal (rendered)', () => {
     );
     expect(container).toBeEmptyDOMElement();
   });
+
+  it('connects dialog aria-labelledby to the title and verifies status radiogroup semantics', async () => {
+    const user = userEvent.setup();
+    renderWithLanguage(
+      <AddEditPackageModal isOpen onClose={vi.fn()} onSave={vi.fn()} />
+    );
+
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveAttribute('aria-labelledby', 'add-edit-package-title');
+    const title = document.getElementById('add-edit-package-title');
+    expect(title).toBeInTheDocument();
+    expect(title).toHaveTextContent(/add (new )?package|הוסף חבילה/i);
+
+    const radiogroup = screen.getByRole('radiogroup');
+    expect(radiogroup).toBeInTheDocument();
+
+    const radios = screen.getAllByRole('radio');
+    expect(radios.length).toBeGreaterThan(0);
+    const inTransitRadio = radios.find(r => r.textContent.includes('In Transit') || r.textContent.includes('בדרך'));
+    expect(inTransitRadio).toHaveAttribute('aria-checked', 'true');
+
+    // Select Delivered
+    const deliveredRadio = radios.find(r => r.textContent.includes('Delivered') || r.textContent.includes('נמסר'));
+    if (deliveredRadio) {
+      await user.click(deliveredRadio);
+      expect(deliveredRadio).toHaveAttribute('aria-checked', 'true');
+      expect(inTransitRadio).toHaveAttribute('aria-checked', 'false');
+    }
+  });
+
+  it('isolates detected PIN in bdi dir="ltr" and enforces >= 48px touch targets', async () => {
+    const user = userEvent.setup();
+    renderWithLanguage(
+      <AddEditPackageModal isOpen onClose={vi.fn()} onSave={vi.fn()} />
+    );
+
+    const trackingInput = screen.getByPlaceholderText(/RS948219481IL/i);
+    // Paste Israeli locker SMS into tracking field to trigger live intelligence
+    await user.type(trackingInput, 'חבילתך 12345678 בלוקר קוד איסוף 8492');
+
+    const pinEl = await screen.findByText('8492');
+    expect(pinEl.tagName.toLowerCase()).toBe('bdi');
+    expect(pinEl).toHaveAttribute('dir', 'ltr');
+
+    const applyBtn = screen.getByRole('button', { name: /auto-fill details|החל פרטים/i });
+    expect(applyBtn.className).toContain('min-h-[48px]');
+
+    const submitBtn = screen.getByRole('button', { name: /add to tracking|הוסף למעקב/i });
+    expect(submitBtn.className).toContain('min-h-[48px]');
+  });
 });
+
