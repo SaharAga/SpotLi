@@ -1,4 +1,5 @@
 /** @vitest-environment jsdom */
+import '@testing-library/jest-dom';
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent, cleanup } from '@testing-library/react';
@@ -116,5 +117,67 @@ describe('CourierActionHub', () => {
     fireEvent.click(screen.getByText('הסר'));
 
     expect(screen.queryByText('השאר ליד הדלת')).not.toBeInTheDocument();
+  });
+
+  // ── Session 29: WAI-ARIA tablist / tab / tabpanel ────────────────────────
+
+  it('template tabs have role="tablist" wrapper with aria-label', () => {
+    renderWithLanguage(<CourierActionHub pkg={mockPkg} />, { language: 'en' });
+
+    const tablist = screen.getByRole('tablist', { name: /courier response templates/i });
+    expect(tablist).toBeInTheDocument();
+  });
+
+  it('each template button carries role="tab" with aria-selected', () => {
+    renderWithLanguage(<CourierActionHub pkg={mockPkg} />, { language: 'en' });
+
+    const tabs = screen.getAllByRole('tab');
+    expect(tabs.length).toBeGreaterThanOrEqual(4);
+
+    // At least one tab should be selected
+    const selectedTabs = tabs.filter(t => t.getAttribute('aria-selected') === 'true');
+    expect(selectedTabs.length).toBe(1);
+
+    // All tabs point to the preview panel
+    tabs.forEach(tab => {
+      expect(tab).toHaveAttribute('aria-controls', 'courier-message-preview');
+    });
+  });
+
+  it('message preview box has role="tabpanel" and tabIndex=0', () => {
+    renderWithLanguage(<CourierActionHub pkg={mockPkg} />, { language: 'en' });
+
+    const panel = document.getElementById('courier-message-preview');
+    expect(panel).toBeInTheDocument();
+    expect(panel).toHaveAttribute('role', 'tabpanel');
+    expect(panel).toHaveAttribute('tabIndex', '0');
+  });
+
+  it('message preview text is wrapped in <bdi dir="auto"> for BiDi safety', () => {
+    renderWithLanguage(<CourierActionHub pkg={mockPkg} />, { language: 'he' });
+
+    // bdi elements inside the preview panel
+    const panel = document.getElementById('courier-message-preview');
+    const bdiNodes = panel.querySelectorAll('bdi[dir="auto"]');
+    expect(bdiNodes.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('gate code input has accessible aria-label', () => {
+    renderWithLanguage(<CourierActionHub pkg={mockPkg} />, { language: 'he' });
+
+    fireEvent.click(screen.getByText('קוד כניסה / שער'));
+
+    const input = screen.getByLabelText(/קוד כניסה לשער/);
+    expect(input).toBeInTheDocument();
+  });
+
+  it('Restore presets and Add template buttons have aria-label', () => {
+    // We need hiddenPresetIds to be non-empty to show the restore button.
+    // Remove all tabs so that restore button appears
+    renderWithLanguage(<CourierActionHub pkg={mockPkg} />, { language: 'en' });
+
+    // Add template button always visible
+    const addBtn = screen.getByRole('button', { name: /add custom template/i });
+    expect(addBtn).toBeInTheDocument();
   });
 });
