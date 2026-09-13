@@ -219,12 +219,12 @@ export function BackButton({ onClick, label, className = '' }) {
  * navigating deserves the same affordance at every width. An X means "dismiss
  * this thing on top of the page" — these are pages.
  */
-export function ModalHeader({ title, subtitle, onClose, closeLabel = 'Back', actions }) {
+export function ModalHeader({ title, subtitle, onClose, closeLabel = 'Back', actions, titleId }) {
   return (
     <div className="flex items-center gap-3 p-4 sm:p-6 border-b border-slate-800">
       {onClose && <BackButton onClick={onClose} label={closeLabel} className="shrink-0" />}
       <div className="min-w-0 flex-1 flex flex-col gap-1">
-        <Title>{title}</Title>
+        <Title id={titleId}>{title}</Title>
         {subtitle && <p className="text-sm text-slate-400 leading-relaxed">{subtitle}</p>}
       </div>
       {actions}

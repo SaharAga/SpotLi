@@ -107,10 +107,48 @@ describe('SmartImportModal (rendered)', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('renders nothing when isOpen is false', () => {
-    const { container } = renderWithLanguage(
-      <SmartImportModal isOpen={false} onClose={vi.fn()} onParsedResult={vi.fn()} />
+  it('links dialog aria-labelledby to the title and contains tracking/pin within bdi dir="ltr"', async () => {
+    const user = userEvent.setup();
+    renderWithLanguage(
+      <SmartImportModal isOpen onClose={vi.fn()} onParsedResult={vi.fn()} />
     );
-    expect(container).toBeEmptyDOMElement();
+
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveAttribute('aria-labelledby', 'smart-import-title');
+    const title = document.getElementById('smart-import-title');
+    expect(title).toBeInTheDocument();
+    expect(title).toHaveTextContent(/smart import/i);
+
+    // Parse locker sample
+    await user.click(screen.getByRole('button', { name: /boxit \/ cheetah locker example/i }));
+    const trackingEl = await screen.findByText('BOX920194');
+    expect(trackingEl.tagName.toLowerCase()).toBe('bdi');
+    expect(trackingEl).toHaveAttribute('dir', 'ltr');
+
+    const pinEl = screen.getByText('8492');
+    expect(pinEl.tagName.toLowerCase()).toBe('bdi');
+    expect(pinEl).toHaveAttribute('dir', 'ltr');
+  });
+
+  it('enforces touch targets and accessible controls on manual switch and action buttons', () => {
+    const onSwitchToManual = vi.fn();
+    renderWithLanguage(
+      <SmartImportModal
+        isOpen
+        onClose={vi.fn()}
+        onParsedResult={vi.fn()}
+        onSwitchToManual={onSwitchToManual}
+      />
+    );
+
+    const manualBtn = screen.getByRole('button', { name: /enter details manually instead/i });
+    expect(manualBtn.className).toContain('min-h-[48px]');
+
+    const pasteBtn = screen.getByRole('button', { name: /paste from clipboard/i });
+    expect(pasteBtn.className).toContain('min-h-[48px]');
+
+    const extractBtn = screen.getByRole('button', { name: /extract shipping details/i });
+    expect(extractBtn.className).toContain('min-h-[48px]');
   });
 });
+
