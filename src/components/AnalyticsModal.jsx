@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { BarChart3, PieChart, TrendingUp, Award, Coins, CheckCircle2, Clock } from 'lucide-react';
+import { BarChart3, PieChart, TrendingUp, Award, CheckCircle2, Clock } from 'lucide-react';
 import { getCarrier } from '../types/carriers';
 import { STAGES } from '../types/stages';
 import { Button } from './ui/Primitives';
@@ -7,7 +7,6 @@ import { useLanguage } from '../context/LanguageContext';
 import {
   buildTransitDaysMap,
   calculateCarrierTurnaroundLeaderboard,
-  calculateMultiCurrencyBreakdown,
   calculateDeliveryMetrics
 } from '../utils/analyticsUtils';
 import { Modal } from './Modal';
@@ -33,14 +32,13 @@ export function AnalyticsModal({
     const transitDays = buildTransitDaysMap(packages);
     return {
       metrics: calculateDeliveryMetrics(packages, transitDays),
-      leaderboard: calculateCarrierTurnaroundLeaderboard(packages, transitDays),
-      currencyBreakdown: calculateMultiCurrencyBreakdown(packages)
+      leaderboard: calculateCarrierTurnaroundLeaderboard(packages, transitDays)
     };
   }, [isOpen, packages]);
 
   if (!isOpen || !analytics) return null;
 
-  const { metrics, leaderboard, currencyBreakdown } = analytics;
+  const { metrics, leaderboard } = analytics;
 
   // Fastest carrier from turnaround leaderboard
   const fastestCarrier = leaderboard.find(c => c.avgDays > 0);
@@ -308,47 +306,6 @@ export function AnalyticsModal({
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-
-          {/* Section 2: Multi-Currency Spending Breakdown */}
-          <div className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
-                <Coins className="w-4 h-4 text-emerald-400" />
-                <span>{t('insights.currencyBreakdown')}</span>
-              </h3>
-              <span className="text-xs text-slate-400 hidden sm:inline">
-                {t('insights.currencyBreakdownDesc')}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {Object.entries(currencyBreakdown.currencies).map(([code, cur]) => (
-                <div
-                  key={code}
-                  className="p-4 rounded-xl bg-slate-900/90 border border-slate-800/90 flex flex-col justify-between min-h-[96px] hover:border-slate-700 transition-ui shadow-sm"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-400">{code}</span>
-                    <span className="text-base font-extrabold text-indigo-400">{cur.symbol}</span>
-                  </div>
-                  <div>
-                    <p className="text-xl font-extrabold text-slate-100 tracking-tight">
-                      <bdi dir="ltr">{cur.symbol}{cur.total.toLocaleString(language === 'he' ? 'he-IL' : 'en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</bdi>
-                    </p>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      <bdi dir="ltr">{cur.count}</bdi> {t('insights.packages')}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {!currencyBreakdown.hasValues && (
-              <p className="text-xs text-slate-500 text-center pt-1">
-                {t('insights.noCurrencyData')}
-              </p>
             )}
           </div>
 

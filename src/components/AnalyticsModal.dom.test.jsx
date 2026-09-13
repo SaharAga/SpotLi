@@ -12,7 +12,6 @@ vi.mock('../utils/analyticsUtils', async (importOriginal) => {
     buildTransitDaysMap: vi.fn(actual.buildTransitDaysMap),
     calculateDeliveryMetrics: vi.fn(actual.calculateDeliveryMetrics),
     calculateCarrierTurnaroundLeaderboard: vi.fn(actual.calculateCarrierTurnaroundLeaderboard),
-    calculateMultiCurrencyBreakdown: vi.fn(actual.calculateMultiCurrencyBreakdown)
   };
 });
 
@@ -55,7 +54,6 @@ describe('AnalyticsModal computation gating', () => {
 
     expect(analyticsUtils.calculateDeliveryMetrics).not.toHaveBeenCalled();
     expect(analyticsUtils.calculateCarrierTurnaroundLeaderboard).not.toHaveBeenCalled();
-    expect(analyticsUtils.calculateMultiCurrencyBreakdown).not.toHaveBeenCalled();
     expect(analyticsUtils.buildTransitDaysMap).not.toHaveBeenCalled();
   });
 
@@ -91,10 +89,9 @@ describe('AnalyticsModal computation gating', () => {
     // Should display empty fallback indicators
     expect(text).toContain('No delivered shipments available to benchmark carrier transit times');
     expect(text).toContain('No carrier distribution data available yet');
-    expect(text).toContain('No price or currency details detected in packages yet');
   });
 
-  it('renders rich metrics, carrier leaderboard and currency values accurately', () => {
+  it('renders rich metrics and the carrier leaderboard accurately', () => {
     const richPackages = [
       {
         id: 'p-1',
@@ -127,9 +124,6 @@ describe('AnalyticsModal computation gating', () => {
     // DHL fastest carrier (3 days)
     expect(text).toContain('DHL Express');
     expect(text).toContain('3 days');
-    // Currencies rendered
-    expect(text).toContain('$120');
-    expect(text).toContain('₪450');
   });
 
   it('supports Hebrew localization with mirrored language context', () => {
