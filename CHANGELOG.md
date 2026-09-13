@@ -7,6 +7,94 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.31.0] - 2026-09-13
+
+### Added
+- Fixed light mode rendering headings as white-on-white. The light theme inverts
+the slate scale, so a literal `text-white` never flipped — the onboarding hero,
+every first-run card title, and the push-alerts nudge were invisible to anyone
+whose device was set to light.
+
+Fixed closing a dialog being able to navigate the user out of the app. The modal
+router mutated browser history from inside a `setStack` updater, which React
+re-invokes, so one close fired two `history.back()` calls and walked past the
+app's own entry. History now holds a single sentinel that cannot drift from the
+stack, and Back closes exactly one screen at a time.
+
+Gave the service worker real offline support. It shipped a bare network
+passthrough that cached nothing, while `main.jsx` deleted every cache on every
+boot (it matched against a version string frozen since 0.6.0), so the app had no
+offline availability at all. The worker now precaches the shell, serves
+navigations network-first with a cached fallback, and no longer force-reloads
+every open tab — the existing "update available" prompt applies the update
+instead.
+
+Insights no longer reports 100% on-time over a list of overdue packages. Both
+rates counted only delivered shipments, so one sitting weeks past its promised
+date registered nowhere; an overdue package is now a miss in both.
+
+Fixed the package detail header: the carrier gradient painted at full strength
+because `bg-opacity-10` was removed in Tailwind v4 (Israel Post turned an
+ordinary package's header solid red), and the Edit button was clipped off-screen
+at 390px.
+
+Fixed the auto-generated package title storing a truncated tracking number with
+a literal ellipsis — that string is the package's name and is interpolated into
+the WhatsApp/SMS message sent to a courier.
+
+Account → Date format now actually changes how dates render; it was stored and
+cloud-synced but never read. The auto-archive confirm button no longer relies on
+an undefined `bg-primary` utility, and the demo banner no longer quotes a URL
+query parameter at the user.
+
+Finished landing `ready_for_pickup` as a real delivery status. The parser
+returned it for a Hebrew "ממתינה לאיסוף" pickup SMS and four components plus
+~20 tests already branched on it, but it was missing from `VALID_STATUSES` and
+from the `firestore.rules` allowlist — so it could never be saved and a pasted
+pickup notice landed on "Order Placed". It now has display metadata, transition
+rules, a filter bucket and a stepper position, and Smart Import sets the stage
+the message actually describes.
+
+- The package list now leads with the package. Titles were clamped to one line
+beside a status badge that repeats across most rows, leaving about seven
+characters — "Sony WH-1000XM5 Headphones" rendered as "Sony W…" — while the
+expected date was squeezed to "A…" and the carrier to a single pixel. Titles get
+two lines, the date and carrier no longer truncate to nothing.
+
+The first screen shows packages again. The install prompt and the feature nudge
+could both be up at once and, stacked with the demo bar, KPI row, search and
+filter chips, pushed every package below the fold; only one promotional banner
+shows at a time now. The Feedback button no longer covers the last card, and the
+filter chips fade at the edge instead of being sliced mid-word, so it reads as
+scrollable rather than broken.
+
+The Account screen is one screen again. The bottom-bar tab rendered its own copy
+outside the modal router, with a different set of rows from the one the rest of
+the app opened, and pushed no history entry — so the Android back gesture left
+the app instead of closing the sheet. Removing the duplicate also un-blocked its
+code splitting: the entry bundle drops from 57.4 kB to 48.4 kB gzipped.
+
+The service worker has tests, covering the shell precache, offline fallback and
+the update opt-in. A SessionStart hook installs `functions/` dependencies, which
+the root install does not reach.
+
+### Fixed
+- Hardened carrier tracking proxy with daily rate-limiting guards and sealed the `carrierUsage` collection in Firestore rules. Prioritized header tokens in inbound email webhook, resolved `qs` dependency vulnerabilities in functions, and added comprehensive adversarial penetration test suites.
+
+- Package cards are a little shorter — the padding and inter-row gap a two-line
+title cost are given back, without losing any of the information the two lines
+were added to show.
+
+- Added guards against the class of bug that broke light mode. A static contract
+test now rejects a literal `text-white` on a surface that inverts between themes
+(with an allowlist for the genuine exceptions, which stays honest — a stale
+entry fails the test too) and rejects utilities Tailwind v4 removed, such as
+`bg-opacity-*`, which emit no CSS and fail silently. ThemeContext gained its
+first tests, and `renderWithTheme` joins `renderWithLanguage` so components can
+be rendered in a pinned theme. CLAUDE.md now states the invariant all of this
+protects: theming is a palette inversion, so slate tokens flip between themes
+and literal white/black ink does not.
+
 ## [0.30.0] - 2026-09-12
 
 ### Added
