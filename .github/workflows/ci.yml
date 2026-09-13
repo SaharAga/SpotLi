@@ -137,13 +137,29 @@ jobs:
           echo "rules=$(echo "$CHANGED" | grep -qE '^firestore\.rules$' && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
   # A release commit (produced by `npm run release`) only ever touches
-  # package.json, CHANGELOG.md, and .changes/ — it carries no code the PR
-  # that preceded it didn't already carry, and that PR already ran the full
-  # suite below against this exact code. Re-running lint/test/functions on
-  # the release push is pure duplication (and doubles CI time on every
-  # release); skip them there and rely on the PR's already-green run. Any
-  # push whose diff touches anything else still runs everything, same as a
-  # PR does.
+  # package.json, package-lock.json, CHANGELOG.md, and .changes/ — it
+  # carries no code the PR that preceded it didn't already carry, and that
+  # PR already ran the full suite below against this exact code. Re-running
+  # lint/test/functions on the release push is pure duplication (and doubles
+  # CI time on every release); skip them there and rely on the PR's
+  # already-green run. Any push whose diff touches anything else still runs
+  # everything, same as a PR does.
+  #
+  # package-lock.json joined that list when the release script started
+  # bumping the lockfile's own version alongside package.json's (0.31.1).
+  # Until then the lock was left at whatever version it happened to carry,
+  # which is how it drifted to 0.16.0 for fourteen releases; the fix meant
+  # every release commit now touches a file this pattern did not name, so
+  # no release counted as release-only and the skip quietly stopped working.
+  # This does widen the skip beyond the release case: a push whose only diff
+  # is package-lock.json — `npm update` resolving new versions inside the
+  # existing semver ranges, with no package.json edit — now skips lint/test
+  # too. That is the same bet the other entries already make, and it holds
+  # for the same reason: this job runs only on a push to main, and a change
+  # reaches main through a PR, where the full suite runs against that exact
+  # tree (the pull_request trigger never consults this job). What it does
+  # not cover is a direct push to main, which was already true of every
+  # other name in this list.
   detect-release-only-commit:
     name: Detect Release-Only Commit
     runs-on: ubuntu-latest
@@ -169,7 +185,7 @@ jobs:
           CHANGED=$(git diff --name-only "$BEFORE_SHA" HEAD)
           echo "Changed files:"
           echo "$CHANGED"
-          NON_RELEASE=$(echo "$CHANGED" | grep -vE '^(package\.json|CHANGELOG\.md|\.changes/)' | grep -c '.' || true)
+          NON_RELEASE=$(echo "$CHANGED" | grep -vE '^(package\.json|package-lock\.json|CHANGELOG\.md|\.changes/)' | grep -c '.' || true)
 
           if [ -n "$CHANGED" ] && [ "$NON_RELEASE" -eq 0 ]; then
             echo "release_only=true" >> "$GITHUB_OUTPUT"
