@@ -167,7 +167,7 @@ export const LIVE_TRACKING_CARRIERS = Object.freeze(
 
 /**
  * Reasons a lookup returned no tracking data.
- * - `carrier-unsupported`: no integration exists for this carrier.
+ * - `carrier-unsupported`: the upstream could not identify this shipment.
  * - `carrier-unavailable`: an integration exists but the upstream call failed.
  */
 export const UNTRACKED_REASONS = Object.freeze({
@@ -176,11 +176,47 @@ export const UNTRACKED_REASONS = Object.freeze({
 });
 
 /**
- * @param {string} carrierId
- * @returns {boolean} true when a real upstream lookup exists for this carrier
+ * Carriers the 17TRACK proxy carries an explicit catalogue ID for.
+ *
+ * Mirrors TRACK17_CARRIER_MAP in functions/src/carrierProxy.js. The two encode
+ * the same fact in two packages and must be changed together — the server
+ * decides what is actually queried, this copy only decides what the UI is
+ * willing to promise. A carrier missing here is still queried; 17TRACK is just
+ * asked to identify it from the number alone.
  */
-export function isLiveTrackingSupported(carrierId) {
+const TRACK17_MAPPED_CARRIERS = Object.freeze(new Set([
+  'israel-post', 'cainiao', 'dhl', 'fedex', 'ups', 'usps',
+  'royal-mail', '4px', 'yunexpress', 'yanwen', 'aramex'
+]));
+
+/**
+ * True when this carrier has a hand-written client-side adapter.
+ *
+ * Only governs the direct-from-browser fallback in queryCarrierLive. It is NOT
+ * "can this be tracked": every carrier now goes through the Cloud Function
+ * proxy first, which reaches 17TRACK with or without a catalogue ID.
+ *
+ * @param {string} carrierId
+ * @returns {boolean}
+ */
+export function hasDirectCarrierAdapter(carrierId) {
   return Boolean(getCarrier(carrierId)?.liveTracking);
+}
+
+/**
+ * True when a live lookup for this carrier is backed by a named integration,
+ * rather than resting on 17TRACK identifying the number on its own.
+ *
+ * This is what the UI may promise. It used to be `isLiveTrackingSupported`,
+ * which meant "has a local adapter" — four carriers — and was also used to
+ * refuse the lookup outright, so twelve Israeli couriers were told "live
+ * tracking isn't available" without the app ever asking 17TRACK about them.
+ *
+ * @param {string} carrierId
+ * @returns {boolean}
+ */
+export function isLiveTrackingConfirmed(carrierId) {
+  return hasDirectCarrierAdapter(carrierId) || TRACK17_MAPPED_CARRIERS.has(carrierId);
 }
 
 /**
@@ -211,7 +247,7 @@ export function createUntrackedRecord(carrierId, reason) {
  * the transport concerns (test guard, timeout, error handling) and the
  * untracked fallback that every failure path must produce.
  *
- * @param {object} carrier - carrier table entry with a `liveTracking` config
+ * @param {object} carrier - carrier table entry; `liveTracking` is optional
  * @param {string} trackingNumber
  * @returns {Promise<object>} a tracked record, or an untracked one when the
  *   gateway is unreachable or returns nothing for this item.
@@ -224,6 +260,14 @@ async function queryCarrierLive(carrier, trackingNumber) {
     return createUntrackedRecord(carrier.id, UNTRACKED_REASONS.UNAVAILABLE);
   }
 
+  // The proxy's own verdict, kept so a definite "no such shipment" is not
+  // flattened into the same "couldn't reach anything" as a network failure.
+  // Without this every unsuccessful lookup came back as carrier-unavailable
+  // once the pre-refusal was removed, and carrier-unsupported — the reason
+  // that says the number could not be identified at all — stopped being
+  // produced by anything.
+  let upstreamReason = null;
+
   // 1. Attempt Cloud Function proxy (which has 17TRACK API key & GAASH adapter, bypassing browser CORS and anti-bot WAFs)
   try {
     const res = await callFunction('queryCarrierTracking', {
@@ -232,6 +276,9 @@ async function queryCarrierLive(carrier, trackingNumber) {
     });
     if (res?.data?.tracked) {
       return res.data;
+    }
+    if (typeof res?.data?.reason === 'string') {
+      upstreamReason = res.data.reason;
     }
   } catch (err) {
     // Cloud function proxy not available or failed; proceed to direct gateway fallback
@@ -255,7 +302,7 @@ async function queryCarrierLive(carrier, trackingNumber) {
     }
   }
 
-  return createUntrackedRecord(carrier.id, UNTRACKED_REASONS.UNAVAILABLE);
+  return createUntrackedRecord(carrier.id, upstreamReason || UNTRACKED_REASONS.UNAVAILABLE);
 }
 
 /**
@@ -276,10 +323,14 @@ export async function fetchLiveCarrierTracking(trackingNumber, carrierOverride, 
 
   const detected = carrierOverride || detectCarrier(cleanTrack).carrierId || 'other';
 
-  // No integration for this carrier — say so instead of guessing.
-  if (!isLiveTrackingSupported(detected)) {
-    return { ...createUntrackedRecord(detected, UNTRACKED_REASONS.UNSUPPORTED), isFromCache: false };
-  }
+  // Every carrier is attempted. This used to bail out unless the carrier had a
+  // local adapter, which meant the Cloud Function — the side that actually
+  // holds the 17TRACK key — was never called for anything else, and Cheetah,
+  // HFD, Buzzr and nine other Israeli couriers reported "no live tracking"
+  // without a single request ever being made on their behalf. The proxy takes
+  // any carrier id and omits the catalogue code when it has none, which is
+  // 17TRACK's auto-detect mode; an unidentifiable number comes back untracked
+  // on its own merits rather than being pre-judged here.
 
   // 1. Check 2-Hour Edge Cache
   if (!forceRefresh) {

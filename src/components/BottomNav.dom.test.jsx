@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BottomNav } from './BottomNav';
 import { LanguageProvider } from '../context/LanguageContext';
@@ -19,7 +19,39 @@ const renderNav = (props = {}) => {
 };
 
 describe('BottomNav', () => {
-  it('renders four destinations plus the add button', () => {
+/**
+   * Navbar unmounts this bar for drill-down modals (detail, add, smart import)
+   * so those get full-screen height, but the panel CSS reserved 4.5rem for the
+   * bar on every modal regardless — so a detail screen lost 72px to a bar that
+   * was not on screen, and its content clipped early above a dead band. The
+   * panel padding is now gated on this attribute, which means the attribute
+   * has to track mounting exactly.
+   *
+   * jsdom loads no stylesheets, so the padding itself cannot be asserted here;
+   * what is asserted is the signal the CSS keys off.
+   */
+  describe('bottom-bar presence signal', () => {
+    it('marks the document while the bar is on screen', () => {
+      expect(document.body.getAttribute('data-bottom-nav')).toBeNull();
+      renderNav();
+      expect(document.body.getAttribute('data-bottom-nav')).toBe('true');
+    });
+
+    it('clears the mark when the bar unmounts, so modals reclaim the space', () => {
+      const { unmount } = renderNav();
+      expect(document.body.getAttribute('data-bottom-nav')).toBe('true');
+      unmount();
+      expect(document.body.getAttribute('data-bottom-nav')).toBeNull();
+    });
+
+    it('leaves nothing behind after a normal cleanup', () => {
+      renderNav();
+      cleanup();
+      expect(document.body.getAttribute('data-bottom-nav')).toBeNull();
+    });
+  });
+
+    it('renders four destinations plus the add button', () => {
     renderNav();
     expect(screen.getByRole('navigation')).toBeTruthy();
     // Four tabs + the FAB.

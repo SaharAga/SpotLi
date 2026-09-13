@@ -103,11 +103,14 @@ describe('Multi-Carrier Tracking Service', () => {
       expect(res.error).toBe('Invalid tracking number');
     });
 
-    it('reports an unsupported carrier as untracked rather than inventing data', async () => {
+    it('reports a carrier with no local adapter as untracked rather than inventing data', async () => {
+      // Chita has no liveTracking block. It is no longer refused for that
+      // reason — it goes to the proxy like anything else — but an attempt
+      // that yields nothing must still leave the package untouched.
       const res = await fetchTrackingUpdates('CH10849201', 'chita');
       expect(res.success).toBe(true);
       expect(res.tracked).toBe(false);
-      expect(res.reason).toBe('carrier-unsupported');
+      expect(res.reason).not.toBe('carrier-unsupported');
       expect(res.carrier).toBe('chita');
       expect(res.checkpoints).toEqual([]);
       expect(res.status).toBeUndefined();
@@ -122,12 +125,18 @@ describe('Multi-Carrier Tracking Service', () => {
       expect(res.checkpoints).toEqual([]);
     });
 
-    it('does not spend the rate-limit cooldown on an unsupported carrier', async () => {
+    it('spends the rate-limit cooldown on every carrier, now that every carrier is queried', async () => {
+      // The cooldown used to be exempted for carriers with no local adapter,
+      // because asking about them cost nothing — the lookup never left the
+      // browser. It does now, so the second call inside the window has to be
+      // held back exactly as it is for Israel Post, or the cooldown would
+      // stop protecting the very carriers that were just connected.
       const tracking = 'CH55555555';
-      await fetchTrackingUpdates(tracking, 'chita');
+      const first = await fetchTrackingUpdates(tracking, 'chita');
+      expect(first.success).toBe(true);
+
       const second = await fetchTrackingUpdates(tracking, 'chita');
-      expect(second.success).toBe(true);
-      expect(second.rateLimited).toBeUndefined();
+      expect(second.rateLimited).toBe(true);
     });
 
     it('rejects subsequent fetch within cooldown period', async () => {

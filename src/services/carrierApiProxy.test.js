@@ -4,7 +4,8 @@ import {
   getCachedTracking, 
   setCachedTracking, 
   fetchLiveCarrierTracking,
-  isLiveTrackingSupported,
+  isLiveTrackingConfirmed,
+  hasDirectCarrierAdapter,
   LIVE_TRACKING_CARRIERS
 } from './carrierApiProxy';
 import { CARRIERS, CARRIER_LIST } from '../types/carriers';
@@ -75,17 +76,25 @@ describe('carrierApiProxy Service', () => {
   });
 
   describe('fetchLiveCarrierTracking', () => {
-    it('returns an explicit untracked record for a carrier with no integration', async () => {
+    it('attempts a carrier with no local adapter instead of pre-judging it', async () => {
+      // Chita has no liveTracking block, which used to mean the lookup was
+      // refused outright and reported as 'carrier-unsupported' without the
+      // Cloud Function — the side holding the 17TRACK key — ever being asked.
+      // It now goes down the lookup path like any other carrier; what comes
+      // back is whatever the attempt yields.
       const res = await fetchLiveCarrierTracking('CH10849201', 'chita', true);
       expect(res.carrier).toBe('chita');
+      expect(res.reason).not.toBe('carrier-unsupported');
+
+      // Still the property that matters: an attempt that yields nothing must
+      // leave a package looking untracked, never plausibly in transit.
       expect(res.tracked).toBe(false);
-      expect(res.reason).toBe('carrier-unsupported');
       expect(res.checkpoints).toEqual([]);
       expect(res.status).toBeNull();
       expect(res.estimatedDelivery).toBeNull();
     });
 
-    it('never fabricates checkpoints for any unsupported carrier', async () => {
+    it('never fabricates checkpoints for any carrier the lookup cannot resolve', async () => {
       const carriers = ['chita', 'hfd', 'boxit', 'dhl', 'fedex', 'ups', 'usps', 'other'];
 
       for (const carrierId of carriers) {
@@ -115,20 +124,31 @@ describe('carrierApiProxy Service', () => {
       expect(getCachedTracking('RS777777777IL')).toBeNull();
     });
 
-    it('identifies which carriers have a live integration', () => {
-      expect(isLiveTrackingSupported('israel-post')).toBe(true);
-      expect(isLiveTrackingSupported('gaash')).toBe(true);
-      expect(isLiveTrackingSupported('exelot')).toBe(true);
-      expect(isLiveTrackingSupported('cainiao')).toBe(true);
-      expect(isLiveTrackingSupported('dhl')).toBe(false);
-      expect(isLiveTrackingSupported('other')).toBe(false);
+    it('counts both a local adapter and a 17TRACK catalogue id as confirmed', () => {
+      // Local adapters.
+      expect(isLiveTrackingConfirmed('israel-post')).toBe(true);
+      expect(isLiveTrackingConfirmed('gaash')).toBe(true);
+      expect(isLiveTrackingConfirmed('exelot')).toBe(true);
+      expect(isLiveTrackingConfirmed('cainiao')).toBe(true);
+      // Mapped in the proxy's 17TRACK catalogue, so the UI may promise it even
+      // with no client-side adapter. This read false before, which is why the
+      // detail screen told users DHL had no live tracking.
+      expect(isLiveTrackingConfirmed('dhl')).toBe(true);
+      expect(isLiveTrackingConfirmed('fedex')).toBe(true);
+      // Neither: still attempted via auto-detect, but nothing is promised.
+      expect(isLiveTrackingConfirmed('chita')).toBe(false);
+      expect(isLiveTrackingConfirmed('other')).toBe(false);
     });
   });
 
   describe('live-tracking capability comes from the carrier table', () => {
-    it('treats a carrier as live-trackable exactly when the table gives it a liveTracking config', () => {
+    it('reports a direct client adapter exactly when the table gives it a liveTracking config', () => {
+      // hasDirectCarrierAdapter governs only the direct-from-browser fallback.
+      // It is deliberately no longer the same question as "can this be
+      // tracked", which is what conflating the two cost twelve Israeli
+      // couriers.
       for (const carrier of CARRIER_LIST) {
-        expect(isLiveTrackingSupported(carrier.id)).toBe(Boolean(carrier.liveTracking));
+        expect(hasDirectCarrierAdapter(carrier.id)).toBe(Boolean(carrier.liveTracking));
       }
     });
 
@@ -139,9 +159,11 @@ describe('carrierApiProxy Service', () => {
       expect(LIVE_TRACKING_CARRIERS).toContain('israel-post');
     });
 
-    it('reports unknown carrier ids as unsupported rather than throwing', () => {
-      expect(isLiveTrackingSupported('no-such-carrier')).toBe(false);
-      expect(isLiveTrackingSupported(undefined)).toBe(false);
+    it('reports unknown carrier ids as unconfirmed rather than throwing', () => {
+      expect(isLiveTrackingConfirmed('no-such-carrier')).toBe(false);
+      expect(isLiveTrackingConfirmed(undefined)).toBe(false);
+      expect(hasDirectCarrierAdapter('no-such-carrier')).toBe(false);
+      expect(hasDirectCarrierAdapter(undefined)).toBe(false);
     });
 
     it('gives every live-tracking entry an endpoint builder and a parser', () => {

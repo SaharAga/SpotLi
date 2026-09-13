@@ -453,10 +453,26 @@
       display: flex;
       flex-direction: column;
       padding-top: env(safe-area-inset-top, 0px);
-      /* Clears the bottom tab bar, which now stays visible on top of pages
-         (BottomNav, z-[60]) rather than being covered by them. */
-      padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+      /* Default: the panel owns the whole viewport and reserves nothing but
+         the home indicator. Room for the tab bar is added back below, and
+         only while the bar is actually mounted. */
+      padding-bottom: env(safe-area-inset-bottom, 0px);
       animation: sheetSlideUp 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Clears the bottom tab bar, which stays visible on top of the tab
+       screens (BottomNav, z-[60]) rather than being covered by them.
+
+       Gated on the bar's own presence attribute, not applied to every panel:
+       Navbar unmounts the bar for drill-down modals (detail, add, smart
+       import) precisely so they get full-screen height, but this padding used
+       to apply regardless. Those screens gave up 72px to a bar that was not
+       there — content clipped early against a dead band at the bottom of a
+       panel that had no tab bar in it. BottomNav sets the attribute when it
+       mounts and drops it when it unmounts, so the reservation and the bar
+       can no longer disagree. */
+    body[data-bottom-nav='true'] [data-modal-panel] {
+      padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
     }
 
     [data-modal-panel][data-flush-bottom="true"] {

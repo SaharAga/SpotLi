@@ -1,6 +1,6 @@
 import {
   fetchLiveCarrierTracking,
-  isLiveTrackingSupported,
+  isLiveTrackingConfirmed,
   UNTRACKED_REASONS
 } from './carrierApiProxy';
 
@@ -46,7 +46,7 @@ export const VERIFICATION_TIMEOUT_MS = 4000;
  */
 export function shouldVerify(candidate, carrierId) {
   if (!candidate || !carrierId) return false;
-  if (!isLiveTrackingSupported(carrierId)) return false;
+  if (!isLiveTrackingConfirmed(carrierId)) return false;
 
   // `verified` is already settled; `none` was rejected on the evidence.
   return candidate.status === 'probable' || candidate.status === 'uncertain';
@@ -61,7 +61,7 @@ export function shouldVerify(candidate, carrierId) {
  */
 export async function verifyCandidate(trackingNumber, carrierId) {
   if (!trackingNumber || !carrierId) return 'unavailable';
-  if (!isLiveTrackingSupported(carrierId)) return 'unavailable';
+  if (!isLiveTrackingConfirmed(carrierId)) return 'unavailable';
 
   // An offline device cannot distinguish "no such shipment" from "no network",
   // and guessing wrong in either direction is worse than not asking.

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { List, BarChart3, Plus, Activity, User } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -92,6 +92,23 @@ function BottomNavImpl({
       </button>
     );
   };
+
+  /**
+   * Tell the document this bar is on screen, so a full-screen modal panel can
+   * reserve room for it only when it is actually there.
+   *
+   * Navbar deliberately unmounts this bar for drill-down modals (detail, add,
+   * smart import) to give them full-screen height, but the panel CSS reserved
+   * 4.5rem for the bar unconditionally — so those screens lost 72px to a bar
+   * that was not rendered, and their content region ended in a dead band
+   * above the viewport edge. Declaring presence here rather than threading a
+   * prop through Modal keeps the fact with the component that decides it: the
+   * attribute cannot disagree with what is mounted.
+   */
+  useEffect(() => {
+    document.body.setAttribute('data-bottom-nav', 'true');
+    return () => document.body.removeAttribute('data-bottom-nav');
+  }, []);
 
   return (
     <nav
