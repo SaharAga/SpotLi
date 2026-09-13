@@ -110,6 +110,38 @@ if (DRY) {
 // package.json: targeted replace so formatting and key order survive.
 writeFileSync(pkgPath, pkgRaw.replace(/"version":\s*"[^"]+"/, `"version": "${next}"`));
 
+/**
+ * package-lock.json carries the same version in two places — the root and the
+ * `packages[""]` entry describing this package. Nothing in `npm ci` or the
+ * build reads them, which is exactly why they rotted: the lock sat at 0.16.0
+ * across fourteen releases before anyone noticed, so a lock pulled from a
+ * build under investigation identified no release at all.
+ *
+ * Rewritten by targeted replace rather than `npm install --package-lock-only`,
+ * for the same reason package.json is: re-serializing the whole file to move
+ * one string would bury the real dependency diff of any future release under
+ * thousands of lines of formatting churn. Both live in the file's header,
+ * ahead of the first dependency, so the replace is bounded to that slice and
+ * cannot reach a dependency that happens to share the version number.
+ */
+const lockPath = 'package-lock.json';
+const lockRaw = readFileSync(lockPath, 'utf8');
+const headEnd = lockRaw.indexOf('"dependencies"');
+if (headEnd === -1) throw new Error(`${lockPath}: no "dependencies" key — is this a lockfile?`);
+const head = lockRaw
+  .slice(0, headEnd)
+  .replace(/"version":\s*"[^"]+"/g, `"version": "${next}"`);
+writeFileSync(lockPath, head + lockRaw.slice(headEnd));
+
+// The replace is positional, so prove it landed rather than assume it.
+const lock = JSON.parse(readFileSync(lockPath, 'utf8'));
+if (lock.version !== next || lock.packages?.['']?.version !== next) {
+  throw new Error(
+    `${lockPath}: version is still ${lock.version} / ${lock.packages?.['']?.version} after the bump. ` +
+      'Its layout has changed — update this step in scripts/release.mjs.'
+  );
+}
+
 // CHANGELOG: insert above the newest existing entry.
 const changelog = readFileSync('CHANGELOG.md', 'utf8');
 const firstEntry = changelog.indexOf('\n## [');

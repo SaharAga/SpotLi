@@ -269,7 +269,7 @@ function PackageCardImpl({
           transform: swipeOffset ? `translateX(${swipeOffset}px)` : 'none',
           transition: isSwiping ? 'none' : 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)'
         }}
-        className={`group relative bg-slate-900 hover:bg-slate-800 border rounded-2xl p-4 transition-ui duration-200 cursor-pointer flex flex-col gap-3 shadow-sm hover:shadow-md ${
+        className={`group relative bg-slate-900 hover:bg-slate-800 border rounded-2xl p-3.5 transition-ui duration-200 cursor-pointer flex flex-col gap-2 shadow-sm hover:shadow-md ${
           pkg.isPinned ? 'border-blue-500/40 ring-1 ring-blue-500/20' : 'border-slate-800 hover:border-slate-700'
         }`}
       >
@@ -303,11 +303,14 @@ function PackageCardImpl({
               {itemTitle}
             </h3>
             {/*
-              Wraps rather than truncating. On one line the tracking number won
-              the space and the carrier lost all of it — "AliExpress / Cainiao"
-              was allotted a single pixel, and "Cheetah Delivery (Chita)"
-              rendered as "Che…". Both identify the parcel, so neither gets cut
-              to nothing; the row takes a second line instead.
+              Wraps, deliberately, and it costs a line of card height.
+              A 15-character tracking number and a carrier name do not both fit
+              on one 390px row: on a single line the tracking number takes the
+              width and the carrier is left with about 3px — "AliExpress /
+              Cainiao" renders as nothing. Both identify the parcel, so the row
+              takes a second line instead of cutting one to zero. (Tried and
+              reverted: `shrink-0` on the number with the carrier truncating
+              reproduces the 3px result.)
             */}
             <div className="flex flex-wrap items-center gap-x-1.5 text-xs text-slate-400 mt-0.5">
               <span className="font-mono"><bdi dir="ltr">{pkg.trackingNumber}</bdi></span>
@@ -438,7 +441,7 @@ function PackageCardImpl({
             which tells the user strictly less than showing nothing. Both now
             wrap to a second line before either gets cut.
           */}
-          <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-400 min-w-0">
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-slate-400 min-w-0">
             <Calendar className="w-3.5 h-3.5 shrink-0" />
             <span className="shrink-0 whitespace-nowrap">{formatDate(pkg.expectedDeliveryDate, language)}</span>
             {daysInfo && pkg.status !== 'delivered' && (
