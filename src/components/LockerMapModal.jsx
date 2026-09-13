@@ -337,7 +337,7 @@ export function LockerMapModal({
                       </div>
                       <div className="mt-2 flex items-center gap-1.5 flex-wrap">
                         {point.packages.map((p) => (
-                          <span key={p.id} className="text-[11px] px-2 py-0.5 rounded-lg bg-white dark:bg-slate-900 border border-indigo-500/20 text-slate-800 dark:text-slate-200 font-semibold truncate max-w-[140px]">
+                          <span key={p.id} className="text-[11px] px-2 py-0.5 rounded-lg bg-slate-900/90 border border-indigo-500/30 text-slate-200 font-semibold truncate max-w-[140px]">
                             {language === 'he' && p.titleHe ? p.titleHe : p.title}
                           </span>
                         ))}
@@ -507,8 +507,8 @@ export function LockerMapModal({
                         </div>
 
                         {(activeStatus.warningHe || activeStatus.warningEn) && (
-                          <div className="flex items-center gap-2 p-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-xs">
-                            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                          <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs font-medium">
+                            <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
                             <span>{language === 'he' ? activeStatus.warningHe : activeStatus.warningEn}</span>
                           </div>
                         )}

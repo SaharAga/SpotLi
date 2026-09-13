@@ -376,7 +376,7 @@ export function getLiveStoreStatus(hoursStr = '', options = {}) {
       badgeTextEn: 'Open 24/7',
       nextChangeHe: 'עמדת איסוף אוטומטית פתוחה תמיד',
       nextChangeEn: 'Automated locker always open',
-      badgeClass: 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+      badgeClass: 'bg-blue-500/20 text-blue-900 dark:text-blue-300 border-blue-500/30'
     };
   }
 
@@ -397,7 +397,7 @@ export function getLiveStoreStatus(hoursStr = '', options = {}) {
       nextChangeEn: `Closed for ${holidayNotice.holidayNameEn}`,
       warningHe: `נקודת האיסוף סגורה היום לרגל ${holidayNotice.holidayNameHe}.`,
       warningEn: `Pickup location is closed today for ${holidayNotice.holidayNameEn}.`,
-      badgeClass: 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+      badgeClass: 'bg-rose-500/20 text-rose-900 dark:text-rose-300 border-rose-500/30'
     };
   }
 
@@ -419,7 +419,7 @@ export function getLiveStoreStatus(hoursStr = '', options = {}) {
         nextChangeEn: `Opens Sunday at ${sundayOpenTime}`,
         warningHe: 'סגור בשבת. מומלץ לתכנן את האיסוף ליום ראשון בבוקר.',
         warningEn: 'Closed on Shabbat. Plan pickup for Sunday morning.',
-        badgeClass: 'bg-slate-800 text-slate-300 border-slate-700'
+        badgeClass: 'bg-slate-500/15 dark:bg-slate-800 text-slate-800 dark:text-slate-300 border-slate-500/30 dark:border-slate-700'
       };
     }
   }
@@ -464,7 +464,7 @@ export function getLiveStoreStatus(hoursStr = '', options = {}) {
         nextChangeEn: `Closes in ${minutesToClose} min (${closeTimeStr})`,
         warningHe: fridayWarningHe,
         warningEn: fridayWarningEn,
-        badgeClass: 'bg-amber-500/25 text-amber-300 border-amber-500/40'
+        badgeClass: 'bg-amber-500/25 text-amber-950 dark:text-amber-300 border-amber-500/40'
       };
     }
 
@@ -478,7 +478,7 @@ export function getLiveStoreStatus(hoursStr = '', options = {}) {
       nextChangeEn: `Closes at ${closeTimeStr}`,
       warningHe: fridayWarningHe,
       warningEn: fridayWarningEn,
-      badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+      badgeClass: 'bg-emerald-500/20 text-emerald-950 dark:text-emerald-300 border-emerald-500/30'
     };
   }
 
@@ -496,7 +496,7 @@ export function getLiveStoreStatus(hoursStr = '', options = {}) {
         badgeTextEn: `Opens Soon (${openTimeStr})`,
         nextChangeHe: `נפתח בעוד ${minutesToOpen} דקות (${openTimeStr})`,
         nextChangeEn: `Opens in ${minutesToOpen} min (${openTimeStr})`,
-        badgeClass: 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+        badgeClass: 'bg-blue-500/20 text-blue-900 dark:text-blue-300 border-blue-500/30'
       };
     }
 
@@ -508,7 +508,7 @@ export function getLiveStoreStatus(hoursStr = '', options = {}) {
       badgeTextEn: 'Closed',
       nextChangeHe: `ייפתח היום ב-${openTimeStr}`,
       nextChangeEn: `Opens today at ${openTimeStr}`,
-      badgeClass: 'bg-slate-800 text-slate-300 border-slate-700'
+      badgeClass: 'bg-slate-500/15 dark:bg-slate-800 text-slate-800 dark:text-slate-300 border-slate-500/30 dark:border-slate-700'
     };
   }
 
@@ -539,6 +539,6 @@ export function getLiveStoreStatus(hoursStr = '', options = {}) {
     nextChangeEn: `Opens ${nextOpeningStrEn} at ${nextOpenTime}`,
     warningHe: currentDay === 5 ? 'הסניף נסגר לסופ״ש. ייפתח מחדש ביום ראשון.' : undefined,
     warningEn: currentDay === 5 ? 'Branch closed for the weekend. Re-opens Sunday.' : undefined,
-    badgeClass: 'bg-slate-800 text-slate-300 border-slate-700'
+    badgeClass: 'bg-slate-500/15 dark:bg-slate-800 text-slate-800 dark:text-slate-300 border-slate-500/30 dark:border-slate-700'
   };
 }
