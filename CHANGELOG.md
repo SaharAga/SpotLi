@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.31.1] - 2026-09-13
+
+### Fixed
+- The empty-state onboarding no longer asks you to connect a Gmail account you
+have already connected. Its Gmail tile rendered unconditionally, under a
+"Recommended" badge, because the component was never given any account state —
+so a signed-in user with Gmail syncing and nothing yet delivered was told to
+set up the thing that was already running. The tile is now omitted once Gmail
+is connected. The Gmail *nudge* banner had a second form of the same bug: it
+read the connection flag but left it out of its memo's dependencies, so the
+server's answer arriving after first paint never reached it.
+
 ## [0.31.0] - 2026-09-13
 
 ### Added
