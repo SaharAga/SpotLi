@@ -40,12 +40,14 @@ function Picker({ isOpen, onClose, title, options, value, onSelect }) {
     >
       <ModalHeader title={title} onClose={onClose} closeLabel={he ? 'חזרה' : 'Back'} />
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2" role="radiogroup" aria-label={title}>
           {options.map((opt) => (
             <SettingRow
               key={opt.value}
               label={opt.label}
               hint={opt.hint}
+              role="radio"
+              aria-checked={opt.value === value}
               onClick={() => { onSelect(opt.value); onClose(); }}
               control={
                 opt.value === value

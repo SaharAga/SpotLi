@@ -494,10 +494,11 @@ export function AccountModal({
       </div>
 
       <div className={`${card} space-y-3`}>
-        <label className="block text-xs font-bold text-slate-100">
+        <label htmlFor="account-delete-confirm" className="block text-xs font-bold text-slate-100">
           {language === 'he' ? 'לאישור המחיקה, הקלד "מחק" או "DELETE":' : 'To confirm, type "DELETE":'}
         </label>
         <input
+          id="account-delete-confirm"
           type="text"
           value={deleteConfirmationInput}
           onChange={(e) => setDeleteConfirmationInput(e.target.value)}
@@ -565,7 +566,7 @@ export function AccountModal({
               onClose={() => setSubPage(null)}
               closeLabel={he ? 'חזרה' : 'Back'}
             />
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 pb-8 sm:pb-10">
               {subPage === 'profile' && renderProfile()}
               {subPage === 'notifications' && renderNotifications()}
               {subPage === 'danger' && renderDanger()}
@@ -580,7 +581,7 @@ export function AccountModal({
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 pb-8 sm:pb-10 flex flex-col gap-6">
               <div data-account-rows className="flex flex-col gap-6">
                 {/* Identity / Profile card */}
                 <button
@@ -617,7 +618,7 @@ export function AccountModal({
                     <label className="w-full flex items-center gap-3 min-h-[52px] px-4 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 hover:border-slate-700 transition-colors cursor-pointer">
                       <Upload className="w-4 h-4 shrink-0 text-slate-400" aria-hidden="true" />
                       <span className="flex-1 text-sm font-bold text-slate-100">{t('backup.importData')}</span>
-                      <input type="file" accept=".json" onChange={handleFile} className="hidden" />
+                      <input type="file" accept=".json" onChange={handleFile} aria-label={t('backup.importData')} className="hidden" />
                     </label>
                   </div>
                 </Section>
@@ -638,16 +639,18 @@ export function AccountModal({
                 onShowToast={onShowToast}
               />
 
-              <Section label={he ? 'חשבון' : 'Account'}>
-                <div className="flex flex-col gap-2">
-                  {onOpenAdminFeedback && (
-                    <AccountRow icon={ShieldCheck} label={he ? 'ניהול ומדדים' : 'Admin'} onClick={go(onOpenAdminFeedback)} />
-                  )}
-                  {signedIn && (
-                    <AccountRow icon={LogOut} tone="danger" label={he ? 'התנתקות' : 'Sign out'} onClick={go(logout)} />
-                  )}
-                </div>
-              </Section>
+              {(onOpenAdminFeedback || signedIn) && (
+                <Section label={he ? 'חשבון' : 'Account'}>
+                  <div className="flex flex-col gap-2">
+                    {onOpenAdminFeedback && (
+                      <AccountRow icon={ShieldCheck} label={he ? 'ניהול ומדדים' : 'Admin'} onClick={go(onOpenAdminFeedback)} />
+                    )}
+                    {signedIn && (
+                      <AccountRow icon={LogOut} tone="danger" label={he ? 'התנתקות' : 'Sign out'} onClick={go(logout)} />
+                    )}
+                  </div>
+                </Section>
+              )}
 
               <Section label={he ? 'עוד' : 'More'}>
                 <div className="flex flex-col gap-2">
@@ -660,7 +663,7 @@ export function AccountModal({
               </Section>
 
               <p className="text-xs text-slate-600 text-center" dir={isRTL ? 'rtl' : 'ltr'}>
-                {APP_NAME} v{APP_VERSION}
+                {APP_NAME} <bdi dir="ltr">v{APP_VERSION}</bdi>
               </p>
             </div>
           </>

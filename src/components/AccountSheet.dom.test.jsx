@@ -114,4 +114,16 @@ describe('AccountSheet', () => {
       expect(ok).toBe(true);
     }
   });
+
+  it('completely omits the Account section header for guest users without admin', () => {
+    renderSheet();
+    expect(screen.queryByRole('heading', { level: 3, name: /^Account$/i })).toBeNull();
+  });
+
+  it('provides an accessible aria-label on the import backup file input', () => {
+    renderSheet();
+    const fileInput = document.querySelector('input[type="file"]');
+    expect(fileInput).toBeTruthy();
+    expect(fileInput.getAttribute('aria-label')).toBeTruthy();
+  });
 });

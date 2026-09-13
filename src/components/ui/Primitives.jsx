@@ -256,7 +256,19 @@ export function ModalFooter({ children, className = '' }) {
  * value in place (a switch), so it gets no chevron and does not swallow the
  * control's own clicks.
  */
-export function SettingRow({ icon: Icon, label, value, hint, onClick, control, tone = 'default', disabled }) {
+export function SettingRow({
+  icon: Icon,
+  label,
+  value,
+  hint,
+  onClick,
+  control,
+  tone = 'default',
+  disabled,
+  role,
+  'aria-checked': ariaChecked,
+  ...rest
+}) {
   const tones = {
     default: 'text-slate-100',
     danger: 'text-rose-400',
@@ -297,10 +309,10 @@ export function SettingRow({ icon: Icon, label, value, hint, onClick, control, t
   // itself interactive (a Toggle) passes no onClick, so it stays a plain div
   // and never nests one interactive element inside another.
   if (!onClick) {
-    return <div className={base}>{body}</div>;
+    return <div className={base} role={role} aria-checked={ariaChecked} {...rest}>{body}</div>;
   }
   return (
-    <button type="button" onClick={onClick} disabled={disabled} className={base}>
+    <button type="button" onClick={onClick} disabled={disabled} role={role} aria-checked={ariaChecked} className={base} {...rest}>
       {body}
     </button>
   );
