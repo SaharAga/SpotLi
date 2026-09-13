@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, FileText, ArrowLeft } from 'lucide-react';
+import { FileText, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { TERMS_CONTENT, PRIVACY_CONTENT } from '../constants/legal';
 import { Modal } from './Modal';
@@ -43,7 +43,9 @@ export function LegalDocumentModal({ isOpen, onClose, docType = 'terms' }) {
             </div>
             <div>
               <h2 id="legal-doc-title" className="text-base sm:text-lg font-bold text-slate-100">{content.title}</h2>
-              <p className="text-xs text-slate-400">{content.updated}</p>
+              <p className="text-xs text-slate-400">
+                <bdi dir="auto">{content.updated}</bdi>
+              </p>
             </div>
           </div>
         </div>
@@ -61,7 +63,7 @@ export function LegalDocumentModal({ isOpen, onClose, docType = 'terms' }) {
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-ui cursor-pointer min-h-[48px]"
+            className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-ui cursor-pointer min-h-[48px] min-w-[80px] flex items-center justify-center"
           >
             {language === 'he' ? 'סגור' : 'Close'}
           </button>
