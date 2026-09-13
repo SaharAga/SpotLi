@@ -180,7 +180,7 @@ export function AboutModal({
                   {t('appTitle')}
                 </h2>
                 <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-bold border border-blue-500/30 uppercase tracking-wider">
-                  v{APP_VERSION}
+                  <bdi dir="ltr">v{APP_VERSION}</bdi>
                 </span>
               </div>
               <p className="text-xs text-slate-400 font-medium">
@@ -190,16 +190,17 @@ export function AboutModal({
           </div>
 
           <button
+            type="button"
             onClick={onClose}
             className="order-first me-3 p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
-            aria-label="Back"
+            aria-label={language === 'he' ? 'חזרה' : 'Back'}
           >
             <ArrowLeft className="w-5 h-5 rtl:rotate-180" aria-hidden="true" />
           </button>
         </div>
 
         {/* Scrollable Content */}
-        <div className="p-5 sm:p-6 overflow-y-auto space-y-6 text-xs text-slate-300">
+        <div className="flex-1 p-5 sm:p-6 overflow-y-auto space-y-6 text-xs text-slate-300 pb-8">
           {/* Section 1: System Info & Version Banner */}
           <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
@@ -208,13 +209,13 @@ export function AboutModal({
                   {language === 'he' ? 'גרסת מערכת' : 'System Build'}:
                 </span>
                 <span className="font-mono text-xs text-blue-400 font-bold bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">
-                  {APP_VERSION}
+                  <bdi dir="ltr">{APP_VERSION}</bdi>
                 </span>
                 <span className="text-xs text-slate-400">
-                  ({RELEASE_DATE})
+                  <bdi dir="ltr">({RELEASE_DATE})</bdi>
                 </span>
                 <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 uppercase font-semibold">
-                  {BUILD_CHANNEL}
+                  <bdi dir="ltr">{BUILD_CHANNEL}</bdi>
                 </span>
               </div>
               <p className="text-xs text-slate-400">
@@ -284,11 +285,21 @@ export function AboutModal({
               <div className="flex items-center gap-2">
                 <Activity className="w-4 h-4 text-emerald-400" />
                 <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-                  {language === 'he' ? 'בדיקת תקינות מערכת (BIST Self-Test)' : 'System Health & Self-Test (BIST)'}
+                  {language === 'he' ? (
+                    <>
+                      <span>בדיקת תקינות מערכת</span>{' '}
+                      <bdi dir="ltr" className="inline-block whitespace-nowrap">
+                        (BIST Self-Test)
+                      </bdi>
+                    </>
+                  ) : (
+                    'System Health & Self-Test (BIST)'
+                  )}
                 </h3>
                 {bistResult && (
                   <span
-                    className={`text-xs px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1 ${
+                    dir="ltr"
+                    className={`text-xs px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1 shrink-0 ${
                       bistResult.status === 'PASS'
                         ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                         : bistResult.status === 'WARN'
@@ -299,7 +310,8 @@ export function AboutModal({
                     {bistResult.status === 'PASS' && <CheckCircle2 className="w-3 h-3" />}
                     {bistResult.status === 'WARN' && <AlertTriangle className="w-3 h-3" />}
                     {bistResult.status === 'FAIL' && <XCircle className="w-3 h-3" />}
-                    {bistResult.status} ({bistResult.summary.passed}/{bistResult.summary.total})
+                    <span>{bistResult.status}</span>
+                    <span>({bistResult.summary.passed}/{bistResult.summary.total})</span>
                   </span>
                 )}
               </div>
@@ -326,8 +338,8 @@ export function AboutModal({
                     key={check.id}
                     className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800/80 flex items-start justify-between gap-2"
                   >
-                    <div className="space-y-0.5 min-w-0">
-                      <div className="flex items-center gap-1.5">
+                    <div className="space-y-0.5 min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
                         {check.status === 'PASS' ? (
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                         ) : check.status === 'WARN' ? (
@@ -335,11 +347,11 @@ export function AboutModal({
                         ) : (
                           <XCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
                         )}
-                        <span className="font-semibold text-slate-200 text-xs truncate">
+                        <span className="font-semibold text-slate-200 text-xs truncate" dir="ltr">
                           {check.name}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-400 leading-tight">
+                      <p className="text-xs text-slate-400 leading-tight" dir="ltr">
                         {check.message}
                       </p>
                     </div>
@@ -413,7 +425,7 @@ export function AboutModal({
                 <span>{language === 'he' ? 'ספקי שילוח נתמכים' : 'Supported Carriers'}</span>
               </h3>
               <span className="text-xs font-bold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded-full">
-                {CARRIER_LIST.length} {language === 'he' ? 'ספקים' : 'Carriers'}
+                <bdi dir="ltr">{CARRIER_LIST.length}</bdi> {language === 'he' ? 'ספקים' : 'Carriers'}
               </span>
             </div>
 
@@ -441,7 +453,17 @@ export function AboutModal({
           <div>
             <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider mb-2.5 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-amber-400" />
-              <span>{language === 'he' ? `חידושים בגרסה ${APP_VERSION}` : `Release Highlights (${APP_VERSION})`}</span>
+              <span>
+                {language === 'he' ? (
+                  <>
+                    <span>חידושים בגרסה</span> <bdi dir="ltr">{APP_VERSION}</bdi>
+                  </>
+                ) : (
+                  <>
+                    <span>Release Highlights</span> <bdi dir="ltr">({APP_VERSION})</bdi>
+                  </>
+                )}
+              </span>
             </h3>
             <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2 text-xs">
               <div className="flex items-start gap-2">
@@ -525,7 +547,7 @@ export function AboutModal({
           <button
             type="button"
             onClick={onClose}
-            className="hidden lg:block px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-ui cursor-pointer min-h-[48px] w-full sm:w-auto"
+            className="px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-ui cursor-pointer min-h-[48px] w-full sm:w-auto"
           >
             {language === 'he' ? 'סגור' : 'Close'}
           </button>
