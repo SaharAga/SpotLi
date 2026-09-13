@@ -88,6 +88,7 @@ export function NavigationChoiceModal({
       layer="top"
       componentName="NavigationChoiceModal"
       compact
+      labelledBy="navigation-choice-title"
       className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-6 flex flex-col"
     >
       {/* Header */}
@@ -97,7 +98,7 @@ export function NavigationChoiceModal({
             <Navigation className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base sm:text-lg font-bold text-slate-100">
+            <h3 id="navigation-choice-title" className="text-base sm:text-lg font-bold text-slate-100">
               {t('navigation.title') || 'Choose Navigation App'}
             </h3>
             <p className="text-xs text-slate-400">
@@ -108,7 +109,7 @@ export function NavigationChoiceModal({
         <button
           onClick={onClose}
           className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-400 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
-          aria-label="Close"
+          aria-label={language === 'he' ? 'סגור' : 'Close'}
         >
           <X className="w-5 h-5" />
         </button>
@@ -123,11 +124,11 @@ export function NavigationChoiceModal({
               {t('navigation.destination') || 'Destination'}
             </span>
             <p className="text-xs font-semibold text-slate-200 truncate mt-0.5">
-              {destinationQuery}
+              <bdi dir="auto">{destinationQuery}</bdi>
             </p>
             {lat !== null && lng !== null && (
               <span className="text-xs font-mono text-slate-500 block mt-0.5">
-                GPS: {Number(lat).toFixed(4)}, {Number(lng).toFixed(4)}
+                <bdi dir="ltr">GPS: {Number(lat).toFixed(4)}, {Number(lng).toFixed(4)}</bdi>
               </span>
             )}
           </div>
@@ -135,7 +136,11 @@ export function NavigationChoiceModal({
       </div>
 
       {/* Navigation Providers List */}
-      <div className="p-4 sm:p-5 space-y-2.5 max-h-[50vh] overflow-y-auto">
+      <div
+        role="group"
+        aria-label={t('navigation.title') || 'Choose Navigation App'}
+        className="p-4 sm:p-5 space-y-2.5 max-h-[50vh] overflow-y-auto"
+      >
         {appList.map((app) => {
           const isPreferred = preferredApp === app.id;
           const appName = language === 'he' ? app.nameHe : app.name;
@@ -146,6 +151,8 @@ export function NavigationChoiceModal({
               key={app.id}
               type="button"
               onClick={() => handleSelectApp(app.id)}
+              aria-current={isPreferred ? 'true' : undefined}
+              aria-label={`${appName} - ${appDesc}${isPreferred ? ` (${t('navigation.preferredBadge') || 'Default'})` : ''}`}
               className={`w-full p-3.5 rounded-2xl border transition-ui text-start flex items-center justify-between gap-3 cursor-pointer min-h-[52px] group ${
                 isPreferred
                   ? 'bg-emerald-600/10 border-emerald-500/50 hover:bg-emerald-600/20'
@@ -200,9 +207,10 @@ export function NavigationChoiceModal({
           <button
             type="button"
             onClick={handleResetPreference}
+            aria-label={t('navigation.clearPreference') || 'Reset saved default'}
             className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-rose-400 transition-colors cursor-pointer min-h-[48px] px-2"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="w-3.5 h-3.5 rtl:scale-x-[-1]" />
             <span>{t('navigation.clearPreference') || 'Reset saved default'}</span>
           </button>
         )}
