@@ -1,12 +1,13 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   X, Download, FileSpreadsheet, FileCode, Printer,
-  CheckCircle2, Package, Filter, ShieldCheck
+  CheckCircle2, Package, Filter, ShieldCheck, Copy, Check
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { ModalHeader } from './ui/Primitives';
 import { exportToCSV, exportToJSON, generatePrintableSummary } from '../utils/exportUtils';
 import { todayISO } from '../utils/dateUtils';
+import { copyToClipboard } from '../utils/clipboard';
 import { Modal } from './Modal';
 import { useFeatureUsage } from '../hooks/useFeatureUsage';
 import { FEATURE_IDS } from '../constants/featureIds';
@@ -24,6 +25,16 @@ export function ExportModal({
   const [selectedFormat, setSelectedFormat] = useState('csv'); // 'csv' | 'json' | 'print'
   const [selectedScope, setSelectedScope] = useState('all'); // 'all' | 'active' | 'delivered'
   const [isExporting, setIsExporting] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const copyTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const filteredExportPackages = useMemo(() => {
     if (!Array.isArray(packages)) return [];
@@ -37,6 +48,57 @@ export function ExportModal({
       return true;
     });
   }, [packages, selectedScope]);
+
+  const handleCopyToClipboard = async () => {
+    if (filteredExportPackages.length === 0) {
+      if (onShowToast) {
+        onShowToast(language === 'he' ? 'אין חבילות להעתקה' : 'No packages to copy', 'info');
+      }
+      return;
+    }
+
+    let exportString = '';
+    try {
+      if (selectedFormat === 'csv') {
+        exportString = exportToCSV(filteredExportPackages, false);
+      } else if (selectedFormat === 'json') {
+        exportString = exportToJSON(filteredExportPackages, false, '', { scope: selectedScope });
+      } else if (selectedFormat === 'print') {
+        exportString = generatePrintableSummary(filteredExportPackages, language, false);
+      }
+
+      const ok = await copyToClipboard(exportString);
+      if (ok) {
+        setCopied(true);
+        if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+        copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
+        if (onShowToast) {
+          const formatLabel = selectedFormat.toUpperCase();
+          onShowToast(
+            language === 'he'
+              ? `נתוני ${formatLabel} הועתקו ללוח בהצלחה`
+              : `${formatLabel} data copied to clipboard`,
+            'success'
+          );
+        }
+      } else {
+        if (onShowToast) {
+          onShowToast(
+            language === 'he' ? 'ההעתקה ללוח נכשלה' : 'Failed to copy to clipboard',
+            'error'
+          );
+        }
+      }
+    } catch (err) {
+      console.error('Clipboard copy failed:', err);
+      if (onShowToast) {
+        onShowToast(
+          language === 'he' ? 'שגיאה בהעתקת הנתונים' : 'Failed to copy data',
+          'error'
+        );
+      }
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -117,13 +179,19 @@ export function ExportModal({
         <div className="p-4 sm:p-6 space-y-5 text-xs text-slate-200">
           {/* 1. Format Selection */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-200 flex items-center gap-2">
+            <label id="export-format-label" className="text-xs font-bold text-slate-200 flex items-center gap-2">
               <span>{language === 'he' ? '1. בחר פורמט ייצוא' : '1. Select Export Format'}</span>
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div
+              role="radiogroup"
+              aria-labelledby="export-format-label"
+              className="grid grid-cols-1 sm:grid-cols-3 gap-2.5"
+            >
               {/* CSV / Excel */}
               <button
                 type="button"
+                role="radio"
+                aria-checked={selectedFormat === 'csv'}
                 onClick={() => setSelectedFormat('csv')}
                 className={`p-3.5 rounded-2xl border text-start transition-ui cursor-pointer flex flex-col justify-between min-h-[48px] ${
                   selectedFormat === 'csv'
@@ -146,6 +214,8 @@ export function ExportModal({
               {/* JSON report — scope-filtered, not a restorable backup */}
               <button
                 type="button"
+                role="radio"
+                aria-checked={selectedFormat === 'json'}
                 onClick={() => setSelectedFormat('json')}
                 className={`p-3.5 rounded-2xl border text-start transition-ui cursor-pointer flex flex-col justify-between min-h-[48px] ${
                   selectedFormat === 'json'
@@ -170,6 +240,8 @@ export function ExportModal({
               {/* Print / PDF */}
               <button
                 type="button"
+                role="radio"
+                aria-checked={selectedFormat === 'print'}
                 onClick={() => setSelectedFormat('print')}
                 className={`p-3.5 rounded-2xl border text-start transition-ui cursor-pointer flex flex-col justify-between min-h-[48px] ${
                   selectedFormat === 'print'
@@ -193,13 +265,19 @@ export function ExportModal({
 
           {/* 2. Scope Filter */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-slate-200 flex items-center gap-2">
+            <label id="export-scope-label" className="text-xs font-bold text-slate-200 flex items-center gap-2">
               <Filter className="w-3.5 h-3.5 text-blue-400" />
               <span>{language === 'he' ? '2. טווח חבילות לייצוא' : '2. Package Scope'}</span>
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div
+              role="radiogroup"
+              aria-labelledby="export-scope-label"
+              className="grid grid-cols-3 gap-2"
+            >
               <button
                 type="button"
+                role="radio"
+                aria-checked={selectedScope === 'all'}
                 onClick={() => setSelectedScope('all')}
                 className={`p-2.5 rounded-xl border text-center font-bold text-xs transition-ui cursor-pointer min-h-[48px] flex items-center justify-center ${
                   selectedScope === 'all'
@@ -212,6 +290,8 @@ export function ExportModal({
 
               <button
                 type="button"
+                role="radio"
+                aria-checked={selectedScope === 'active'}
                 onClick={() => setSelectedScope('active')}
                 className={`p-2.5 rounded-xl border text-center font-bold text-xs transition-ui cursor-pointer min-h-[48px] flex items-center justify-center ${
                   selectedScope === 'active'
@@ -224,6 +304,8 @@ export function ExportModal({
 
               <button
                 type="button"
+                role="radio"
+                aria-checked={selectedScope === 'delivered'}
                 onClick={() => setSelectedScope('delivered')}
                 className={`p-2.5 rounded-xl border text-center font-bold text-xs transition-ui cursor-pointer min-h-[48px] flex items-center justify-center ${
                   selectedScope === 'delivered'
@@ -245,7 +327,7 @@ export function ExportModal({
               </span>
             </div>
             <span className="px-3 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-300 font-bold text-xs">
-              {filteredExportPackages.length} {language === 'he' ? 'פריטים' : 'items'}
+              <bdi dir="ltr">{filteredExportPackages.length}</bdi> {language === 'he' ? 'פריטים' : 'items'}
             </span>
           </div>
 
@@ -260,13 +342,34 @@ export function ExportModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 sm:p-5 border-t border-slate-800 bg-slate-950/60 flex items-center justify-end gap-3">
+        <div className="p-4 sm:p-5 border-t border-slate-800 bg-slate-950/60 flex items-center justify-end gap-2.5 flex-wrap sm:flex-nowrap">
           <button
             type="button"
             onClick={onClose}
             className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors cursor-pointer min-h-[48px]"
           >
             {language === 'he' ? 'ביטול' : 'Cancel'}
+          </button>
+
+          <button
+            type="button"
+            disabled={isExporting || filteredExportPackages.length === 0}
+            onClick={handleCopyToClipboard}
+            aria-label={copied ? (language === 'he' ? 'הועתק ללוח!' : 'Copied to clipboard!') : (language === 'he' ? 'העתק ללוח' : 'Copy to clipboard')}
+            title={language === 'he' ? 'העתק נתונים ללוח' : 'Copy data to clipboard'}
+            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-600 disabled:opacity-40 text-slate-200 hover:text-slate-100 font-bold text-xs transition-colors cursor-pointer flex items-center justify-center gap-2 border border-slate-700 min-h-[48px]"
+          >
+            {copied ? (
+              <>
+                <Check className="w-4 h-4 text-emerald-400" />
+                <span>{language === 'he' ? 'הועתק!' : 'Copied!'}</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-4 h-4 text-slate-300" />
+                <span>{language === 'he' ? 'העתק' : 'Copy'}</span>
+              </>
+            )}
           </button>
 
           <button
@@ -279,7 +382,9 @@ export function ExportModal({
             <span>
               {isExporting 
                 ? (language === 'he' ? 'מפיק קובץ...' : 'Generating...') 
-                : (language === 'he' ? `ייצא עכשיו (${filteredExportPackages.length})` : `Download Export (${filteredExportPackages.length})`)}
+                : (language === 'he' 
+                    ? <>ייצא עכשיו <bdi dir="ltr">({filteredExportPackages.length})</bdi></> 
+                    : <>Download Export <bdi dir="ltr">({filteredExportPackages.length})</bdi></>)}
             </span>
           </button>
         </div>
