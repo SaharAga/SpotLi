@@ -301,10 +301,19 @@ function PackageCardImpl({
       )}
 
       <div
+        role="button"
+        tabIndex={0}
+        aria-label={`${itemTitle} — ${language === 'he' ? stage.hebrewLabel : stage.label}`}
         onClick={() => {
           if (Math.abs(swipeOffset) > 5) return;
           if (typeof onOpenDetails === 'function') {
             onOpenDetails(pkg);
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (typeof onOpenDetails === 'function') onOpenDetails(pkg);
           }
         }}
         onTouchStart={handleTouchStart}
@@ -320,7 +329,10 @@ function PackageCardImpl({
       >
         {/* Row 1: leading icon, title + tracking/carrier meta, status pill */}
         <div className="flex items-start gap-3">
-          <div className={`relative p-2 rounded-xl shrink-0 ${stage.badgeClass.split(' ').filter(c => c.startsWith('bg-') || c.startsWith('text-')).join(' ')}`}>
+          <div
+            aria-hidden="true"
+            className={`relative p-2 rounded-xl shrink-0 ${stage.badgeClass.split(' ').filter(c => c.startsWith('bg-') || c.startsWith('text-')).join(' ')}`}
+          >
             {pkg.status === 'returned_to_sender' ? (
               <RotateCcw className="w-4 h-4" />
             ) : pkg.status === 'exception' ? (
@@ -374,9 +386,10 @@ function PackageCardImpl({
                         onOpenLockerMode(pkg);
                       }}
                       title={language === 'he' ? 'פתח מצב לוקר מוגדל' : 'Open Full-Screen Locker Mode'}
+                      aria-label={language === 'he' ? `פתח מצב לוקר — PIN ${pkg.pickupCode}` : `Open Locker Mode — PIN ${pkg.pickupCode}`}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 hover:bg-emerald-500/25 dark:hover:bg-emerald-500/30 text-emerald-800 dark:text-emerald-200 transition-colors cursor-pointer min-h-[44px]"
                     >
-                      <Sun className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 shrink-0" />
+                      <Sun className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 shrink-0" aria-hidden="true" />
                       <span>PIN {pkg.pickupCode}</span>
                     </button>
                   ) : (
@@ -391,7 +404,7 @@ function PackageCardImpl({
                     className="px-2.5 py-1.5 hover:bg-emerald-500/25 dark:hover:bg-emerald-500/30 border-s border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:text-emerald-900 dark:hover:text-emerald-100 transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
                     aria-label={language === 'he' ? 'העתק קוד איסוף' : 'Copy pickup PIN'}
                   >
-                    {copiedPin ? <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedPin ? <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />}
                   </button>
                 </div>
               )}
@@ -400,7 +413,7 @@ function PackageCardImpl({
                   title={language === 'he' ? 'חברת השילוח העבירה את החבילה לנקודה חלופית' : 'Package was redirected to an alternate pickup location'}
                   className="ms-1 inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/15 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-500/30 text-xs font-bold shrink-0"
                 >
-                  <AlertTriangle className="w-3 h-3" />
+                  <AlertTriangle className="w-3 h-3" aria-hidden="true" />
                   <span>{t('redirectDetection.badge')}</span>
                 </span>
               )}
@@ -464,11 +477,11 @@ function PackageCardImpl({
               className="flex-1 min-w-0 flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl hover:bg-slate-900/90 hover:text-emerald-300 transition-colors cursor-pointer min-h-[48px] text-start group/nav"
             >
               <div className="flex items-center gap-2 min-w-0">
-                <MapPin className="w-4 h-4 text-emerald-400 shrink-0 group-hover/nav:scale-110 transition-transform" />
+                <MapPin className="w-4 h-4 text-emerald-400 shrink-0 group-hover/nav:scale-110 transition-transform" aria-hidden="true" />
                 <span className="truncate text-xs font-medium">{pkg.pickupLocation}</span>
               </div>
               <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 group-hover/nav:bg-emerald-500/25 transition-colors flex items-center gap-1 text-[11px] font-bold shrink-0">
-                <Navigation className="w-3.5 h-3.5 rtl:rotate-180" />
+                <Navigation className="w-3.5 h-3.5 rtl:rotate-180" aria-hidden="true" />
                 <span className="hidden sm:inline">{language === 'he' ? 'נווט' : 'Navigate'}</span>
               </span>
             </button>
@@ -493,7 +506,7 @@ function PackageCardImpl({
                     : `Open bundled pickup screen for ${sameLocationSiblings.length + 1} packages`
                 }
               >
-                <Layers className="w-3.5 h-3.5 text-indigo-300" />
+                <Layers className="w-3.5 h-3.5 text-indigo-300" aria-hidden="true" />
                 <span>{language === 'he' ? `עוד ${sameLocationSiblings.length} כאן` : `+${sameLocationSiblings.length} here`}</span>
               </button>
             )}
@@ -509,7 +522,7 @@ function PackageCardImpl({
                 ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
                 : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
           }`}>
-            <Clock className="w-3.5 h-3.5 shrink-0" />
+            <Clock className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
             <span className="truncate">{language === 'he' ? pickupCountdown.formattedHe : pickupCountdown.formattedEn}</span>
           </div>
         )}
@@ -522,7 +535,7 @@ function PackageCardImpl({
                 ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
                 : 'bg-blue-500/15 text-blue-300 border-blue-500/30'
           }`}>
-            <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+            <RotateCcw className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
             <span className="truncate">{language === 'he' ? returnCountdown.formattedHe : returnCountdown.formattedEn}</span>
           </div>
         )}
@@ -537,7 +550,7 @@ function PackageCardImpl({
             wrap to a second line before either gets cut.
           */}
           <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-slate-400 min-w-0">
-            <Calendar className="w-3.5 h-3.5 shrink-0" />
+            <Calendar className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
             <span className="shrink-0 whitespace-nowrap">{formatDate(pkg.expectedDeliveryDate, language)}</span>
             {daysInfo && pkg.status !== 'delivered' && (
               <span
@@ -557,6 +570,7 @@ function PackageCardImpl({
           <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
             {onRefreshTracking && (
               <button
+                type="button"
                 onClick={handleRefresh}
                 disabled={isRefreshing}
                 title={t('card.refreshStatus')}
@@ -565,11 +579,12 @@ function PackageCardImpl({
                   isRefreshing ? 'animate-spin text-emerald-400' : ''
                 }`}
               >
-                {isRefreshing ? <Loader2 className="w-3.5 h-3.5" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                {isRefreshing ? <Loader2 className="w-3.5 h-3.5" aria-hidden="true" /> : <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />}
               </button>
             )}
 
             <button
+              type="button"
               onClick={handleMarkDelivered}
               aria-label={pkg.status === 'delivered' ? t('card.markActive') : t('card.markDelivered')}
               title={pkg.status === 'delivered' ? t('card.markActive') : t('card.markDelivered')}
@@ -577,11 +592,12 @@ function PackageCardImpl({
                 pkg.status === 'delivered' ? 'text-emerald-500 bg-emerald-500/10' : 'text-slate-400 hover:text-emerald-500 hover:bg-slate-800'
               }`}
             >
-              <CheckCircle className={`w-3.5 h-3.5 ${pkg.status === 'delivered' ? 'fill-emerald-500/20' : ''}`} />
+              <CheckCircle className={`w-3.5 h-3.5 ${pkg.status === 'delivered' ? 'fill-emerald-500/20' : ''}`} aria-hidden="true" />
             </button>
 
             <div className="relative">
               <button
+                type="button"
                 ref={menuTriggerRef}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -600,39 +616,44 @@ function PackageCardImpl({
                 title={t('card.viewDetails')}
                 className="p-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
               >
-                <MoreVertical className="w-3.5 h-3.5" />
+                <MoreVertical className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
 
               {menuOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }} />
                   <div
+                    aria-label={t('card.moreActions')}
                     className={`absolute z-50 w-48 bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl py-1 text-xs end-0 ${
                       menuFlipUp ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
                     }`}
                   >
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setMenuOpen(false);
                         handleCopy(e);
                       }}
+                      aria-label={t('card.copyTracking')}
                       className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-slate-100 min-h-[48px]"
                     >
-                      {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />}
                       <span>{t('card.copyTracking')}</span>
                     </button>
 
                     {pkg.pickupCode && onOpenLockerMode && (
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           setMenuOpen(false);
                           onOpenLockerMode(pkg);
                         }}
+                        aria-label={language === 'he' ? 'מצב לוקר מוגדל' : 'Locker Mode'}
                         className="w-full flex items-center gap-2 px-3 py-2.5 text-emerald-600 dark:text-emerald-400 hover:bg-slate-800 hover:text-emerald-700 dark:hover:text-emerald-300 min-h-[48px] font-semibold"
                       >
-                        <Sun className="w-3.5 h-3.5" />
+                        <Sun className="w-3.5 h-3.5" aria-hidden="true" />
                         <span>{language === 'he' ? 'מצב לוקר מוגדל' : 'Locker Mode'}</span>
                       </button>
                     )}
@@ -641,58 +662,67 @@ function PackageCardImpl({
                       href={trackingUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      aria-label={language === 'he' ? `עקוב אחר החבילה ב-${carrier.hebrewName}` : `Track package on ${carrier.name}`}
                       onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }}
                       className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-slate-100 min-h-[48px]"
                     >
-                      <ArrowUpRight className="w-3.5 h-3.5" />
+                      <ArrowUpRight className="w-3.5 h-3.5" aria-hidden="true" />
                       <span>{t('card.viewCarrier')}</span>
                     </a>
 
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setMenuOpen(false);
                         onTogglePin(pkg.id);
                       }}
+                      aria-label={pkg.isPinned ? t('card.unpin') : t('card.pin')}
                       className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-slate-100 min-h-[48px]"
                     >
-                      <Pin className={`w-3.5 h-3.5 ${pkg.isPinned ? 'fill-blue-400 text-blue-400' : ''}`} />
+                      <Pin className={`w-3.5 h-3.5 ${pkg.isPinned ? 'fill-blue-400 text-blue-400' : ''}`} aria-hidden="true" />
                       <span>{pkg.isPinned ? t('card.unpin') : t('card.pin')}</span>
                     </button>
 
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setMenuOpen(false);
                         onEdit(pkg);
                       }}
+                      aria-label={t('card.edit')}
                       className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-slate-100 min-h-[48px]"
                     >
-                      <Edit3 className="w-3.5 h-3.5" />
+                      <Edit3 className="w-3.5 h-3.5" aria-hidden="true" />
                       <span>{t('card.edit')}</span>
                     </button>
 
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setMenuOpen(false);
                         onToggleArchive(pkg.id);
                       }}
+                      aria-label={pkg.isArchived ? t('card.unarchive') : t('card.archive')}
                       className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-slate-100 min-h-[48px]"
                     >
-                      <Archive className="w-3.5 h-3.5" />
+                      <Archive className="w-3.5 h-3.5" aria-hidden="true" />
                       <span>{pkg.isArchived ? t('card.unarchive') : t('card.archive')}</span>
                     </button>
 
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setMenuOpen(false);
                         onDelete(pkg.id);
                       }}
+                      aria-label={t('card.delete')}
                       className="w-full flex items-center gap-2 px-3 py-2.5 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 hover:text-rose-700 dark:hover:text-rose-300 min-h-[48px]"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                       <span>{t('card.delete')}</span>
                     </button>
                   </div>

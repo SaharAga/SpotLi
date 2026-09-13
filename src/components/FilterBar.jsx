@@ -94,11 +94,12 @@ export function FilterBar({
         />
         {searchQuery && (
           <button
+            type="button"
             onClick={() => onSearchChange('')}
             className="absolute top-1/2 -translate-y-1/2 end-1.5 p-2 rounded-lg text-slate-400 hover:text-slate-100 min-h-[48px] min-w-[48px] flex items-center justify-center"
             aria-label="Clear search"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4" aria-hidden="true" />
           </button>
         )}
       </div>
@@ -140,6 +141,7 @@ export function FilterBar({
         </div>
 
         <button
+          type="button"
           onClick={() => setFiltersOpen((v) => !v)}
           aria-expanded={filtersOpen}
           aria-label={t('filters.status')}
@@ -167,6 +169,7 @@ export function FilterBar({
           >
             {onRefreshAll && (
               <button
+                type="button"
                 onClick={onRefreshAll}
                 disabled={isRefreshing}
                 aria-label={t('tracking.refreshAll')}
@@ -183,9 +186,10 @@ export function FilterBar({
                 preference you set once next to a control you use constantly.
                 It belongs with the other settings. */}
             <div>
-              <label className="block text-xs font-bold text-slate-400 mb-1.5">{t('filters.gridView')} / {t('filters.tableView')}</label>
-              <div className="flex items-center gap-2">
+              <label id="filter-viewmode-label" className="block text-xs font-bold text-slate-400 mb-1.5">{t('filters.gridView')} / {t('filters.tableView')}</label>
+              <div className="flex items-center gap-2" role="group" aria-labelledby="filter-viewmode-label">
                 <button
+                  type="button"
                   onClick={() => onViewModeChange('grid')}
                   aria-label={t('filters.gridView')}
                   aria-pressed={viewMode === 'grid'}
@@ -197,6 +201,7 @@ export function FilterBar({
                   <span>{t('filters.gridView')}</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => onViewModeChange('table')}
                   aria-label={t('filters.tableView')}
                   aria-pressed={viewMode === 'table'}
@@ -211,12 +216,14 @@ export function FilterBar({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 mb-1.5">{t('filters.status')}</label>
-              <div className="flex flex-col gap-1">
+              <label id="filter-status-label" className="block text-xs font-bold text-slate-400 mb-1.5">{t('filters.status')}</label>
+              <div className="flex flex-col gap-1" role="group" aria-labelledby="filter-status-label">
                 {statusOptions.map((opt) => (
                   <button
+                    type="button"
                     key={opt.id}
                     onClick={() => onTabChange(opt.id)}
+                    aria-pressed={activeTab === opt.id}
                     className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold text-start transition-colors min-h-[48px] ${
                       activeTab === opt.id ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-slate-800'
                     }`}
@@ -229,8 +236,9 @@ export function FilterBar({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 mb-1.5">{t('filters.allCarriers')}</label>
+              <label htmlFor="filter-carrier-select" className="block text-xs font-bold text-slate-400 mb-1.5">{t('filters.allCarriers')}</label>
               <select
+                id="filter-carrier-select"
                 value={selectedCarrier}
                 onChange={(e) => onCarrierChange(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 text-slate-200 text-sm rounded-lg p-2.5 focus:outline-none focus:border-blue-500 cursor-pointer min-h-[48px]"
@@ -245,8 +253,9 @@ export function FilterBar({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-400 mb-1.5">{t('filters.sortBy')}</label>
+              <label htmlFor="filter-sort-select" className="block text-xs font-bold text-slate-400 mb-1.5">{t('filters.sortBy')}</label>
               <select
+                id="filter-sort-select"
                 value={sortBy}
                 onChange={(e) => onSortChange(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 text-slate-200 text-sm rounded-lg p-2.5 focus:outline-none focus:border-blue-500 cursor-pointer min-h-[48px]"
