@@ -7,6 +7,164 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.32.0] - 2026-09-13
+
+### Added
+- Add contextual education in AuthModal for guest users clicking Gmail sync, highlight Google Sign-In, and protect private email forwarding address in IngestionGuideModal behind authentication to prevent un-routed delivery webhooks.
+
+- Enhance Israeli locker and pickup ergonomics on package cards: direct 1-tap navigation launcher modal with Waze, Google Maps, Apple Maps, and Moovit options, prominent 1-tap PIN copy button and full-screen locker mode trigger, high-contrast shelf number badge, and timer cleanup lifecycle fixes.
+
+- Disambiguate generic Israeli postal phrasing from named courier brands in smartParser (raising carrier detection accuracy to 100.0% on held-out corpus), expose normalized pickupCode on parser return, add Israeli locker quick sample to SmartImportModal with 2x2 grid, and display locker PIN in the parsed preview card before ingestion.
+
+- Implement multi-package pickup bundling and cluster ergonomics: add interactive cluster indicator button to package cards for co-located parcels, render a top-level bundled pickup banner on the dashboard for 1-tap PIN modal access, display active pickup points grouped at the top of the Locker Map Locator with consolidated package lists, enhance FullScreenLockerModal with stacked PINs and high-contrast theme-aware sunlight visibility, and add 404 resilience to Gmail push history processing.
+
+- Enhance authenticated user flows and dashboard ergonomics: verify Google sign-in button contrast across themes in AuthModal, display personalized forwarding addresses in IngestionGuideModal with multi-provider setup guides, verify real user registration and PostAuthSetupWizard integration, enhance SideNavDrawer profile card styling with high-contrast palette tokens in light and dark modes, and add comprehensive DOM tests for authenticated drawer navigation.
+
+### Fixed
+- Added 404 and 410 entity handling to `gmailPushHandler.js` so deleted messages, discarded drafts, or spam do not abort real-time Gmail push notification batches or block stored historyId advancement.
+
+- Enhance PackageCard action menu WAI-ARIA accessibility, opaque popup layering, swipe contrast, and Toast high-contrast action button.
+
+- Add high-contrast sticky OfflineBanner component with real-time sync queue tracking, automatic replay recovery notification, and bilingual WAI-ARIA status support.
+
+- Enhance ActivityModal timeline with contextual checkpoint stage icons, rich detail descriptions, accessible event labels, and DOM test suite.
+
+- Refactor AnalyticsModal to eliminate hardcoded facade fallbacks, add directional BiDi text isolation for numbers/currencies, provide carrier distribution empty states, and add DOM test coverage.
+
+- Enhance ExportModal with WAI-ARIA radiogroups, 1-tap clipboard copying with animated feedback and timeout cleanup, BiDi number containment, and full DOM integration test coverage.
+
+- Enhance FeedbackModal with WAI-ARIA radiogroups, >=48px rating touch targets, light/dark contrast safety tokens, BiDi text containment, and 10 DOM integration tests.
+
+- Enhance AccountModal and AccountSettingsRows with WAI-ARIA radiogroup/radio semantics, associate delete confirmation label with input, add aria-label to backup import input, fix guest empty Account section header, wrap version in bdi containment, and add scroller bottom padding.
+
+- Enhance AboutModal and LegalDocumentModal with inner scroll flex container, WAI-ARIA labelledBy accessibility, responsive mobile close button, BiDi isolation on version and diagnostics, and 8 DOM integration tests.
+
+- Polish Welcome & Onboarding Tour modal (`OnboardingModal.jsx`):
+- Added `labelledBy="onboarding-slide-title"` to `Modal` dialog and matched `id="onboarding-slide-title"` on heading.
+- Upgraded slide indicators to accessible WAI-ARIA `role="tablist"` and `role="tab"` with `aria-selected`, `aria-controls`, and localized `aria-label` ("Slide X of Y").
+- Marked slide body container as `role="tabpanel"` linked to active tab via `aria-labelledby`.
+- Isolated numbers, courier codes, tracking identifiers (`#AMZ-9382`, `#CH-4821`, `CH-849201`, `48291`, `B-14`, `7 3 9 1 0`) in `<bdi dir="ltr">` elements to prevent BiDi inversion in Hebrew RTL.
+- Hardened light mode and dark mode theme tokens across all 4 slide illustration cards and status badges (`text-emerald-700 dark:text-emerald-400`, `text-amber-600 dark:text-amber-400`, `text-blue-600 dark:text-blue-400`, `bg-blue-50 dark:bg-blue-950/40`), ensuring full WCAG AAA contrast in both modes.
+- Expanded unit test suite in `OnboardingModal.test.jsx` covering ARIA semantics, direct tab selection, dialog labelling, and BiDi containment (12 passing tests).
+
+- Polish Automatic Shipment Ingestion guide (`IngestionGuideModal.jsx`):
+- Added WAI-ARIA `role="tablist"` and `role="tab"` with `aria-selected` and `aria-controls` to interactive provider tabs (Gmail, Outlook, iCloud, Yahoo), and associated `role="tabpanel"` on step details container.
+- Added 1-tap "Copy Filter" (`העתק מסנן` / `Copy Filter`) button next to the Boolean forwarding filter query with clipboard checkmark feedback and automatic timer teardown on unmount.
+- Wrapped private ingestion email and filter query in `<bdi dir="ltr">` / `dir="ltr"` preventing Hebrew RTL punctuation or parenthesis inversions.
+- Added accessible dialog labelling (`labelledBy="ingestion-guide-title"`) and localized `aria-label` on the back button (`חזרה` / `Back`).
+- Expanded unit tests in `IngestionGuideModal.test.jsx` covering dialog ARIA landmarks, tablist semantics, filter copying, email copying, and QR code section controls.
+
+- Fix Hebrew RTL pickup PIN digit reversal, add dialog labelling, bdi isolation for tracking and shelf codes, and accessible action labels in FullScreenLockerModal.
+
+- Add dialog labelling, localized close button, BiDi isolation for destination and GPS coordinates, and WAI-ARIA group semantics to NavigationChoiceModal.
+
+- Modernize AutoArchivePromptModal with first-class slate theme tokens, header close button, and 48px touch targets.
+
+- Add dialog labelling, 48px touch targets on copy buttons, RTL route arrow mirroring, and BiDi containment in PackageDetailModal.
+
+- Smart Import Modal (`SmartImportModal.jsx`, `Primitives.jsx`):
+- Connected `labelledBy="smart-import-title"` to `<Modal>` and added `titleId="smart-import-title"` to `ModalHeader` to establish WAI-ARIA dialog title association.
+- Enclosed tracking numbers, locker pickup codes, shelf numbers, and screenshot metadata within `<bdi dir="ltr">` elements to prevent number and hyphen inversion in Hebrew RTL layouts.
+- Replaced light mode washed-out colors with theme-aware tokens (`text-emerald-600 dark:text-emerald-400`, `text-amber-600 dark:text-amber-300`, `text-blue-600 dark:text-blue-400`, and `bg-emerald-500/10 dark:bg-emerald-950/40`) ensuring WCAG AAA contrast in both light and dark themes.
+- Enforced >= 48px touch targets on the manual switch link, report wrong button, and screenshot remove button with explicit accessible labels.
+- Added directional arrow mirroring in Hebrew RTL layouts (`rtl:rotate-180`).
+- Expanded DOM integration tests to verify dialog labelling, title ID linking, `<bdi dir="ltr">` containment, and >= 48px touch targets.
+
+- Legal Document Modal (`LegalDocumentModal.jsx`, `LegalDocumentModal.dom.test.jsx`):
+- Purged unused `X` import.
+- Enclosed updated timestamp within `<bdi dir="auto">` to eliminate BiDi parenthesis and date flipping in Hebrew RTL viewports.
+- Enforced >= 48px touch targets on header back button and footer close button (`min-h-[48px] min-w-[80px]`).
+- Verified dialog `aria-labelledby="legal-doc-title"` linkage to document title heading.
+- Created comprehensive DOM test suite `src/components/LegalDocumentModal.dom.test.jsx` (6 tests covering Terms of Use, Privacy Policy, Hebrew RTL localization, close actions, and touch targets).
+
+- Add/Edit Package Modal (`AddEditPackageModal.jsx`, `AddEditPackageModal.dom.test.jsx`):
+- Purged unused `X`, `Package` (lucide-react), and `STAGES` imports.
+- Added dialog labelling via `labelledBy="add-edit-package-title"` and `titleId="add-edit-package-title"` on `<ModalHeader>`.
+- Wrapped detected locker PIN in `<bdi dir="ltr">` and duplicate package title in `<bdi dir="auto">` to eliminate BiDi text inversion.
+- Upgraded status stage selector to WAI-ARIA `role="radiogroup"` with `aria-label` and `role="radio"` with dynamic `aria-checked` states.
+- Enhanced theme contrast tokens for live intelligence badges (`text-blue-700 dark:text-blue-300`, `text-emerald-700 dark:text-emerald-300`, `text-amber-700 dark:text-amber-300`) and 1-tap auto-fill button.
+- Added DOM test coverage verifying dialog accessible labelling, radiogroup semantics, PIN bdi isolation, and >= 48px touch targets.
+
+- Admin Telemetry Dashboard Modal (`AdminDashboardModal.jsx`, `AdminScreenshotLightbox.jsx`, `AdminDashboardModal.test.jsx`):
+- Purged unused `X` icon import.
+- Added dialog accessible labelling via `aria-labelledby="admin-dashboard-title"` on `<div role="dialog">` and `id="admin-dashboard-title"` on heading.
+- Cleanly grouped header action controls (`Refresh` and `Back`) into a dedicated flex row, ensuring consistent alignment across LTR and RTL.
+- Refactored tab navigation to WAI-ARIA `role="tablist"` with `role="tab"`, `id="admin-tab-*"`, `aria-selected`, and `aria-controls="admin-panel-*"` mapped to the active `role="tabpanel"`.
+- Isolated app versions, device screen geometries, and timestamps with `<bdi dir="ltr">` and `<bdi dir="auto">` to eliminate BiDi punctuation and numeral inversion in Hebrew RTL mode.
+- Corrected feedback search input touch target ergonomics (`min-h-[48px]`) and layout mirroring (`ps-9 pe-3`).
+- Enhanced theme contrast tokens for version badges and tab indicators (`text-indigo-600 dark:text-indigo-300`, `text-slate-500 dark:text-slate-400`).
+- Expanded test suite with DOM tests for dialog labelling, tablist semantics, and touch targets (5/5 passing).
+
+- Delete Confirmation Dialog (`DeleteConfirmDialog.jsx`, `DeleteConfirmDialog.dom.test.jsx`):
+- Added WAI-ARIA dialog accessible labelling and description linkages (`labelledBy="delete-confirm-title"` and `describedBy="delete-confirm-description"`).
+- Attached `initialFocusRef` to the Cancel ("Keep Package") button to safeguard against accidental destructive keypresses.
+- Added a dedicated top-corner Close (`X`) button with localized `aria-label={language === 'he' ? 'סגור' : 'Close'}` and `min-h-[48px] min-w-[48px]` touch targets.
+- Enforced strict $\ge 48\text{px}$ touch targets across all interactive buttons (`min-h-[48px] px-4 py-2.5`) with focus rings for keyboard navigation.
+- Added support for safe BiDi package title rendering via `<bdi dir="auto">` when provided.
+- Created comprehensive DOM test suite in `DeleteConfirmDialog.dom.test.jsx` covering ARIA dialog contracts, BiDi containment, action callbacks, and touch target constraints (7/7 tests passing).
+
+- Courier Action Hub (`CourierActionHub.jsx`):
+- Added WAI-ARIA `role="tablist"` with `aria-label` on the template selector grid.
+- Added `role="tab"`, `id="courier-tab-*"`, `aria-selected`, and `aria-controls="courier-message-preview"` to each template button.
+- Added `id="courier-message-preview"`, `role="tabpanel"`, `aria-labelledby`, and `tabIndex={0}` to the message preview box.
+- Wrapped message preview text and template label in `<bdi dir="auto">` to prevent RTL punctuation and word-order inversion in Hebrew mode.
+- Added `aria-label` attributes to Restore presets, Add new response, Close editor, Edit active message, and Delete/Remove buttons.
+- Enforced $\ge 48\text{px}$ touch targets across the Restore button (`min-h-[48px] min-w-[48px]`), custom template editor title input (`min-h-[48px]`), form Cancel and Save buttons (`min-h-[48px]`), and the editor Close (`X`) button (`min-h-[48px] min-w-[48px]`).
+- Applied `rtl:scale-x-[-1]` to Send (WhatsApp), ExternalLink (SMS), and RotateCcw (restore presets) icons for natural RTL mirroring.
+- Added `aria-label` to Gate code inline input.
+
+- Accessibility hardening for `FeatureNudgeBanner`, `FirstTimeEmptyState`, and `InstallPwaBanner`:
+
+**FeatureNudgeBanner**:
+- Banner root upgraded to `role="region"` with `aria-label` matching nudge title for landmark navigation.
+- Decorative icon container and arrow icons marked `aria-hidden="true"`.
+- Suppress-permanently button gains explicit `aria-label`.
+- Close X icon marked `aria-hidden="true"`.
+
+**FirstTimeEmptyState**:
+- Header Sparkles badge icon marked `aria-hidden="true"`.
+- All three tile icon containers (`Mail`, `MessageSquareText`, `Sparkles`) marked `aria-hidden="true"`.
+- Added `id` to each tile `<h3>` and `<p>` description elements.
+- Gmail, SMS, and Demo CTA buttons gain `aria-describedby` linking to their tile description paragraph.
+- Arrow icons and Plus icon in buttons marked `aria-hidden="true"`.
+
+**InstallPwaBanner**:
+- Added `type="button"` to all three main banner buttons (Dismiss X, Install App, Not Now).
+- Enforced `min-h-[48px]` on Install App and Not Now buttons (previously ~34px).
+- Added `aria-label` to Install App and Not Now buttons.
+- Enlarged Dismiss X button to `min-h-[48px] min-w-[48px]`.
+- `Download` icon inside Install button marked `aria-hidden="true"`.
+- iOS guide modal promoted to `role="dialog"` + `aria-modal="true"` + `aria-labelledby="ios-guide-title"`.
+- `<h3>` in guide gets `id="ios-guide-title"`.
+- Guide close X button gains `type="button"`, `aria-label`, `min-h-[48px] min-w-[48px]`.
+- Got It button gains `type="button"` and `min-h-[48px]`.
+- Step number badge `<span>` elements and inline icons (`Share`, `PlusSquare`, `Smartphone`) marked `aria-hidden="true"`.
+
+New DOM tests: 17 new tests across `FeatureNudgeBanner.dom.test.jsx`, `FirstTimeEmptyState.dom.test.jsx`, and `InstallPwaBanner.dom.test.jsx`.
+
+- Accessibility and keyboard navigation polish for `PackageCard` and `FilterBar`:
+
+**PackageCard**:
+- Made the main card container keyboard accessible with `role="button"`, `tabIndex={0}`, `onKeyDown` handling (`Enter`/`Space`), and a descriptive `aria-label` detailing title and status.
+- Added explicit `type="button"` to all overflow menu and action buttons.
+- Added explicit `aria-label` attributes to menu actions (Copy tracking, Locker mode, Carrier link, Pin, Edit, Archive, Delete) and pickup navigation.
+- Added `aria-hidden="true"` to decorative Lucide icons across status badges, action buttons, and countdown chips.
+
+**FilterBar**:
+- Added `type="button"` to the search clear button and filter panel toggle button.
+- Added `aria-pressed` states on filter panel view mode buttons (Grid/Table) and status options.
+- Linked Carrier and Sort selects to their corresponding `<label>` elements via `id` and `htmlFor`.
+- Wrapped grouped controls in `role="group"` with `aria-labelledby` attributes.
+
+**Tests**:
+- Added `FilterBar.dom.test.jsx` (5 tests covering clear button, chips aria-pressed, filters panel toggle, view mode switching, and Escape key dismissal).
+
+- Enhance Smart Import and Package Card pickup ergonomics: add automatic smooth scrolling to parsed candidates on mobile viewports, display extracted pickup PINs in candidate preview cards, add Israeli Boxit locker sample SMS, and fix light-mode text contrast on package PIN and shelf badges to exceed WCAG AAA standards.
+
+- Enhance Locker Map Locator and operating hours contrast: replace inverted palette violations with theme-aware slate tokens for pickup package badges, upgrade operating hours status badges (open, closed, holiday, closing soon) to high-contrast WCAG AAA theme-aware classes, and resolve low-contrast warning banner text in light mode.
+
+- Enhance FilterBar accessible labels, tooltip descriptors, and PackageTable high-contrast urgent status badges and touch targets.
+
 ## [0.31.1] - 2026-09-13
 
 ### Fixed
