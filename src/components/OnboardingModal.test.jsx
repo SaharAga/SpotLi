@@ -123,4 +123,45 @@ describe('OnboardingModal Component Tests', () => {
     expect(screen.getByRole('button', { name: 'גלה איך זה עובד' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'התחבר' })).toBeInTheDocument();
   });
+
+  it('exposes accessible tablist and tab roles for slide navigation', () => {
+    renderComponent();
+    const tablist = screen.getByRole('tablist', { name: /Tour progress/i });
+    expect(tablist).toBeInTheDocument();
+
+    const tabs = screen.getAllByRole('tab');
+    expect(tabs).toHaveLength(4);
+
+    expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
+    expect(tabs[1]).toHaveAttribute('aria-selected', 'false');
+
+    const panel = screen.getByRole('tabpanel');
+    expect(panel).toHaveAttribute('aria-labelledby', 'onboarding-slide-tab-0');
+
+    // Click tab 3 (Slide 3: Smart Import) directly
+    fireEvent.click(tabs[2]);
+    expect(tabs[2]).toHaveAttribute('aria-selected', 'true');
+    expect(tabs[0]).toHaveAttribute('aria-selected', 'false');
+    expect(panel).toHaveAttribute('aria-labelledby', 'onboarding-slide-tab-2');
+    expect(screen.getByText(/Smart SMS & Link Import/i)).toBeInTheDocument();
+  });
+
+  it('renders dialog with labelledBy matching slide title', () => {
+    renderComponent();
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveAttribute('aria-labelledby', 'onboarding-slide-title');
+    const title = screen.getByRole('heading', { level: 2 });
+    expect(title).toHaveAttribute('id', 'onboarding-slide-title');
+  });
+
+  it('wraps courier codes and PINs in bdi elements for BiDi safety', () => {
+    renderComponent({}, 'he');
+    // On Slide 1, check #AMZ-9382 and #CH-4821
+    const bdiElements = document.querySelectorAll('bdi[dir="ltr"]');
+    expect(bdiElements.length).toBeGreaterThanOrEqual(3);
+
+    const textContents = Array.from(bdiElements).map((el) => el.textContent);
+    expect(textContents).toContain('#AMZ-9382');
+    expect(textContents).toContain('#CH-4821');
+  });
 });
