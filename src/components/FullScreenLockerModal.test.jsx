@@ -195,4 +195,52 @@ describe('FullScreenLockerModal Component', () => {
       expect(onClose).toHaveBeenCalled();
     });
   });
+
+  it('sets dialog aria-labelledby pointing to title and renders accessible action buttons', () => {
+    renderWithLanguage(
+      <FullScreenLockerModal
+        isOpen={true}
+        pkg={mockPackage}
+        onClose={vi.fn()}
+      />
+    );
+
+    const dialog = screen.getByRole('dialog');
+    expect(dialog.getAttribute('aria-labelledby')).toBe('locker-modal-title');
+    const title = document.getElementById('locker-modal-title');
+    expect(title).toBeInTheDocument();
+
+    const closeBtn = screen.getByRole('button', { name: /Close|סגור/i });
+    expect(closeBtn).toBeInTheDocument();
+
+    const pinButton = screen.getByRole('button', { name: /Pickup PIN.*8492/i });
+    expect(pinButton).toBeInTheDocument();
+    expect(pinButton).toHaveAttribute('dir', 'ltr');
+
+    const navButtons = screen.getAllByRole('button', { name: /Navigate to Location/i });
+    expect(navButtons.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders shelf numbers and phone shortcuts inside bdi dir=ltr tags', () => {
+    const pkgWithShelfAndPhone = {
+      ...mockPackage,
+      shelfNumber: 'B-14',
+      pickupPhone: '054-1234567'
+    };
+
+    renderWithLanguage(
+      <FullScreenLockerModal
+        isOpen={true}
+        pkg={pkgWithShelfAndPhone}
+        onClose={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('B-14')).toBeInTheDocument();
+    expect(screen.getByText('B-14').tagName.toLowerCase()).toBe('bdi');
+
+    const phoneLink = screen.getByRole('link', { name: /Call Store: 054-1234567/i });
+    expect(phoneLink).toHaveAttribute('href', 'tel:054-1234567');
+    expect(screen.getByText('054-1234567').tagName.toLowerCase()).toBe('bdi');
+  });
 });

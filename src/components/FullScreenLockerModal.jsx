@@ -157,6 +157,7 @@ export function FullScreenLockerModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      labelledBy="locker-modal-title"
       componentName="FullScreenLockerModal"
       className="relative w-full max-w-xl bg-slate-950 border-2 border-emerald-500/40 rounded-3xl shadow-2xl overflow-hidden my-4 max-h-[95vh] flex flex-col text-slate-100"
     >
@@ -167,7 +168,7 @@ export function FullScreenLockerModal({
             {isBundled ? <Layers className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-black text-slate-100 flex items-center gap-2">
+            <h2 id="locker-modal-title" className="text-base sm:text-lg font-black text-slate-100 flex items-center gap-2">
               <span>
                 {isBundled
                   ? (language === 'he' ? `איסוף מרוכז (${bundledList.length} חבילות)` : `Bundled Pickup (${bundledList.length} Packages)`)
@@ -190,7 +191,7 @@ export function FullScreenLockerModal({
         <button
           onClick={onClose}
           className="p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
-          aria-label={t('common.close') || 'Close'}
+          aria-label={language === 'he' ? 'סגור' : 'Close'}
         >
           <X className="w-5 h-5" />
         </button>
@@ -226,7 +227,7 @@ export function FullScreenLockerModal({
                     {itemTitle}
                   </span>
                   <span className="text-xs font-mono font-bold text-slate-600 dark:text-slate-400 shrink-0">
-                    {item.trackingNumber}
+                    <bdi dir="ltr">{item.trackingNumber}</bdi>
                   </span>
                 </div>
 
@@ -236,7 +237,7 @@ export function FullScreenLockerModal({
                       {language === 'he' ? 'מדף / מספר איסוף' : 'Shelf / Bin'}:
                     </span>
                     <span className="text-lg sm:text-xl font-mono font-black text-amber-950 dark:text-amber-200">
-                      {item.shelfNumber}
+                      <bdi dir="ltr">{item.shelfNumber}</bdi>
                     </span>
                   </div>
                 )}
@@ -250,6 +251,8 @@ export function FullScreenLockerModal({
                   onClick={() => handleCopyPin(itemPin, item.id)}
                   role="button"
                   tabIndex={0}
+                  dir="ltr"
+                  aria-label={itemPin ? `${t('lockerMode.pickupPin')}: ${itemPin}` : t('locationBundling.noPin')}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
@@ -266,7 +269,7 @@ export function FullScreenLockerModal({
                         className="w-11 h-14 sm:w-14 sm:h-18 bg-white dark:bg-slate-950 border-2 border-emerald-500/50 dark:border-emerald-500/40 rounded-2xl flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform"
                       >
                         <span className="text-2xl sm:text-4xl font-black text-emerald-950 dark:text-emerald-100 font-mono tracking-tighter">
-                          {char}
+                          <bdi dir="ltr">{char}</bdi>
                         </span>
                       </div>
                     ))
@@ -340,6 +343,7 @@ export function FullScreenLockerModal({
               onClick={handleNavigate}
               className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-blue-400 hover:text-slate-100 transition-colors shrink-0 cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
               title={t('lockerMode.navigate')}
+              aria-label={t('lockerMode.navigate')}
             >
               <Navigation className="w-4 h-4" />
             </button>
@@ -388,6 +392,7 @@ export function FullScreenLockerModal({
             onClick={handleNavigate}
             disabled={!pkg.pickupLocation}
             className="py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-blue-400 hover:text-blue-300 font-bold text-xs border border-blue-900/60 transition-ui flex items-center justify-center gap-2 min-h-[48px] cursor-pointer disabled:opacity-50"
+            aria-label={t('lockerMode.navigate')}
           >
             <Navigation className="w-4 h-4" />
             <span>{t('lockerMode.navigate')}</span>
@@ -399,9 +404,10 @@ export function FullScreenLockerModal({
           <a
             href={`tel:${pkg.pickupPhone}`}
             className="w-full py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-300 font-bold text-xs border border-slate-800 transition-ui flex items-center justify-center gap-2 min-h-[48px]"
+            aria-label={`${t('phoneActions.callStore')}: ${pkg.pickupPhone}`}
           >
             <Phone className="w-3.5 h-3.5" />
-            <span>{t('phoneActions.callStore')} ({pkg.pickupPhone})</span>
+            <span>{t('phoneActions.callStore')} (<bdi dir="ltr">{pkg.pickupPhone}</bdi>)</span>
           </a>
         )}
       </div>
