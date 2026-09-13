@@ -1902,8 +1902,18 @@ export function DashboardContent() {
         )}
 
       {/* Footer */}
-      <footer className="border-t border-slate-900/80 bg-slate-950/60 py-6 mt-12 text-center text-xs text-slate-400">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      {/* Desktop only. BottomNav is lg:hidden and fixed, so on a phone this
+          footer sat underneath it at the end of the scroll: 153px of page
+          height carrying text no mobile user could ever read, below a gap
+          that looked like the page had simply run out. Desktop has no bottom
+          bar, so there it is ordinary page furniture and stays. */}
+      <footer className="hidden lg:block border-t border-slate-900/80 bg-slate-950/60 py-6 mt-12 text-center text-xs text-slate-400">
+        {/* The Feedback FAB is fixed at end-4 / bottom-5.5rem, so at the end of
+            the scroll it lands exactly on this row's trailing text and clipped
+            the carrier list mid-word. Reserve its width on the end side rather
+            than adding bottom padding: padding would push the page taller by
+            the FAB's whole height to solve an overlap that is horizontal. */}
+        <div className="max-w-7xl mx-auto px-4 lg:pe-40 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p>{APP_COPYRIGHT} • {t('appTagline')}</p>
           <div className="flex items-center gap-4 text-slate-400">
             <span>Supports Israel Post, AliExpress, 4PX, DHL, FedEx, UPS & Yanwen</span>
