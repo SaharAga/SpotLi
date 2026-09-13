@@ -363,7 +363,17 @@ export const translations = {
       lockerDesc: 'Tap the locker pickup button on your card for sunlight-proof giant PINs and Waze directions.',
       lockerAction: 'View Pickup Mode'
     },
-    appTourMenu: 'App Tour'
+    appTourMenu: 'App Tour',
+    offline: {
+      offlineTitle: "You're offline",
+      offlineDesc: 'Changes will save locally and sync automatically.',
+      pendingChanges: '{count} change pending sync',
+      pendingChangesPlural: '{count} changes pending sync',
+      backOnline: 'Back online',
+      syncComplete: 'All changes synced successfully!',
+      syncNow: 'Sync Now',
+      dismiss: 'Dismiss offline alert'
+    }
   },
   he: {
     appTitle: 'SpotLi',
@@ -726,6 +736,16 @@ export const translations = {
       lockerDesc: 'לחץ על כפתור האיסוף בכרטיס החבילה לצפייה בקוד ענק שלא כבה בשמש וניווט ישיר ב-Waze.',
       lockerAction: 'צפה במצב איסוף'
     },
-    appTourMenu: 'מדריך שימוש וסיור'
+    appTourMenu: 'מדריך שימוש וסיור',
+    offline: {
+      offlineTitle: 'אתה במצב לא מקוון',
+      offlineDesc: 'השינויים יישמרו מקומית ויסונכרנו אוטומטית.',
+      pendingChanges: 'שינוי {count} ממתין לסנכרון',
+      pendingChangesPlural: '{count} שינויים ממתינים לסנכרון',
+      backOnline: 'חזרת לאינטרנט',
+      syncComplete: 'כל השינויים סונכרנו בהצלחה!',
+      syncNow: 'סנכרן כעת',
+      dismiss: 'סגור התראת מצב לא מקוון'
+    }
   }
 };

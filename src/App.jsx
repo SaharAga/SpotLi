@@ -77,6 +77,7 @@ const OnboardingModal = lazyModal(() => import('./components/OnboardingModal'), 
 const PostAuthSetupWizard = lazyModal(() => import('./components/PostAuthSetupWizard'), 'PostAuthSetupWizard');
 
 import { Toast } from './components/Toast';
+import { OfflineBanner } from './components/OfflineBanner';
 import { InstallPwaBanner } from './components/InstallPwaBanner';
 import { FirstTimeEmptyState } from './components/FirstTimeEmptyState';
 import { FeatureNudgeBanner } from './components/FeatureNudgeBanner';
@@ -1626,6 +1627,9 @@ export function DashboardContent() {
         onResetData={handleResetData}
         onShowToast={showToast}
       />
+
+      {/* Offline Connectivity & Sync Queue Status Banner */}
+      <OfflineBanner />
 
       {/* Dismissable Top PWA Installation Banner */}
       <InstallPwaBanner onVisibilityChange={setIsInstallBannerVisible} />
