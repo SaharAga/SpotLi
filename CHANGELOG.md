@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.33.0] - 2026-09-13
+
+### Added
+- Live tracking now actually reaches every carrier. The client refused the lookup
+outright unless a carrier had a hand-written client-side adapter — four of
+them — so twelve Israeli couriers, Cheetah and HFD among them, reported "live
+tracking isn't available" without the Cloud Function that holds the 17TRACK key
+ever being asked about a single one. The proxy already accepted any carrier and
+already omitted the catalogue code when it had none, which is 17TRACK's
+auto-detect mode; nothing was reaching it. Every carrier is now queried, and an
+untracked answer is the outcome of a real lookup rather than a local refusal.
+The detail screen no longer claims tracking is unavailable for a carrier it is
+about to query — it distinguishes a confirmed integration from one resting on
+auto-detect, and says a refresh will still try.
+
+### Fixed
+- Insights no longer shows a Multi-Currency Spending Breakdown. The card totalled
+what you had spent per currency, but nothing in the app records a package's
+price — there is no price field on the add/edit form, the smart parser never
+extracts one, and the schema has no such field — so it could only ever show a
+figure when a price happened to appear in a note or title and a regex caught
+it. In practice it was four zeroes and an apology, on a screen about deliveries
+rather than spending. `extractPackageValue` stays for a future per-package
+customs-threshold hint, which is the one place a package's declared value
+actually matters here.
+
+- Pages are now only as tall as what they show, and stop clipping content at the
+bottom. Three separate things made the end of a screen look broken: the page
+footer sat underneath the fixed mobile tab bar, so 153px of height carried a
+copyright line and the carrier list no phone user could reach, below a gap that
+read as the page having run out early — it is desktop-only now, where there is
+no tab bar. Every full-screen modal reserved 4.5rem for that tab bar even on
+the drill-down screens (package detail, add, smart import) where the bar is
+deliberately unmounted to give them full height, so those lost 72px to a bar
+that was not there and clipped early against a dead band; the reservation now
+follows the bar's actual presence. And on desktop the Feedback button covered
+the end of the footer text, cutting the carrier list mid-word.
+
 ## [0.32.0] - 2026-09-13
 
 ### Added
