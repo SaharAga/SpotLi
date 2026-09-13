@@ -143,6 +143,7 @@ export function FilterBar({
           onClick={() => setFiltersOpen((v) => !v)}
           aria-expanded={filtersOpen}
           aria-label={t('filters.status')}
+          title={t('filters.moreFilters')}
           className={`relative shrink-0 ms-auto min-h-[48px] min-w-[48px] rounded-xl border transition-ui flex items-center justify-center ${
             filtersOpen
               ? 'bg-blue-600 border-blue-600 text-white'

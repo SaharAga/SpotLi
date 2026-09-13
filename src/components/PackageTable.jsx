@@ -126,7 +126,11 @@ function PackageTableImpl({
                   <div className="flex items-center gap-1.5">
                     <span>{formatDate(pkg.expectedDeliveryDate, language)}</span>
                     {daysInfo && pkg.status !== 'delivered' && (
-                      <span className={`text-xs px-1.5 py-0.2 rounded font-semibold ${daysInfo.isUrgent ? 'bg-amber-500/20 text-amber-300' : 'bg-slate-800 text-slate-400'}`}>
+                      <span className={`text-xs px-1.5 py-0.5 rounded font-semibold ${
+                        daysInfo.isUrgent
+                          ? 'bg-amber-500/15 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-500/30'
+                          : 'bg-slate-500/15 dark:bg-slate-800 text-slate-700 dark:text-slate-400'
+                      }`}>
                         {daysInfo.text}
                       </span>
                     )}
@@ -144,8 +148,8 @@ function PackageTableImpl({
                     <button
                       onClick={(e) => handleMarkDelivered(pkg, e)}
                       title={t('card.markDelivered')}
-                      className={`p-1.5 rounded-lg transition-colors ${
-                        pkg.status === 'delivered' ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-400 hover:text-emerald-400 hover:bg-slate-800'
+                      className={`p-2 rounded-lg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center ${
+                        pkg.status === 'delivered' ? 'text-emerald-500 bg-emerald-500/10' : 'text-slate-400 hover:text-emerald-500 hover:bg-slate-800'
                       }`}
                     >
                       <CheckCircle className="w-4 h-4" />
@@ -154,21 +158,21 @@ function PackageTableImpl({
                       href={carrier.getTrackingUrl(pkg.trackingNumber)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-slate-800 transition-colors"
+                      className="p-2 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-slate-800 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
                       title={t('card.viewCarrier')}
                     >
                       <ExternalLink className="w-4 h-4" />
                     </a>
                     <button
                       onClick={() => onEdit(pkg)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors"
+                      className="p-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
                       title={t('card.edit')}
                     >
                       <Edit3 className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => onDelete(pkg.id)}
-                      className="p-1.5 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors"
+                      className="p-2 rounded-lg text-rose-600 dark:text-rose-400 hover:text-rose-800 dark:hover:text-rose-300 hover:bg-rose-500/10 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
                       title={t('card.delete')}
                     >
                       <Trash2 className="w-4 h-4" />
