@@ -1,4 +1,4 @@
-import { fetchLiveCarrierTracking, UNTRACKED_REASONS } from './carrierApiProxy';
+import { fetchLiveCarrierTracking } from './carrierApiProxy';
 import { detectCarrier } from '../utils/carrierDetector';
 import { parsePackage } from '../schemas/packageSchema';
 import { checkRateLimit, recordTrackingFetch, resetTrackingCooldown, RATE_LIMIT_COOLDOWN_MS } from '../utils/rateLimiter';
@@ -116,11 +116,14 @@ export async function fetchTrackingUpdates(trackingNumber, carrierId, bypassRate
     const trackingData = await fetchLiveCarrierTracking(cleanTrack, detectedCarrier, bypassRateLimit);
 
     if (trackingData.tracked === false) {
-      // Only burn the cooldown when a real upstream call was attempted;
-      // an unsupported carrier costs nothing to ask about again.
-      if (trackingData.reason !== UNTRACKED_REASONS.UNSUPPORTED) {
-        recordTrackingFetch(cleanTrack);
-      }
+      // Every carrier now reaches the proxy, so an untracked answer is the
+      // outcome of a real upstream call rather than a local refusal, and the
+      // cooldown applies to it exactly as it does to a successful lookup.
+      // This used to exempt carrier-unsupported, back when that reason meant
+      // the lookup had been declined client-side and cost nothing; it now
+      // means the upstream could not identify the shipment, which costs the
+      // same call as any other answer.
+      recordTrackingFetch(cleanTrack);
       return {
         success: true,
         tracked: false,

@@ -669,8 +669,10 @@ describe('Delivery Service and Storage Persistence', () => {
       const res = await deliveryService.refreshPackageTracking(testPkg, null, true);
       expect(res.success).toBe(true);
       expect(res.tracked).toBe(false);
-      expect(res.reason).toBe('carrier-unsupported');
-      // Chita has no live feed, so the package must come back exactly as saved.
+      expect(res.reason).not.toBe('carrier-unsupported');
+      // Chita is queried like any other carrier now, but a lookup that comes
+      // back with nothing must leave the package exactly as saved — inventing
+      // progress here is what made refresh untrustworthy in the first place.
       expect(res.updatedPackage.checkpoints).toEqual([]);
       expect(res.updatedPackage.status).toBe('in_transit');
     });

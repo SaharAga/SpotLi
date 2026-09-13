@@ -11,7 +11,7 @@ import { formatDate, formatDateTime, getDaysRemaining } from '../utils/dateUtils
 import { getPickupCountdown, getReturnCountdown, calculateDefaultReturnDeadline } from '../utils/deadlineUtils';
 import { canTransition, TRANSITION_MATRIX } from '../services/deliveryService';
 import { checkRateLimit } from '../utils/rateLimiter';
-import { isLiveTrackingSupported } from '../services/carrierApiProxy';
+import { isLiveTrackingConfirmed } from '../services/carrierApiProxy';
 import { CourierActionHub } from './CourierActionHub';
 import { Modal } from './Modal';
 import { getPreferredNavigationApp, openNavigationApp } from '../utils/navigationService';
@@ -1041,13 +1041,16 @@ export function PackageDetailModal({
 
           {/* Checkpoints Timeline Section */}
           <div className="space-y-4">
-            {/* No live feed exists for this carrier — state it up front so the
-                timeline below is never mistaken for carrier-sourced events. */}
-            {!isLiveTrackingSupported(pkg.carrier) && (
+            {/* No *confirmed* live feed for this carrier — state it up front so
+                the timeline below is never mistaken for carrier-sourced
+                events. A refresh is still attempted (17TRACK is asked to
+                identify the number on its own), so this no longer claims the
+                lookup will not happen, only that it is not guaranteed. */}
+            {!isLiveTrackingConfirmed(pkg.carrier) && (
               <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
                 <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                 <p className="text-xs text-amber-200/90 font-medium leading-relaxed">
-                  {t('tracking.notSupported').replace('{carrier}', language === 'he' ? carrier.hebrewName : carrier.name)}
+                  {t('tracking.notConfirmed').replace('{carrier}', language === 'he' ? carrier.hebrewName : carrier.name)}
                 </p>
               </div>
             )}
@@ -1056,7 +1059,7 @@ export function PackageDetailModal({
               <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
                 <Clock className="w-4 h-4 text-indigo-400" />
                 <span>{t('detailModal.timelineTitle')}</span>
-                {!isLiveTrackingSupported(pkg.carrier) && (
+                {!isLiveTrackingConfirmed(pkg.carrier) && (
                   <span className="text-xs font-semibold uppercase tracking-wider text-amber-400/90 bg-amber-500/10 border border-amber-500/25 rounded-md px-1.5 py-0.5">
                     {t('tracking.manualBadge')}
                   </span>

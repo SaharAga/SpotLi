@@ -2,16 +2,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('./carrierApiProxy', () => ({
   fetchLiveCarrierTracking: vi.fn(),
-  isLiveTrackingSupported: vi.fn(),
+  isLiveTrackingConfirmed: vi.fn(),
   UNTRACKED_REASONS: { UNSUPPORTED: 'carrier-unsupported', UNAVAILABLE: 'carrier-unavailable' }
 }));
 
-const { fetchLiveCarrierTracking, isLiveTrackingSupported } = await import('./carrierApiProxy');
+const { fetchLiveCarrierTracking, isLiveTrackingConfirmed } = await import('./carrierApiProxy');
 const { verifyCandidate, shouldVerify, findConfirmedCandidate } = await import('./candidateVerificationService');
 
 beforeEach(() => {
   vi.clearAllMocks();
-  isLiveTrackingSupported.mockReturnValue(true);
+  isLiveTrackingConfirmed.mockReturnValue(true);
 });
 
 describe('shouldVerify', () => {
@@ -23,7 +23,7 @@ describe('shouldVerify', () => {
   });
 
   it('never asks about a carrier with no integration', () => {
-    isLiveTrackingSupported.mockReturnValue(false);
+    isLiveTrackingConfirmed.mockReturnValue(false);
     expect(shouldVerify({ status: 'probable' }, 'chita')).toBe(false);
   });
 });

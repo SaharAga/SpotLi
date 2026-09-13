@@ -82,6 +82,7 @@ export const translations = {
       overrideStatus: 'Change Status',
       overrideStatusPrompt: 'Override package status:',
       notSupported: 'Live tracking isn\u2019t available for {carrier} yet \u2014 update this package manually.',
+      notConfirmed: '{carrier} has no confirmed live feed \u2014 a refresh will still try, but you may need to update this package manually.',
       carrierUnavailable: '{carrier} tracking is unreachable right now. Nothing was changed.',
       untrackedBatch: '{count} packages have no live tracking and were left unchanged.',
       manualBadge: 'Manual tracking'
@@ -458,6 +459,7 @@ export const translations = {
       overrideStatus: 'שינוי סטטוס ידני',
       overrideStatusPrompt: 'בחר סטטוס חדש עבור החבילה:',
       notSupported: 'מעקב אוטומטי עבור {carrier} עדיין לא נתמך \u2014 יש לעדכן את החבילה ידנית.',
+      notConfirmed: 'לא קיים מעקב אוטומטי מאומת עבור {carrier} \u2014 רענון עדיין ינסה, וייתכן שיהיה צורך לעדכן את החבילה ידנית.',
       carrierUnavailable: 'לא ניתן להתחבר כרגע למערכת המעקב של {carrier}. שום פרט לא שונה.',
       untrackedBatch: '{count} חבילות ללא מעקב אוטומטי נותרו ללא שינוי.',
       manualBadge: 'מעקב ידני'
