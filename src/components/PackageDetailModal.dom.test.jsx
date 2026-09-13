@@ -288,4 +288,67 @@ describe('PackageDetailModal — Pickup Navigation Integration', () => {
     expect(onDelete).toHaveBeenCalledWith('pkg-nav-1');
     expect(onClose).toHaveBeenCalled();
   });
+
+  it('links dialog aria-labelledby to package title and isolates tracking/pickup codes in bdi tags', () => {
+    const pkgWithShelf = {
+      ...mockPackageWithPickup,
+      shelfNumber: 'B-42',
+      localTrackingNumber: 'CH123456789'
+    };
+
+    renderWithLanguage(
+      <PackageDetailModal
+        isOpen={true}
+        pkg={pkgWithShelf}
+        onClose={vi.fn()}
+      />
+    );
+
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveAttribute('aria-labelledby', 'package-detail-title');
+    const title = document.getElementById('package-detail-title');
+    expect(title).toBeInTheDocument();
+    expect(title).toHaveTextContent('Logitech MX Master 3S');
+
+    // Pickup Code and Shelf Number in bdi dir=ltr
+    const pickupCodeEl = screen.getByText('8492');
+    expect(pickupCodeEl.tagName.toLowerCase()).toBe('bdi');
+    expect(pickupCodeEl).toHaveAttribute('dir', 'ltr');
+
+    const shelfEl = screen.getByText('B-42');
+    expect(shelfEl.tagName.toLowerCase()).toBe('bdi');
+    expect(shelfEl).toHaveAttribute('dir', 'ltr');
+
+    // Tracking Number in bdi dir=ltr
+    const trackingEl = screen.getByText('RS948219483IL');
+    expect(trackingEl.tagName.toLowerCase()).toBe('bdi');
+    expect(trackingEl).toHaveAttribute('dir', 'ltr');
+
+    const localTrackingEl = screen.getByText('CH123456789');
+    expect(localTrackingEl.tagName.toLowerCase()).toBe('bdi');
+    expect(localTrackingEl).toHaveAttribute('dir', 'ltr');
+  });
+
+  it('renders accessible copy buttons with touch targets and localized action labels', () => {
+    const pkgWithDetails = {
+      ...mockPackageWithPickup,
+      shelfNumber: 'C-09',
+      localTrackingNumber: 'IL998877'
+    };
+
+    renderWithLanguage(
+      <PackageDetailModal
+        isOpen={true}
+        pkg={pkgWithDetails}
+        onClose={vi.fn()}
+      />,
+      'en'
+    );
+
+    expect(screen.getByRole('button', { name: 'Copy pickup code' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Copy shelf number' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Copy tracking number/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Copy local tracking' })).toBeInTheDocument();
+  });
 });
+

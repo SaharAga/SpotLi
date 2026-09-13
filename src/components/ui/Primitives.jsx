@@ -26,9 +26,9 @@ const FOCUS =
   'focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 focus:outline-none';
 
 /** Screen/section title. Rubik for display, matching the home header. */
-export function Title({ children, className = '' }) {
+export function Title({ children, className = '', id, ...rest }) {
   return (
-    <h2 className={`font-display text-xl font-semibold tracking-tight text-slate-100 ${className}`}>
+    <h2 id={id} className={`font-display text-xl font-semibold tracking-tight text-slate-100 ${className}`} {...rest}>
       {children}
     </h2>
   );

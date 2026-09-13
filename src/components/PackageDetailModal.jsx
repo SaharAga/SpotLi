@@ -294,6 +294,7 @@ export function PackageDetailModal({
       isOpen={isOpen}
       onClose={onClose}
       componentName="PackageDetailModal"
+      labelledBy="package-detail-title"
       className="relative w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8 max-h-[90vh] flex flex-col"
     >
         {/*
@@ -373,7 +374,7 @@ export function PackageDetailModal({
             </div>
           </div>
 
-          <Title className="relative text-xl sm:text-2xl">{itemTitle}</Title>
+          <Title id="package-detail-title" className="relative text-xl sm:text-2xl">{itemTitle}</Title>
         </div>
 
         {/* Modal Body */}
@@ -499,7 +500,7 @@ export function PackageDetailModal({
               <div className="flex items-center gap-1.5 mt-1 text-xs font-semibold text-slate-200">
                 <MapPin className="w-4 h-4 text-rose-400 shrink-0" />
                 <span className="truncate">{pkg.origin || 'Global'}</span>
-                <span>→</span>
+                <span className="inline-block rtl:rotate-180 font-bold">→</span>
                 <span className="truncate text-blue-300">{pkg.destination || 'Israel'}</span>
               </div>
             </div>
@@ -529,15 +530,16 @@ export function PackageDetailModal({
                         </span>
                         <div className="flex items-center gap-2">
                           <span className="text-3xl sm:text-4xl font-black text-emerald-50 tracking-wider font-mono">
-                            {pkg.pickupCode}
+                            <bdi dir="ltr">{pkg.pickupCode}</bdi>
                           </span>
                           <button
                             onClick={async () => {
                               const success = await copyToClipboard(pkg.pickupCode);
                               if (success && onShowToast) onShowToast(language === 'he' ? 'קוד איסוף הועתק' : 'Pickup code copied', 'success');
                             }}
-                            className="p-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 transition-colors"
+                            className="p-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer"
                             title={language === 'he' ? 'העתק קוד' : 'Copy code'}
+                            aria-label={language === 'he' ? 'העתק קוד איסוף' : 'Copy pickup code'}
                           >
                             <Copy className="w-5 h-5" />
                           </button>
@@ -566,15 +568,16 @@ export function PackageDetailModal({
                         </span>
                         <div className="flex items-center gap-2">
                           <span className="text-2xl sm:text-3xl font-black text-amber-200 tracking-wider font-mono">
-                            {pkg.shelfNumber}
+                            <bdi dir="ltr">{pkg.shelfNumber}</bdi>
                           </span>
                           <button
                             onClick={async () => {
                               const success = await copyToClipboard(pkg.shelfNumber);
                               if (success && onShowToast) onShowToast(language === 'he' ? 'מספר מדף הועתק' : 'Shelf number copied', 'success');
                             }}
-                            className="p-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 transition-colors"
+                            className="p-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer"
                             title={language === 'he' ? 'העתק מספר מדף' : 'Copy shelf number'}
+                            aria-label={language === 'he' ? 'העתק מספר מדף' : 'Copy shelf number'}
                           >
                             <Copy className="w-4 h-4" />
                           </button>
@@ -650,9 +653,10 @@ export function PackageDetailModal({
                       href={`tel:${pkg.pickupPhone}`}
                       className="flex justify-center items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-800/40 hover:bg-emerald-700/50 text-emerald-200 hover:text-slate-100 text-xs font-bold transition-ui min-h-[48px] border border-emerald-500/30"
                       title={language === 'he' ? `התקשר: ${pkg.pickupPhone}` : `Call: ${pkg.pickupPhone}`}
+                      aria-label={language === 'he' ? `התקשר לחנות: ${pkg.pickupPhone}` : `Call store: ${pkg.pickupPhone}`}
                     >
                       <Phone className="w-3.5 h-3.5" />
-                      <span>{t('phoneActions.callStore')}</span>
+                      <span>{t('phoneActions.callStore')} (<bdi dir="ltr">{pkg.pickupPhone}</bdi>)</span>
                     </a>
                   )}
                 </div>
@@ -735,7 +739,7 @@ export function PackageDetailModal({
                           >
                             <span className="font-semibold text-slate-200 group-hover/sib:text-indigo-300 truncate max-w-[140px]">{sibTitle}</span>
                             <span className="font-mono text-emerald-400 font-bold shrink-0">
-                              {sib.pickupCode ? `PIN: ${sib.pickupCode}` : sib.trackingNumber}
+                              <bdi dir="ltr">{sib.pickupCode ? `PIN: ${sib.pickupCode}` : sib.trackingNumber}</bdi>
                             </span>
                           </button>
                         );
@@ -872,13 +876,14 @@ export function PackageDetailModal({
                     {t('card.trackingNumber')}
                   </span>
                   <span className="font-mono text-base font-bold text-slate-200">
-                    {pkg.trackingNumber}
+                    <bdi dir="ltr">{pkg.trackingNumber}</bdi>
                   </span>
                 </div>
                 <button
                   onClick={handleCopy}
-                  className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 transition-colors"
+                  className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer"
                   title={t('card.copyTracking')}
+                  aria-label={t('card.copyTracking') || (language === 'he' ? 'העתק מספר מעקב' : 'Copy tracking number')}
                 >
                   {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
                 </button>
@@ -890,7 +895,7 @@ export function PackageDetailModal({
                     {language === 'he' ? 'חלוקה מקומית בארץ:' : 'Domestic courier:'}
                   </span>
                   <span className="font-mono font-bold text-cyan-300">
-                    {pkg.localTrackingNumber}
+                    <bdi dir="ltr">{pkg.localTrackingNumber}</bdi>
                   </span>
                   {pkg.localCarrier && (
                     <span className="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-semibold">
@@ -902,8 +907,9 @@ export function PackageDetailModal({
                       const success = await copyToClipboard(pkg.localTrackingNumber);
                       if (success && onShowToast) onShowToast(language === 'he' ? 'מספר מעקב מקומי הועתק' : 'Local tracking number copied', 'success');
                     }}
-                    className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-100 transition-colors"
+                    className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-100 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center cursor-pointer"
                     title={language === 'he' ? 'העתק מספר מעקב מקומי' : 'Copy local tracking'}
+                    aria-label={language === 'he' ? 'העתק מספר מעקב מקומי' : 'Copy local tracking'}
                   >
                     <Copy className="w-3.5 h-3.5" />
                   </button>
