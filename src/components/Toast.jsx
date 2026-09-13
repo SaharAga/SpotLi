@@ -42,7 +42,7 @@ export function Toast({ toast, onClose }) {
                 toast.action.onClick?.();
                 onClose();
               }}
-              className="px-3.5 py-2 min-h-[48px] text-xs sm:text-sm font-bold rounded-lg bg-white/20 hover:bg-white/30 active:scale-95 text-white transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-white/40 flex items-center justify-center cursor-pointer"
+              className="px-3.5 py-2 min-h-[48px] text-xs sm:text-sm font-bold rounded-lg bg-blue-600 hover:bg-blue-500 active:scale-95 text-white transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 flex items-center justify-center cursor-pointer"
             >
               {toast.action.label}
             </button>
@@ -50,7 +50,7 @@ export function Toast({ toast, onClose }) {
           <button
             onClick={onClose}
             aria-label="Close notification"
-            className="p-3 min-w-[48px] min-h-[48px] flex items-center justify-center rounded-lg hover:bg-white/10 text-slate-400 hover:text-slate-100 transition-colors cursor-pointer"
+            className="p-3 min-w-[48px] min-h-[48px] flex items-center justify-center rounded-lg hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>

@@ -257,7 +257,7 @@ function PackageCardImpl({
           >
             <div
               className={`flex items-center gap-2 font-bold text-xs transition-transform duration-150 ${
-                pkg.isArchived ? 'text-emerald-300' : 'text-amber-300'
+                pkg.isArchived ? 'text-emerald-800 dark:text-emerald-300' : 'text-amber-950 dark:text-amber-300'
               }`}
               style={{
                 transform: `scale(${swipeOffset >= SWIPE_THRESHOLD ? 1.08 : Math.max(0.85, Math.min(1, swipeOffset / SWIPE_THRESHOLD))})`,
@@ -285,7 +285,7 @@ function PackageCardImpl({
             }}
           >
             <div
-              className="flex items-center gap-2 font-bold text-xs text-rose-300 transition-transform duration-150"
+              className="flex items-center gap-2 font-bold text-xs text-rose-800 dark:text-rose-300 transition-transform duration-150"
               style={{
                 transform: `scale(${-swipeOffset >= SWIPE_THRESHOLD ? 1.08 : Math.max(0.85, Math.min(1, -swipeOffset / SWIPE_THRESHOLD))})`,
                 opacity: Math.min(1, Math.max(0.4, -swipeOffset / 35))
@@ -571,9 +571,10 @@ function PackageCardImpl({
 
             <button
               onClick={handleMarkDelivered}
+              aria-label={pkg.status === 'delivered' ? t('card.markActive') : t('card.markDelivered')}
               title={pkg.status === 'delivered' ? t('card.markActive') : t('card.markDelivered')}
               className={`p-2 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center ${
-                pkg.status === 'delivered' ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-400 hover:text-emerald-400 hover:bg-slate-800'
+                pkg.status === 'delivered' ? 'text-emerald-500 bg-emerald-500/10' : 'text-slate-400 hover:text-emerald-500 hover:bg-slate-800'
               }`}
             >
               <CheckCircle className={`w-3.5 h-3.5 ${pkg.status === 'delivered' ? 'fill-emerald-500/20' : ''}`} />
@@ -593,6 +594,9 @@ function PackageCardImpl({
                   }
                   setMenuOpen(!menuOpen);
                 }}
+                aria-label={t('card.moreActions')}
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
                 title={t('card.viewDetails')}
                 className="p-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center"
               >
@@ -603,7 +607,7 @@ function PackageCardImpl({
                 <>
                   <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }} />
                   <div
-                    className={`absolute z-50 w-48 bg-slate-900/98 border border-slate-700/80 rounded-2xl shadow-2xl py-1 text-xs end-0 ${
+                    className={`absolute z-50 w-48 bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl py-1 text-xs end-0 ${
                       menuFlipUp ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
                     }`}
                   >
@@ -626,7 +630,7 @@ function PackageCardImpl({
                           setMenuOpen(false);
                           onOpenLockerMode(pkg);
                         }}
-                        className="w-full flex items-center gap-2 px-3 py-2.5 text-emerald-400 hover:bg-slate-800 hover:text-emerald-300 min-h-[48px] font-semibold"
+                        className="w-full flex items-center gap-2 px-3 py-2.5 text-emerald-600 dark:text-emerald-400 hover:bg-slate-800 hover:text-emerald-700 dark:hover:text-emerald-300 min-h-[48px] font-semibold"
                       >
                         <Sun className="w-3.5 h-3.5" />
                         <span>{language === 'he' ? 'מצב לוקר מוגדל' : 'Locker Mode'}</span>
@@ -686,7 +690,7 @@ function PackageCardImpl({
                         setMenuOpen(false);
                         onDelete(pkg.id);
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2.5 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 min-h-[48px]"
+                      className="w-full flex items-center gap-2 px-3 py-2.5 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 hover:text-rose-700 dark:hover:text-rose-300 min-h-[48px]"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>{t('card.delete')}</span>

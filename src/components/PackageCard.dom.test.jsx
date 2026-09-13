@@ -232,5 +232,29 @@ describe('PackageCard Component', () => {
 
     expect(screen.getByText('Shelf B-42')).toBeInTheDocument();
   });
+
+  it('opens accessible action menu and triggers onToggleArchive when Archive item is clicked', () => {
+    const onToggleArchive = vi.fn();
+    renderWithLanguage(
+      <PackageCard
+        pkg={basePkg}
+        onOpenDetails={vi.fn()}
+        onToggleArchive={onToggleArchive}
+      />
+    );
+
+    const menuBtn = screen.getByRole('button', { name: /Package actions|פעולות לחבילה/i });
+    expect(menuBtn).toHaveAttribute('aria-haspopup', 'menu');
+    expect(menuBtn).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.click(menuBtn);
+    expect(menuBtn).toHaveAttribute('aria-expanded', 'true');
+
+    const archiveItem = screen.getByRole('button', { name: /Archive|העבר לארכיון/i });
+    fireEvent.click(archiveItem);
+
+    expect(onToggleArchive).toHaveBeenCalledWith('pkg-1');
+  });
 });
+
 
