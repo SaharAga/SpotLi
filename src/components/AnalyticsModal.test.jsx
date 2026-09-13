@@ -57,7 +57,7 @@ describe('AnalyticsModal Logic & Translation Contract Tests', () => {
       'delivered', 'active', 'onTimeRate', 'successRate',
       'turnaroundLeaderboard', 'turnaroundLeaderboardDesc',
       'currencyBreakdown', 'currencyBreakdownDesc',
-      'noCurrencyData', 'noLeaderboardData',
+      'noCurrencyData', 'noLeaderboardData', 'noCarrierDistribution',
       'carrierDistribution', 'stageDistribution'
     ];
 

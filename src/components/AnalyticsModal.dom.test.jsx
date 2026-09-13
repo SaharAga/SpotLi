@@ -79,4 +79,70 @@ describe('AnalyticsModal computation gating', () => {
     expect(document.body.textContent).toContain(String(expected.deliveredCount));
     expect(document.body.textContent).toContain(`${expected.deliverySuccessRate}%`);
   });
+
+  it('renders graceful empty state without hardcoded facade fallbacks when 0 packages exist', () => {
+    renderModal({ isOpen: true, packages: [] });
+
+    // Must not fabricate fake Israel Post records when no packages exist
+    const text = document.body.textContent;
+    expect(text).not.toContain('Israel Post (8 days)');
+    expect(text).not.toContain('דואר ישראל (8 ימים)');
+
+    // Should display empty fallback indicators
+    expect(text).toContain('No delivered shipments available to benchmark carrier transit times');
+    expect(text).toContain('No carrier distribution data available yet');
+    expect(text).toContain('No price or currency details detected in packages yet');
+  });
+
+  it('renders rich metrics, carrier leaderboard and currency values accurately', () => {
+    const richPackages = [
+      {
+        id: 'p-1',
+        title: 'Wireless Earbuds',
+        carrier: 'dhl',
+        status: 'delivered',
+        orderDate: '2026-08-01T00:00:00Z',
+        updatedAt: '2026-08-04T00:00:00Z',
+        value: 120,
+        currency: 'USD'
+      },
+      {
+        id: 'p-2',
+        title: 'Running Shoes',
+        carrier: 'cheetah',
+        status: 'in_transit',
+        orderDate: '2026-08-02T00:00:00Z',
+        value: 450,
+        currency: 'ILS'
+      }
+    ];
+
+    renderModal({ isOpen: true, packages: richPackages });
+
+    const text = document.body.textContent;
+    // Total count: 2
+    expect(text).toContain('2');
+    // Active count: 1
+    expect(text).toContain('1');
+    // DHL fastest carrier (3 days)
+    expect(text).toContain('DHL Express');
+    expect(text).toContain('3 days');
+    // Currencies rendered
+    expect(text).toContain('$120');
+    expect(text).toContain('₪450');
+  });
+
+  it('supports Hebrew localization with mirrored language context', () => {
+    localStorage.setItem('deliveree_lang', 'he');
+    render(
+      <LanguageProvider>
+        <AnalyticsModal isOpen={true} onClose={() => {}} packages={[]} />
+      </LanguageProvider>
+    );
+
+    const text = document.body.textContent;
+    expect(text).toContain('תובנות וסטטיסטיקות משלוחים');
+    expect(text).toContain('אין עדיין משלוחים שנמסרו למדידת מהירות חברות השילוח');
+    expect(text).toContain('אין עדיין נתוני התפלגות חברות שילוח');
+  });
 });
