@@ -53,11 +53,15 @@ export function FeatureNudgeBanner({
   const IconComponent = config.icon;
 
   return (
-    <div className={`w-full p-4 rounded-3xl bg-slate-900/95 border ${config.border} shadow-lg mb-4 animate-fade-in relative`}>
+    <div
+      role="region"
+      aria-label={config.title}
+      className={`w-full p-4 rounded-3xl bg-slate-900/95 border ${config.border} shadow-lg mb-4 animate-fade-in relative`}
+    >
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         {/* Left / Start Info */}
         <div className="flex items-start gap-3 flex-1 min-w-0">
-          <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center shrink-0 ${config.iconBg}`}>
+          <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center shrink-0 ${config.iconBg}`} aria-hidden="true">
             <IconComponent className="w-5 h-5" />
           </div>
           <div className="min-w-0 pr-6 sm:pr-0">
@@ -75,6 +79,7 @@ export function FeatureNudgeBanner({
           <button
             type="button"
             onClick={() => onSuppressPermanently(nudge.id)}
+            aria-label={t('nudges.dontShowAgain')}
             className="text-[11px] text-slate-400 hover:text-slate-200 transition-colors underline decoration-slate-600 cursor-pointer min-h-[48px] flex items-center px-1"
           >
             {t('nudges.dontShowAgain')}
@@ -86,7 +91,7 @@ export function FeatureNudgeBanner({
             className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs transition-all shadow-md cursor-pointer min-h-[48px] ${config.btnBg}`}
           >
             <span>{config.actionLabel}</span>
-            {isRTL ? <ArrowLeft className="w-3.5 h-3.5" /> : <ArrowRight className="w-3.5 h-3.5" />}
+            {isRTL ? <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" /> : <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />}
           </button>
         </div>
       </div>
@@ -98,7 +103,7 @@ export function FeatureNudgeBanner({
         className="absolute top-3 end-3 p-2 rounded-xl text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
         aria-label={t('nudges.dismiss')}
       >
-        <X className="w-4 h-4" />
+        <X className="w-4 h-4" aria-hidden="true" />
       </button>
     </div>
   );
