@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   X, Sparkles, CheckCircle2, ArrowRight,
   AlertCircle, ImagePlus, Trash2, Loader2, ShieldAlert, Flag
@@ -85,6 +85,13 @@ export function SmartImportModal({
   // instead of a new reporting system.
   const [isReportingWrong, setIsReportingWrong] = useState(false);
   const [reportedWrong, setReportedWrong] = useState(false);
+  const resultRef = useRef(null);
+
+  useEffect(() => {
+    if (hasSearched && !isAiParsing && parsed && typeof resultRef.current?.scrollIntoView === 'function') {
+      resultRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [hasSearched, isAiParsing, parsed]);
 
   const matchedExistingPackage = React.useMemo(() => {
     if (!parsed || !parsed.trackingNumber) return null;
@@ -394,6 +401,10 @@ export function SmartImportModal({
       text: 'שלום, דבר דואר שמספרו RS948219483IL נמסר לחלוקה ביחידת הדואר דיזנגוף סנטר. שעות פתיחה: 08:00-19:00.'
     },
     {
+      label: language === 'he' ? 'דוגמת לוקר Boxit / צ\'יטה' : 'Boxit / Cheetah Locker Example',
+      text: 'בוקסיט: חבילתך BOX920194 הופקדה בלוקר שרונה מרקט קומה 1-. קוד לאיסוף: 8492'
+    },
+    {
       label: language === 'he' ? 'דוגמת הודעת AliExpress / קאיניאו' : 'AliExpress / Cainiao Example',
       text: 'AliExpress update: Your order for "Mechanical Keyboard" (LP00582910482CN) has arrived at the destination sorting facility in Israel.'
     },
@@ -474,7 +485,7 @@ export function SmartImportModal({
                 different widths, which reads as a layout accident rather than
                 a set of equivalent choices.
               */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {sampleSMS.map((s, idx) => (
                   <button
                     key={idx}
@@ -584,7 +595,7 @@ export function SmartImportModal({
 
           {/* Parsed Result Display */}
           {hasSearched && !isAiParsing && (
-            <div className="animate-fade-in pt-2">
+            <div ref={resultRef} className="animate-fade-in pt-2">
               {parsed && parsed.trackingNumber ? (
                 <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 space-y-3">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -637,6 +648,13 @@ export function SmartImportModal({
                       <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
                         <span className="text-xs text-slate-500 uppercase font-bold">{language === 'he' ? 'נקודת איסוף' : 'Pickup Point'}</span>
                         <p className="font-semibold text-amber-300 mt-0.5">{parsed.pickupLocation}</p>
+                      </div>
+                    )}
+
+                    {(parsed.pickupCode || parsed.lockerPin) && (
+                      <div className="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+                        <span className="text-xs text-slate-500 uppercase font-bold">{language === 'he' ? 'קוד איסוף / PIN' : 'Pickup PIN'}</span>
+                        <p className="font-mono font-bold text-emerald-400 mt-0.5">{parsed.pickupCode || parsed.lockerPin}</p>
                       </div>
                     )}
 

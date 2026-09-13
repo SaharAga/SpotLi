@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { X, MapPin, Clock, Phone, Navigation, ExternalLink, ShieldCheck, Search, Flag, AlertCircle, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { X, MapPin, Clock, Phone, Navigation, ExternalLink, ShieldCheck, Search, Flag, AlertCircle, ArrowLeft, Layers, CheckCircle2 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { Modal } from './Modal';
 import { getPreferredNavigationApp, openNavigationApp } from '../utils/navigationService';
 import { getLiveStoreStatus } from '../utils/openingHoursService';
 import { submitFeedback } from '../services/feedbackService';
+import { areLocationsMatching } from '../utils/locationBundling';
 
 export const POPULAR_PICKUP_POINTS = [
   {
@@ -74,12 +75,72 @@ export function LockerMapModal({
   onClose,
   initialSearch = '',
   selectedLocation = null,
+  packages = [],
+  onOpenLockerMode,
   onOpenNavigation,
   onShowToast
 }) {
   const { t, isRTL, language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState(initialSearch);
-  const [activePoint, setActivePoint] = useState(selectedLocation || POPULAR_PICKUP_POINTS[0]);
+
+  const userPickupPoints = useMemo(() => {
+    if (!Array.isArray(packages)) return [];
+    const activeWithLocation = packages.filter((p) => (
+      p &&
+      !p.isArchived &&
+      p.status !== 'archived' &&
+      p.status !== 'delivered' &&
+      Boolean(p.pickupLocation)
+    ));
+
+    const groups = [];
+    for (const pkg of activeWithLocation) {
+      let match = groups.find((g) => areLocationsMatching(g.location, pkg.pickupLocation));
+      if (match) {
+        match.packages.push(pkg);
+      } else {
+        groups.push({
+          id: `user-point-${groups.length + 1}`,
+          isUserPickup: true,
+          name: pkg.pickupLocation,
+          nameHe: pkg.pickupLocation,
+          address: pkg.pickupLocation,
+          addressHe: pkg.pickupLocation,
+          hours: pkg.pickupHours || '24/7',
+          hoursHe: pkg.pickupHours || '24/7',
+          phone: pkg.pickupPhone || '*2694',
+          distance: '0.2 km',
+          lat: 32.0715,
+          lng: 34.7872,
+          type: 'locker',
+          carrier: pkg.carrierName || pkg.carrier || 'BoxIt',
+          location: pkg.pickupLocation,
+          packages: [pkg]
+        });
+      }
+    }
+    return groups;
+  }, [packages]);
+
+  const initialPoint = useMemo(() => {
+    if (selectedLocation) {
+      return (
+        userPickupPoints.find((p) => areLocationsMatching(p.location, selectedLocation)) ||
+        POPULAR_PICKUP_POINTS.find((p) => areLocationsMatching(p.address, selectedLocation) || areLocationsMatching(p.addressHe, selectedLocation)) ||
+        selectedLocation
+      );
+    }
+    return userPickupPoints[0] || POPULAR_PICKUP_POINTS[0];
+  }, [selectedLocation, userPickupPoints]);
+
+  const [activePoint, setActivePoint] = useState(() => initialPoint);
+
+  useEffect(() => {
+    if (isOpen) {
+      setActivePoint(initialPoint);
+    }
+  }, [isOpen, initialPoint]);
+
   const [now, setNow] = useState(() => new Date());
   const [isReportingHours, setIsReportingHours] = useState(false);
   const [reportedHours, setReportedHours] = useState('');
@@ -89,6 +150,29 @@ export function LockerMapModal({
     const interval = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(interval);
   }, []);
+
+  const filteredUserPoints = useMemo(() => {
+    if (!searchQuery.trim()) return userPickupPoints;
+    const q = searchQuery.toLowerCase();
+    return userPickupPoints.filter((point) => (
+      point.name.toLowerCase().includes(q) ||
+      point.address.toLowerCase().includes(q) ||
+      point.carrier.toLowerCase().includes(q) ||
+      point.packages.some((p) => (p.title || '').toLowerCase().includes(q) || (p.titleHe || '').includes(q))
+    ));
+  }, [userPickupPoints, searchQuery]);
+
+  const filteredPoints = POPULAR_PICKUP_POINTS.filter((point) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      point.name.toLowerCase().includes(q) ||
+      point.nameHe.includes(q) ||
+      point.address.toLowerCase().includes(q) ||
+      point.addressHe.includes(q) ||
+      point.carrier.toLowerCase().includes(q)
+    );
+  });
 
   if (!isOpen) return null;
 
@@ -124,18 +208,6 @@ export function LockerMapModal({
       setIsSubmittingReport(false);
     }
   };
-
-  const filteredPoints = POPULAR_PICKUP_POINTS.filter((point) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      point.name.toLowerCase().includes(q) ||
-      point.nameHe.includes(q) ||
-      point.address.toLowerCase().includes(q) ||
-      point.addressHe.includes(q) ||
-      point.carrier.toLowerCase().includes(q)
-    );
-  });
 
   const getWazeUrl = (lat, lng) => `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`;
   const getGoogleMapsUrl = (lat, lng, query) =>
@@ -229,7 +301,57 @@ export function LockerMapModal({
         <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 grid-rows-[minmax(0,2fr)_minmax(0,3fr)] md:grid-rows-1 divide-y md:divide-y-0 md:divide-x md:rtl:divide-x-reverse divide-slate-800">
           {/* Pickup List */}
           <div className="min-h-0 p-4 space-y-3 overflow-y-auto">
-            {filteredPoints.length === 0 ? (
+            {filteredUserPoints.length > 0 && (
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center justify-between text-xs font-bold text-indigo-700 dark:text-indigo-300 px-1">
+                  <span className="flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                    {t('locationBundling.myActivePickups') || (language === 'he' ? 'החבילות שלך שממתינות לאיסוף' : 'Your Packages Ready for Pickup')}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-indigo-500/15 dark:bg-indigo-500/20 border border-indigo-500/30 text-[11px] font-extrabold text-indigo-800 dark:text-indigo-200">
+                    {filteredUserPoints.reduce((sum, pt) => sum + pt.packages.length, 0)}
+                  </span>
+                </div>
+                {filteredUserPoints.map((point) => {
+                  const isSelected = activePoint?.id === point.id;
+                  const count = point.packages.length;
+                  return (
+                    <div
+                      key={point.id}
+                      onClick={() => setActivePoint(point)}
+                      className={`p-4 rounded-2xl border transition-ui cursor-pointer ${
+                        isSelected
+                          ? 'bg-indigo-500/15 dark:bg-indigo-600/20 border-indigo-500 ring-2 ring-indigo-500/40 shadow-lg'
+                          : 'bg-indigo-50/60 dark:bg-indigo-950/30 border-indigo-500/30 hover:border-indigo-400/50'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="text-xs sm:text-sm font-black text-indigo-950 dark:text-indigo-100 flex items-center gap-1.5">
+                          <span>{point.name}</span>
+                        </h4>
+                        <span className="px-2 py-0.5 rounded-md bg-indigo-500/20 dark:bg-indigo-500/30 text-indigo-900 dark:text-indigo-200 border border-indigo-400/40 text-xs font-extrabold shrink-0">
+                          {count === 1
+                            ? (language === 'he' ? 'חבילה אחת' : '1 package')
+                            : (language === 'he' ? `${count} חבילות כאן` : `${count} packages here`)}
+                        </span>
+                      </div>
+                      <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                        {point.packages.map((p) => (
+                          <span key={p.id} className="text-[11px] px-2 py-0.5 rounded-lg bg-white dark:bg-slate-900 border border-indigo-500/20 text-slate-800 dark:text-slate-200 font-semibold truncate max-w-[140px]">
+                            {language === 'he' && p.titleHe ? p.titleHe : p.title}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+                <div className="pt-2 pb-1 border-t border-slate-800 text-xs font-bold text-slate-400 px-1">
+                  {language === 'he' ? 'נקודות איסוף ולוקרים נוספים:' : 'All Pickup Points & Lockers:'}
+                </div>
+              </div>
+            )}
+
+            {filteredPoints.length === 0 && filteredUserPoints.length === 0 ? (
               <div className="py-12 text-center text-xs text-slate-500">
                 {isRTL ? 'לא נמצאו נקודות איסוף תואמות' : 'No pickup locations match your search'}
               </div>
@@ -297,9 +419,61 @@ export function LockerMapModal({
                       {language === 'he' ? activePoint.nameHe : activePoint.name}
                     </span>
                     <span className="relative text-xs text-blue-400 mt-0.5">
-                      GPS: {activePoint.lat.toFixed(4)}, {activePoint.lng.toFixed(4)}
+                      GPS: {activePoint.lat != null ? Number(activePoint.lat).toFixed(4) : '—'}, {activePoint.lng != null ? Number(activePoint.lng).toFixed(4) : '—'}
                     </span>
                   </div>
+
+                  {/* If user packages exist at this location */}
+                  {activePoint.packages && activePoint.packages.length > 0 && (
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-950/70 via-slate-900/90 to-blue-950/70 border-2 border-indigo-500/40 space-y-3 shadow-lg">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <span className="text-xs font-bold text-indigo-800 dark:text-indigo-200 flex items-center gap-1.5">
+                          <Layers className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                          <span>
+                            {activePoint.packages.length > 1
+                              ? (language === 'he' ? `ממתינות ${activePoint.packages.length} חבילות במיקום זה:` : `${activePoint.packages.length} packages waiting here:`)
+                              : (language === 'he' ? 'חבילה ממתינה במיקום זה:' : 'Package waiting here:')}
+                          </span>
+                        </span>
+                        {onOpenLockerMode && (
+                          <button
+                            type="button"
+                            onClick={() => onOpenLockerMode(activePoint.packages[0])}
+                            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer min-h-[44px]"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5 text-slate-950 stroke-[2.5]" />
+                            <span>{t('locationBundling.openLockerMode') || (language === 'he' ? 'פתח מסך איסוף מוגדל' : 'Open Locker Mode')}</span>
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        {activePoint.packages.map((pkgItem) => {
+                          const itemTitle = (language === 'he' && pkgItem.titleHe) ? pkgItem.titleHe : pkgItem.title;
+                          return (
+                            <div key={pkgItem.id} className="p-2.5 rounded-xl bg-slate-950/80 border border-indigo-500/30 flex items-center justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className="text-xs font-bold text-slate-100 truncate max-w-[170px] sm:max-w-xs">{itemTitle}</p>
+                                <p className="text-[11px] font-mono text-slate-400 mt-0.5">{pkgItem.trackingNumber}</p>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                {pkgItem.shelfNumber && (
+                                  <span className="px-2 py-0.5 rounded-lg bg-amber-500/15 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-500/30 text-xs font-mono font-bold">
+                                    {language === 'he' ? `מדף: ${pkgItem.shelfNumber}` : `Shelf: ${pkgItem.shelfNumber}`}
+                                  </span>
+                                )}
+                                {pkgItem.pickupCode && (
+                                  <span className="px-2.5 py-1 rounded-lg bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-900 dark:text-emerald-300 border border-emerald-500/30 text-xs font-mono font-black shadow-inner">
+                                    PIN: {pkgItem.pickupCode}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Metadata Specs */}
                   <div className="space-y-2.5">

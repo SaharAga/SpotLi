@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   X, Cloud, Check, AlertCircle,
   Mail, User, Lock, Loader2, LogOut, Trash2, ArrowLeft, Sparkles
@@ -90,6 +90,7 @@ export function calculatePasswordStrength(password) {
 export function AuthModal({
   isOpen,
   initialMode = 'signin',
+  reason = null,
   onClose,
   onShowToast
 }) {
@@ -247,9 +248,22 @@ export function AuthModal({
     }
   };
 
-  // Auto-close modal when user is authenticated
+  const wasLoggedInOnOpenRef = useRef(Boolean(user));
+  const prevIsOpenRef = useRef(isOpen);
+
   useEffect(() => {
-    if (user && isOpen) {
+    if (isOpen && !prevIsOpenRef.current) {
+      wasLoggedInOnOpenRef.current = Boolean(user);
+    }
+    if (!user) {
+      wasLoggedInOnOpenRef.current = false;
+    }
+    prevIsOpenRef.current = isOpen;
+  }, [isOpen, user]);
+
+  // Auto-close modal when user transitions from unauthenticated to authenticated
+  useEffect(() => {
+    if (user && isOpen && !wasLoggedInOnOpenRef.current) {
       if (onShowToast) onShowToast(language === 'he' ? 'התחברת בהצלחה!' : 'Logged in successfully!', 'success');
       onClose();
     }
@@ -414,6 +428,25 @@ export function AuthModal({
               {/* Social / OAuth Sign-in Buttons */}
               {activeTab !== 'forgot' && (
                 <>
+                  {/* Contextual Educational Banner when prompted by Gmail sync */}
+                  {reason === 'gmail_sync' && (
+                    <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-3 text-amber-300 animate-fade-in">
+                      <div className="w-7 h-7 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center shrink-0 text-amber-400 mt-0.5">
+                        <Sparkles className="w-4 h-4" />
+                      </div>
+                      <div className="space-y-0.5 text-xs">
+                        <h4 className="font-bold text-amber-200">
+                          {language === 'he' ? 'חיבור עם Google לסנכרון Gmail' : 'Connect with Google for Gmail Sync'}
+                        </h4>
+                        <p className="text-amber-300/80 leading-relaxed">
+                          {language === 'he'
+                            ? 'חיבור לחשבון Google נדרש כדי לאפשר סנכרון חבילות אוטומטי מתיבת ה-Gmail שלך בבטחה.'
+                            : 'A Google Account is required to automatically connect and sync packages from your Gmail inbox securely.'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Google Sign-in Button — the only OAuth provider actually
                       configured. Apple was previously offered here but was
                       never set up in Firebase/Apple Developer, so it could
@@ -423,10 +456,12 @@ export function AuthModal({
                     type="button"
                     onClick={handleGoogleClick}
                     disabled={isGoogleLoading || isLoading}
-                    className="w-full flex items-center justify-center gap-2.5 p-3 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs transition-ui shadow-md cursor-pointer min-h-[48px] disabled:opacity-50"
+                    className={`w-full flex items-center justify-center gap-2.5 p-3 rounded-2xl bg-white hover:bg-slate-50 text-neutral-900 border border-slate-200 dark:border-slate-800 font-bold text-xs transition-ui shadow-md cursor-pointer min-h-[48px] disabled:opacity-50 ${
+                      reason === 'gmail_sync' ? 'ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-900 shadow-amber-500/20' : ''
+                    }`}
                   >
                     {isGoogleLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-slate-900" />
+                      <Loader2 className="w-4 h-4 animate-spin text-neutral-900" />
                     ) : (
                       <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -458,7 +493,8 @@ export function AuthModal({
                       setFormError('');
                       setFormSuccess('');
                     }}
-                    className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-slate-100 cursor-pointer"
+                    aria-label={language === 'he' ? 'חזרה להתחברות' : 'Back to sign in'}
+                    className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-slate-100 cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
                   >
                     <ArrowLeft className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
                   </button>

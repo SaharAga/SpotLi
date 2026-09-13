@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
-import { Plus, Inbox, ShieldCheck, Sparkles, LogIn, UserPlus, PlayCircle, MessageSquarePlus, RefreshCw } from 'lucide-react';
+import { Plus, Inbox, ShieldCheck, Sparkles, LogIn, UserPlus, PlayCircle, MessageSquarePlus, RefreshCw, Layers, CheckCircle2, Navigation } from 'lucide-react';
 import { Navbar } from './components/Navbar';
 import { StatsCards } from './components/StatsCards';
 import { FilterBar } from './components/FilterBar';
@@ -9,6 +9,7 @@ import { LegalConsentGate } from './components/LegalConsentGate';
 import { ModalLoadingFallback } from './components/ModalLoadingFallback';
 import { findPackageByTrackingNumber, mergePackageData } from './services/deliveryService';
 import { deriveMood } from './utils/ambientMood';
+import { getBundledLocations } from './utils/locationBundling';
 
 /**
  * Every dialog is loaded on demand.
@@ -706,7 +707,14 @@ export function DashboardContent() {
       if (user) {
         openModal(MODAL.INGESTION_GUIDE);
       } else {
-        openModal(MODAL.AUTH);
+        try {
+          if (typeof window !== 'undefined' && window.sessionStorage) {
+            window.sessionStorage.setItem('spotli_post_auth_wizard_pending', 'true');
+          }
+        } catch {
+          // Ignore
+        }
+        openModal(MODAL.AUTH, { initialMode: 'signin', reason: 'gmail_sync' });
       }
       dismissNudge('gmail_sync');
     } else if (type === 'locker') {
@@ -993,6 +1001,10 @@ export function DashboardContent() {
   // every keystroke.
   const handleOpenDetails = useCallback((p) => openModal(MODAL.DETAIL, p), [openModal]);
   const handleOpenLockerMode = useCallback((p) => openModal(MODAL.FULL_SCREEN_LOCKER, p), [openModal]);
+  const handleOpenNavigation = useCallback(
+    (target) => openModal(MODAL.NAVIGATION_CHOICE, target),
+    [openModal]
+  );
 
   const handleEditFromList = useCallback(
     (p) => openModal(MODAL.ADD_EDIT, { editPackage: p }),
@@ -1083,6 +1095,11 @@ export function DashboardContent() {
   const nonArchivedPackages = useMemo(
     () => packages.filter(p => !p.isArchived),
     [packages]
+  );
+
+  const bundledLocations = useMemo(
+    () => getBundledLocations(nonArchivedPackages),
+    [nonArchivedPackages]
   );
 
   // A keystroke that does not change *which* packages match still produced a
@@ -1261,6 +1278,10 @@ export function DashboardContent() {
           isOpen={isOpen}
           onClose={() => closeModal(MODAL.INGESTION_GUIDE)}
           onOpenSmartImport={() => openModal(MODAL.SMART_IMPORT)}
+          onOpenAuth={(opts) => {
+            closeModal(MODAL.INGESTION_GUIDE);
+            openModal(MODAL.AUTH, opts);
+          }}
           onShowToast={showToast}
         />
       )
@@ -1272,6 +1293,7 @@ export function DashboardContent() {
         <AuthModal
           isOpen={isOpen}
           initialMode={payload?.initialMode ?? 'signin'}
+          reason={payload?.reason ?? null}
           onClose={() => closeModal(MODAL.AUTH)}
           onShowToast={showToast}
         />
@@ -1335,6 +1357,8 @@ export function DashboardContent() {
         <LockerMapModal
           isOpen={isOpen}
           onClose={() => closeModal(MODAL.LOCKER_MAP)}
+          packages={packages}
+          onOpenLockerMode={handleOpenLockerMode}
           onOpenNavigation={(target) => openModal(MODAL.NAVIGATION_CHOICE, target)}
           onShowToast={showToast}
         />
@@ -1643,7 +1667,7 @@ export function DashboardContent() {
               } catch {
                 // Ignore
               }
-              openModal(MODAL.AUTH, { initialMode: 'signin' });
+              openModal(MODAL.AUTH, { initialMode: 'signin', reason: 'gmail_sync' });
             }}
             onStartSmartImport={() => openModal(MODAL.SMART_IMPORT)}
             onLoadDemoPackage={handleLaunchDemoMode}
@@ -1667,6 +1691,80 @@ export function DashboardContent() {
               activeFilter={activeTab}
               onSelectFilter={setActiveTab}
             />
+
+            {/* Bundled Multi-Package Pickup Banner */}
+            {bundledLocations.length > 0 && (
+              <div className="space-y-3">
+                {bundledLocations.map((cluster) => {
+                  const firstPkg = cluster.packages[0];
+                  const count = cluster.packages.length;
+                  return (
+                    <div
+                      key={cluster.normalizedKey || cluster.location}
+                      className="p-4 rounded-2xl bg-gradient-to-r from-indigo-950 via-slate-900 to-blue-950 text-white border-2 border-indigo-500/40 shadow-xl shadow-indigo-950/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all"
+                    >
+                      <div className="flex items-start gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 shrink-0 mt-0.5">
+                          <Layers className="w-5 h-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/30 text-indigo-200 border border-indigo-400/40 text-[11px] font-extrabold uppercase tracking-wide">
+                              {t('locationBundling.dashboardBannerTitle')}
+                            </span>
+                            <span className="text-xs font-bold text-slate-200">
+                              {(t('locationBundling.dashboardBannerSubtitle') || '{count} packages waiting at: {location}')
+                                .replace('{count}', String(count))
+                                .replace('{location}', cluster.location)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 mt-2 flex-wrap">
+                            {cluster.packages.map((p) => {
+                              const title = (language === 'he' && p.titleHe) ? p.titleHe : p.title;
+                              return (
+                                <span
+                                  key={p.id}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-200 font-medium"
+                                >
+                                  <span className="truncate max-w-[130px] font-semibold">{title}</span>
+                                  {p.pickupCode && (
+                                    <span className="font-mono text-emerald-400 font-bold text-[11px]">
+                                      PIN: {p.pickupCode}
+                                    </span>
+                                  )}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenLockerMode(firstPkg)}
+                          className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs shadow-md shadow-emerald-500/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer min-h-[48px]"
+                        >
+                          <CheckCircle2 className="w-4 h-4 text-slate-950 stroke-[2.5]" />
+                          <span>
+                            {(t('locationBundling.openClusterPins') || 'View Pickup Codes ({count})').replace('{count}', String(count))}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenNavigation({ location: cluster.location, title: cluster.location })}
+                          className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-blue-400 hover:text-blue-300 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer min-h-[48px] min-w-[48px]"
+                          title={language === 'he' ? 'נווט למיקום' : 'Navigate'}
+                          aria-label={language === 'he' ? 'נווט למיקום' : 'Navigate'}
+                        >
+                          <Navigation className="w-4 h-4 rtl:rotate-180" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Filter & View Controls */}
             <FilterBar
@@ -1700,7 +1798,7 @@ export function DashboardContent() {
                       } catch {
                         // Ignore
                       }
-                      openModal(MODAL.AUTH, { initialMode: 'signin' });
+                      openModal(MODAL.AUTH, { initialMode: 'signin', reason: 'gmail_sync' });
                     }
                   }}
                   onStartSmartImport={() => openModal(MODAL.SMART_IMPORT)}
@@ -1750,6 +1848,7 @@ export function DashboardContent() {
                     onStatusChange={handleStatusChange}
                     onRefreshTracking={handleRefreshSinglePackage}
                     onOpenLockerMode={handleOpenLockerMode}
+                    onOpenNavigation={handleOpenNavigation}
                     onShowToast={showToast}
                   />
                 ))}

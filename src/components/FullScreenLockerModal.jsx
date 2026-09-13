@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, Check, Copy, ExternalLink, MapPin, Sparkles, Navigation, Clock, CheckCircle2, ShieldCheck, Sun, Layers, Phone
 } from 'lucide-react';
@@ -23,6 +23,7 @@ export function FullScreenLockerModal({
   const { t, isRTL, language } = useLanguage();
   const [copiedId, setCopiedId] = useState(null);
   const [isMarking, setIsMarking] = useState(false);
+  const copyTimerRef = useRef(null);
 
   // Screen Wake Lock API — keeps screen on and prevents dimming in bright daylight
   useEffect(() => {
@@ -33,7 +34,12 @@ export function FullScreenLockerModal({
     const requestLock = async () => {
       try {
         if (typeof navigator !== 'undefined' && 'wakeLock' in navigator) {
-          wakeLock = await navigator.wakeLock.request('screen');
+          const lock = await navigator.wakeLock.request('screen');
+          if (!isSubscribed) {
+            lock.release().catch(() => {});
+          } else {
+            wakeLock = lock;
+          }
         }
       } catch {
         // Gracefully ignore if browser policies or battery saver block wake lock
@@ -49,6 +55,14 @@ export function FullScreenLockerModal({
       }
     };
   }, [isOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) {
+        clearTimeout(copyTimerRef.current);
+      }
+    };
+  }, []);
 
   if (!isOpen || !pkg) return null;
 
@@ -69,7 +83,12 @@ export function FullScreenLockerModal({
       if (onShowToast) {
         onShowToast(t('lockerMode.copied'), 'success');
       }
-      setTimeout(() => setCopiedId((curr) => (curr === itemId ? null : curr)), 2500);
+      if (copyTimerRef.current) {
+        clearTimeout(copyTimerRef.current);
+      }
+      copyTimerRef.current = setTimeout(() => {
+        setCopiedId((curr) => (curr === itemId ? null : curr));
+      }, 2500);
     }
   };
 
@@ -181,8 +200,8 @@ export function FullScreenLockerModal({
       <div className="p-6 overflow-y-auto space-y-6 flex-1 flex flex-col items-center">
         
         {/* Wake Lock & High-Brightness Indicator */}
-        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-xs text-emerald-300/90 font-medium">
-          <Sun className="w-3.5 h-3.5 text-amber-400" />
+        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/60 border border-slate-800 text-xs text-emerald-800 dark:text-emerald-300/90 font-medium">
+          <Sun className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
           <span>{t('lockerMode.wakeLockActive')}</span>
         </div>
 
@@ -203,26 +222,26 @@ export function FullScreenLockerModal({
 
                 {/* Package Label Header in Stack */}
                 <div className="flex items-center justify-between gap-2 mb-3 pb-2 border-b border-emerald-500/20 text-xs">
-                  <span className="font-extrabold text-emerald-300 truncate max-w-[220px] sm:max-w-xs text-start">
+                  <span className="font-extrabold text-emerald-800 dark:text-emerald-300 truncate max-w-[220px] sm:max-w-xs text-start">
                     {itemTitle}
                   </span>
-                  <span className="text-xs font-mono font-bold text-slate-400 shrink-0">
+                  <span className="text-xs font-mono font-bold text-slate-600 dark:text-slate-400 shrink-0">
                     {item.trackingNumber}
                   </span>
                 </div>
 
                 {item.shelfNumber && (
-                  <div className="mb-3 px-3 py-1.5 rounded-2xl bg-amber-500/20 border border-amber-400/40 inline-flex items-center gap-2 shadow-sm">
-                    <span className="text-xs text-amber-300 font-bold uppercase tracking-wider">
+                  <div className="mb-3 px-3 py-1.5 rounded-2xl bg-amber-500/15 dark:bg-amber-500/20 border border-amber-500/40 dark:border-amber-400/40 inline-flex items-center gap-2 shadow-sm">
+                    <span className="text-xs text-amber-900 dark:text-amber-300 font-extrabold uppercase tracking-wider">
                       {language === 'he' ? 'מדף / מספר איסוף' : 'Shelf / Bin'}:
                     </span>
-                    <span className="text-lg sm:text-xl font-mono font-black text-amber-200">
+                    <span className="text-lg sm:text-xl font-mono font-black text-amber-950 dark:text-amber-200">
                       {item.shelfNumber}
                     </span>
                   </div>
                 )}
 
-                <span className="text-xs text-emerald-400 uppercase tracking-widest font-black block mb-2">
+                <span className="text-xs text-emerald-800 dark:text-emerald-400 uppercase tracking-widest font-black block mb-2">
                   {itemPin ? t('lockerMode.pickupPin') : t('locationBundling.pinCode')}
                 </span>
 
@@ -244,9 +263,9 @@ export function FullScreenLockerModal({
                     itemPin.split('').map((char, i) => (
                       <div
                         key={i}
-                        className="w-11 h-14 sm:w-14 sm:h-18 bg-slate-950 border border-emerald-500/40 rounded-2xl flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform"
+                        className="w-11 h-14 sm:w-14 sm:h-18 bg-white dark:bg-slate-950 border-2 border-emerald-500/50 dark:border-emerald-500/40 rounded-2xl flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform"
                       >
-                        <span className="text-2xl sm:text-4xl font-black text-emerald-100 font-mono tracking-tighter">
+                        <span className="text-2xl sm:text-4xl font-black text-emerald-950 dark:text-emerald-100 font-mono tracking-tighter">
                           {char}
                         </span>
                       </div>
@@ -263,12 +282,12 @@ export function FullScreenLockerModal({
                 {itemPin && (
                   <div
                     onClick={() => handleCopyPin(itemPin, item.id)}
-                    className="mt-3 flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-emerald-300 transition-colors cursor-pointer"
+                    className="mt-3 flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors cursor-pointer"
                   >
                     {isCopied ? (
                       <>
-                        <Check className="w-4 h-4 text-emerald-400 animate-bounce" />
-                        <span className="text-emerald-400 font-bold">{t('lockerMode.copied')}</span>
+                        <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 animate-bounce" />
+                        <span className="text-emerald-700 dark:text-emerald-400 font-bold">{t('lockerMode.copied')}</span>
                       </>
                     ) : (
                       <>

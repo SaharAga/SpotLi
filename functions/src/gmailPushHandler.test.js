@@ -147,4 +147,81 @@ describe('syncHistoryForConnection Order Correlation', () => {
       { merge: true }
     );
   });
+
+  it('skips 404 Not Found message entities without aborting remaining messages or historyId progression', async () => {
+    const setMock = vi.fn().mockResolvedValue();
+    const docMock = vi.fn().mockReturnValue({ set: setMock });
+    const collectionMock = vi.fn().mockReturnValue({
+      get: vi.fn().mockResolvedValue({ docs: [] }),
+      doc: docMock,
+      add: vi.fn()
+    });
+
+    const db = {
+      collection: vi.fn().mockReturnValue({
+        doc: vi.fn().mockReturnValue({ collection: collectionMock, set: vi.fn().mockResolvedValue() })
+      })
+    };
+
+    const notFoundError = new Error('Requested entity was not found.');
+    notFoundError.code = 404;
+
+    const mockGmail = {
+      users: {
+        history: {
+          list: vi.fn().mockResolvedValue({
+            data: {
+              history: [
+                {
+                  messagesAdded: [
+                    { message: { id: 'msg-deleted-404' } },
+                    { message: { id: 'msg-valid-package' } }
+                  ]
+                }
+              ]
+            }
+          })
+        },
+        messages: {
+          get: vi.fn().mockImplementation(({ id }) => {
+            if (id === 'msg-deleted-404') {
+              return Promise.reject(notFoundError);
+            }
+            return Promise.resolve({
+              data: {
+                id: 'msg-valid-package',
+                snippet: 'Tracking 1Z9999999999999999',
+                payload: {
+                  headers: [
+                    { name: 'Subject', value: 'UPS Shipment Notification' },
+                    { name: 'From', value: 'pkginfo@ups.com' }
+                  ],
+                  body: {
+                    data: Buffer.from('Your package 1Z9999999999999999 is on the way with UPS.').toString('base64url')
+                  }
+                }
+              }
+            });
+          })
+        }
+      }
+    };
+
+    getGmailClientForUser.mockReturnValue({ gmail: mockGmail });
+
+    const result = await syncHistoryForConnection({
+      db,
+      connection: { uid: 'u1', refreshToken: 'rt', historyId: '200' },
+      clientSecret: 'secret',
+      newHistoryId: '205'
+    });
+
+    expect(result.saved).toBe(1);
+    expect(setMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        trackingNumber: '1Z9999999999999999',
+        carrier: 'ups'
+      })
+    );
+  });
 });

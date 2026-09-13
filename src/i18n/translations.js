@@ -264,6 +264,11 @@ export const translations = {
     locationBundling: {
       bundleBannerTitleSingle: '1 other package waiting here!',
       bundleBannerTitleMultiple: '{count} other packages waiting here!',
+      dashboardBannerTitle: 'Bundled Pickup Available!',
+      dashboardBannerSubtitle: '{count} packages waiting at the same spot: {location}',
+      openClusterPins: 'View Pickup Codes ({count})',
+      myActivePickups: 'Your Packages Ready for Pickup',
+      openLockerMode: 'Open Locker Mode (Big Digits)',
       storePickupTitle: 'Store Pickup Details',
       collectAll: 'Mark All as Collected ({count})',
       collectAllSuccess: '{count} packages marked as collected! 🎉',
@@ -620,6 +625,11 @@ export const translations = {
     locationBundling: {
       bundleBannerTitleSingle: 'עוד חבילה אחת ממתינה בנקודה זו!',
       bundleBannerTitleMultiple: 'עוד {count} חבילות ממתינות בנקודה זו!',
+      dashboardBannerTitle: 'איסוף מרוכז זמין!',
+      dashboardBannerSubtitle: '{count} חבילות ממתינות באותו מיקום: {location}',
+      openClusterPins: 'הצג קודי איסוף ({count})',
+      myActivePickups: 'החבילות שלך שממתינות לאיסוף',
+      openLockerMode: 'פתח מסך איסוף מוגדל',
       storePickupTitle: 'פרטי איסוף בחנות',
       collectAll: 'סמן את כולן כנאספו ({count})',
       collectAllSuccess: '{count} חבילות סומנו כנאספו בהצלחה! 🎉',

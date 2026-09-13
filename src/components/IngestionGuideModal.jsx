@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Smartphone, Sparkles, CheckCircle2, Copy, RefreshCw, Plus, Trash2, ArrowLeft, ChevronDown } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -18,12 +18,15 @@ import { Modal } from './Modal';
 export function IngestionGuideModal({
   isOpen,
   onClose,
+  onOpenSmartImport,
+  onOpenAuth,
   onShowToast
 }) {
   const { language } = useLanguage();
   const { user, loginWithGoogle } = useAuth();
   
   const [copiedEmail, setCopiedEmail] = useState(false);
+  const copyEmailTimerRef = useRef(null);
   const [showQR, setShowQR] = useState(false);
   const [showForwarding, setShowForwarding] = useState(false);
   const [selectedGuide, setSelectedGuide] = useState('gmail'); // 'gmail' | 'outlook' | 'icloud' | 'yahoo'
@@ -99,6 +102,12 @@ export function IngestionGuideModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, userUid]);
 
+  useEffect(() => {
+    return () => {
+      if (copyEmailTimerRef.current) clearTimeout(copyEmailTimerRef.current);
+    };
+  }, []);
+
   if (!isOpen) return null;
 
   const appOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://spotliapp.com';
@@ -110,7 +119,8 @@ export function IngestionGuideModal({
     if (success) {
       setCopiedEmail(true);
       if (onShowToast) onShowToast(language === 'he' ? 'כתובת האימייל הועתקה ללוח' : 'Email copied to clipboard', 'success');
-      setTimeout(() => setCopiedEmail(false), 2500);
+      if (copyEmailTimerRef.current) clearTimeout(copyEmailTimerRef.current);
+      copyEmailTimerRef.current = setTimeout(() => setCopiedEmail(false), 2500);
     } else if (onShowToast) {
       onShowToast(language === 'he' ? 'ההעתקה ללוח נכשלה' : 'Failed to copy to clipboard', 'error');
     }
@@ -495,24 +505,57 @@ export function IngestionGuideModal({
         
           {showForwarding && (
           <div className="p-4 sm:p-5 pt-0 space-y-4">
-          {/* Email Copy Card */}
-          <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between gap-2">
-            <div className="min-w-0">
-              <span className="text-xs text-slate-500 block uppercase font-bold">
-                {language === 'he' ? 'כתובת ההעברה הייחודית שלך:' : 'Your Private Ingestion Address:'}
-              </span>
-              <span className="font-mono text-xs text-blue-400 font-semibold truncate block select-all">
-                {ingestionEmail}
-              </span>
+          {/* Email Copy Card / Guest Sign-in Gate */}
+          {!userUid ? (
+            <div className="p-4 bg-slate-900 rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-500/5 to-transparent space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center shrink-0 text-amber-400 mt-0.5">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="text-xs text-amber-400 font-bold block uppercase tracking-wider">
+                    {language === 'he' ? 'נדרשת התחברות לכתובת ייחודית' : 'Account required for forwarding'}
+                  </span>
+                  <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                    {language === 'he'
+                      ? 'כתובת ההעברה האישית משויכת לחשבון שלך כדי לנתב חבילות ישירות אליך. התחברו כדי להפיק את הכתובת הייחודית שלכם.'
+                      : 'Your forwarding address is linked to your account to securely route incoming packages. Sign in to generate your unique address.'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (onOpenAuth) {
+                    onOpenAuth({ initialMode: 'signin', reason: 'gmail_sync' });
+                  } else if (loginWithGoogle) {
+                    await loginWithGoogle();
+                  }
+                }}
+                className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 cursor-pointer min-h-[48px]"
+              >
+                <span>{language === 'he' ? 'התחברות להפקת כתובת אישית' : 'Sign in to generate address'}</span>
+              </button>
             </div>
-            <button
-              onClick={handleCopyEmail}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 min-h-[48px]"
-            >
-              {copiedEmail ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedEmail ? (language === 'he' ? 'הועתק!' : 'Copied!') : (language === 'he' ? 'העתק' : 'Copy')}</span>
-            </button>
-          </div>
+          ) : (
+            <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <span className="text-xs text-slate-500 block uppercase font-bold">
+                  {language === 'he' ? 'כתובת ההעברה הייחודית שלך:' : 'Your Private Ingestion Address:'}
+                </span>
+                <span className="font-mono text-xs text-blue-400 font-semibold truncate block select-all">
+                  {ingestionEmail}
+                </span>
+              </div>
+              <button
+                onClick={handleCopyEmail}
+                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 min-h-[48px]"
+              >
+                {copiedEmail ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedEmail ? (language === 'he' ? 'הועתק!' : 'Copied!') : (language === 'he' ? 'העתק' : 'Copy')}</span>
+              </button>
+            </div>
+          )}
 
           {/* Interactive Guides Tab Bar */}
           <div className="space-y-3 pt-2">

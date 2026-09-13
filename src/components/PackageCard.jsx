@@ -1,8 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Copy, Check, MoreVertical, Pin, Archive, Trash2, Edit3,
   Calendar, CheckCircle, ArrowUpRight, RefreshCw, Loader2, Package,
-  Clock, RotateCcw, Sun, AlertTriangle
+  Clock, RotateCcw, Sun, AlertTriangle, MapPin, Navigation, Layers
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { getCarrier } from '../types/carriers';
@@ -15,7 +15,7 @@ import { getPickupCountdown, getReturnCountdown } from '../utils/deadlineUtils';
 import { triggerHapticFeedback } from '../utils/haptics';
 import { checkRateLimit } from '../utils/rateLimiter';
 import { findSameLocationPackages } from '../utils/locationBundling';
-import { MapPin } from 'lucide-react';
+import { openNavigationApp } from '../utils/navigationService';
 
 function PackageCardImpl({
   pkg,
@@ -28,10 +28,14 @@ function PackageCardImpl({
   onStatusChange,
   onRefreshTracking,
   onOpenLockerMode,
+  onOpenNavigation,
   onShowToast
 }) {
   const { t, language, isRTL } = useLanguage();
   const [copied, setCopied] = useState(false);
+  const [copiedPin, setCopiedPin] = useState(false);
+  const copyTrackingTimerRef = useRef(null);
+  const copyPinTimerRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
   // The row menu opens downward by default. On the last cards in a list that
   // put it under the bottom tab bar, so on open we measure the space actually
@@ -121,9 +125,48 @@ function PackageCardImpl({
     if (success) {
       setCopied(true);
       if (onShowToast) onShowToast(t('card.copied'), 'success');
-      setTimeout(() => setCopied(false), 2000);
+      if (copyTrackingTimerRef.current) clearTimeout(copyTrackingTimerRef.current);
+      copyTrackingTimerRef.current = setTimeout(() => setCopied(false), 2000);
     } else if (onShowToast) {
       onShowToast(language === 'he' ? 'ההעתקה ללוח נכשלה' : 'Failed to copy to clipboard', 'error');
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (copyTrackingTimerRef.current) clearTimeout(copyTrackingTimerRef.current);
+      if (copyPinTimerRef.current) clearTimeout(copyPinTimerRef.current);
+    };
+  }, []);
+
+  const handleCopyPin = async (e) => {
+    e.stopPropagation();
+    if (!pkg.pickupCode) return;
+    const success = await copyToClipboard(pkg.pickupCode);
+    if (success) {
+      setCopiedPin(true);
+      triggerHapticFeedback();
+      if (onShowToast) {
+        onShowToast(language === 'he' ? 'קוד איסוף הועתק!' : 'Pickup code copied!', 'success');
+      }
+      if (copyPinTimerRef.current) clearTimeout(copyPinTimerRef.current);
+      copyPinTimerRef.current = setTimeout(() => setCopiedPin(false), 2000);
+    } else if (onShowToast) {
+      onShowToast(language === 'he' ? 'ההעתקה ללוח נכשלה' : 'Failed to copy to clipboard', 'error');
+    }
+  };
+
+  const handleOpenNavigation = (e) => {
+    e.stopPropagation();
+    if (!pkg.pickupLocation) return;
+    const target = {
+      location: pkg.pickupLocation,
+      title: (language === 'he' && pkg.titleHe) ? pkg.titleHe : pkg.title
+    };
+    if (onOpenNavigation) {
+      onOpenNavigation(target);
+    } else {
+      openNavigationApp('google_maps', target);
     }
   };
 
@@ -260,7 +303,9 @@ function PackageCardImpl({
       <div
         onClick={() => {
           if (Math.abs(swipeOffset) > 5) return;
-          onOpenDetails(pkg);
+          if (typeof onOpenDetails === 'function') {
+            onOpenDetails(pkg);
+          }
         }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -319,32 +364,50 @@ function PackageCardImpl({
                 {store ? (language === 'he' ? store.hebrewName : store.name) + ' — ' : ''}
                 {language === 'he' ? carrier.hebrewName : carrier.name}
               </span>
-              {pkg.pickupCode && onOpenLockerMode && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onOpenLockerMode(pkg);
-                  }}
-                  title={language === 'he' ? 'פתח מצב לוקר מוגדל' : 'Open Full-Screen Locker Mode'}
-                  className="ms-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 font-mono text-xs font-bold cursor-pointer transition-colors shrink-0"
-                >
-                  <span>PIN {pkg.pickupCode}</span>
-                </button>
+              {pkg.pickupCode && (
+                <div className="ms-1 inline-flex items-center rounded-lg bg-emerald-500/15 dark:bg-emerald-500/20 border border-emerald-500/30 dark:border-emerald-500/40 font-mono text-xs font-bold overflow-hidden shrink-0 shadow-sm min-h-[44px]">
+                  {onOpenLockerMode ? (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenLockerMode(pkg);
+                      }}
+                      title={language === 'he' ? 'פתח מצב לוקר מוגדל' : 'Open Full-Screen Locker Mode'}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 hover:bg-emerald-500/25 dark:hover:bg-emerald-500/30 text-emerald-800 dark:text-emerald-200 transition-colors cursor-pointer min-h-[44px]"
+                    >
+                      <Sun className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 shrink-0" />
+                      <span>PIN {pkg.pickupCode}</span>
+                    </button>
+                  ) : (
+                    <span className="px-3 py-1.5 text-emerald-800 dark:text-emerald-200 min-h-[44px] flex items-center">
+                      PIN {pkg.pickupCode}
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleCopyPin}
+                    title={language === 'he' ? 'העתק קוד איסוף' : 'Copy pickup PIN'}
+                    className="px-2.5 py-1.5 hover:bg-emerald-500/25 dark:hover:bg-emerald-500/30 border-s border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:text-emerald-900 dark:hover:text-emerald-100 transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+                    aria-label={language === 'he' ? 'העתק קוד איסוף' : 'Copy pickup PIN'}
+                  >
+                    {copiedPin ? <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
               )}
               {pkg.isRedirected && (
                 <span
                   title={language === 'he' ? 'חברת השילוח העבירה את החבילה לנקודה חלופית' : 'Package was redirected to an alternate pickup location'}
-                  className="ms-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold shrink-0"
+                  className="ms-1 inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/15 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-500/30 text-xs font-bold shrink-0"
                 >
-                  <AlertTriangle className="w-2.5 h-2.5" />
+                  <AlertTriangle className="w-3 h-3" />
                   <span>{t('redirectDetection.badge')}</span>
                 </span>
               )}
               {pkg.shelfNumber && (
                 <span
                   title={language === 'he' ? `מספר מדף: ${pkg.shelfNumber}` : `Shelf number: ${pkg.shelfNumber}`}
-                  className="ms-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono text-xs font-bold shrink-0"
+                  className="ms-1 inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/15 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-500/30 font-mono text-xs font-bold shrink-0"
                 >
                   <span>{language === 'he' ? 'מדף' : 'Shelf'} {pkg.shelfNumber}</span>
                 </span>
@@ -390,17 +453,49 @@ function PackageCardImpl({
           </div>
         </div>
 
-        {/* Pickup Location & Same-Location Bundling Tag */}
+        {/* Pickup Location & Same-Location Bundling Tag with 1-Tap Navigation */}
         {pkg.pickupLocation && (
-          <div className="flex items-center justify-between gap-1.5 text-xs px-2.5 py-1.5 rounded-xl bg-slate-950/60 border border-slate-800/80 text-slate-300">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-              <span className="truncate">{pkg.pickupLocation}</span>
-            </div>
-            {sameLocationSiblings.length > 0 && (
-              <span className="shrink-0 px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-bold">
-                {language === 'he' ? `עוד ${sameLocationSiblings.length} כאן` : `+${sameLocationSiblings.length} here`}
+          <div className="flex items-center justify-between gap-2 p-1 rounded-2xl bg-slate-950/70 border border-slate-800 text-slate-300 shadow-sm">
+            <button
+              type="button"
+              onClick={handleOpenNavigation}
+              title={language === 'he' ? 'פתח ניווט לנקודת האיסוף (Waze / Maps)' : 'Open navigation (Waze / Maps)'}
+              aria-label={language === 'he' ? `נווט אל ${pkg.pickupLocation}` : `Navigate to ${pkg.pickupLocation}`}
+              className="flex-1 min-w-0 flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl hover:bg-slate-900/90 hover:text-emerald-300 transition-colors cursor-pointer min-h-[48px] text-start group/nav"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <MapPin className="w-4 h-4 text-emerald-400 shrink-0 group-hover/nav:scale-110 transition-transform" />
+                <span className="truncate text-xs font-medium">{pkg.pickupLocation}</span>
+              </div>
+              <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 group-hover/nav:bg-emerald-500/25 transition-colors flex items-center gap-1 text-[11px] font-bold shrink-0">
+                <Navigation className="w-3.5 h-3.5 rtl:rotate-180" />
+                <span className="hidden sm:inline">{language === 'he' ? 'נווט' : 'Navigate'}</span>
               </span>
+            </button>
+
+            {sameLocationSiblings.length > 0 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  triggerHapticFeedback('selection');
+                  if (onOpenLockerMode) onOpenLockerMode(pkg);
+                }}
+                className="px-3 py-2 rounded-xl bg-indigo-500/25 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/40 text-xs font-bold transition-all cursor-pointer min-h-[48px] flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 shadow-sm shrink-0"
+                aria-label={
+                  language === 'he'
+                    ? `עוד ${sameLocationSiblings.length} חבילות באותה נקודה. פתח מסך איסוף מרוכז.`
+                    : `${sameLocationSiblings.length} other packages at this location. Open bundled pickup mode.`
+                }
+                title={
+                  language === 'he'
+                    ? `פתח מסך איסוף מרוכז עבור ${sameLocationSiblings.length + 1} חבילות`
+                    : `Open bundled pickup screen for ${sameLocationSiblings.length + 1} packages`
+                }
+              >
+                <Layers className="w-3.5 h-3.5 text-indigo-300" />
+                <span>{language === 'he' ? `עוד ${sameLocationSiblings.length} כאן` : `+${sameLocationSiblings.length} here`}</span>
+              </button>
             )}
           </div>
         )}

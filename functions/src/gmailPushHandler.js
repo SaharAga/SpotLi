@@ -155,7 +155,19 @@ export async function syncHistoryForConnection({ db, connection, clientSecret, n
   let updated = 0;
   let aiResolved = 0;
   for (const messageId of messageIds) {
-    const msgRes = await gmail.users.messages.get({ userId: 'me', id: messageId, format: 'full' });
+    let msgRes;
+    try {
+      msgRes = await gmail.users.messages.get({ userId: 'me', id: messageId, format: 'full' });
+    } catch (err) {
+      const status = err?.code || err?.status || err?.response?.status;
+      if (status === 404 || status === 410) {
+        console.warn(`[gmailPushHandler] Skipping message ${messageId} (status: ${status})`);
+        continue;
+      }
+      throw err;
+    }
+
+    if (!msgRes?.data) continue;
 
     // A message about a tracking number we already have is a status
     // follow-up (e.g. "out for delivery"), not a new package — update the

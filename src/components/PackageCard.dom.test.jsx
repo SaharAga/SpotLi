@@ -1,10 +1,14 @@
 // @vitest-environment jsdom
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { PackageCard } from './PackageCard';
 import { LanguageProvider } from '../context/LanguageContext';
+
+vi.mock('../utils/clipboard', () => ({
+  copyToClipboard: vi.fn().mockResolvedValue(true)
+}));
 
 function renderWithLanguage(ui, language = 'en') {
   localStorage.setItem('deliveree_lang', language);
@@ -174,6 +178,59 @@ describe('PackageCard Component', () => {
 
     expect(onToggleArchive).not.toHaveBeenCalled();
     expect(onDelete).not.toHaveBeenCalled();
+  });
+
+  it('copies pickup PIN on 1-tap copy button click and calls onShowToast', async () => {
+    const onShowToast = vi.fn();
+    renderWithLanguage(
+      <PackageCard
+        pkg={basePkg}
+        onOpenDetails={vi.fn()}
+        onShowToast={onShowToast}
+      />
+    );
+
+    const copyPinBtn = screen.getByRole('button', { name: /Copy pickup PIN|העתק קוד איסוף/i });
+    fireEvent.click(copyPinBtn);
+
+    await waitFor(() => {
+      expect(onShowToast).toHaveBeenCalledWith(expect.stringMatching(/Pickup code copied!|קוד איסוף הועתק!/), 'success');
+    });
+  });
+
+  it('triggers onOpenNavigation when clicking pickup location row', () => {
+    const onOpenNavigation = vi.fn();
+    renderWithLanguage(
+      <PackageCard
+        pkg={basePkg}
+        onOpenDetails={vi.fn()}
+        onOpenNavigation={onOpenNavigation}
+      />
+    );
+
+    const navRow = screen.getByRole('button', { name: /Dizengoff Center BoxIt #142/i });
+    fireEvent.click(navRow);
+
+    expect(onOpenNavigation).toHaveBeenCalledWith({
+      location: 'Dizengoff Center BoxIt #142',
+      title: 'Wireless Keyboard'
+    });
+  });
+
+  it('renders shelf number badge when shelfNumber is provided', () => {
+    const pkgWithShelf = {
+      ...basePkg,
+      shelfNumber: 'B-42'
+    };
+
+    renderWithLanguage(
+      <PackageCard
+        pkg={pkgWithShelf}
+        onOpenDetails={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Shelf B-42')).toBeInTheDocument();
   });
 });
 

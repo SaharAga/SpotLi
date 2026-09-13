@@ -152,7 +152,7 @@ export function SideNavDrawer({
           {/* Profile / User Account */}
           <button
             onClick={() => handleNavClick(onOpenAuth)}
-            className="w-full flex items-center gap-3 p-3 rounded-2xl bg-blue-950/30 border border-blue-500/20 text-blue-200 text-start cursor-pointer hover:bg-blue-950/50 transition-colors min-h-[48px]"
+            className="w-full flex items-center gap-3 p-3 rounded-2xl bg-blue-500/10 hover:bg-blue-500/15 border border-blue-500/25 text-start cursor-pointer transition-colors min-h-[48px]"
           >
             {user ? (
               <div className="w-6 h-6 rounded-full relative shrink-0 overflow-hidden bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-xs font-bold text-white border border-blue-500/40">
@@ -168,13 +168,13 @@ export function SideNavDrawer({
                 )}
               </div>
             ) : (
-              <User className="w-4 h-4 text-blue-400 shrink-0" />
+              <User className="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0" />
             )}
             <div className="truncate">
-              <span className="font-bold block truncate">
+              <span className="font-bold block truncate text-slate-100">
                 {user ? user.name : (language === 'he' ? 'התחברות לחשבון' : 'Sign In / Account')}
               </span>
-              <span className="text-xs text-slate-400 truncate">
+              <span className="text-xs text-slate-400 truncate block">
                 {user ? user.email : (language === 'he' ? 'סנכרון ענן וגיבוי' : 'Cloud sync & backup')}
               </span>
             </div>

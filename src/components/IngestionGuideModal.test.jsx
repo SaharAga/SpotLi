@@ -14,10 +14,15 @@ vi.mock('firebase/functions', async (importOriginal) => {
   };
 });
 
+const authState = vi.hoisted(() => ({
+  user: { uid: 'testuser123', email: 'test@example.com' },
+  loginWithGoogle: vi.fn().mockResolvedValue({ uid: 'testuser123', email: 'test@example.com' })
+}));
+
 vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({
-    user: { uid: 'testuser123', email: 'test@example.com' },
-    loginWithGoogle: vi.fn().mockResolvedValue({ uid: 'testuser123', email: 'test@example.com' })
+    user: authState.user,
+    loginWithGoogle: authState.loginWithGoogle
   }),
   AuthProvider: ({ children }) => <div>{children}</div>
 }));
@@ -44,6 +49,7 @@ describe('IngestionGuideModal Component Tests', () => {
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
+    authState.user = { uid: 'testuser123', email: 'test@example.com' };
   });
 
   const renderModal = (props = {}) => {
@@ -184,5 +190,22 @@ describe('IngestionGuideModal Component Tests', () => {
     const closeBtn = screen.getByLabelText('Back');
     fireEvent.click(closeBtn);
     expect(handleClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('gates private forwarding address behind sign-in when user is unauthenticated', () => {
+    authState.user = null;
+    const handleOpenAuth = vi.fn();
+    renderModal({ onOpenAuth: handleOpenAuth });
+
+    fireEvent.click(screen.getByText(/Don't use Gmail or Outlook\?|אין לך Gmail או Outlook\?/i));
+
+    // Address is not shown
+    expect(screen.queryByText(/cloudmailin\.net/i)).toBeNull();
+    // Sign-in gate card is shown
+    expect(screen.getByText(/Account required for forwarding|נדרשת התחברות לכתובת ייחודית/i)).toBeTruthy();
+
+    const signInBtn = screen.getByRole('button', { name: /Sign in to generate address|התחברות להפקת כתובת אישית/i });
+    fireEvent.click(signInBtn);
+    expect(handleOpenAuth).toHaveBeenCalledWith({ initialMode: 'signin', reason: 'gmail_sync' });
   });
 });

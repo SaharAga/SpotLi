@@ -81,6 +81,20 @@ describe('SmartImportModal (rendered)', () => {
     expect(await screen.findByText('RS948219483IL')).toBeInTheDocument();
   });
 
+  it('parses Israeli locker SMS and displays pickup point and PIN in preview', async () => {
+    const user = userEvent.setup();
+    renderWithLanguage(
+      <SmartImportModal isOpen onClose={vi.fn()} onParsedResult={vi.fn()} />
+    );
+
+    await user.click(screen.getByRole('button', { name: /boxit \/ cheetah locker example/i }));
+    expect(await screen.findByText('BOX920194')).toBeInTheDocument();
+    expect(screen.getByText('BoxIt')).toBeInTheDocument();
+    expect(screen.getByText('Pickup PIN')).toBeInTheDocument();
+    expect(screen.getByText('8492')).toBeInTheDocument();
+    expect(screen.getByText('Pickup Point')).toBeInTheDocument();
+  });
+
   it('the back control calls onClose', () => {
     // Inner pages lead with a back arrow rather than an X — they are one
     // level into a tab, not a window over it. Two controls render (a leading
