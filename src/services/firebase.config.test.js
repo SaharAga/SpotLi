@@ -39,6 +39,24 @@ describe('cleanConfigValue', () => {
   });
 });
 
+describe('cleanConfigValue on the App Check site key', () => {
+  it('strips whitespace a pasted reCAPTCHA key carries', () => {
+    // Same failure mode as the authDomain CRLF above: the key is pasted into a
+    // GitHub repository variable, and a trailing newline survives the build.
+    // ReCaptchaEnterpriseProvider does not reject it synchronously — reCAPTCHA
+    // just never returns a token, so App Check fails invisibly.
+    expect(cleanConfigValue('6Labcdefghijklmnopqrstuvwxyz012345678\r\n'))
+      .toBe('6Labcdefghijklmnopqrstuvwxyz012345678');
+  });
+
+  it('reads a whitespace-only key as unset rather than as configured', () => {
+    // The gate is `app && recaptchaSiteKey`. Without cleaning, "  " is truthy,
+    // so App Check would initialize with a blank key and the "not configured"
+    // warning that explains the problem would never print.
+    expect(Boolean(cleanConfigValue('  \n'))).toBe(false);
+  });
+});
+
 describe('resolveAuthDomain', () => {
   const configuredDomain = 'deliveree-app-2a938.firebaseapp.com';
   const projectId = 'deliveree-app-2a938';
