@@ -399,7 +399,11 @@ const STORE_SIGNATURES = [
   { store: 'Shufersal', pattern: /(shufersal|שופרסל)/i },
   { store: 'Terminal X', pattern: /terminal\s*x/i },
   { store: 'Wolt', pattern: /wolt(\.com)?/i },
-  { store: 'Bug', pattern: /bug(\.co\.il)?/i },
+  // Anchored on the domain or a word boundary: "bug" is three letters of
+  // ordinary English, and unanchored it matched "debug", "bugfix" and any
+  // footer that happened to contain the word — filing a Shopify store's
+  // shipping mail under an Israeli electronics chain.
+  { store: 'Bug', pattern: /\bbug\.co\.il\b|\bbug\b/i },
   { store: 'Castro', pattern: /(castro|קסטרו)/i },
   { store: 'Renuar', pattern: /(renuar|רנואר)/i },
   { store: 'Foot Locker', pattern: /foot\s*locker/i }
@@ -559,12 +563,75 @@ export function isFalsePositive(candidate, context = '') {
  * @param {string} text
  * @returns {string|null}
  */
-export function detectStore(from = '', text = '') {
-  const combined = `${from} ${text}`;
+function matchStoreSignature(value = '') {
+  if (!value) return null;
   for (const { store, pattern } of STORE_SIGNATURES) {
-    if (pattern.test(combined)) return store;
+    if (pattern.test(value)) return store;
   }
   return null;
+}
+
+export function detectStore(from = '', text = '') {
+  // The sender is evidence; the body is a guess. Scanning both at once, as
+  // this did, let any word in a footer outrank the address the mail actually
+  // came from — a "bug" in SEESTARZ's markup made the package a BUG order.
+  return matchStoreSignature(from) || matchStoreSignature(text);
+}
+
+/**
+ * The store name to show the user, which is a different question from
+ * `detectStore`'s.
+ *
+ * `detectStore` answers "is this one of the merchants we recognise", and
+ * callers use that as a gate — extractOrderStatusDetails will not invent a
+ * card for a message it cannot attribute. Widening it to always return
+ * something removes that gate and turns every shipping-ish email into a card.
+ *
+ * This answers the softer question "what should the card say". An unrecognised
+ * sender still names itself: SEESTARZ is a store the signature list will never
+ * contain, and its own display name beats "Online Order".
+ *
+ * @param {string} from
+ * @param {string} text
+ * @returns {string} '' when there is nothing worth showing
+ */
+export function resolveStoreName(from = '', text = '') {
+  // Strictly in order of how much the signal is worth. A recognised sender is
+  // best; the sender's own name is next and beats anything the body claims;
+  // scanning the body is the last resort, and the only step that can be
+  // fooled by a word in a footer.
+  return matchStoreSignature(from)
+    || senderDisplayName(from)
+    || matchStoreSignature(text)
+    || '';
+}
+
+/**
+ * The human-facing name of an email sender, or '' when there isn't one worth
+ * showing. Prefers the display name, falls back to the mailbox domain with
+ * its public suffix and any no-reply-style subdomain removed.
+ *
+ * @param {string} from A From header, e.g. 'SEESTARZ <noreply@seestarz.com>'
+ * @returns {string}
+ */
+export function senderDisplayName(from = '') {
+  if (!from || typeof from !== 'string') return '';
+
+  const display = from.match(/^\s*"?([^"<]+?)"?\s*</);
+  if (display && display[1]) {
+    const name = display[1].trim();
+    // A display name that is just the address again tells the user nothing.
+    if (name && !name.includes('@') && name.length <= 60) return name;
+  }
+
+  const address = (from.match(/[\w.+-]+@([\w.-]+)/) || [])[1];
+  if (!address) return '';
+
+  const host = address.toLowerCase()
+    .replace(/^(?:mail|email|no-?reply|noreply|info|notifications?|shop|store|news|updates?)\./, '');
+  const label = host.split('.')[0];
+  if (!label || label.length < 2 || label.length > 40) return '';
+  return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 /**
@@ -690,8 +757,13 @@ export function shouldAdvanceStatus(currentStatus = 'ordered', newStatus = 'orde
 export function extractOrderStatusDetails(subject = '', body = '', from = '') {
   const cleanBody = sanitizeEmailHtml(body);
   const combinedText = `${subject} ${cleanBody} ${from}`.slice(0, 25000);
+  // Gate on the strict answer — an email we cannot attribute to a recognised
+  // merchant must not conjure a card — but show the resolved one, so a
+  // recognised-by-body-only match does not put a footer's stray word on the
+  // card as the shop's name.
   const store = detectStore(from, combinedText);
   if (!store) return null;
+  const displayStore = resolveStoreName(from, combinedText) || store;
 
   const status = matchDeliveryStatus(subject, cleanBody);
   if (!status) return null;
@@ -699,11 +771,63 @@ export function extractOrderStatusDetails(subject = '', body = '', from = '') {
   const orderNumber = extractOrderNumberFromText(combinedText);
 
   return {
-    store,
+    store: displayStore,
     status,
-    title: generateCleanTitle(subject, store, 'other'),
+    title: generateCleanTitle(subject, displayStore, 'other'),
     ...(orderNumber ? { orderNumber } : {})
   };
+}
+
+/**
+ * The name of the thing being shipped, taken from the email's own list of
+ * contents.
+ *
+ * Shipping mail routinely states this outright — "Items in this shipment /
+ * Rosewater Cream Blouse × 1" — while the subject carries only the order
+ * number. generateCleanTitle sees only the subject, and shreds it: "Shipping
+ * update for order 469417" came out as "update for", which is what the user
+ * ends up reading on the card.
+ *
+ * Takes the first item and no more. A multi-item shipment gets the first
+ * product rather than a truncated concatenation of all of them, which reads
+ * better on a card and is what the package is most likely remembered as.
+ *
+ * @param {string} body Plain-text email body
+ * @returns {string} '' when the email lists no contents
+ */
+export function extractShippedItemName(body = '') {
+  if (!body || typeof body !== 'string') return '';
+
+  const heading = /(?:items?\s+(?:in\s+)?(?:this\s+)?(?:shipment|order|package)|items?\s+shipped|what'?s\s+in\s+(?:this\s+)?(?:box|shipment)|הפריטים?\s+במשלוח|פריטים?\s+שנשלחו)/i;
+  const match = heading.exec(body);
+  if (!match) return '';
+
+  const after = body.slice(match.index + match[0].length, match.index + match[0].length + 400);
+
+  // Newlines cannot be relied on: sanitizeEmailHtml collapses the message to a
+  // single line, so the same email arrives here as separate lines from the
+  // plain-text part and as one run of text from the HTML one. The quantity
+  // marker is the delimiter that survives both — "Rosewater Cream Blouse × 1"
+  // ends the name whether or not a newline follows it.
+  const candidates = [];
+  for (const line of after.split(/\r?\n/)) {
+    const quantityCut = line.match(/^(.{3,80}?)\s*[×xX*]\s*\d+/);
+    if (quantityCut) candidates.push(quantityCut[1]);
+    candidates.push(line);
+  }
+
+  for (const raw of candidates) {
+    const name = String(raw || '').replace(/\s*[×xX*]\s*\d+\s*$/, '').trim();
+
+    // A size, colour or SKU standing alone is not the product name.
+    if (name.length < 3 || name.length > 80) continue;
+    if (!/[A-Za-z\u0590-\u05FF]/.test(name)) continue;
+    if (/^(?:size|color|colour|qty|quantity|sku|מידה|צבע|כמות)\b/i.test(name)) continue;
+
+    return name;
+  }
+
+  return '';
 }
 
 /**
@@ -998,7 +1122,7 @@ export function extractTrackingDetails(subject = '', body = '', from = '', optio
   const cleanBody = sanitizeEmailHtml(body);
   const combinedText = `${subject} ${cleanBody} ${from}`.slice(0, 25000);
   const textOrderNumber = extractOrderNumberFromText(combinedText);
-  const store = detectStore(from, combinedText);
+  const store = resolveStoreName(from, combinedText);
   const lockerPin = extractLockerPin(combinedText);
   const shelfNumber = extractShelfNumber(combinedText);
   const rawPickupLocation = extractPickupLocation(combinedText);
@@ -1244,7 +1368,14 @@ export function extractTrackingDetails(subject = '', body = '', from = '', optio
   }
 
   const effectiveStore = store || schemaStore;
-  const title = schemaTitle || generateCleanTitle(subject, effectiveStore, carrier);
+  // Order of preference: what the email's structured data says it is, then
+  // what its own contents list says, then whatever can be salvaged from the
+  // subject line. The subject is last because it usually names the order, not
+  // the thing — "Shipping update for order 469417".
+  const itemName = extractShippedItemName(cleanBody);
+  const title = schemaTitle
+    || (itemName ? (effectiveStore ? `${effectiveStore} - ${itemName}` : itemName) : '')
+    || generateCleanTitle(subject, effectiveStore, carrier);
   const latencyMs = Date.now() - startTime;
 
   const allPackages = [];

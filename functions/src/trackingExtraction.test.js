@@ -14,7 +14,9 @@ import {
   extractOpeningHours,
   extractPickupPhone,
   extractRedirectInfo,
-  extractAllTrackingDetails
+  extractAllTrackingDetails,
+  resolveStoreName,
+  extractShippedItemName
 } from './trackingExtraction.js';
 
 describe('shouldAdvanceStatus', () => {
@@ -144,7 +146,67 @@ describe('detectStore', () => {
   });
 });
 
+describe('resolveStoreName', () => {
+  it('prefers the sender over a brand name mentioned in the body', () => {
+    // The real bug: a "report a bug" footer link made every shop look like Bug.
+    const body = 'Your order shipped. Questions? report a bug at bug.co.il';
+    expect(resolveStoreName('SEESTARZ <noreply@seestarz.com>', body)).toBe('SEESTARZ');
+  });
+
+  it('falls back to the sender display name, then the mailbox domain', () => {
+    expect(resolveStoreName('Kaspit Store <no-reply@kaspit-shop.com>', '')).toBe('Kaspit Store');
+    expect(resolveStoreName('no-reply@kaspit-shop.com', '')).toBe('Kaspit-shop');
+  });
+
+  it('still lets a known store signature in the sender win', () => {
+    expect(resolveStoreName('auto-confirm@amazon.com', '')).toBe('Amazon');
+  });
+});
+
+describe('extractShippedItemName', () => {
+  it('takes the item name from the shipment list', () => {
+    const body = 'Items in this shipment\nRosewater Cream Blouse \u00d7 1\nXL';
+    expect(extractShippedItemName(body)).toBe('Rosewater Cream Blouse');
+  });
+
+  it('skips a size or colour line standing on its own', () => {
+    const body = 'Items in this shipment\nXL\nRosewater Cream Blouse \u00d7 1';
+    expect(extractShippedItemName(body)).toBe('Rosewater Cream Blouse');
+  });
+
+  it('finds the name when the HTML body has been collapsed to one line', () => {
+    const body = 'Items in this shipment Rosewater Cream Blouse \u00d7 1 XL report a bug';
+    expect(extractShippedItemName(body)).toBe('Rosewater Cream Blouse');
+  });
+
+  it('returns empty when there is no item list', () => {
+    expect(extractShippedItemName('Hello, your order shipped.')).toBe('');
+  });
+});
+
 describe('extractTrackingDetails', () => {
+  it('titles a shipping email with the sender shop and the shipped item', () => {
+    // Regression: a "report a bug" footer link made the store "Bug" and the
+    // subject-derived title "Bug - update for".
+    const body = [
+      'Your order is on its way!',
+      'Items in this shipment',
+      'Rosewater Cream Blouse \u00d7 1',
+      'XL',
+      'Tracking number: 48094292',
+      'Track at https://mytapuz.co.il/tracking?n=48094292',
+      'report a bug'
+    ].join('\n');
+    const result = extractTrackingDetails(
+      'Shipping update for order 469417',
+      body,
+      'SEESTARZ <noreply@seestarz.com>'
+    );
+    expect(result.store).toBe('SEESTARZ');
+    expect(result.title).toBe('SEESTARZ - Rosewater Cream Blouse');
+    expect(result.trackingNumber).toBe('48094292');
+  });
+
   it('extracts Amazon order with TBA tracking and product name in title', () => {
     const subject = 'Your Amazon.com order of "Sony WH-1000XM5 Headphones" has shipped!';
     const from = 'shipment-tracking@amazon.com';
