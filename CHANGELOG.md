@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.34.0] - 2026-09-14
+
+### Added
+- A package filed under the wrong carrier now gets corrected by the tracking
+network instead of keeping the guess forever. The app already asks 17TRACK on
+every refresh, including the one fired automatically when a package is added —
+but its identification was discarded twice over: the Cloud Function echoed back
+whichever carrier id the client had sent rather than the one detected, and the
+client never wrote a carrier into the refreshed package at all. Both now carry
+it. A carrier only inferred from a tracking number's shape is replaced by what
+17TRACK reports; a carrier the number names itself (RS…IL, 1Z…) or one the user
+chose is left alone. When 17TRACK names a courier absent from our catalogue —
+Tapuz, and most of the Israeli last mile — the name is kept and shown while the
+package stays manually tracked, rather than inventing an id for it.
+
+### Fixed
+- Smart Import no longer files a delivered Hebrew SMS as still in transit, and no
+longer names a carrier it only guessed. A real H&M Israel dispatch message
+("נמסרה חבילה שמספרה …", delivered by Tapuz) came in as "in transit" from
+"DHL Express": every Hebrew delivered-phrase the parser knew was subject-first
+("החבילה נמסרה") while this courier writes verb-first, and the bare ten-digit
+number matched DHL and Aramex equally, with the first of the two winning. An
+all-digit number that several carriers claim now resolves to "Other" rather
+than to whichever matched first — a letter-bearing id such as Yanwen's UB…YP or
+Cainiao's LP…CN still identifies its carrier as before.
+
 ## [0.33.1] - 2026-09-14
 
 ### Fixed
