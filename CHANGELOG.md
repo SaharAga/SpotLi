@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.34.2] - 2026-09-14
+
+### Fixed
+- Smart Import now reads a Hebrew shipment number written without the word
+"מספר". A real courier SMS opening "משלוח 19611199 מI-HERB" parsed to no
+tracking number at all and had to be entered by hand: every labelled Hebrew
+pattern required מספר after the noun, and a bare eight-digit run matches no
+carrier format, so the generic token scan discarded it as noise. Hebrew drops
+מספר as readily as English drops "number" — the noun running straight into the
+value is now accepted, exactly as "order 8471293" already was. The no-label
+form takes six characters minimum and no intervening words, so a street number
+or a shekel amount beside "משלוח" is not mistaken for a shipment id.
+
+- A package created from an email now shows the shop that actually sent it. Store
+detection concatenated the sender and the whole message body and took the first
+signature that matched anywhere, so a stray word in a footer outranked the
+address the mail came from — a SEESTARZ shipping notice containing the word
+"bug" was filed as an order from BUG, the Israeli electronics chain, and the
+"bug" signature had no word boundary at all so "debug" matched it too. The
+sender is now consulted first, and a sender the signature list has never heard
+of contributes its own display name rather than losing to a body scan.
+
+- A package created from a shipping email is now named after the item that was
+shipped. The title came from the subject line, so "Shipping update for order
+469417" became the unhelpful "update for"; when the email lists what is in the
+shipment, that item name is used instead. The list is read both as separate
+lines and as the single collapsed run of text an HTML body arrives as, and a
+lone size or colour line is skipped rather than mistaken for the product.
+
 ## [0.34.1] - 2026-09-14
 
 ### Fixed
