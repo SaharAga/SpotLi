@@ -83,6 +83,7 @@ import { FirstTimeEmptyState } from './components/FirstTimeEmptyState';
 import { FeatureNudgeBanner } from './components/FeatureNudgeBanner';
 import { useFeatureNudges } from './hooks/useFeatureNudges';
 import { deliveryService } from './services/deliveryService';
+import { syncQueueService } from './services/syncQueueService';
 import { useLanguage, LanguageProvider } from './context/LanguageContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { useAuth, AuthProvider } from './context/AuthContext';
@@ -442,6 +443,17 @@ export function DashboardContent() {
     if (loading || appActiveRecordedRef.current) return;
     appActiveRecordedRef.current = true;
     recordFeatureUse(FEATURE_IDS.APP_ACTIVE, { uid: user?.id || null });
+  }, [loading, user?.id]);
+
+  // Drain anything the offline queue is still holding. A mutation that failed
+  // while online had nothing to retry it — no `online` event fires when the
+  // page never went offline — so it sat in localStorage indefinitely and the
+  // user's devices quietly disagreed. Gated on auth having settled, because
+  // every cloud write in a replay is scoped by userId and the Firestore rules
+  // check it: replaying before the session is restored would only burn retries.
+  useEffect(() => {
+    if (loading || !user?.id) return;
+    syncQueueService.resumeIfPending('startup');
   }, [loading, user?.id]);
 
   // Handle PWA App Shortcuts, Web Share Target & Query Parameters on mount

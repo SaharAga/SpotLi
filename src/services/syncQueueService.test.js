@@ -335,6 +335,62 @@ describe('SyncQueueService Unit Tests', () => {
       expect(syncQueue.getDeadLetterQueue().length).toBe(0);
     });
   });
+  describe('resumeIfPending (SYNC-07)', () => {
+    it('replays a mutation that failed while online, which nothing else would retry', async () => {
+      // The real bug: three mutations sat pending for five hours on a device
+      // that never went offline. A failure while online bumps retryCount and
+      // stops there — no `online` event fires (the page never left the
+      // network), and OfflineBanner renders null while online, so its manual
+      // sync button is unreachable. Nothing retried them.
+      const failing = vi.spyOn(cloudAdapter, 'upsertPackageRemote')
+        .mockRejectedValueOnce(new Error('Firestore unavailable'));
+      syncQueue.isOnline = true;
+      syncQueue.enqueue(MUTATION_TYPES.ADD, { id: 'pkg-stuck', title: 'Stuck' }, 'user-1');
+      await vi.waitFor(() => {
+        expect(failing).toHaveBeenCalled();
+        expect(syncQueue.isReplaying).toBe(false);
+      });
+      expect(syncQueue.getQueue().length).toBe(1);
+
+      failing.mockResolvedValue(undefined);
+      expect(syncQueue.resumeIfPending('startup')).toBe(true);
+      await vi.waitFor(() => expect(syncQueue.getQueue().length).toBe(0));
+
+      failing.mockRestore();
+    });
+
+    it('does nothing when the queue is empty, offline, or already replaying', () => {
+      syncQueue.isOnline = true;
+      expect(syncQueue.resumeIfPending()).toBe(false);
+
+      syncQueue.isOnline = false;
+      syncQueue.enqueue(MUTATION_TYPES.ADD, { id: 'pkg-offline' }, 'user-1');
+      expect(syncQueue.resumeIfPending()).toBe(false);
+
+      syncQueue.isOnline = true;
+      syncQueue.isReplaying = true;
+      expect(syncQueue.resumeIfPending()).toBe(false);
+      syncQueue.isReplaying = false;
+    });
+
+    it('leaves the retry budget intact, so a doomed mutation still dead-letters', async () => {
+      const failing = vi.spyOn(cloudAdapter, 'upsertPackageRemote')
+        .mockRejectedValue(new Error('Invalid payload'));
+      syncQueue.isOnline = false;
+      syncQueue.enqueue(MUTATION_TYPES.ADD, { id: 'pkg-doomed' }, 'user-1');
+      syncQueue.isOnline = true;
+
+      for (let i = 0; i < MAX_RETRY_COUNT; i++) {
+        syncQueue.resumeIfPending('foreground');
+        await vi.waitFor(() => expect(syncQueue.isReplaying).toBe(false));
+      }
+
+      expect(syncQueue.getQueue().length).toBe(0);
+      expect(syncQueue.getDeadLetterQueue().length).toBe(1);
+      failing.mockRestore();
+    });
+  });
+
   describe('replay concurrency and ordering', () => {
     afterEach(() => {
       vi.restoreAllMocks();
