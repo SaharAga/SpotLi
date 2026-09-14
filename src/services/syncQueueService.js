@@ -66,6 +66,44 @@ export class SyncQueueService {
       window.addEventListener('online', () => this.handleNetworkChange(true));
       window.addEventListener('offline', () => this.handleNetworkChange(false));
     }
+
+    // Coming back to the app is the other moment a stalled queue can move: a
+    // phone that was backgrounded for hours never fires `online`, because it
+    // never went offline as far as the page is concerned.
+    if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) this.resumeIfPending('foreground');
+      });
+    }
+  }
+
+  /**
+   * Replays whatever is already waiting, if it can.
+   *
+   * Until this existed, replayQueue() was only reachable from an offline→online
+   * transition or a fresh enqueue. A mutation that fails while *online* — a
+   * Firestore hiccup, an expired token, a rules rejection — takes its retry
+   * count up by one and then has nothing left to retry it: the browser fires no
+   * `online` event, because the page never went offline, and OfflineBanner
+   * renders null whenever online, so its manual sync button cannot be reached
+   * either. The queue stops there, silently, with the user's changes on one
+   * device and not the other.
+   *
+   * Call it on startup once auth has settled (a replay needs a signed-in user:
+   * every cloud write is scoped by userId and the rules check it) and whenever
+   * the app returns to the foreground. Both are cheap — it no-ops unless
+   * something is actually waiting.
+   *
+   * @param {string} [reason] short label for the log line
+   * @returns {boolean} whether a replay was started
+   */
+  resumeIfPending(reason = 'resume') {
+    if (!this.isOnline || this.isReplaying) return false;
+    const pending = this.getQueue().length;
+    if (pending === 0) return false;
+    console.info(`[SyncQueueService] Resuming ${pending} pending mutation(s) (${reason}).`);
+    void this.replayQueue();
+    return true;
   }
 
   handleNetworkChange(onlineStatus) {
