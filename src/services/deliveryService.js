@@ -475,8 +475,24 @@ export const deliveryService = {
     if (res.localTrackingNumber) updatedAliases.add(res.localTrackingNumber);
     updatedAliases.delete(pkg.trackingNumber);
 
+    // Let the network correct a carrier we only inferred from the number's
+    // shape. Applied solely when the package is still filed under 'other':
+    // an explicit choice by the user, or an id that names its own carrier
+    // (RS…IL, 1Z…), outranks 17TRACK's guess and is left alone. When 17TRACK
+    // names a courier we have no id for — Tapuz, and most of the Israeli last
+    // mile — the name is kept so the card can show it, while the id stays
+    // 'other' and the package remains manually tracked.
+    const carrierFromNetwork = pkg.carrier === 'other' && res.detectedCarrier
+      ? res.detectedCarrier
+      : pkg.carrier;
+    const carrierNameFromNetwork = pkg.carrier === 'other' && !res.detectedCarrier
+      ? (res.detectedCarrierName || pkg.carrierName)
+      : pkg.carrierName;
+
     const updated = {
       ...pkg,
+      carrier: carrierFromNetwork,
+      carrierName: carrierNameFromNetwork,
       status: targetStatus,
       checkpoints: mergedCheckpoints,
       expectedDeliveryDate: res.expectedDeliveryDate || pkg.expectedDeliveryDate,

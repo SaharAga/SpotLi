@@ -112,6 +112,81 @@ describe('carrierProxy', () => {
       vi.unstubAllGlobals();
     });
 
+    /**
+     * Sending a number with no carrier code is how 17TRACK is asked to work
+     * out the carrier itself — the only route open to the twelve Israeli
+     * couriers absent from TRACK17_CARRIER_MAP. Its answer used to be thrown
+     * away here: the response echoed back `carrier: carrierId`, whatever the
+     * client had guessed going in, so a package stayed filed under a carrier
+     * the number's shape had merely suggested.
+     */
+    it('reports the carrier 17TRACK identified, mapped to our id when we have one', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          code: 0,
+          data: {
+            accepted: [
+              {
+                number: '1234567890',
+                track_info: {
+                  latest_status: { status: 'InTransit' },
+                  tracking: {
+                    providers: [
+                      { provider: { key: 100003, name: 'FedEx' }, events: [] }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        })
+      });
+      vi.stubGlobal('fetch', mockFetch);
+
+      const res = await query17TrackApi('1234567890', 'other', 'valid_test_key');
+      expect(res.detectedCarrier).toBe('fedex');
+      expect(res.detectedCarrierName).toBe('FedEx');
+      // `carrier` still reports what was asked about, so the two claims stay
+      // distinguishable: one is the client's belief, the other the network's.
+      expect(res.carrier).toBe('other');
+
+      vi.unstubAllGlobals();
+    });
+
+    it('keeps the reported name when the detected carrier has no id on our side', async () => {
+      // Tapuz and most of the Israeli last mile are not in the catalogue map.
+      // A name with no id is still worth surfacing; inventing an id is not.
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          code: 0,
+          data: {
+            accepted: [
+              {
+                number: '7989423526',
+                track_info: {
+                  latest_status: { status: 'Delivered' },
+                  tracking: {
+                    providers: [
+                      { provider: { key: 100999, name: 'Tapuz Delivery' }, events: [] }
+                    ]
+                  }
+                }
+              }
+            ]
+          }
+        })
+      });
+      vi.stubGlobal('fetch', mockFetch);
+
+      const res = await query17TrackApi('7989423526', 'other', 'valid_test_key');
+      expect(res.detectedCarrier).toBeNull();
+      expect(res.detectedCarrierName).toBe('Tapuz Delivery');
+
+      vi.unstubAllGlobals();
+    });
+
     it('automatically registers and re-queries if tracking number was not registered (-18019902)', async () => {
       let callCount = 0;
       const mockFetch = vi.fn().mockImplementation((url) => {
