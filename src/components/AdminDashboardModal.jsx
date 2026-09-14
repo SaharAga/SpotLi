@@ -102,13 +102,29 @@ export function AdminDashboardModal({
   const [syncQueueHealth, setSyncQueueHealth] = useState(() =>
     computeSyncQueueHealth(syncQueueService.getQueue(), syncQueueService.getDeadLetterQueue())
   );
+  // The dead-lettered mutations themselves, not just the count. Each one is a
+  // change the user made that never reached the cloud: retryDeadLetterMutation
+  // existed but nothing called it, so they were unrecoverable and invisible.
+  const [deadLetters, setDeadLetters] = useState(() => syncQueueService.getDeadLetterQueue());
   useEffect(() => {
-    const refresh = () =>
+    const refresh = () => {
       setSyncQueueHealth(computeSyncQueueHealth(syncQueueService.getQueue(), syncQueueService.getDeadLetterQueue()));
+      setDeadLetters(syncQueueService.getDeadLetterQueue());
+    };
     const unsubscribe = syncQueueService.subscribe(refresh);
     refresh();
     return unsubscribe;
   }, []);
+
+  const handleRetryDeadLetter = useCallback((mutationId) => {
+    const requeued = syncQueueService.retryDeadLetterMutation(mutationId);
+    onShowToast?.(
+      requeued
+        ? (language === 'he' ? 'השינוי הוחזר לתור הסנכרון' : 'Change re-queued for sync')
+        : (language === 'he' ? 'השינוי כבר לא בתור' : 'That change is no longer queued'),
+      requeued ? 'success' : 'info'
+    );
+  }, [language, onShowToast]);
   
   // App Check, read from the client that actually runs it (see firebase.js).
   // Re-read on every open: the startup token request may still have been in
@@ -1038,6 +1054,46 @@ export function AdminDashboardModal({
                     <div className="text-lg font-bold text-rose-400">{syncQueueHealth.deadLetterCount}</div>
                   </div>
                 </div>
+
+                {/* Each of these is a change the user made that never reached
+                    the cloud. Without a way back into the queue they are
+                    simply lost, silently. */}
+                {deadLetters.length > 0 && (
+                  <div className="space-y-2 pt-1">
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      {language === 'he'
+                        ? 'שינויים שלא הגיעו לענן אחרי כל הניסיונות. אפשר להחזיר כל אחד לתור.'
+                        : 'Changes that never reached the cloud after every retry. Each can be put back in the queue.'}
+                    </p>
+                    {deadLetters.map((entry) => (
+                      <div
+                        key={entry.id}
+                        className="p-3 rounded-xl bg-slate-900/80 border border-rose-500/20 space-y-2"
+                      >
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="px-2 py-0.5 rounded-lg bg-rose-500/10 text-rose-300 text-[11px] font-bold">
+                            {entry.type}
+                          </span>
+                          <span className="text-xs text-slate-300 font-medium break-all">
+                            {entry.payload?.title
+                              || entry.payload?.trackingNumber
+                              || entry.payload?.id
+                              || entry.payload?.packageId
+                              || (language === 'he' ? 'ללא שם' : 'Untitled')}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 break-words font-mono">{entry.lastError}</p>
+                        <button
+                          onClick={() => handleRetryDeadLetter(entry.id)}
+                          className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 min-h-[48px]"
+                        >
+                          <RefreshCw className="w-4 h-4 text-blue-400" />
+                          <span>{language === 'he' ? 'נסה שוב' : 'Retry'}</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Export Tools */}

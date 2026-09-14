@@ -5,6 +5,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { AdminDashboardModal, describeAppCheck } from './AdminDashboardModal.jsx';
 import { LanguageProvider } from '../context/LanguageContext';
+import { syncQueueService, DEAD_LETTER_STORAGE_KEY } from '../services/syncQueueService';
 import { AuthProvider } from '../context/AuthContext';
 
 vi.mock('../services/firebase', () => ({
@@ -116,6 +117,38 @@ describe('AdminDashboardModal Component Tests', () => {
     // The mocked client reports no site key in this build.
     expect(await screen.findByText(/Not configured|לא מוגדר/i)).toBeTruthy();
     expect(screen.getByText(/not set in this build/i)).toBeTruthy();
+  });
+
+  it('lists dead-lettered changes and puts one back in the queue on Retry', () => {
+    // Each of these is a change the user made that never reached the cloud.
+    // retryDeadLetterMutation existed but nothing called it, so they were
+    // unrecoverable — and invisible.
+    localStorage.setItem(DEAD_LETTER_STORAGE_KEY, JSON.stringify([
+      {
+        id: 'mut-dead-1',
+        type: 'ADD',
+        payload: { id: 'pkg-1', title: 'Rosewater Cream Blouse' },
+        userId: 'user-1',
+        retryCount: 5,
+        failedAt: '2026-09-14T10:00:00Z',
+        lastError: 'Missing or insufficient permissions.'
+      }
+    ]));
+    const onShowToast = vi.fn();
+    renderDashboard({ onShowToast });
+
+    fireEvent.click(screen.getByText(/Export & System|ייצוא ומערכת/i));
+    expect(screen.getByText('Rosewater Cream Blouse')).toBeTruthy();
+    expect(screen.getByText(/Missing or insufficient permissions/i)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: /retry|נסה שוב/i }));
+
+    expect(syncQueueService.getDeadLetterQueue()).toHaveLength(0);
+    expect(syncQueueService.getQueue().some((m) => m.id === 'mut-dead-1')).toBe(true);
+    expect(onShowToast).toHaveBeenCalled();
+
+    syncQueueService.clearQueue();
+    syncQueueService.clearDeadLetterQueue();
   });
 
   it('calls onClose when close button is clicked', () => {
