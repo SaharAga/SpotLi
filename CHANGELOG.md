@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.33.1] - 2026-09-14
+
+### Fixed
+- App Check now initializes in the production build. `firebase.js` only calls
+`initializeAppCheck` when `VITE_RECAPTCHA_V3_SITE_KEY` is set at build time, and
+that repository variable had never been added — so every request for the first
+seven days of monitoring arrived with no App Check token at all (0 verified out
+of 4.4k, 100% "outdated client"). Nothing in the client changed; the key is now
+configured, so the shipped bundle starts presenting tokens and the App Check
+metrics become meaningful. Enforcement stays off until verified traffic shows up
+there, per the rollout sequence in README — turning it on against tokenless
+traffic would have rejected every request, including real users'.
+
 ## [0.33.0] - 2026-09-13
 
 ### Added
