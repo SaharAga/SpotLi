@@ -1,1 +1,1 @@
-export const LEGAL_VERSION = '2026-09-10.1';
+export const LEGAL_VERSION = '2026-09-14.1';

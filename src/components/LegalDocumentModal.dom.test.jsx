@@ -40,7 +40,18 @@ describe('LegalDocumentModal (rendered)', () => {
 
     const heading = document.getElementById('legal-doc-title');
     expect(heading).toHaveTextContent('Privacy Policy');
-    expect(screen.getByText(/personal data/i)).toBeInTheDocument();
+    // getAllByText, not getByText: "personal data" appears in more than one
+    // section, so a singular query here was asserting the phrase is rare
+    // rather than that the policy rendered — and broke the moment the
+    // retention section was reworded.
+    expect(screen.getAllByText(/personal data/i).length).toBeGreaterThan(0);
+
+    // The carve-out the account-deletion promise depends on. Feedback and
+    // crash reports are collected with no account link, so "delete my account"
+    // cannot reach them; the policy has to say that plainly.
+    expect(
+      screen.getByText(/cannot be located or deleted per user/i)
+    ).toBeInTheDocument();
   });
 
   it('renders Hebrew RTL content when language is "he"', () => {

@@ -270,7 +270,10 @@ export function AccountModal({
       setIsDeleting(true);
       await deleteUserAccountAndData(user.id);
       if (onShowToast) {
-        onShowToast(language === 'he' ? 'החשבון וכל המידע נמחקו לצמיתות' : 'Account and all data wiped permanently', 'info');
+        // Not "all data": anonymous feedback and crash reports carry no link
+        // to an account and survive deletion by design. The Privacy Policy
+        // says so; this toast used to contradict it.
+        onShowToast(language === 'he' ? 'החשבון ונתוני החבילות נמחקו לצמיתות' : 'Account and package data wiped permanently', 'info');
       }
       onClose();
     } catch {
@@ -513,7 +516,7 @@ export function AccountModal({
           className="w-full py-3 px-4 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:opacity-40 text-white font-bold text-xs transition-ui flex items-center justify-center gap-2 cursor-pointer min-h-[48px]"
         >
           <Trash2 className="w-4 h-4" />
-          <span>{isDeleting ? (language === 'he' ? 'מוחק נתונים...' : 'Wiping all data...') : (language === 'he' ? 'מחק את החשבון וכל הנתונים לצמיתות' : 'Delete Account & Wipe All Data')}</span>
+          <span>{isDeleting ? (language === 'he' ? 'מוחק נתונים...' : 'Wiping data...') : (language === 'he' ? 'מחק את החשבון ואת נתוני החבילות' : 'Delete Account & Package Data')}</span>
         </button>
       </div>
     </div>

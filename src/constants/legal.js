@@ -177,7 +177,7 @@ export const TERMS_CONTENT = {
 export const PRIVACY_CONTENT = {
   en: {
     title: 'Privacy Policy',
-    updated: 'Last updated: September 5, 2026',
+    updated: 'Last updated: September 14, 2026',
     sections: [
       {
         heading: 'Data Controller & Contact',
@@ -229,7 +229,7 @@ export const PRIVACY_CONTENT = {
       },
       {
         heading: 'Data Retention & Account Deletion',
-        body: 'Your account profile and package records are retained until you delete your account. You can permanently delete your account and all associated package data at any time via Settings → Danger Zone. Upon account deletion, all user data, push tokens, Gmail connection tokens, and stored package documents are permanently purged. Feedback submissions are anonymous and unlinked to user accounts, and therefore cannot be deleted on an individual account basis.'
+        body: 'Your account profile and package records are retained until you delete your account. You can permanently delete your account and all associated package data at any time via Settings → Danger Zone. Upon account deletion, your profile, package records, push tokens, Gmail connection tokens, and stored package documents are permanently purged. Two categories are deliberately collected without any link to your account and therefore cannot be located or deleted per user: feedback you submit, and anonymous crash reports generated automatically when the application encounters an error. Neither contains your name, email address or account identifier. Crash reports are additionally stripped of personal data before they are stored.'
       },
       {
         heading: 'Your Rights',
@@ -251,7 +251,7 @@ export const PRIVACY_CONTENT = {
   },
   he: {
     title: 'מדיניות פרטיות',
-    updated: 'עודכן לאחרונה: 5 בספטמבר 2026',
+    updated: 'עודכן לאחרונה: 14 בספטמבר 2026',
     sections: [
       {
         heading: 'בעל השליטה במידע ויצירת קשר',
@@ -303,7 +303,7 @@ export const PRIVACY_CONTENT = {
       },
       {
         heading: 'שמירת מידע ומחיקת חשבון',
-        body: 'פרטי החשבון והמשלוחים נשמרים עד למחיקת החשבון על ידך. באפשרותך למחוק לצמיתות את החשבון ואת כל המידע המקושר אליו בכל עת דרך הגדרות ← אזור סכנה ← מחיקת חשבון. עם המחיקה, כל נתוני המשתמש, מזהי ההתראות, טוקני ה-Gmail ומסמכי החבילות נמחקים לצמיתות. משוב שנשלח הוא אנונימי וללא קישור לחשבון, ולכן אינו ניתן לאיתור או מחיקה לפי משתמש.'
+        body: 'פרטי החשבון והמשלוחים נשמרים עד למחיקת החשבון על ידך. באפשרותך למחוק לצמיתות את החשבון ואת כל המידע המקושר אליו בכל עת דרך הגדרות ← אזור סכנה ← מחיקת חשבון. עם המחיקה, פרטי הפרופיל, רשומות המשלוחים, מזהי ההתראות, טוקני ה-Gmail ומסמכי החבילות נמחקים לצמיתות. שני סוגי מידע נאספים במכוון ללא כל קישור לחשבון, ולכן אינם ניתנים לאיתור או למחיקה לפי משתמש: משוב שנשלח על ידך, ודיווחי קריסה אנונימיים הנוצרים אוטומטית כאשר היישום נתקל בשגיאה. אף אחד מהם אינו כולל את שמך, כתובת הדוא"ל או מזהה החשבון שלך. מדיווחי הקריסה מוסר מידע אישי לפני השמירה.'
       },
       {
         heading: 'זכויותיך',
