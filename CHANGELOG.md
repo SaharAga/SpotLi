@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.34.3] - 2026-09-14
+
+### Fixed
+- App Check now says why it isn't working. The reCAPTCHA Enterprise site key was
+the one configuration value read straight from the environment without being
+trimmed, so a newline picked up from pasting it into a repository variable
+would have been passed to the provider verbatim — the same mistake that once
+broke Google sign-in through `authDomain`, and harder to spot here because
+nothing fails loudly: `initializeAppCheck` returns successfully whether or not
+the key is usable, and a key the provider rejects simply never produces a
+token. The key is cleaned like every other config value now, and a whitespace
+only key reads as unset so the existing "not configured" warning prints. On top
+of that, a production build asks for a token once at startup and warns, naming
+the current hostname, when it cannot get one — turning a silent failure (zero
+verified requests, an empty console) into a message that says where to look.
+
 ## [0.34.2] - 2026-09-14
 
 ### Fixed
