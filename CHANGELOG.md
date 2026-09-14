@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.34.1] - 2026-09-14
+
+### Fixed
+- The account-deletion promise now matches what deletion actually does. The
+Privacy Policy already noted that feedback is anonymous and cannot be deleted
+per account, but said nothing about crash reports, which are collected the same
+way — and the Account screen contradicted the policy outright, offering to
+"Delete Account & Wipe All Data" and reporting "Account and all data wiped
+permanently". Both categories are now named in the policy, in Hebrew and
+English, along with the fact that neither carries a name, email address or
+account identifier; the button and its confirmation say package data, which is
+what they delete. LEGAL_VERSION is bumped, so signed-in users are asked to
+accept the revised policy.
+
 ## [0.34.0] - 2026-09-14
 
 ### Added
