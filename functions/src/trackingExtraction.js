@@ -779,6 +779,58 @@ export function extractOrderStatusDetails(subject = '', body = '', from = '') {
 }
 
 /**
+ * The name of the thing being shipped, taken from the email's own list of
+ * contents.
+ *
+ * Shipping mail routinely states this outright — "Items in this shipment /
+ * Rosewater Cream Blouse × 1" — while the subject carries only the order
+ * number. generateCleanTitle sees only the subject, and shreds it: "Shipping
+ * update for order 469417" came out as "update for", which is what the user
+ * ends up reading on the card.
+ *
+ * Takes the first item and no more. A multi-item shipment gets the first
+ * product rather than a truncated concatenation of all of them, which reads
+ * better on a card and is what the package is most likely remembered as.
+ *
+ * @param {string} body Plain-text email body
+ * @returns {string} '' when the email lists no contents
+ */
+export function extractShippedItemName(body = '') {
+  if (!body || typeof body !== 'string') return '';
+
+  const heading = /(?:items?\s+(?:in\s+)?(?:this\s+)?(?:shipment|order|package)|items?\s+shipped|what'?s\s+in\s+(?:this\s+)?(?:box|shipment)|הפריטים?\s+במשלוח|פריטים?\s+שנשלחו)/i;
+  const match = heading.exec(body);
+  if (!match) return '';
+
+  const after = body.slice(match.index + match[0].length, match.index + match[0].length + 400);
+
+  // Newlines cannot be relied on: sanitizeEmailHtml collapses the message to a
+  // single line, so the same email arrives here as separate lines from the
+  // plain-text part and as one run of text from the HTML one. The quantity
+  // marker is the delimiter that survives both — "Rosewater Cream Blouse × 1"
+  // ends the name whether or not a newline follows it.
+  const candidates = [];
+  for (const line of after.split(/\r?\n/)) {
+    const quantityCut = line.match(/^(.{3,80}?)\s*[×xX*]\s*\d+/);
+    if (quantityCut) candidates.push(quantityCut[1]);
+    candidates.push(line);
+  }
+
+  for (const raw of candidates) {
+    const name = String(raw || '').replace(/\s*[×xX*]\s*\d+\s*$/, '').trim();
+
+    // A size, colour or SKU standing alone is not the product name.
+    if (name.length < 3 || name.length > 80) continue;
+    if (!/[A-Za-z\u0590-\u05FF]/.test(name)) continue;
+    if (/^(?:size|color|colour|qty|quantity|sku|מידה|צבע|כמות)\b/i.test(name)) continue;
+
+    return name;
+  }
+
+  return '';
+}
+
+/**
  * Derives a clean, user-friendly package title from store and subject.
  * @param {string} subject
  * @param {string|null} store
@@ -1316,7 +1368,14 @@ export function extractTrackingDetails(subject = '', body = '', from = '', optio
   }
 
   const effectiveStore = store || schemaStore;
-  const title = schemaTitle || generateCleanTitle(subject, effectiveStore, carrier);
+  // Order of preference: what the email's structured data says it is, then
+  // what its own contents list says, then whatever can be salvaged from the
+  // subject line. The subject is last because it usually names the order, not
+  // the thing — "Shipping update for order 469417".
+  const itemName = extractShippedItemName(cleanBody);
+  const title = schemaTitle
+    || (itemName ? (effectiveStore ? `${effectiveStore} - ${itemName}` : itemName) : '')
+    || generateCleanTitle(subject, effectiveStore, carrier);
   const latencyMs = Date.now() - startTime;
 
   const allPackages = [];
