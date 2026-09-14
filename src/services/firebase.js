@@ -151,6 +151,38 @@ export const functionsInstance = app ? getFunctions(app) : null;
  */
 const recaptchaSiteKey = cleanConfigValue(import.meta.env.VITE_RECAPTCHA_V3_SITE_KEY);
 
+/**
+ * Whether App Check is actually working, in a form a screen can render.
+ *
+ * Every signal App Check gives you otherwise needs a desktop browser: the
+ * console warnings below, the network tab, the Firebase console's own charts.
+ * On a phone there is no way to tell a working install from a silently broken
+ * one, which is the state this app was in — key configured, zero verified
+ * requests, nothing to look at. The admin dashboard reads this instead.
+ *
+ * `state` is one of:
+ *   'unconfigured'  no site key reached the build
+ *   'init-failed'   initializeAppCheck threw
+ *   'checking'      a token request is in flight
+ *   'token-ok'      a token came back; requests are verified
+ *   'no-token'      the key was rejected — wrong key, or wrong origin
+ */
+let appCheckDiagnostic = {
+  state: 'unconfigured',
+  detail: 'VITE_RECAPTCHA_V3_SITE_KEY is not set in this build.'
+};
+let appCheckSettled = Promise.resolve(appCheckDiagnostic);
+
+/** Current App Check status. Synchronous; may read 'checking'. */
+export function getAppCheckDiagnostic() {
+  return appCheckDiagnostic;
+}
+
+/** Resolves once the startup token request has settled, to the final status. */
+export function whenAppCheckSettled() {
+  return appCheckSettled;
+}
+
 if (app && recaptchaSiteKey) {
   // Lets `npm run dev` keep working once enforcement is turned on: register
   // this logged token as a debug token in Firebase Console -> App Check.
@@ -165,6 +197,7 @@ if (app && recaptchaSiteKey) {
       provider: new ReCaptchaEnterpriseProvider(recaptchaSiteKey),
       isTokenAutoRefreshEnabled: true
     });
+    appCheckDiagnostic = { state: 'checking', detail: 'Requesting a token…' };
 
     // initializeAppCheck returns successfully even when the key is wrong or
     // this origin is missing from the key's allowed-domains list: the real
@@ -175,19 +208,32 @@ if (app && recaptchaSiteKey) {
     // token turns the silence into a message. It costs no extra request:
     // isTokenAutoRefreshEnabled already fetches one at startup, and this
     // attaches to that same in-flight exchange.
-    if (import.meta.env.PROD) {
-      getToken(appCheck).catch((err) => {
+    appCheckSettled = getToken(appCheck).then(
+      () => {
+        appCheckDiagnostic = { state: 'token-ok', detail: 'A token was issued for this device.' };
+        return appCheckDiagnostic;
+      },
+      (err) => {
         const origin = typeof window !== 'undefined' ? window.location.hostname : 'this origin';
-        console.warn(
-          '[Firebase] App Check is configured but could not get a token, so every '
-          + 'request still counts as unverified. Check that the reCAPTCHA Enterprise '
-          + `key belongs to this Firebase project and that ${origin} is on its list `
-          + 'of allowed domains:',
-          err
-        );
-      });
-    }
+        appCheckDiagnostic = {
+          state: 'no-token',
+          detail: `The key was rejected for ${origin}: ${err?.message || String(err)}`
+        };
+        if (import.meta.env.PROD) {
+          console.warn(
+            '[Firebase] App Check is configured but could not get a token, so every '
+            + 'request still counts as unverified. Check that the reCAPTCHA Enterprise '
+            + `key belongs to this Firebase project and that ${origin} is on its list `
+            + 'of allowed domains:',
+            err
+          );
+        }
+        return appCheckDiagnostic;
+      }
+    );
   } catch (err) {
+    appCheckDiagnostic = { state: 'init-failed', detail: err?.message || String(err) };
+    appCheckSettled = Promise.resolve(appCheckDiagnostic);
     console.warn('[Firebase] App Check failed to initialize:', err);
   }
 } else if (app && typeof window !== 'undefined' && import.meta.env.PROD) {
