@@ -9,7 +9,7 @@ import {
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
-import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
+import { initializeAppCheck, ReCaptchaEnterpriseProvider, getToken } from 'firebase/app-check';
 
 /**
  * Firebase Client Configuration.
@@ -149,7 +149,7 @@ export const functionsInstance = app ? getFunctions(app) : null;
  * the site key and turning on enforcement is a Firebase console step outside
  * this repo; see README.md.
  */
-const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_V3_SITE_KEY;
+const recaptchaSiteKey = cleanConfigValue(import.meta.env.VITE_RECAPTCHA_V3_SITE_KEY);
 
 if (app && recaptchaSiteKey) {
   // Lets `npm run dev` keep working once enforcement is turned on: register
@@ -161,10 +161,32 @@ if (app && recaptchaSiteKey) {
   }
 
   try {
-    initializeAppCheck(app, {
+    const appCheck = initializeAppCheck(app, {
       provider: new ReCaptchaEnterpriseProvider(recaptchaSiteKey),
       isTokenAutoRefreshEnabled: true
     });
+
+    // initializeAppCheck returns successfully even when the key is wrong or
+    // this origin is missing from the key's allowed-domains list: the real
+    // failure happens later, inside reCAPTCHA, and nothing surfaces it. That
+    // is how App Check shipped silently broken — no token exchange ever
+    // reached firebaseappcheck.googleapis.com, the console's Verified count
+    // sat at zero, and the browser console said nothing at all. Asking for a
+    // token turns the silence into a message. It costs no extra request:
+    // isTokenAutoRefreshEnabled already fetches one at startup, and this
+    // attaches to that same in-flight exchange.
+    if (import.meta.env.PROD) {
+      getToken(appCheck).catch((err) => {
+        const origin = typeof window !== 'undefined' ? window.location.hostname : 'this origin';
+        console.warn(
+          '[Firebase] App Check is configured but could not get a token, so every '
+          + 'request still counts as unverified. Check that the reCAPTCHA Enterprise '
+          + `key belongs to this Firebase project and that ${origin} is on its list `
+          + 'of allowed domains:',
+          err
+        );
+      });
+    }
   } catch (err) {
     console.warn('[Firebase] App Check failed to initialize:', err);
   }
