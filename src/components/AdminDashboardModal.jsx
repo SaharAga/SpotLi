@@ -16,8 +16,64 @@ import { fetchAllParseCorrections, computeParseCorrectionStats } from '../servic
 import { fetchAllSmartImportAttempts, computeSmartImportMissRateStats } from '../services/smartImportAttemptService';
 import { fetchFeatureAdoptionStats, computeAdoptionSummary } from '../services/featureAdoptionStatsService';
 import { syncQueueService, computeSyncQueueHealth } from '../services/syncQueueService';
+import { getAppCheckDiagnostic, whenAppCheckSettled } from '../services/firebase';
 import { AdminScreenshotLightbox } from './AdminScreenshotLightbox.jsx';
 import { downloadBlob } from '../utils/exportUtils';
+
+/**
+ * Turns an App Check status into something readable on a phone.
+ *
+ * The console warnings this mirrors need a desktop browser, and App Check's
+ * own failure mode is silence — so this is the only place the difference
+ * between "working" and "configured but rejected" is visible on a device.
+ *
+ * @param {string} state one of the states getAppCheckDiagnostic reports
+ * @param {string} language 'he' | 'en'
+ * @returns {{label: string, tone: string, nextStep: string}}
+ */
+export function describeAppCheck(state, language) {
+  const he = language === 'he';
+  switch (state) {
+    case 'token-ok':
+      return {
+        label: he ? 'מאומת' : 'Verified',
+        tone: 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300',
+        nextStep: he
+          ? 'הבקשות מהמכשיר הזה נחתמות. מונה ה-Verified בקונסולה אמור לעלות.'
+          : 'Requests from this device are signed. The console\'s Verified count should climb.'
+      };
+    case 'no-token':
+      return {
+        label: he ? 'המפתח נדחה' : 'Key rejected',
+        tone: 'bg-rose-500/10 border border-rose-500/20 text-rose-300',
+        nextStep: he
+          ? 'המפתח הגיע לבנייה אבל reCAPTCHA דחה אותו. בדוק שהמפתח שייך לפרויקט הזה ושהדומיין שלמטה מופיע ברשימת הדומיינים המורשים שלו.'
+          : 'The key reached the build but reCAPTCHA rejected it. Check that the key belongs to this Firebase project and that the hostname below is on its allowed-domains list.'
+      };
+    case 'init-failed':
+      return {
+        label: he ? 'האתחול נכשל' : 'Init failed',
+        tone: 'bg-rose-500/10 border border-rose-500/20 text-rose-300',
+        nextStep: he
+          ? 'initializeAppCheck זרק שגיאה — פירוט למטה.'
+          : 'initializeAppCheck threw — details below.'
+      };
+    case 'checking':
+      return {
+        label: he ? 'בבדיקה…' : 'Checking…',
+        tone: 'bg-slate-800 border border-slate-700 text-slate-300',
+        nextStep: he ? 'בקשת אסימון בדרך.' : 'A token request is in flight.'
+      };
+    default:
+      return {
+        label: he ? 'לא מוגדר' : 'Not configured',
+        tone: 'bg-amber-500/10 border border-amber-500/20 text-amber-300',
+        nextStep: he
+          ? 'מפתח ה-reCAPTCHA לא הגיע לבנייה הזו — בדוק את משתנה המאגר VITE_RECAPTCHA_V3_SITE_KEY ב-GitHub. עד אז לכתיבות ללא הזדהות, כמו /feedback, אין הגנה מפני בוטים.'
+          : 'The reCAPTCHA key did not reach this build — check the VITE_RECAPTCHA_V3_SITE_KEY repository variable on GitHub. Until it does, unauthenticated writes like /feedback have no bot protection.'
+      };
+  }
+}
 
 export function AdminDashboardModal({
   isOpen,
@@ -54,6 +110,20 @@ export function AdminDashboardModal({
     return unsubscribe;
   }, []);
   
+  // App Check, read from the client that actually runs it (see firebase.js).
+  // Re-read on every open: the startup token request may still have been in
+  // flight the first time this mounted.
+  const [appCheck, setAppCheck] = useState(() => getAppCheckDiagnostic());
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    let alive = true;
+    setAppCheck(getAppCheckDiagnostic());
+    whenAppCheckSettled().then((status) => {
+      if (alive) setAppCheck(status);
+    });
+    return () => { alive = false; };
+  }, [isOpen]);
+
   // Loading & error states
   const [isLoading, setIsLoading] = useState(false);
   const [cloudError, setCloudError] = useState(null);
@@ -924,6 +994,26 @@ export function AdminDashboardModal({
           {/* TAB 5: SYSTEM & EXPORT */}
           {activeTab === 'system' && (
             <div className="space-y-6">
+              {/* App Check — the only place this is visible without DevTools */}
+              <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
+                <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-blue-400" />
+                  <span>{language === 'he' ? 'מצב App Check (מכשיר זה)' : 'App Check Status (This Device)'}</span>
+                </h3>
+                {(() => {
+                  const described = describeAppCheck(appCheck.state, language);
+                  return (
+                    <>
+                      <span className={`inline-block px-2.5 py-1 rounded-lg text-xs font-bold ${described.tone}`}>
+                        {described.label}
+                      </span>
+                      <p className="text-xs text-slate-400 leading-relaxed">{described.nextStep}</p>
+                      <p className="text-xs text-slate-500 leading-relaxed break-words font-mono">{appCheck.detail}</p>
+                    </>
+                  );
+                })()}
+              </div>
+
               {/* Offline sync queue health (this device only — see note above) */}
               <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
                 <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">

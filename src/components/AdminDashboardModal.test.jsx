@@ -3,7 +3,7 @@ import '@testing-library/jest-dom';
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { AdminDashboardModal } from './AdminDashboardModal.jsx';
+import { AdminDashboardModal, describeAppCheck } from './AdminDashboardModal.jsx';
 import { LanguageProvider } from '../context/LanguageContext';
 import { AuthProvider } from '../context/AuthContext';
 
@@ -13,7 +13,9 @@ vi.mock('../services/firebase', () => ({
   isFirebaseConfigured: false,
   googleProvider: {},
   appleProvider: {},
-  facebookProvider: {}
+  facebookProvider: {},
+  getAppCheckDiagnostic: () => ({ state: 'unconfigured', detail: 'not set in this build' }),
+  whenAppCheckSettled: () => Promise.resolve({ state: 'unconfigured', detail: 'not set in this build' })
 }));
 
 vi.mock('../services/feedbackService', async () => {
@@ -105,6 +107,17 @@ describe('AdminDashboardModal Component Tests', () => {
     expect(screen.getByText(/Export Telemetry Data|ייצוא נתוני טלמטריה/i)).toBeTruthy();
   });
 
+  it('shows App Check status on the System tab, so it is readable without DevTools', async () => {
+    renderDashboard();
+
+    fireEvent.click(screen.getByText(/Export & System|ייצוא ומערכת/i));
+    expect(screen.getByText(/App Check Status|מצב App Check/i)).toBeTruthy();
+
+    // The mocked client reports no site key in this build.
+    expect(await screen.findByText(/Not configured|לא מוגדר/i)).toBeTruthy();
+    expect(screen.getByText(/not set in this build/i)).toBeTruthy();
+  });
+
   it('calls onClose when close button is clicked', () => {
     const handleClose = vi.fn();
     renderDashboard({ onClose: handleClose });
@@ -161,5 +174,31 @@ describe('AdminDashboardModal Component Tests', () => {
 
     const ratingSelect = screen.getByRole('combobox');
     expect(ratingSelect.className).toContain('min-h-[48px]');
+  });
+});
+
+describe('describeAppCheck', () => {
+  it('separates a working install from a configured-but-rejected one', () => {
+    // The distinction the Firebase console cannot show you on a phone: both
+    // of these have a key, and only one of them is protecting anything.
+    expect(describeAppCheck('token-ok', 'en').label).toBe('Verified');
+    expect(describeAppCheck('no-token', 'en').label).toBe('Key rejected');
+    expect(describeAppCheck('no-token', 'en').nextStep).toMatch(/allowed-domains/i);
+  });
+
+  it('points an unset key at the repository variable, and says what is unprotected', () => {
+    const described = describeAppCheck('unconfigured', 'en');
+    expect(described.label).toBe('Not configured');
+    expect(described.nextStep).toMatch(/VITE_RECAPTCHA_V3_SITE_KEY/);
+    expect(described.nextStep).toMatch(/feedback/);
+  });
+
+  it('translates every state', () => {
+    for (const state of ['token-ok', 'no-token', 'init-failed', 'checking', 'unconfigured']) {
+      const he = describeAppCheck(state, 'he');
+      const en = describeAppCheck(state, 'en');
+      expect(he.label).not.toBe(en.label);
+      expect(he.tone).toBe(en.tone);
+    }
   });
 });
