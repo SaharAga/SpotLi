@@ -4,8 +4,8 @@
 
 | Attribute | Value |
 | :--- | :--- |
-| **Version** | `v0.30.0` |
-| **Release Date** | 2026-09-12 |
+| **Version** | `v0.33.0` |
+| **Release Date** | 2026-09-13 |
 | **Release Channel** | `alpha` |
 | **Firebase Schema Version** | `1.0.0` |
 | **Build Target** | React 19 + Vite 8 + Tailwind CSS 4 PWA |
@@ -78,7 +78,7 @@ To balance deep specialization with clean communication boundaries, agents are o
 ## 3. Quality Gates & Verification Metrics
 
 ```
-[Quality Gate Pipeline — v0.30.0]
+[Quality Gate Pipeline — v0.33.0]
 ├─ 1. Static Linting & Syntax: 0 errors (`npm run lint` exits 0). react-perf
 │     runs at `warn` as a standing worklist, so warnings are expected output.
 ├─ 2. Type & Contract Verification: 100% compliant schemas (Zod + TypeScript)

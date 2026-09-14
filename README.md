@@ -114,9 +114,16 @@ build of this app, without requiring sign-in. It's optional — unset,
 
 To turn it on:
 
-1. Create a reCAPTCHA v3 site key at
-   [google.com/recaptcha/admin](https://www.google.com/recaptcha/admin) for
-   this app's domain(s).
+1. Create a reCAPTCHA **Enterprise** key in Google Cloud console →
+   [Security → reCAPTCHA](https://console.cloud.google.com/security/recaptcha),
+   for this app's domain(s), and copy its **key ID**.
+
+   Not a classic v3 key from `google.com/recaptcha/admin`: `firebase.js`
+   initializes App Check with `ReCaptchaEnterpriseProvider`, which rejects a
+   classic key. The two consoles look similar and the failure is quiet — App
+   Check simply never produces a valid token, so enforcement locks out real
+   users. The key ID is public and ships in the bundle by design; unlike a
+   classic v3 key it has no secret half.
 2. In Firebase console → **App Check**, register the web app with that key.
 3. Set `VITE_RECAPTCHA_V3_SITE_KEY` (local `.env.local`, and as a repository
    variable for CI/production — see Deployment below).

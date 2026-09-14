@@ -9,8 +9,20 @@ across Israeli couriers and global shipping carriers. It's offline-first (localS
 service worker + an offline sync queue), optionally syncs to Firebase for signed-in users, and
 can ingest tracking numbers from pasted text, SMS, or the PWA share target.
 
-Live tracking coverage is currently limited to Israel Post (`src/services/carrierApiProxy.js`);
-every other carrier is detected/displayed but shown as "manual tracking" rather than faked.
+Live tracking goes through `src/services/carrierApiProxy.js`, which asks the
+`queryCarrierTracking` Cloud Function for **every** carrier — the proxy holds the 17TRACK key
+and omits the catalogue code when `TRACK17_CARRIER_MAP` has none, which is 17TRACK's
+auto-detect mode. Until `0.33.0` the client refused the lookup unless the carrier had a
+hand-written `liveTracking` adapter (four of them), so twelve of fifteen Israeli couriers
+reported "no live tracking" without the proxy ever being asked; don't reintroduce a
+carrier allowlist in front of it.
+
+Two predicates, deliberately distinct: `hasDirectCarrierAdapter` governs only the
+direct-from-browser fallback, while `isLiveTrackingConfirmed` ("a local adapter, or a
+17TRACK catalogue id") is what the UI may promise. A carrier that is neither is still
+queried — it just rests on auto-detect, so the detail screen says a refresh will try rather
+than that tracking is unavailable. An untracked answer still yields no checkpoints, status
+or estimate: a package we cannot track must look untracked, never plausibly in transit.
 
 ## Commands
 
