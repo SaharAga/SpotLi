@@ -361,6 +361,31 @@ export const SMS_CORPUS = [
     }
   },
 
+  // Reported from the live app. Hebrew drops "מספר" as readily as English
+  // drops "number", and this courier writes the noun straight into the value:
+  // "משלוח 19611199". The labelled patterns all required מספר, so nothing
+  // matched, and an eight-digit run fits no carrier format — the generic token
+  // scan discarded it as noise. The message parsed to no tracking number at
+  // all and had to be entered by hand. Recipient name replaced; the rest is
+  // the message as received.
+  {
+    id: 'ydm-hebrew-shipment-no-number-word',
+    rawText: 'שלום ישראל ישראלי  משלוח 19611199 מI-HERB  אמור להגיע לכתובת ראש העין 23 ראש העין. המערכת זיהתה כי כתובת המשלוח אינה תקינה\\חסרה אנא עדכן את הכתובת בלינק  על מנת שנוכל להשלים את המסירה יש לעדכן את כתובת המגורים בלינק הבא https://run.ydm.co.il/RunCom.Server/Request.aspx?PRGNAME=idkun_ktovet_niman_random&ARGUMENTS=-A62319611199745',
+    expected: {
+      trackingNumber: '19611199'
+    }
+  },
+  {
+    // The house number in that same message sits beside a Hebrew noun too.
+    // The no-label branch takes six characters minimum so a street number, a
+    // shekel amount or a quantity is never mistaken for a shipment id.
+    id: 'hebrew-shipment-noun-short-number-ignored',
+    rawText: 'משלוח חינם בקנייה מעל 250 שח לכתובת ראש העין 23',
+    expected: {
+      trackingNumber: ''
+    }
+  },
+
   // 13. Temu
   {
     id: 'temu-hebrew-cainiao',

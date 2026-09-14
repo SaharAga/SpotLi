@@ -755,11 +755,30 @@ export function extractAndScoreCandidates(text) {
   // "הזמנה"/"הזמנתך" is deliberately absent: an order number is only a
   // tracking number once the parcel has shipped, which the gated scan below
   // handles.
-  const hebrewNumberedPattern = /(?:חבילה|חבילת|חבילתך|משלוח|משלוחך|פריט|שליחות)(?:\s+[^\s:=#-]{1,20}){0,3}\s+(?:ש?מספר(?:ה|ו)?|מס['׳`״’‘]?)\s*[:=#-]?\s*([A-Za-z0-9_-]{5,35})/gi;
+  // Two shapes, exactly as the order scan below has: the label word present
+  // with up to three words between it and the value, or the noun running
+  // straight into the value with no label at all. The second is why a real
+  // Tapuz/YDM dispatch — "משלוח 19611199 מI-HERB" — extracted nothing: Hebrew
+  // drops "מספר" as readily as English drops "number", the labelled shape did
+  // not match, and an eight-digit run fits no carrier format, so the generic
+  // token scan discarded it as noise.
+  //
+  // The no-label branch takes the value directly, with no intervening words.
+  // Allowing them there would let the pattern stride past the number and
+  // capture the following word instead — the same trap documented on the order
+  // scan. Six characters minimum, so a street number or a shekel amount
+  // sitting next to "משלוח" is not mistaken for a shipment id.
+  const HEB_SHIPMENT_NOUN = "(?:חבילה|חבילת|חבילתך|משלוח|משלוחך|פריט|שליחות)";
+  const HEB_NUMBER_LABEL = "(?:ש?מספר(?:ה|ו)?|מס['׳`״’‘]?)";
+  const hebrewNumberedPattern = new RegExp(
+    `(?:${HEB_SHIPMENT_NOUN}(?:\\s+[^\\s:=#-]{1,20}){0,3}\\s+${HEB_NUMBER_LABEL}\\s*[:=#-]?\\s*([A-Za-z0-9_-]{5,35})`
+      + `|${HEB_SHIPMENT_NOUN}[\\s:=#-]+([A-Za-z0-9_-]{6,35}))`,
+    'gi'
+  );
   let hebrewNumberedMatch;
 
   while ((hebrewNumberedMatch = hebrewNumberedPattern.exec(normalizedText)) !== null) {
-    const rawVal = hebrewNumberedMatch[1];
+    const rawVal = hebrewNumberedMatch[1] || hebrewNumberedMatch[2];
     const cleanVal = rawVal.trim().toUpperCase();
 
     if (candidatesMap.has(cleanVal) || METADATA_WORDS.has(cleanVal)) continue;
