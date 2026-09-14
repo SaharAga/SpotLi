@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.35.0] - 2026-09-14
+
+### Added
+- The admin dashboard's System tab now reports whether App Check is actually
+working on this device: verified, configured but rejected, not configured at
+all, or still checking — each with what to do about it. Every other signal App
+Check gives requires a desktop browser (a console warning, the network tab, the
+Firebase console's charts), so on a phone there was no way to tell a working
+install from a silently broken one. A rejected key also names the hostname it
+was rejected for, which is usually the answer: the origin is missing from the
+key's allowed-domains list.
+
 ## [0.34.3] - 2026-09-14
 
 ### Fixed
