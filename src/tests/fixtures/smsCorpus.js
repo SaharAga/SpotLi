@@ -333,6 +333,34 @@ export const SMS_CORPUS = [
     }
   },
 
+  // Reported from the live app: a real H&M Israel dispatch SMS, delivered by
+  // Tapuz. Two defects in one message. The status read "in transit" because
+  // every Hebrew delivered-phrase was subject-first ("החבילה נמסרה") and this
+  // courier writes verb-first ("נמסרה חבילה"). And the carrier came back DHL:
+  // the bare ten-digit number matches DHL and Aramex both, and the first of
+  // the two won — an explicit "שמספרה" label had marked the value distinctive,
+  // which establishes that it *is* a tracking number, not whose it is.
+  // Tapuz is not named anywhere in the text, so 'other' is the honest answer.
+  {
+    id: 'hm-israel-tapuz-delivered',
+    rawText: 'הי  גל אגא נמסרה חבילה שמספרה  7989423526 מ  H&M Israel (Match Retail) ל  receives_name תודה',
+    expected: {
+      trackingNumber: '7989423526',
+      carrier: 'other',
+      status: 'delivered'
+    }
+  },
+  {
+    // The same verb, one word apart in meaning: handed to the courier, not to
+    // the customer. Must stay out_for_delivery, or the fix above turns every
+    // dispatch notice into a delivery.
+    id: 'hebrew-handed-to-courier',
+    rawText: 'החבילה שלך נמסרה לשליח והיא בדרך אליך',
+    expected: {
+      status: 'out_for_delivery'
+    }
+  },
+
   // 13. Temu
   {
     id: 'temu-hebrew-cainiao',

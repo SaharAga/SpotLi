@@ -1114,7 +1114,20 @@ export function parseSmartText(rawText) {
     // digit, the honest answer is that the carrier is unknown: the package is
     // still saved and still tracked manually, but it is not filed under a
     // carrier it never touched.
-    const carrierIsGuessedFromShape = top.distinctive === false
+    // `distinctive` answers "is this a shipment id", which an explicit
+    // "מספר מעקב"/"חבילה שמספרה" label settles on its own. It does not answer
+    // "which carrier issued it", and using it for both is how a bare
+    // ten-digit number in an H&M dispatch SMS came back labelled DHL — the
+    // number matched DHL *and* Aramex, and the first of the two won. When more
+    // than one carrier claims the shape, the value distinguishes none of them.
+    // Restricted to all-digit values on purpose. A letter-bearing id carries
+    // real carrier evidence in the letters themselves (UB…YP is Yanwen,
+    // LP…CN is Cainiao) even when several patterns happen to match its shape;
+    // widening this to every multi-match value sent both of those to 'other'.
+    // A bare digit run has no such evidence to offer.
+    const shapeMatchesSeveralCarriers = (top.carrierCandidates?.length ?? 0) > 1
+      && !/[A-Z]/i.test(String(top.value || ''));
+    const carrierIsGuessedFromShape = (top.distinctive === false || shapeMatchesSeveralCarriers)
       && !phraseCarrier
       && !urlCarrier
       && top.checksum !== 'pass';
@@ -1234,7 +1247,16 @@ export function parseSmartText(rawText) {
   // Infer delivery status from text
   let status = dateInfo.statusHint || 'ordered';
   const lowerText = cleanText.toLowerCase();
-  if (/\b(delivered|successfully delivered)\b/i.test(lowerText) || /(?:נמסרה בהצלחה|נמסר ליעד|החבילה נמסרה)/i.test(lowerText)) {
+  // Hebrew puts the verb first as readily as last: a real Israeli courier SMS
+  // opens "נמסרה חבילה שמספרה …", which none of the subject-first phrasings
+  // below matched, so a delivered package was filed as still in transit. Both
+  // orders are accepted, but only when נמסר sits next to the noun — "נמסרה
+  // לשליח" is a handover to the courier, which is out_for_delivery and is
+  // matched further down.
+  // No \b anywhere: it is defined on ASCII \w, so it never matches against a
+  // Hebrew letter and silently kills the alternative it is attached to.
+  const deliveredHe = /(?:נמסרה בהצלחה|נמסר ליעד|(?:ה)?(?:חבילה|משלוח|הזמנה)\s+נמסר[ההת]?|נמסר[ההת]?\s+(?:ה)?(?:חבילה|משלוח|הזמנה)(?!\s*לשליח))/i;
+  if (/\b(delivered|successfully delivered)\b/i.test(lowerText) || deliveredHe.test(lowerText)) {
     status = 'delivered';
   } else if (
     lockerPin ||
