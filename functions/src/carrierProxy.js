@@ -234,8 +234,23 @@ export async function query17TrackApi(trackingNumber, carrierId, apiKey) {
     const rawStatus = trackInfo.latest_status?.status;
     const status = inferStageFrom17Track(rawStatus);
 
+    // What 17TRACK decided the carrier is, which is the whole point of sending
+    // a number with no carrier code. `carrier` below only ever echoed back the
+    // id we sent, so an auto-detected carrier was discarded at the boundary and
+    // a package kept whatever the client had guessed from the number's shape.
+    // The code is 17TRACK's own catalogue key; it maps to one of ours only for
+    // the eleven in TRACK17_CARRIER_MAP, so the name is carried too — an
+    // Israeli courier like Tapuz has no id on our side to map to.
+    const provider = trackInfo.tracking?.providers?.[0]?.provider;
+    const detectedCode = provider?.key;
+    const detectedCarrier = detectedCode
+      ? (Object.keys(TRACK17_CARRIER_MAP).find((id) => TRACK17_CARRIER_MAP[id] === detectedCode) || null)
+      : null;
+
     return {
       carrier: carrierId,
+      detectedCarrier,
+      detectedCarrierName: provider?.name || null,
       tracked: true,
       status,
       checkpoints,

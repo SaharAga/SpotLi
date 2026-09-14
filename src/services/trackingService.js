@@ -139,6 +139,10 @@ export async function fetchTrackingUpdates(trackingNumber, carrierId, bypassRate
       success: true,
       tracked: true,
       carrier: detectedCarrier,
+      // 17TRACK's own identification, when it made one. Distinct from
+      // `carrier`, which is what the client believed going in.
+      detectedCarrier: trackingData.detectedCarrier || null,
+      detectedCarrierName: trackingData.detectedCarrierName || null,
       status: trackingData.status,
       checkpoints: trackingData.checkpoints,
       expectedDeliveryDate: trackingData.estimatedDelivery,
