@@ -190,15 +190,18 @@ were affected:
 3. App Check must be turned on (see above) — `parseWithAi` enforces it
    server-side, so the feature is inert without it regardless of the
    Gemini key.
-4. Deploy:
+4. Deploy. CI does this for you (since `0.23.0`): `ci.yml`'s
+   `deploy-functions` job runs on every push to `main` that touches
+   `functions/`, gated on the same `FIREBASE_HOSTING_ENABLED` variable as
+   the Hosting deploy. Unlike Hosting there is no staging channel — Cloud
+   Functions are one live set per project — so a merged `functions/` change
+   is live within minutes, without waiting for a release commit. The manual
+   escape hatch, for a rollback or a deploy from a branch:
    ```bash
    firebase deploy --only functions
    ```
-   Not wired into CI's automatic deploy — unlike Hosting and Firestore
-   rules, this needs the secret and the Blaze plan in place first, and a
-   deploy step that fails on every single push until then is exactly the
-   trap `firestore.rules` auto-deploy fell into earlier; add it to
-   `ci.yml`'s `deploy-firebase` job once 1–3 above are done.
+   Steps 1–3 must be done first either way: CI supplies the service
+   account, not the Gemini secret or the Blaze plan.
 
 ## Automated Email Ingestion & Gmail Sync
 

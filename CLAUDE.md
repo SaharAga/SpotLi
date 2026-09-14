@@ -208,9 +208,12 @@ a conflict; new changeset files never conflict with each other.
 Hosting and pushes `firestore.rules` only on a push to `main` that changes `package.json`'s
 version (i.e. a release commit, per above) — an ordinary merge lands without deploying — and only
 when the `FIREBASE_HOSTING_ENABLED` repo variable is set. `VITE_FIREBASE_*` values come from
-repository variables (public client identifiers, not secrets). `functions/` deploy is manual
-(`firebase deploy --only functions`) — not yet wired into CI, since it needs the Gemini secret and
-Blaze plan set up first.
+repository variables (public client identifiers, not secrets). `functions/` deploys on its own
+schedule (since `0.23.0`): any ordinary push to `main` that *touches* `functions/`, because Cloud
+Functions have no staging/production split, so a fix there goes live when it merges rather than
+waiting for the next release commit. A release-only commit skips it — the code would be byte
+identical — and the same `FIREBASE_HOSTING_ENABLED` gate applies. `firebase deploy --only
+functions` remains the manual escape hatch, not the normal path.
 
 `.github/workflows/health-check.yml` runs daily: verifies the deployed site matches `main`'s
 `package.json` version and that `firestore.rules` deploys idempotently.
