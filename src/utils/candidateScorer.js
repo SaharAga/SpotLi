@@ -141,6 +141,13 @@ export function isPromotionalContext(fullText) {
  * parcel has actually left: an order that shipped has a tracking number, an
  * order that was merely received does not, and the message says which.
  */
+/**
+ * Longest a path segment may be to pass as a tracking number on the strength
+ * of its carrier domain alone. The longest real formats in carrierSpecs are
+ * well inside this; anything longer is a session or CRM token.
+ */
+const MAX_OPAQUE_PATH_SEGMENT = 22;
+
 const SHIPPED_MARKERS = [
   /יצא(?:ה|ו)?\s*(?:למשלוח|לדרך|מהמחסן)/,
   // "נשלח" alone is not a shipment — an email signature reading
@@ -169,14 +176,27 @@ const NOT_YET_SHIPPED_MARKERS = [
 ];
 
 /**
+ * A courier stating it has taken the parcel in: "הזמנתך … נקלטה בתפוז".
+ *
+ * The same verb a shop uses for "your order was received", which is why נקלט
+ * is also a veto above. What separates them is who is speaking, not the
+ * wording — so this only counts when the message links to a recognised
+ * courier. A shop's own "ההזמנה נקלטה ותטופל" carries no such link and stays
+ * vetoed; the courier's does, and the parcel really is in its hands.
+ */
+const COURIER_INTAKE_MARKER = /נקלט(?:ה|ו)?\s*ב/;
+
+/**
  * Whether the message states the parcel is already on its way.
  * @param {string} fullText
  * @returns {boolean}
  */
 export function isShipmentInProgress(fullText) {
   if (!fullText || typeof fullText !== 'string') return false;
-  if (NOT_YET_SHIPPED_MARKERS.some((marker) => marker.test(fullText))) return false;
-  return SHIPPED_MARKERS.some((marker) => marker.test(fullText));
+
+  const courierIntake = COURIER_INTAKE_MARKER.test(fullText) && messageHasCarrierDomain(fullText);
+  if (!courierIntake && NOT_YET_SHIPPED_MARKERS.some((marker) => marker.test(fullText))) return false;
+  return courierIntake || SHIPPED_MARKERS.some((marker) => marker.test(fullText));
 }
 
 /**
@@ -644,7 +664,21 @@ export function extractAndScoreCandidates(text) {
           // statement that it *is* a tracking number. Off a carrier domain it
           // must earn its place by matching a carrier format.
           const ruleEval = hasDigit ? evaluateCandidateRules(cleanVal) : null;
-          const segmentIsCredible = hasDigit && (Boolean(domainCarrier) || ruleEval.formatMatch);
+          // On a carrier's own domain a path segment needs no format match —
+          // being inside the courier's link is the evidence. But some couriers
+          // link to a CRM view keyed by an opaque session token rather than by
+          // the number: Tapuz sends
+          // /Cs/client/delivery-status/GQCYRVZLABK9PR8IRVUWHMCXR8A5WNMHUMYP,
+          // 36 characters that are not a tracking number, are not what the
+          // customer would ever quote, and match nothing the next message about
+          // the same parcel will say. Taken as the tracking number it also
+          // defeats duplicate detection, filing a second copy of a package the
+          // list already holds. Real formats top out around twenty characters,
+          // so past that a segment has to actually match a carrier rule.
+          const segmentIsCredible = hasDigit && (
+            ruleEval.formatMatch
+            || (Boolean(domainCarrier) && cleanVal.length <= MAX_OPAQUE_PATH_SEGMENT)
+          );
 
           if (segmentIsCredible && /^[A-Za-z0-9_-]{5,35}$/.test(cleanVal) && !METADATA_WORDS.has(cleanVal) && !isFalsePositive(cleanVal, normalizedText, start, end)) {
             const carriers = domainCarrier
