@@ -116,6 +116,20 @@ describe('isShipmentInProgress — order numbers used as tracking numbers', () =
     expect(isShipmentInProgress('התשלום התקבל. המוצר יסופק תוך 3-5 ימי עסקים.')).toBe(false);
   });
 
+  it('treats a courier taking the parcel in as a shipment, but not a shop saying the same word', () => {
+    // Real Tapuz SMS. "נקלטה" is the same verb a shop uses for "order
+    // received", so it vetoes by default — here the courier is the one saying
+    // it, and its own tracking link is what says so. Before this, the veto
+    // killed the order-number scan and the parcel's real number was never
+    // extracted at all.
+    const tapuzSms = "הזמנתך מס' 48094292 מSeestarz online, נקלטה בתפוז ותסופק בימים הקרובים."
+      + ' לינק למעקב https://crm.tapuzdelivery.co.il/Cs/client/delivery-status/ABC123';
+    expect(isShipmentInProgress(tapuzSms)).toBe(true);
+
+    // Same verb, no courier — a shop acknowledging an order it has not shipped.
+    expect(isShipmentInProgress('ההזמנה שלך נקלטה במערכת ותטופל בקרוב')).toBe(false);
+  });
+
   it('is false for text with no shipment language at all', () => {
     expect(isShipmentInProgress('קוד האימות שלך הוא 483920')).toBe(false);
     expect(isShipmentInProgress('')).toBe(false);

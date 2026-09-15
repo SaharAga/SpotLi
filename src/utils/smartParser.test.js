@@ -207,6 +207,34 @@ describe('smartParser - extractTrackingCandidates', () => {
 });
 
 describe('smartParser - parseSmartText', () => {
+  it('takes the order number from a Tapuz SMS, not the opaque CRM token in its link', () => {
+    // Reported from the live app. Two separate faults in one message: the
+    // "נקלטה" veto stopped the order-number scan from ever running, and the
+    // CRM link's 36-character session token was accepted as a tracking number
+    // because it sat on a carrier domain and contained a digit. The result was
+    // a package filed under a token that identifies nothing — and, since the
+    // same parcel had arrived by email the day before under 48094292, a second
+    // copy of a package the list already held.
+    const sms = 'היי Sahar Aga, הזמנתך מס\' 48094292 מSeestarz online, נקלטה בתפוז ותסופק בימים'
+      + ' הקרובים. לינק למעקב https://crm.tapuzdelivery.co.il/Cs/client/delivery-status/'
+      + 'GQCYRVZLABK9PR8IRVUWHMCXR8A5WNMHUMYP. המשך יום נעים';
+    const parsed = parseSmartText(sms);
+
+    expect(parsed.trackingNumber).toBe('48094292');
+    expect(parsed.carrier).toBe('tapuz');
+    expect(parsed.candidateStatus).toBe('verified');
+    // The token must not survive anywhere as a candidate.
+    expect((parsed.candidates || []).map((c) => c.value))
+      .not.toContain('GQCYRVZLABK9PR8IRVUWHMCXR8A5WNMHUMYP');
+  });
+
+  it('still takes a short id from a carrier link path', () => {
+    // The guard above is a length bound, not a ban on path ids: a courier that
+    // keys its link by the number itself must keep working.
+    const parsed = parseSmartText('הזמנתך יצאה למשלוח https://mytapuz.co.il/t/3094829104');
+    expect(parsed.trackingNumber).toBe('3094829104');
+  });
+
   it('parses AliExpress confirmation and detects carrier and store', () => {
     const text = 'Hi Sahar, your AliExpress order has been shipped with Cainiao. Tracking: LP00582910482CN';
     const parsed = parseSmartText(text);
