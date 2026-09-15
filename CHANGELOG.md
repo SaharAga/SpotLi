@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.37.0] - 2026-09-15
+
+### Added
+- The add/edit package form fits on a phone screen now. It asked for sixteen
+fields at once — fourteen of them optional — in a single scroll that ran to
+1,878px inside a 633px window, with Cancel and Add to Tracking at the very
+bottom, so submitting meant travelling the whole form. The two required fields,
+the carrier and the status stay in view; order details, pickup and locker
+details, and the store return window fold into sections that open on a tap, and
+the action row is pinned to the bottom where it is always reachable. A section
+that already holds something opens itself — editing a package, a Smart Import
+prefill, or a one-tap auto-fill that lands afterwards — so nothing is ever
+hidden behind a closed door. The form also fills the screen: it carried a
+75vh cap sized for a desktop dialog, which left a dead band below the fields on
+a phone.
+
+### Fixed
+- Packages sync to the cloud again. Firestore refuses a package write outright if
+it carries any field the security rules do not name, and the client was sending
+two: `isDemo`, which the schema puts on every package, and `location`, which
+the merge path wrote and nothing ever read. Any package that went through a
+merge — every auto-ingested package, every status update from an email or SMS —
+was therefore rejected with "Missing or insufficient permissions", retried five
+times, and dead-lettered, which is why changes made on one device stopped
+reaching the others. `isDemo` is now allowed by the rules, the dead `location`
+field is gone, and unknown fields are dropped at the cloud boundary rather than
+refusing the whole document — they still survive locally, which is what they
+were preserved for. Changes already stranded can be replayed from the admin
+dashboard's Retry button.
+
+- Fixed a property-based test that generated Israel Post tracking numbers with
+random UPU S10 check digits and asserted the parser must extract them. Only
+about one in eleven verified, so the test contradicted the parser's deliberate
+refusal of an unlabeled number whose check digit fails — failing at random
+whenever fast-check also drew a prefix Israel Post actually issues. The
+generator now appends the correct check digit, and a new test holds it to the
+real validator so the two cannot drift apart.
+
+- On iPhone the sign-in screen now offers installing the app first. iOS gives a
+home-screen app its own storage, separate from Safari, so anyone who signs in
+through the browser and installs afterwards has to sign in a second time — the
+app's own install hint lived in the post-sign-up wizard, which is exactly too
+late to prevent that. The note appears above the sign-in options, only on an
+iPhone that has not installed yet, and only as advice: the form underneath
+stays usable for anyone who prefers the browser. Android and desktop share a
+session between the browser and the installed app, so they are not shown it.
+The install steps themselves are now one component shared with the install
+banner rather than a second copy.
+
 ## [0.36.0] - 2026-09-15
 
 ### Added
