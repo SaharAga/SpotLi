@@ -12,7 +12,7 @@
  */
 
 import { sendPushToUser } from './pushNotifications.js';
-import { formatPushTitleAndBody } from './pushPayload.js';
+import { formatPushTitleAndBody, getUserLanguage } from './pushPayload.js';
 
 const AUTOMATED_SOURCES = new Set(['gmail_sync', 'gmail_sync_order_status', 'gmail_sync_ai', 'email_forwarding']);
 
@@ -29,7 +29,7 @@ export function createNewPackagePushHandler({ db, webpush, vapidPublicKey, vapid
 
     console.log('[newPackagePush] Triggered for package', pkg.id, 'uid', uid, 'source', pkg.source);
 
-    const { title, body } = formatPushTitleAndBody(pkg);
+    const { title, body } = formatPushTitleAndBody(pkg, await getUserLanguage(db, uid));
     const payload = {
       title,
       body,
