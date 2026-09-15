@@ -1234,6 +1234,12 @@ export function DashboardContent() {
           onClose={() => closeModal(MODAL.SMART_IMPORT)}
           onParsedResult={handleSmartImportResult}
           onShowToast={showToast}
+          // Without this the modal's duplicate check ran against its own empty
+          // default forever, so "Matching Existing Package" never appeared and
+          // a second SMS about a package already being tracked looked like it
+          // would add a duplicate. The save path deduplicates either way; this
+          // is the half that says so before the user commits.
+          packages={packages}
           uid={user?.id}
           onSwitchToManual={(rawText) => {
             closeModal(MODAL.SMART_IMPORT);
