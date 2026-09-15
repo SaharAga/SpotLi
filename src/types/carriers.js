@@ -298,6 +298,31 @@ export const CARRIERS = {
     sample: 'CRG9104821',
     country: 'Israel'
   },
+  'focus': {
+    id: 'focus',
+    name: 'Focus Logistics',
+    hebrewName: 'פוקוס',
+    color: 'from-violet-600 to-purple-700',
+    badgeBg: 'bg-violet-500/10 border-violet-500/30 text-violet-400',
+    accentColor: '#7c3aed',
+    logoText: 'פוקוס',
+    website: 'https://focuslogistics.co.il',
+    // Their SMS links the site root, not a per-parcel page, and no public
+    // tracking URL format is known — so this points where the message points
+    // rather than inventing a query string that 404s.
+    getTrackingUrl: () => 'https://focuslogistics.co.il',
+    fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
+    // No bare-digit rule on purpose. The reported parcel was `4046309` — seven
+    // digits, which would also match an order number, a PIN and half the
+    // numbers in an average SMS. Focus is recognised from the phrase and the
+    // host instead (see HEBREW_CARRIER_PHRASES and CARRIER_URL_RULES), the same
+    // way `cargo` is.
+    patterns: [
+      rule(/^(FCS|FOCUS)\d{6,12}$/i, { confidence: 'high', priority: 62 })
+    ],
+    sample: 'FCS4046309',
+    country: 'Israel'
+  },
   'getpackage': {
     id: 'getpackage',
     name: 'GetPackage',

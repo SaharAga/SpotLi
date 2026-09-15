@@ -168,3 +168,37 @@ describe('smartParser — delivery stages with no נמסר in them', () => {
     expect(parseSmartText('שליח מבקש למסור את BZR2039485 היום').status).toBe('out_for_delivery');
   });
 });
+
+describe('smartParser — Focus Logistics', () => {
+  it('names the courier the message names', () => {
+    const parsed = parseSmartText(LA_BEAUTE_SMS);
+    expect(parsed.carrier).toBe('focus');
+    // The merchant and the courier are different things and both survive.
+    expect(parsed.store).toBe('LA BEAUTE');
+  });
+
+  it.each([
+    ['the distribution-company phrase', 'הגיע לחברת ההפצה "פוקוס"'],
+    ['the host', 'למעקב https://focuslogistics.co.il/tracking/4046309'],
+    ['the English name', 'Handed to Focus Logistics for final delivery']
+  ])('recognises it from %s', (_label, text) => {
+    expect(parseSmartText(`משלוח 4046309 ${text}`).carrier).toBe('focus');
+  });
+
+  it.each([
+    'הפוקוס שלנו על שירות מהיר, משלוח 12345678',
+    'משלוח 12345678 בפוקוס מלא'
+  ])('does not claim the bare word: %s', (text) => {
+    // "פוקוס" is an ordinary Hebrew word — the same reason `cargo` is anchored.
+    expect(parseSmartText(text).carrier).not.toBe('focus');
+  });
+
+  it('has no bare-digit detection rule', async () => {
+    // 4046309 is seven digits. A rule that loose would also claim order
+    // numbers and PINs across every other carrier's messages.
+    const { CARRIERS } = await import('../types/carriers.js');
+    for (const r of CARRIERS.focus.patterns) {
+      expect('4046309').not.toMatch(r.re);
+    }
+  });
+});

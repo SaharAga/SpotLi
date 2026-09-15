@@ -156,6 +156,13 @@ export const CARRIER_URL_RULES = [
       /\/tracking\/([A-Z0-9_-]+)/i
     ]
   },
+  // Focus Logistics (focuslogistics.co.il)
+  {
+    carrierId: 'focus',
+    hostPattern: /focuslogistics\.co\.il/i,
+    paramNames: ['num', 'track', 'tracking', 'barcode', 'id', 'code'],
+    pathPatterns: [/\/tracking\/([A-Z0-9_-]+)/i]
+  },
   // Chita Delivery / Cheetah (chtr.co.il, chita-il.com, chita.co.il)
   {
     carrierId: 'chita',
@@ -416,6 +423,10 @@ const HEBREW_CARRIER_PHRASES = [
   // Anchored to a distribution-company phrase or the carrier's own host, since
   // "cargo" is an ordinary English word and Flying Cargo is a separate carrier.
   { carrierId: 'cargo', patterns: [/קרגו\s*שליחויות/i, /cargo\s*express/i, /חברת\s*ה?הפצה\s*CARGO/i, /cargo-?ship/i] },
+  // Same shape as CARGO above: "פוקוס" is an ordinary Hebrew word, so the bare
+  // form is deliberately absent — it is matched only where a distribution
+  // company is being named, or by the carrier's own host.
+  { carrierId: 'focus', patterns: [/חברת\s*ה?הפצה\s*["'״׳’]?\s*פוקוס/i, /מחברת\s*פוקוס/i, /פוקוס\s*לוגיסטיק/i, /focus\s*logistics/i, /focuslogistics/i] },
   { carrierId: 'getpackage', patterns: [/גט\s*פקג['׳`״’‘]/i, /getpackage/i] },
   { carrierId: 'zigzag', patterns: [/זיגזג\s*שליחויות/i, /שליח\s*זיגזג/i, /זיגזג/i, /zigzag/i] },
   { carrierId: 'orian', patterns: [/אוריאן/i, /orian/i] },
