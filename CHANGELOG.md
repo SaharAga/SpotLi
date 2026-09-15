@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.37.3] - 2026-09-15
+
+### Fixed
+- Smart Import names the shop, not the courier, on two more common Israeli SMS
+shapes. A message reading "מספר משלוח 4046309 מ- LA BEAUTE הגיע לחברת ההפצה
+'פוקוס'" was titled "פוקוס" — the distribution company, which the message
+quotes — with no merchant at all. The merchant is now read whether it comes
+before or after the tracking number, and a quoted name introduced as a delivery
+company is no longer mistaken for the item.
+
+Also fixes a guard that dropped any single-word shop of eight letters or more.
+
+- Correcting a package's delivery stage after Smart Import now counts as a parse
+correction. The parser guesses the stage and the form lets you change it, but
+`status` was in neither the correction allowlist nor the training snapshot, so
+every one of those fixes was recorded nowhere — the same blind spot that let a
+delivered SMS ship as "in transit" without any signal reaching us.
+
 ## [0.37.2] - 2026-09-15
 
 ### Fixed
