@@ -8,14 +8,25 @@ name: Production Health Check
 # auto-deploy 403 (TASK-27) that only shows up as one easy-to-miss red job
 # on the merge commit that caused it, with nothing re-checking it after.
 #
-# Runs daily so either failure re-surfaces as a fresh, hard-to-ignore red
-# run — not just once at merge time — until actually fixed. GitHub emails
-# repo watchers by default when a scheduled workflow run fails, so this
-# needs no separate notification wiring.
+# It re-surfaces either failure as a fresh, hard-to-ignore red run — not
+# just once at merge time — until actually fixed. GitHub emails repo
+# watchers by default when a scheduled workflow run fails, so this needs no
+# separate notification wiring.
+#
+# Weekly, not daily. Both jobs are short but Actions bills each one rounded
+# up to a whole minute, so two jobs a day cost ~60 of this account's 2,000
+# monthly private-repo minutes to re-check a site that only changes on a
+# release. The tradeoff is real and accepted: drift can now go up to seven
+# days unnoticed rather than one. That is tolerable because neither failure
+# mode is silent at the moment it happens — a failed hosting deploy or a
+# rules 403 already shows as a red job on the release commit — and this
+# check is the backstop for a red job nobody revisited, not the first
+# alarm. workflow_dispatch is still here to run it on demand right after a
+# release, which is when drift is actually plausible.
 
 on:
   schedule:
-    - cron: '0 6 * * *' # 06:00 UTC daily
+    - cron: '0 6 * * 1' # 06:00 UTC, Mondays
   workflow_dispatch: {}
 
 jobs:
