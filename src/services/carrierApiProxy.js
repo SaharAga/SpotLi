@@ -220,6 +220,46 @@ export function isLiveTrackingConfirmed(carrierId) {
 }
 
 /**
+ * Translation key for a refresh that came back without tracking data.
+ *
+ * The proxy answers with a vocabulary of reasons, and the UI used to collapse
+ * all but one of them into "live tracking isn't available for {carrier} yet".
+ * That sentence says the carrier has no feed — which is a permanent fact about
+ * the carrier, and was wrong for the case that actually produces it most:
+ * 17TRACK was asked and simply had no record of the number. Reported from a
+ * real Tapuz parcel, whose 8-digit number went up in auto-detect mode (no
+ * catalogue code) and came back `not-found`; the user was told Tapuz is
+ * unsupported when what happened was "nothing on this shipment yet".
+ *
+ * Three outcomes, three different things to do about it:
+ * - nothing on record (yet)    -> try again later
+ * - the carrier has no feed    -> update it by hand, permanently
+ * - the lookup could not run   -> nothing changed; not the package's fault
+ *
+ * @param {string|null|undefined} reason - as carried on an untracked record
+ * @returns {'tracking.notFound'|'tracking.notSupported'|'tracking.carrierUnavailable'}
+ */
+export function untrackedReasonKey(reason) {
+  switch (reason) {
+    // The upstream ran and returned nothing for this shipment. `no-checkpoints`
+    // is the GAASH adapter's spelling of the same answer.
+    case 'not-found':
+    case 'no-checkpoints':
+      return 'tracking.notFound';
+
+    case UNTRACKED_REASONS.UNSUPPORTED:
+      return 'tracking.notSupported';
+
+    // Everything else is the lookup itself failing — an unreachable gateway, an
+    // HTTP error from 17TRACK, a missing API key. Unknown reasons land here too:
+    // "we could not check" is the honest answer for a reason we do not know,
+    // where "this carrier is unsupported" would be a claim we cannot make.
+    default:
+      return 'tracking.carrierUnavailable';
+  }
+}
+
+/**
  * Build an explicit "no tracking data" result.
  *
  * Deliberately carries no checkpoints, status or delivery estimate: a package
