@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   X, Cloud, Check, AlertCircle,
-  Mail, User, Lock, Loader2, LogOut, Trash2, ArrowLeft, Sparkles, Smartphone
+  Mail, User, Lock, Loader2, LogOut, Trash2, ArrowLeft, Sparkles, Smartphone, ChevronRight
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -444,23 +444,22 @@ export function AuthModal({
                   Android and desktop share storage between the browser and the
                   installed app, so they are deliberately not shown this. */}
               {suggestInstallFirst && activeTab !== 'forgot' && (
-                <div className="mb-4 p-3 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-start gap-2.5 text-start">
-                  <Smartphone className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" aria-hidden="true" />
-                  <div className="space-y-2">
-                    <p className="text-xs text-slate-300 leading-relaxed">
-                      {language === 'he'
-                        ? 'מתקינים את SpotLi למסך הבית קודם? באייפון לאפליקציה יש התחברות נפרדת מספארי, כך שהתחברות כאן תדרוש התחברות נוספת אחרי ההתקנה.'
-                        : 'Install SpotLi to your Home Screen first? On iPhone the app keeps its own sign-in, separate from Safari — so signing in here means signing in again after you install.'}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setShowInstallGuide(true)}
-                      className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors cursor-pointer min-h-[48px]"
-                    >
-                      {language === 'he' ? 'איך מתקינים' : 'How to install'}
-                    </button>
-                  </div>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowInstallGuide(true)}
+                  className="w-full mb-4 px-3 py-2 rounded-2xl bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 transition-colors cursor-pointer flex items-center gap-2.5 text-start min-h-[48px]"
+                >
+                  <Smartphone className="w-4 h-4 text-blue-400 shrink-0" aria-hidden="true" />
+                  <span className="flex-1 text-xs font-bold text-slate-200">
+                    {language === 'he'
+                      ? 'משתמשים באייפון? התקינו את האפליקציה קודם'
+                      : 'Using an iPhone? Install the app first'}
+                  </span>
+                  <ChevronRight
+                    className={`w-4 h-4 text-blue-400 shrink-0 ${isRTL ? 'rotate-180' : ''}`}
+                    aria-hidden="true"
+                  />
+                </button>
               )}
 
               {/* Social / OAuth Sign-in Buttons */}

@@ -58,20 +58,20 @@ describe('AuthModal (rendered)', () => {
       // signing in here costs the person a second sign-in after installing.
       setUserAgent(IPHONE);
       renderWithLanguage(<AuthModal isOpen initialMode="signin" onClose={vi.fn()} />);
-      expect(screen.getByText(/signing in here means signing in again/i)).toBeInTheDocument();
+      expect(screen.getByText(/install the app first/i)).toBeInTheDocument();
     });
 
     it('does not nag Android, where the browser and the installed app share a session', () => {
       setUserAgent(ANDROID);
       renderWithLanguage(<AuthModal isOpen initialMode="signin" onClose={vi.fn()} />);
-      expect(screen.queryByText(/signing in here means signing in again/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/install the app first/i)).not.toBeInTheDocument();
     });
 
     it('does not show it once the app is already installed', () => {
       setUserAgent(IPHONE);
       Object.defineProperty(window.navigator, 'standalone', { value: true, configurable: true });
       renderWithLanguage(<AuthModal isOpen initialMode="signin" onClose={vi.fn()} />);
-      expect(screen.queryByText(/signing in here means signing in again/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/install the app first/i)).not.toBeInTheDocument();
     });
 
     it('leaves the sign-in form usable — it is advice, not a gate', async () => {
@@ -91,7 +91,7 @@ describe('AuthModal (rendered)', () => {
       const user = userEvent.setup();
       renderWithLanguage(<AuthModal isOpen initialMode="signin" onClose={vi.fn()} />);
 
-      await user.click(screen.getByRole('button', { name: /how to install/i }));
+      await user.click(screen.getByRole('button', { name: /install the app first/i }));
       expect(await screen.findByText(/Add to Home Screen/i)).toBeInTheDocument();
     });
   });
