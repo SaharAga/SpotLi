@@ -6,6 +6,8 @@ import {
   fetchLiveCarrierTracking,
   isLiveTrackingConfirmed,
   hasDirectCarrierAdapter,
+  untrackedReasonKey,
+  UNTRACKED_REASONS,
   LIVE_TRACKING_CARRIERS
 } from './carrierApiProxy';
 import { CARRIERS, CARRIER_LIST } from '../types/carriers';
@@ -341,6 +343,58 @@ describe('carrierApiProxy Service', () => {
       expect(record.shelfNumber).toBe('A-42');
       expect(record.pickupLocation).toBe('נקודת מסירה צ\'יטה, דיזנגוף 50, תל אביב');
       expect(record.checkpoints).toHaveLength(2);
+    });
+  });
+  describe('untrackedReasonKey', () => {
+    // Reported from a real Tapuz parcel: an 8-digit number with no catalogue
+    // code went up in 17TRACK's auto-detect mode and came back `not-found`.
+    // The UI called that "live tracking isn't available for Tapuz Delivery
+    // yet" — a claim about the carrier, from an answer about the shipment.
+    it('reports a shipment 17TRACK has no record of as "nothing yet"', () => {
+      expect(untrackedReasonKey('not-found')).toBe('tracking.notFound');
+    });
+
+    it("treats GAASH's empty-status answer as the same 'nothing yet'", () => {
+      expect(untrackedReasonKey('no-checkpoints')).toBe('tracking.notFound');
+    });
+
+    it('reserves the carrier-has-no-feed message for that reason alone', () => {
+      expect(untrackedReasonKey(UNTRACKED_REASONS.UNSUPPORTED)).toBe('tracking.notSupported');
+    });
+
+    it('reports a failed lookup as unreachable, not as an unsupported carrier', () => {
+      for (const reason of [
+        UNTRACKED_REASONS.UNAVAILABLE,
+        'upstream-error',
+        'upstream-17track-http-503',
+        'api-key-required',
+        'nonce-fetch-failed',
+        'invalid-tracking-number',
+        'missing-tracking-number'
+      ]) {
+        expect(untrackedReasonKey(reason)).toBe('tracking.carrierUnavailable');
+      }
+    });
+
+    // An unknown reason must not be reported as a fact about the carrier: we
+    // would be asserting something we did not learn.
+    it('falls back to unreachable for an unrecognised or absent reason', () => {
+      expect(untrackedReasonKey('something-new-from-upstream')).toBe('tracking.carrierUnavailable');
+      expect(untrackedReasonKey(undefined)).toBe('tracking.carrierUnavailable');
+      expect(untrackedReasonKey(null)).toBe('tracking.carrierUnavailable');
+    });
+
+    it('never returns a key the UI cannot render', async () => {
+      const { translations } = await import('../i18n/translations');
+      const keys = ['not-found', 'no-checkpoints', UNTRACKED_REASONS.UNSUPPORTED, 'upstream-error', 'whatever']
+        .map(untrackedReasonKey);
+      for (const key of new Set(keys)) {
+        const leaf = key.split('.').slice(1).join('.');
+        for (const lang of ['en', 'he']) {
+          expect(translations[lang].tracking[leaf]).toBeTruthy();
+          expect(translations[lang].tracking[leaf]).toContain('{carrier}');
+        }
+      }
     });
   });
 });

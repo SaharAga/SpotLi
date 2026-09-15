@@ -89,6 +89,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { useAuth, AuthProvider } from './context/AuthContext';
 import { isAdminUser } from './constants/admin';
 import { getCarrier } from './types/carriers';
+import { untrackedReasonKey } from './services/carrierApiProxy';
 import { getTabPredicate, ARCHIVED_TAB } from './types/stages';
 import { STORAGE_KEYS } from './constants/storageKeys';
 import { LEGAL_VERSION } from './constants/legalVersion';
@@ -988,13 +989,10 @@ export function DashboardContent() {
   const handleRefreshSinglePackage = useCallback(async (pkg) => {
     const res = await deliveryService.refreshPackageTracking(pkg, user?.id || null);
 
-    // Lookup worked, but this carrier has no live feed. Say so plainly rather
-    // than reporting a successful refresh that changed nothing.
+    // The lookup ran but produced no tracking data. Which of the three reasons
+    // it was decides what the user should do about it — see untrackedReasonKey.
     if (res.success && res.tracked === false) {
-      const key = res.reason === 'carrier-unavailable'
-        ? 'tracking.carrierUnavailable'
-        : 'tracking.notSupported';
-      showToast(t(key).replace('{carrier}', carrierLabel(pkg)), 'info');
+      showToast(t(untrackedReasonKey(res.reason)).replace('{carrier}', carrierLabel(pkg)), 'info');
       return;
     }
 
