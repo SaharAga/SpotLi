@@ -146,7 +146,6 @@ export function mergePackageData(existingPkg, incomingData) {
     customsDetails: incomingData.customsDetails
       ? { ...(existingPkg.customsDetails || {}), ...incomingData.customsDetails }
       : existingPkg.customsDetails || null,
-    location: incomingData.location || existingPkg.location || null,
     expectedDeliveryDate: incomingData.expectedDeliveryDate || existingPkg.expectedDeliveryDate || null,
     aliases: Array.from(aliases),
     checkpoints: mergedCheckpoints,
