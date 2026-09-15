@@ -231,6 +231,25 @@
         }
       ]
     },
+    "focus": {
+      "id": "focus",
+      "name": "Focus Logistics",
+      "hebrewName": "פוקוס",
+      "website": "https://focuslogistics.co.il",
+      "country": "Israel",
+      "domains": [
+        "focuslogistics.co.il"
+      ],
+      "patterns": [
+        {
+          "source": "^(FCS|FOCUS)\\d{6,12}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 62
+        }
+      ]
+    },
     "getpackage": {
       "id": "getpackage",
       "name": "GetPackage",
@@ -941,6 +960,14 @@
       "confidence": "high",
       "checksum": "not-applicable",
       "priority": 60
+    },
+    {
+      "carrierId": "focus",
+      "source": "^(FCS|FOCUS)\\d{6,12}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 62
     },
     {
       "carrierId": "cargo",
