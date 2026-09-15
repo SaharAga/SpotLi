@@ -13,6 +13,7 @@ import { recordParseCorrection } from '../services/parseCorrectionService';
 import { recordSmartImportAttempt } from '../services/smartImportAttemptService';
 import { recordTrainingExample } from '../services/trainingDataService';
 import { Modal } from './Modal';
+import { CollapsibleSection } from './CollapsibleSection';
 
 // Smart Import fields worth watching for a post-autofill edit. Excludes
 // `destination`, which is always a static guess ("Israel") rather than
@@ -61,6 +62,30 @@ export function AddEditPackageModal({
   // mis-parse detection signal. Null outside a fresh Smart Import prefill
   // (editing an existing package is not a "correction" of anything).
   const autoFillSnapshotRef = useRef(null);
+
+  // A drawer that holds something opens itself, and never shuts on its own.
+  //
+  // Hiding data the user cannot see is worse than a long form. This is read
+  // from the live field values rather than from `editPackage`, because the
+  // fields arrive by three routes: editing a package, a Smart Import prefill
+  // passed as initialValues, and the 1-tap auto-fill that lands *after* mount.
+  // Only the first of those is known when the modal opens.
+  //
+  // Order date and expected delivery are deliberately not counted: the form
+  // fills them in for you (today, and today + 14), so treating them as
+  // content would open this drawer on every blank add — which is the one
+  // thing it exists to avoid.
+  const hasOrderDetails = Boolean(
+    (category && category !== 'electronics') || origin || notes
+    // 'Tel Aviv, Israel' is this form's own placeholder guess for destination,
+    // not something the user or the parser supplied (see the note at the top
+    // of this file), so it does not count as content either.
+    || (destination && destination !== 'Tel Aviv, Israel' && destination !== 'Israel')
+  );
+  const hasPickupDetails = Boolean(
+    pickupCode || shelfNumber || pickupDeadline || pickupLocation || originalPickupLocation
+  );
+  const hasReturnDetails = Boolean(returnDeadline || returnNotes);
 
   // Check for duplicate tracking number against existing package list
   const duplicatePackage = React.useMemo(() => {
@@ -371,7 +396,10 @@ export function AddEditPackageModal({
       />
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+      <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-4 max-h-[75vh] lg:max-h-[70vh]">
+        {/* Always visible: the two required fields, plus the two
+            answers a person adding a package by hand always has. */}
         {/* Item Title */}
         <div>
           <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
@@ -471,10 +499,8 @@ export function AddEditPackageModal({
           )}
         </div>
 
-        {/* Carrier & Category Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Carrier Selector */}
-          <div>
+        {/* Carrier */}
+        <div>
             <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
               {t('modal.carrier')}
             </label>
@@ -508,8 +534,45 @@ export function AddEditPackageModal({
                 ))}
               </optgroup>
             </select>
-          </div>
+        </div>
 
+        {/* Current Status Stage */}
+        <div>
+          <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+            {t('modal.status')}
+          </label>
+          <div
+            role="radiogroup"
+            aria-label={t('modal.status')}
+            className="grid grid-cols-2 sm:grid-cols-3 gap-2"
+          >
+            {SELECTABLE_STATUSES.map((s) => (
+              <button
+                type="button"
+                role="radio"
+                aria-checked={status === s.id}
+                key={s.id}
+                onClick={() => setStatus(s.id)}
+                className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-ui text-center min-h-[48px] cursor-pointer ${
+                  status === s.id
+                    ? 'bg-blue-600 border-blue-500 text-white shadow-sm'
+                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                }`}
+              >
+                {language === 'he' ? s.hebrewLabel : s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+
+        {/* Everything below is optional, and folded away by default.
+            A section opens itself when it already holds something, so
+            an edited package or a Smart Import guess is never hidden. */}
+        <CollapsibleSection
+          title={language === 'he' ? 'פרטי הזמנה' : 'Order details'}
+          defaultOpen={hasOrderDetails}
+        >
           <div>
             <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
               {t('modal.category')}
@@ -526,9 +589,7 @@ export function AddEditPackageModal({
               ))}
             </select>
           </div>
-        </div>
 
-        {/* Dates Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
@@ -584,35 +645,6 @@ export function AddEditPackageModal({
           </div>
         </div>
 
-        {/* Current Status Stage */}
-        <div>
-          <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
-            {t('modal.status')}
-          </label>
-          <div
-            role="radiogroup"
-            aria-label={t('modal.status')}
-            className="grid grid-cols-2 sm:grid-cols-3 gap-2"
-          >
-            {SELECTABLE_STATUSES.map((s) => (
-              <button
-                type="button"
-                role="radio"
-                aria-checked={status === s.id}
-                key={s.id}
-                onClick={() => setStatus(s.id)}
-                className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-ui text-center min-h-[48px] cursor-pointer ${
-                  status === s.id
-                    ? 'bg-blue-600 border-blue-500 text-white shadow-sm'
-                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700 hover:text-slate-200'
-                }`}
-              >
-                {language === 'he' ? s.hebrewLabel : s.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Notes / Locker / Instructions */}
         <div>
           <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
@@ -628,8 +660,13 @@ export function AddEditPackageModal({
         </div>
 
         {/* Pickup Details */}
-        <div className="space-y-4 pt-4 border-t border-slate-800">
-          <h3 className="text-sm font-bold text-slate-200">{language === 'he' ? 'פרטי איסוף ולוקר (אופציונלי)' : 'Pickup & Locker Details (Optional)'}</h3>
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title={language === 'he' ? 'פרטי איסוף ולוקר' : 'Pickup & locker details'}
+          defaultOpen={hasPickupDetails}
+        >
+          <div className="space-y-4">
           
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
@@ -681,14 +718,15 @@ export function AddEditPackageModal({
               className="w-full bg-slate-950 border border-slate-800 text-base sm:text-sm text-slate-100 placeholder-slate-500 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors min-h-[48px]"
             />
           </div>
-        </div>
+          </div>
+        </CollapsibleSection>
 
-        {/* Return Window Details */}
-        <div className="space-y-4 pt-4 border-t border-slate-800">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-200">
-              {language === 'he' ? 'חלון החזרה לחנות (אופציונלי)' : 'Store Return Window (Optional)'}
-            </h3>
+        <CollapsibleSection
+          title={language === 'he' ? 'חלון החזרה לחנות' : 'Store return window'}
+          defaultOpen={hasReturnDetails}
+        >
+          <div className="space-y-4">
+            <div className="flex items-center justify-end">
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
@@ -741,10 +779,14 @@ export function AddEditPackageModal({
               />
             </div>
           </div>
+          </div>
+        </CollapsibleSection>
         </div>
 
-        {/* Modal Actions */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+        {/* Pinned. The form is far taller than the window, and this row used to
+            sit at the very bottom of that scroll: on a phone you travelled the
+            whole thing to reach "Add to Tracking". */}
+        <div className="shrink-0 flex items-center justify-end gap-3 p-4 sm:px-6 border-t border-slate-800 bg-slate-900">
           <button
             type="button"
             onClick={onClose}

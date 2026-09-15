@@ -484,6 +484,20 @@
     [data-modal-panel] > * {
       min-height: 0;
     }
+
+    /* ...including the caller's own max-height. The add/edit form carried
+       `max-h-[75vh]`, sized for a centred desktop dialog; inside a panel that
+       is already the whole viewport it left a dead band below the fields —
+       844px of panel holding an 81px header and a 633px form. The form fills
+       what the header leaves, and its own scroll region does the scrolling. */
+    [data-modal-panel] > form {
+      flex: 1 1 auto;
+      max-height: none !important;
+    }
+
+    [data-modal-panel] > form > .overflow-y-auto {
+      max-height: none !important;
+    }
   }
 
   .min-h-touch {
