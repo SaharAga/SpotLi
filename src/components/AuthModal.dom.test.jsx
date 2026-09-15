@@ -1,5 +1,5 @@
 /** @vitest-environment jsdom */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AuthModal } from './AuthModal';
@@ -40,6 +40,60 @@ describe('AuthModal (rendered)', () => {
   beforeEach(() => {
     cleanup();
     Object.values(authMocks).forEach((fn) => fn.mockReset());
+  });
+
+  describe('install-first note', () => {
+    const setUserAgent = (ua) => {
+      Object.defineProperty(window.navigator, 'userAgent', { value: ua, configurable: true });
+    };
+    const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Version/17.0 Mobile/15E148 Safari/604.1';
+    const ANDROID = 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/120.0.0.0 Mobile Safari/537.36';
+
+    afterEach(() => {
+      delete window.navigator.standalone;
+    });
+
+    it('offers installing first on an iPhone that has not installed yet', () => {
+      // A session created in Safari is invisible to the home-screen app, so
+      // signing in here costs the person a second sign-in after installing.
+      setUserAgent(IPHONE);
+      renderWithLanguage(<AuthModal isOpen initialMode="signin" onClose={vi.fn()} />);
+      expect(screen.getByText(/install the app first/i)).toBeInTheDocument();
+    });
+
+    it('does not nag Android, where the browser and the installed app share a session', () => {
+      setUserAgent(ANDROID);
+      renderWithLanguage(<AuthModal isOpen initialMode="signin" onClose={vi.fn()} />);
+      expect(screen.queryByText(/install the app first/i)).not.toBeInTheDocument();
+    });
+
+    it('does not show it once the app is already installed', () => {
+      setUserAgent(IPHONE);
+      Object.defineProperty(window.navigator, 'standalone', { value: true, configurable: true });
+      renderWithLanguage(<AuthModal isOpen initialMode="signin" onClose={vi.fn()} />);
+      expect(screen.queryByText(/install the app first/i)).not.toBeInTheDocument();
+    });
+
+    it('leaves the sign-in form usable — it is advice, not a gate', async () => {
+      setUserAgent(IPHONE);
+      const user = userEvent.setup();
+      renderWithLanguage(<AuthModal isOpen initialMode="signin" onClose={vi.fn()} />);
+
+      await user.type(screen.getByPlaceholderText('you@domain.com'), 'tester@example.com');
+      await user.type(screen.getByPlaceholderText('\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022'), 'somepassword1!');
+      await user.click(getSubmitButton(/sign in$/i));
+
+      expect(authMocks.loginWithEmail).toHaveBeenCalled();
+    });
+
+    it('shows the install steps on demand', async () => {
+      setUserAgent(IPHONE);
+      const user = userEvent.setup();
+      renderWithLanguage(<AuthModal isOpen initialMode="signin" onClose={vi.fn()} />);
+
+      await user.click(screen.getByRole('button', { name: /install the app first/i }));
+      expect(await screen.findByText(/Add to Home Screen/i)).toBeInTheDocument();
+    });
   });
 
   it('rejects an invalid email without calling loginWithEmail', async () => {
