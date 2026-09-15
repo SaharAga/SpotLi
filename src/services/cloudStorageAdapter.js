@@ -10,7 +10,7 @@ import {
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './firebase';
 import { deliveryService } from './deliveryService';
-import { parsePackage, parsePackageList } from '../schemas/packageSchema';
+import { parsePackage, parsePackageList, pickCloudWritableFields } from '../schemas/packageSchema';
 import { STORAGE_KEYS } from '../constants/storageKeys';
 
 export const MAX_TOMBSTONES = 200;
@@ -417,7 +417,9 @@ export class CloudStorageAdapter {
     if (!validatedPkg) throw new Error('Invalid package payload');
     this.removeTombstone(validatedPkg.id, userId);
     const docRef = doc(db, 'users', userId, 'packages', validatedPkg.id);
-    await setDoc(docRef, { ...validatedPkg, userId }, { merge: true });
+    // Narrowed, not trusted: the repairing schema preserves unknown fields on
+    // purpose, and firestore.rules refuses the entire write if it sees one.
+    await setDoc(docRef, { ...pickCloudWritableFields(validatedPkg), userId }, { merge: true });
   }
 
   /**

@@ -355,3 +355,56 @@ export function parsePackageList(data) {
     limit: PACKAGE_LIST_SOFT_LIMIT
   };
 }
+
+/**
+ * The only keys Firestore will accept on a package document.
+ *
+ * `firestore.rules` gates every package write on
+ * `data.keys().hasOnly(allowedKeys)` — one unexpected key and the WHOLE write
+ * is refused with "Missing or insufficient permissions". The repairing schema
+ * above deliberately does the opposite: `catchall` preserves unknown fields so
+ * a record written by a newer client is not quietly stripped by an older one.
+ *
+ * Both behaviours are right, and together they were a trap. A package that
+ * picked up any stray field — `location`, written by mergePackageData and read
+ * by nothing — could never sync again, silently, until it exhausted its retries
+ * and landed in the dead-letter queue. Three of them did.
+ *
+ * So the two rules meet here: unknown fields still survive in localStorage, and
+ * are dropped at the cloud boundary instead of poisoning the write. Kept in
+ * lockstep with firestore.rules by
+ * src/tests/integration/firestoreRulesContract.test.js.
+ */
+export const CLOUD_WRITABLE_KEYS = Object.freeze([
+  'id', 'title', 'titleHe', 'trackingNumber', 'carrier', 'carrierName',
+  'status', 'category', 'orderDate', 'expectedDeliveryDate', 'origin',
+  'destination', 'notes', 'notesHe', 'isPinned', 'isArchived', 'isDemo',
+  'checkpoints', 'pickupCode', 'pickupLocation', 'pickupHours', 'pickupPhone',
+  'pickupDeadline', 'returnDeadline', 'returnNotes',
+  'isRedirected', 'originalPickupLocation', 'redirectedAt', 'redirectReason',
+  'store', 'orderNumber', 'createdAt', 'updatedAt', 'userId',
+  'shelfNumber', 'localTrackingNumber', 'localCarrier', 'aliases',
+  'customsDetails', 'source', 'confidence', 'lockerPin', 'schemaVersion'
+]);
+
+const CLOUD_WRITABLE_KEY_SET = new Set(CLOUD_WRITABLE_KEYS);
+
+/**
+ * Narrows a package to the fields Firestore accepts.
+ *
+ * Undefined values are dropped too: Firestore rejects `undefined` outright,
+ * and an absent optional field is what the rules expect anyway.
+ *
+ * @param {object} pkg
+ * @returns {object}
+ */
+export function pickCloudWritableFields(pkg) {
+  if (!pkg || typeof pkg !== 'object') return {};
+  const out = {};
+  for (const key of Object.keys(pkg)) {
+    if (CLOUD_WRITABLE_KEY_SET.has(key) && pkg[key] !== undefined) {
+      out[key] = pkg[key];
+    }
+  }
+  return out;
+}
