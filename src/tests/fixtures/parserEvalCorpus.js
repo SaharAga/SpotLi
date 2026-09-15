@@ -23,11 +23,24 @@
  *   rawText         the text a user would paste / share into Smart Import
  *   expected.trackingNumber  the correct ID, or null for a true negative
  *   expected.carrier         the correct carrier id, or null
+ *   expected.deliveryStatus  optional — the stage the message states
+ *   expected.store           optional — the merchant the message names
+ *
+ * `deliveryStatus` and `store` are optional because they were added after the
+ * corpus was written, and a case without them is still a valid tracking case.
+ * They exist because a real SMS came back with the right number, the wrong
+ * stage and no merchant, and the harness reported it green: it scored only the
+ * ID and the carrier, so everything else the parser got wrong was invisible by
+ * construction. Adding an expectation to an existing case is not tuning — it
+ * records what the message already says. Writing one to match what the parser
+ * currently outputs is, so read the text, not the result. Seven of these are
+ * failing today, across five carriers; they stay failing until the parser
+ * earns them.
  *   group           bucket for per-group reporting
  *   note            why this case is interesting (shown on failure)
  */
 
-/** @type {Array<{id:string,rawText:string,group:string,note?:string,expected:{trackingNumber:string|null,carrier:string|null}}>} */
+/** @type {Array<{id:string,rawText:string,group:string,note?:string,expected:{trackingNumber:string|null,carrier:string|null,deliveryStatus?:string,store?:string}}>} */
 export const PARSER_EVAL_CORPUS = [
   // ─────────────────────────────────────────────────────────────────────
   // POSITIVES — Israel Post (UPU S10, checksum-valid)
@@ -36,28 +49,28 @@ export const PARSER_EVAL_CORPUS = [
     id: 'pos-ilp-plain',
     group: 'israel-post',
     rawText: 'דואר ישראל - דבר דואר RS736102941IL ממתין לאיסוף בסניף רמת אביב עד 14/03.',
-    expected: { trackingNumber: 'RS736102941IL', carrier: 'israel-post' }
+    expected: { trackingNumber: 'RS736102941IL', carrier: 'israel-post', deliveryStatus: 'ready_for_pickup' }
   },
   {
     id: 'pos-ilp-no-keyword',
     group: 'israel-post',
     note: 'S10 format alone, no Hebrew tracking keyword anywhere',
     rawText: 'החבילה שלך RR617283948IL בדרך.',
-    expected: { trackingNumber: 'RR617283948IL', carrier: 'israel-post' }
+    expected: { trackingNumber: 'RR617283948IL', carrier: 'israel-post', deliveryStatus: 'in_transit' }
   },
   {
     id: 'pos-ilp-with-phone-nearby',
     group: 'israel-post',
     note: 'phone number adjacent — must not be preferred over the S10',
     rawText: 'דואר ישראל: EE482103946IL הגיע לסניף. לבירורים חייגו 03-9445566 בין 08:00-16:00.',
-    expected: { trackingNumber: 'EE482103946IL', carrier: 'israel-post' }
+    expected: { trackingNumber: 'EE482103946IL', carrier: 'israel-post', deliveryStatus: 'ready_for_pickup' }
   },
   {
     id: 'pos-ilp-among-dates-and-price',
     group: 'israel-post',
     note: 'date + price + branch number all compete as digit runs',
     rawText: 'הזמנה מ-12/02/2026 בסך 249.90 ₪ נשלחה. מספר מעקב CP736102941IL. סניף 4471.',
-    expected: { trackingNumber: 'CP736102941IL', carrier: 'israel-post' }
+    expected: { trackingNumber: 'CP736102941IL', carrier: 'israel-post', deliveryStatus: 'in_transit' }
   },
   {
     id: 'pos-ilp-lowercase-spaced',
@@ -70,7 +83,7 @@ export const PARSER_EVAL_CORPUS = [
     id: 'pos-ilp-english-mypost-url',
     group: 'israel-post',
     rawText: 'Your item EA482103946US is now in transit. Track: https://mypost.israelpost.co.il/itemtrace?itemcode=EA482103946US',
-    expected: { trackingNumber: 'EA482103946US', carrier: 'israel-post' }
+    expected: { trackingNumber: 'EA482103946US', carrier: 'israel-post', deliveryStatus: 'in_transit' }
   },
 
   // ─────────────────────────────────────────────────────────────────────
@@ -80,27 +93,27 @@ export const PARSER_EVAL_CORPUS = [
     id: 'pos-chita-courier-eta',
     group: 'israeli-courier',
     rawText: 'צ\'יטה: השליח בדרך אליך עם משלוח CH20481937. חלון הגעה משוער 14:00-16:00.',
-    expected: { trackingNumber: 'CH20481937', carrier: 'chita' }
+    expected: { trackingNumber: 'CH20481937', carrier: 'chita', deliveryStatus: 'out_for_delivery' }
   },
   {
     id: 'pos-chita-bare-no-label',
     group: 'israeli-courier',
     note: 'carrier phrase present but no "מספר מעקב" label before the ID',
     rawText: 'שלום! חבילתך מצ\'יטה CHT10294857 נמסרה לשליח.',
-    expected: { trackingNumber: 'CHT10294857', carrier: 'chita' }
+    expected: { trackingNumber: 'CHT10294857', carrier: 'chita', deliveryStatus: 'out_for_delivery' }
   },
   {
     id: 'pos-hfd-with-pin',
     group: 'israeli-courier',
     note: 'locker PIN (4 digits) must not win over the HFD id',
     rawText: 'HFD: חבילה HFD73610294 ממתינה בלוקר בסופר יודה. קוד פתיחה: 5512',
-    expected: { trackingNumber: 'HFD73610294', carrier: 'hfd' }
+    expected: { trackingNumber: 'HFD73610294', carrier: 'hfd', deliveryStatus: 'ready_for_pickup' }
   },
   {
     id: 'pos-boxit-locker',
     group: 'israeli-courier',
     rawText: 'בוקסיט - החבילה שלך BOX4820193 ממתינה בעמדה בקניון הזהב ראשל"צ. קוד איסוף 7734.',
-    expected: { trackingNumber: 'BOX4820193', carrier: 'boxit' }
+    expected: { trackingNumber: 'BOX4820193', carrier: 'boxit', deliveryStatus: 'ready_for_pickup' }
   },
   {
     id: 'pos-tapuz-url-only',
@@ -113,31 +126,31 @@ export const PARSER_EVAL_CORPUS = [
     id: 'pos-zigzag-delivered',
     group: 'israeli-courier',
     rawText: 'זיגזג: משלוח ZIG492013 נמסר בהצלחה. תודה שבחרת בנו!',
-    expected: { trackingNumber: 'ZIG492013', carrier: 'zigzag' }
+    expected: { trackingNumber: 'ZIG492013', carrier: 'zigzag', deliveryStatus: 'delivered' }
   },
   {
     id: 'pos-buzzr-attempt',
     group: 'israeli-courier',
     rawText: 'באזר: ניסינו למסור את BZR2039485 ולא היית בבית. ננסה שוב מחר בין 09:00-13:00.',
-    expected: { trackingNumber: 'BZR2039485', carrier: 'buzzr' }
+    expected: { trackingNumber: 'BZR2039485', carrier: 'buzzr', deliveryStatus: 'exception' }
   },
   {
     id: 'pos-bar-distribution',
     group: 'israeli-courier',
     rawText: 'בר הפצה - דבר דואר BAR9018372 נמסר לנקודת האיסוף ברחוב הרצל 44.',
-    expected: { trackingNumber: 'BAR9018372', carrier: 'bar-distribution' }
+    expected: { trackingNumber: 'BAR9018372', carrier: 'bar-distribution', deliveryStatus: 'ready_for_pickup' }
   },
   {
     id: 'pos-orian-warehouse',
     group: 'israeli-courier',
     rawText: 'אוריאן: משלוח ORN20394857 שוחרר מהמכס ויצא להפצה.',
-    expected: { trackingNumber: 'ORN20394857', carrier: 'orian' }
+    expected: { trackingNumber: 'ORN20394857', carrier: 'orian', deliveryStatus: 'in_transit' }
   },
   {
     id: 'pos-getpackage-locker',
     group: 'israeli-courier',
     rawText: 'GetPackage: החבילה GP61728394 מחכה לך. קוד: 2841. הלוקר פתוח 24/7.',
-    expected: { trackingNumber: 'GP61728394', carrier: 'getpackage' }
+    expected: { trackingNumber: 'GP61728394', carrier: 'getpackage', deliveryStatus: 'ready_for_pickup' }
   },
 
   // ─────────────────────────────────────────────────────────────────────
@@ -148,31 +161,31 @@ export const PARSER_EVAL_CORPUS = [
     group: 'global',
     note: 'UPS 1Z with the spacing UPS itself uses in emails',
     rawText: 'UPS: Your package 1Z 999 AA1 01 2345 6784 is out for delivery.',
-    expected: { trackingNumber: '1Z999AA10123456784', carrier: 'ups' }
+    expected: { trackingNumber: '1Z999AA10123456784', carrier: 'ups', deliveryStatus: 'out_for_delivery' }
   },
   {
     id: 'pos-aliexpress-cainiao',
     group: 'global',
     rawText: 'AliExpress: Order shipped! Tracking LP00582910482CN. Estimated arrival Mar 12.',
-    expected: { trackingNumber: 'LP00582910482CN', carrier: 'cainiao' }
+    expected: { trackingNumber: 'LP00582910482CN', carrier: 'cainiao', deliveryStatus: 'in_transit', store: 'AliExpress' }
   },
   {
     id: 'pos-yunexpress',
     group: 'global',
     rawText: 'YunExpress shipment YT2109849201948201 has departed the origin facility.',
-    expected: { trackingNumber: 'YT2109849201948201', carrier: 'yunexpress' }
+    expected: { trackingNumber: 'YT2109849201948201', carrier: 'yunexpress', deliveryStatus: 'in_transit' }
   },
   {
     id: 'pos-4px-hebrew-context',
     group: 'global',
     rawText: 'המשלוח שלך מ-4PX בדרך. מספר מעקב: 4PX30004928194',
-    expected: { trackingNumber: '4PX30004928194', carrier: '4px' }
+    expected: { trackingNumber: '4PX30004928194', carrier: '4px', deliveryStatus: 'in_transit' }
   },
   {
     id: 'pos-usps-impb',
     group: 'global',
     rawText: 'USPS: Item 9400100000000000000006 was delivered to your mailbox.',
-    expected: { trackingNumber: '9400100000000000000006', carrier: 'usps' }
+    expected: { trackingNumber: '9400100000000000000006', carrier: 'usps', deliveryStatus: 'delivered' }
   },
   {
     id: 'pos-royal-mail',
@@ -185,7 +198,7 @@ export const PARSER_EVAL_CORPUS = [
     group: 'global',
     note: 'bare 10 digits — only the DHL keyword makes this a tracking number',
     rawText: 'DHL Express waybill 3094829104 has cleared customs in Tel Aviv.',
-    expected: { trackingNumber: '3094829104', carrier: 'dhl' }
+    expected: { trackingNumber: '3094829104', carrier: 'dhl', deliveryStatus: 'in_transit' }
   },
   {
     id: 'pos-fedex-12digit-labeled',
@@ -198,7 +211,7 @@ export const PARSER_EVAL_CORPUS = [
     id: 'pos-shein-order',
     group: 'global',
     rawText: 'SHEIN: your parcel GSH2039485716 has arrived in Israel and moved to local delivery.',
-    expected: { trackingNumber: 'GSH2039485716', carrier: 'shein' }
+    expected: { trackingNumber: 'GSH2039485716', carrier: 'shein', deliveryStatus: 'in_transit', store: 'SHEIN' }
   },
 
   // ─────────────────────────────────────────────────────────────────────
@@ -209,28 +222,28 @@ export const PARSER_EVAL_CORPUS = [
     group: 'hard-positive',
     note: 'an OTP AND a tracking number in one message — must pick the tracking one',
     rawText: 'קוד האימות שלך הוא 483920. בנוסף, חבילתך RS736102941IL הגיעה לסניף.',
-    expected: { trackingNumber: 'RS736102941IL', carrier: 'israel-post' }
+    expected: { trackingNumber: 'RS736102941IL', carrier: 'israel-post', deliveryStatus: 'ready_for_pickup' }
   },
   {
     id: 'pos-hard-order-and-tracking',
     group: 'hard-positive',
     note: 'Amazon-style order id must lose to the real carrier id',
     rawText: 'Order 114-8291029-1928301 has shipped via UPS. Tracking: 1Z999AA10123456784',
-    expected: { trackingNumber: '1Z999AA10123456784', carrier: 'ups' }
+    expected: { trackingNumber: '1Z999AA10123456784', carrier: 'ups', deliveryStatus: 'in_transit' }
   },
   {
     id: 'pos-hard-shortlink',
     group: 'hard-positive',
     note: 'ID only reachable through the link text, not resolvable offline',
     rawText: 'צ\'יטה: חבילה CH48201937 בדרך. פרטים: https://chtr.co.il/t/CH48201937',
-    expected: { trackingNumber: 'CH48201937', carrier: 'chita' }
+    expected: { trackingNumber: 'CH48201937', carrier: 'chita', deliveryStatus: 'in_transit' }
   },
   {
     id: 'pos-hard-two-tracking-numbers',
     group: 'hard-positive',
     note: 'split shipment — either ID is acceptable, first is preferred',
     rawText: 'ההזמנה פוצלה לשני משלוחים: RS736102941IL ו-RR617283948IL. שניהם בדרך.',
-    expected: { trackingNumber: 'RS736102941IL', carrier: 'israel-post' }
+    expected: { trackingNumber: 'RS736102941IL', carrier: 'israel-post', deliveryStatus: 'in_transit' }
   },
   {
     id: 'pos-hard-address-numbers',
@@ -251,7 +264,7 @@ export const PARSER_EVAL_CORPUS = [
     group: 'hard-positive',
     note: 'long email body with footer noise around the ID',
     rawText: 'Hi,\n\nThanks for your order. It shipped today.\n\nTracking number: 1Z999AA10123456784\nCarrier: UPS\n\nQuestions? Call 1-800-555-0199 or reply to this email.\nOrder #99182 | Invoice 20260214 | VAT 514829371',
-    expected: { trackingNumber: '1Z999AA10123456784', carrier: 'ups' }
+    expected: { trackingNumber: '1Z999AA10123456784', carrier: 'ups', deliveryStatus: 'in_transit' }
   },
 
   // ─────────────────────────────────────────────────────────────────────
@@ -273,7 +286,7 @@ export const PARSER_EVAL_CORPUS = [
     id: 'pos-order-as-tracking-courier-en',
     group: 'order-as-tracking',
     rawText: 'Your order 8471293 has shipped with Tapuz and is on its way.',
-    expected: { trackingNumber: '8471293', carrier: 'tapuz' }
+    expected: { trackingNumber: '8471293', carrier: 'tapuz', deliveryStatus: 'in_transit' }
   },
   {
     id: 'pos-order-as-tracking-with-url',
@@ -287,7 +300,7 @@ export const PARSER_EVAL_CORPUS = [
     group: 'hard-positive',
     note: 'from a real user correction: labeled number must beat both the URL path token and the WhatsApp phone number',
     rawText: 'שלום, הזמנתך מ-Cotton Club לשדרות בן גוריון 23 ראש העין, נקלטה בחברת ההפצה CARGO ותימסר אליך בימים הקרובים. מס מעקב 68709580, למעקב אחר המשלוח: https://www.cargo-ship.co.il/cs/cs-client/delivery-status/VJ452WCTHFEI לבירורים נוספים בוואטסאפ https://wa.me/972504328304',
-    expected: { trackingNumber: '68709580', carrier: 'cargo' }
+    expected: { trackingNumber: '68709580', carrier: 'cargo', deliveryStatus: 'in_transit' }
   },
 
   // ─────────────────────────────────────────────────────────────────────
@@ -303,28 +316,28 @@ export const PARSER_EVAL_CORPUS = [
     group: 'real-world',
     note: 'Israel Post מהיר לתיבה format (MA…N8) — matched no rule at all, and the carrier is never named',
     rawText: 'לקוח יקר, משלוח MA002378449N8 מהשולח ישראכרט מהיר לתיבה יונח בתיבת המכתבים שלך במהלך הימים הקרובים.',
-    expected: { trackingNumber: 'MA002378449N8', carrier: 'israel-post' }
+    expected: { trackingNumber: 'MA002378449N8', carrier: 'israel-post', deliveryStatus: 'in_transit' }
   },
   {
     id: 'pos-real-zigzag-multilink',
     group: 'real-world',
     note: 'carrier identifiable only by host; three URLs, two base64 blobs and a WhatsApp number compete',
     rawText: 'שלום לקוח יקר\nשליחות מטעם אליטה אופק && לכתובת רחוב הדוגמה 1 תל אביב שמספרה 9214846123 עברה לחברת המשלוחים למעקב אחרי ההזמנה - לינק למעקב - https://api.zig-zag.co.il/isufatzmi/#!/deliveryTracking?num=DFA8E4BF45FD9B61\n\nלאישור השארת חבילה ליד הדלת יש להכנס לקישור https://www.zig-zag.co.il/bythedoor?num=eyJpZCI6IjExMTExIiwibnVtIjoiMTAwMDAwMDAwMDAifQ==\n\nניתן לפנות אלינו בווצאפ https://wa.me/972500000000\nבברכה זיגזג',
-    expected: { trackingNumber: '9214846123', carrier: 'zigzag' }
+    expected: { trackingNumber: '9214846123', carrier: 'zigzag', deliveryStatus: 'in_transit' }
   },
   {
     id: 'pos-real-tapuz-return',
     group: 'real-world',
     note: 'a return pickup, carrier named only in the sign-off',
     rawText: 'היי, שליח של Seestarz online מבקש לאסוף מרחוב הדוגמה 1 תל אביב פריט/ים חזרה. מספר משלוח 47927811. במידה ואינכם נמצאים בכתובת - ניתן להשאיר במיקום המוסכם ולעדכן את השליח שלכם. לוואטסאפ עם נציג https://wa.me/972500000000 אין צורך לחכות לשליח בכתובת. יום נעים, תפוז שליחויות',
-    expected: { trackingNumber: '47927811', carrier: 'tapuz' }
+    expected: { trackingNumber: '47927811', carrier: 'tapuz', store: 'Seestarz online' }
   },
   {
     id: 'pos-real-chita-survey',
     group: 'real-world',
     note: "typographic apostrophe in צ’יטה, plus a shortlink whose path must not beat the number in the text",
     rawText: 'היי, המשלוח 101300711 הגיע לד21, איך היה עם השליח? נשמח לשמוע! לדירוג קצר או פנייה לצוות שלנו – לחצו כאן: https://u.cheetahint.com/rvi7q91 תודה שבחרתם בצ’יטה שליחויות.',
-    expected: { trackingNumber: '101300711', carrier: 'chita' }
+    expected: { trackingNumber: '101300711', carrier: 'chita', deliveryStatus: 'delivered' }
   },
 
   {
@@ -332,27 +345,27 @@ export const PARSER_EVAL_CORPUS = [
     group: 'real-world',
     note: 'two letters, ten digits, one trailing letter — matched no rule, so every message like it produced nothing',
     rawText: 'שלום, דוור עתיד להגיע לביתך בימים הקרובים על מנת למסור את משלוח RU0126608199Z מהלקוח Amazon. תודה דואר ישראל.',
-    expected: { trackingNumber: 'RU0126608199Z', carrier: 'israel-post' }
+    expected: { trackingNumber: 'RU0126608199Z', carrier: 'israel-post', deliveryStatus: 'in_transit', store: 'Amazon' }
   },
   {
     id: 'pos-real-ilp-registered',
     group: 'real-world',
     rawText: 'שלום, דואר רשום RR0126918911X מרשות האוכלוסין התקבל בדואר ישראל ובדרכו אליך. לשירותך, דואר ישראל.',
-    expected: { trackingNumber: 'RR0126918911X', carrier: 'israel-post' }
+    expected: { trackingNumber: 'RR0126918911X', carrier: 'israel-post', deliveryStatus: 'in_transit' }
   },
   {
     id: 'pos-real-ilp-counter-item',
     group: 'real-world',
     note: 'counter-issued YY item, eleven digits',
     rawText: 'לקוח יקר, תודה שאספת את דבר הדואר YY00370128099 בדואר ישראל.',
-    expected: { trackingNumber: 'YY00370128099', carrier: 'israel-post' }
+    expected: { trackingNumber: 'YY00370128099', carrier: 'israel-post', deliveryStatus: 'delivered' }
   },
   {
     id: 'pos-real-ilp-foreign-s10',
     group: 'real-world',
     note: 'inbound S10 from Sweden — a valid registered item dropped purely for not ending in IL',
     rawText: 'לקוח יקר, תודה שאספת את דבר הדואר RE477128799SE בדואר ישראל.',
-    expected: { trackingNumber: 'RE477128799SE', carrier: 'israel-post' }
+    expected: { trackingNumber: 'RE477128799SE', carrier: 'israel-post', deliveryStatus: 'delivered' }
   },
   {
     id: 'neg-real-ilp-portal-otp',
@@ -373,7 +386,7 @@ export const PARSER_EVAL_CORPUS = [
     group: 'real-world',
     note: 'six-character mixed-case code in a tracking_number param — upper-casing it would resolve to nothing',
     rawText: 'היי, שליח של H&M Israel מבקש למסור חבילה היום. למעקב וזמן אספקה משוער https://tapuzdelivery.com/tn?tracking_number=jCWLR0&uid=3c08ff8d-91bc-492d-9e25-be33a128199a אין צורך לחכות לשליח בכתובת.',
-    expected: { trackingNumber: 'jCWLR0', carrier: 'tapuz' }
+    expected: { trackingNumber: 'jCWLR0', carrier: 'tapuz', deliveryStatus: 'out_for_delivery' }
   },
   {
     id: 'neg-real-tapuz-verification-code',
@@ -387,7 +400,7 @@ export const PARSER_EVAL_CORPUS = [
     group: 'real-world',
     note: 'labelled by שליחות, but nothing in the message says which carrier — must not be guessed from digit count',
     rawText: 'לקוח/ה יקר/ה, שליח דיווח ביצוע שליחות 7920079311 מדלתא. לפרטים ומשוב על השליח: https://octu.io/p8x0TX',
-    expected: { trackingNumber: '7920079311', carrier: 'other' }
+    expected: { trackingNumber: '7920079311', carrier: 'other', deliveryStatus: 'delivered' }
   },
 
   // ─────────────────────────────────────────────────────────────────────

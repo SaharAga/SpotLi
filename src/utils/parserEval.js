@@ -59,6 +59,24 @@ export function scoreCase(sample, parsed) {
     outcome = actual ? 'wrong' : 'correct';
   }
 
+  // Scored only where the case declares an expectation, so the 77 cases written
+  // before these fields existed stay valid rather than counting as failures.
+  //
+  // This is the hole a real Seestarz SMS fell through. The harness read only
+  // `trackingNumber` and `carrier`; it found 48094292 correctly and reported
+  // the case green, while the parser called a delivered package in_transit and
+  // missed a merchant the message named outright. A miss the metric cannot see
+  // is a miss the metric will keep letting through — the corpus even contains
+  // "שליח של Seestarz online" already, and scored nothing about it.
+  const deliveryStatusCorrect = typeof sample.expected.deliveryStatus === 'string'
+    ? parsed?.status === sample.expected.deliveryStatus
+    : null;
+
+  const expectedStore = sample.expected.store;
+  const storeCorrect = typeof expectedStore === 'string'
+    ? (parsed?.store || '').trim().toLowerCase() === expectedStore.trim().toLowerCase()
+    : null;
+
   return {
     id: sample.id,
     group: sample.group,
@@ -67,6 +85,12 @@ export function scoreCase(sample, parsed) {
     actualTracking: actual,
     carrierCorrect,
     status: parsed?.candidateStatus,
+    deliveryStatusCorrect,
+    expectedDeliveryStatus: sample.expected.deliveryStatus ?? null,
+    actualDeliveryStatus: parsed?.status ?? null,
+    storeCorrect,
+    expectedStore: expectedStore ?? null,
+    actualStore: parsed?.store ?? null,
     isPositive,
     note: sample.note
   };
@@ -104,6 +128,19 @@ export function summarize(results) {
     ? 0
     : carrierScored.filter((r) => r.carrierCorrect).length / carrierScored.length;
 
+  // The counts are reported alongside the rates on purpose: an accuracy over
+  // zero scored cases is 0, and an accuracy over three is noise. A threshold on
+  // a rate nothing backs is the same blind spot in a new place.
+  const deliveryStatusScored = results.filter((r) => r.deliveryStatusCorrect !== null);
+  const deliveryStatusAccuracy = deliveryStatusScored.length === 0
+    ? 0
+    : deliveryStatusScored.filter((r) => r.deliveryStatusCorrect).length / deliveryStatusScored.length;
+
+  const storeScored = results.filter((r) => r.storeCorrect !== null);
+  const storeAccuracy = storeScored.length === 0
+    ? 0
+    : storeScored.filter((r) => r.storeCorrect).length / storeScored.length;
+
   return {
     total: results.length,
     positives: positives.length,
@@ -117,6 +154,10 @@ export function summarize(results) {
     recall,
     f1,
     carrierAccuracy,
+    deliveryStatusScored: deliveryStatusScored.length,
+    deliveryStatusAccuracy,
+    storeScored: storeScored.length,
+    storeAccuracy,
     // Share of negatives correctly left alone — the metric the tuning corpus
     // cannot report at all, because it contains no negatives.
     specificity: negatives.length === 0 ? 0 : trueNegatives / negatives.length
@@ -191,6 +232,12 @@ export function evaluateCorpus(corpus, parseFn) {
     summary: summarize(results),
     groups: byGroup(results),
     calibration: calibration(results),
-    failures: results.filter((r) => r.outcome !== 'correct')
+    // A case with the right number but the wrong stage is a failure. Filtering
+    // on `outcome` alone is what made the reported miss look like a pass.
+    failures: results.filter((r) => (
+      r.outcome !== 'correct'
+      || r.deliveryStatusCorrect === false
+      || r.storeCorrect === false
+    ))
   };
 }
