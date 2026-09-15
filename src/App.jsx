@@ -339,6 +339,20 @@ export function DashboardContent() {
     clearSaveError
   } = usePackages(user, triggerCloudSync);
 
+  // Keep the stored preference in step with the language actually in use.
+  //
+  // Push notifications are written server-side, so the Cloud Function's only
+  // way to know which language to use is `users/{uid}.preferences.language`.
+  // The account screen writes it, but only when someone opens the picker — so
+  // a user on an English device who never did got Hebrew notifications, having
+  // been shown an English app the whole time. First-run detection has to reach
+  // the server too, not just localStorage.
+  useEffect(() => {
+    if (!user?.id || !language) return;
+    if (user.preferences?.language === language) return;
+    updateUserPreferences({ language });
+  }, [user?.id, user?.preferences?.language, language, updateUserPreferences]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [selectedCarrier, setSelectedCarrier] = useState('all');
