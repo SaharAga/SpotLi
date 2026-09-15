@@ -14,7 +14,16 @@ const THRESHOLDS = {
   precision: 0.94,
   recall: 0.97,
   specificity: 0.93,
-  carrierAccuracy: 0.95
+  carrierAccuracy: 0.95,
+  // Delivery stage and merchant were not scored at all until a real Seestarz
+  // SMS came back with the right tracking number, the wrong stage and no
+  // merchant — and the harness called it green. These floors are set below the
+  // measured 81% / 75%, and the seven stage misses behind that 81% are left
+  // failing on purpose: they span five carriers, so they are a gap in the
+  // parser, not a Tapuz quirk, and fixing them by editing regexes until this
+  // held-out corpus goes quiet is the one thing its header forbids.
+  deliveryStatusAccuracy: 0.78,
+  storeAccuracy: 0.70
 };
 
 describe('parserEval — scoring primitives', () => {
@@ -92,6 +101,23 @@ describe('parserEval — parser accuracy ratchet', () => {
       ).toBeGreaterThanOrEqual(floor);
     });
   }
+
+  it('backs the stage and merchant rates with enough cases to mean something', () => {
+    // An accuracy over zero scored cases is 0, and over three it is noise.
+    // Without this, dropping the expectations would satisfy every threshold
+    // above — the same blind spot, relocated.
+    expect(report.summary.deliveryStatusScored).toBeGreaterThanOrEqual(30);
+    expect(report.summary.storeScored).toBeGreaterThanOrEqual(4);
+  });
+
+  it('counts a right number with a wrong stage as a failure', () => {
+    // `failures` fed the report that said this corpus was clean. While it
+    // filtered on tracking alone, a stage regression could never appear in it.
+    const stageMisses = report.results.filter((r) => r.deliveryStatusCorrect === false);
+    for (const miss of stageMisses) {
+      expect(report.failures.map((f) => f.id)).toContain(miss.id);
+    }
+  });
 
   it('never picks the wrong number when a real shipment is present', () => {
     // Silently saving the wrong ID is the worst failure mode: it looks like

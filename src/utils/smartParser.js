@@ -1150,6 +1150,33 @@ export function parseSmartText(rawText) {
     }
   }
 
+  /**
+   * Merchant named by sentence shape rather than by catalogue.
+   *
+   * `detectStore` recognises a fixed list of large retailers. Most Israeli
+   * courier SMS name a shop that will never be on such a list — the reported
+   * case was "חבילה מSeestarz online מספר 48094292", a small store whose name
+   * the message states outright while the app titled the package
+   * "Package 48094292" and showed no merchant at all.
+   *
+   * The grammar is the signal: "<parcel> from <merchant> number <id>". Reading
+   * the slot between the two keywords needs no catalogue and so works for a
+   * shop nobody has heard of, which is the whole point.
+   */
+  const extractMerchantPhrase = (text) => {
+    const match = /(?:ה)?(?:חבילה|משלוח|הזמנה)\s+מ[־-]?\s*([A-Za-z\u0590-\u05FF][A-Za-z0-9\u0590-\u05FF.'&-]*(?:[ \t]+[A-Za-z0-9\u0590-\u05FF.'&-]+){0,3})\s+(?:מספר|מס'|שמספרה)/i.exec(text);
+    if (!match) return '';
+
+    const candidate = match[1].trim();
+    // The slot can also hold a courier or a place — "החבילה מהלוקר מספר 12" is
+    // not a shop. Those are the words that make the sentence mean something
+    // else, so they disqualify the capture rather than being trimmed out of it.
+    if (/^(?:ה?לוקר|ה?שליח|ה?סניף|ה?נקודת|ה?דואר|ה?מחסן|ה?חנות|ה?כתובת)/i.test(candidate)) return '';
+    if (/^[A-Z0-9_-]{8,}$/i.test(candidate)) return '';
+    if (candidate.length < 2 || candidate.length > 40) return '';
+    return candidate;
+  };
+
   // Detect merchant / store
   const storeInfo = detectStore(cleanText);
   let detectedStore = '';
@@ -1167,6 +1194,15 @@ export function parseSmartText(rawText) {
       category = 'clothing';
     } else if (['iherb', 'superpharm'].includes(storeInfo.id)) {
       category = 'health';
+    }
+  } else {
+    // Fallback only. A catalogue hit carries a Hebrew name, a brand colour and
+    // an id the UI keys off; a phrase carries a name and nothing else, so it
+    // must never displace one.
+    const merchantPhrase = extractMerchantPhrase(cleanText);
+    if (merchantPhrase) {
+      detectedStore = merchantPhrase;
+      detectedStoreHe = merchantPhrase;
     }
   }
 
@@ -1255,7 +1291,20 @@ export function parseSmartText(rawText) {
   // matched further down.
   // No \b anywhere: it is defined on ASCII \w, so it never matches against a
   // Hebrew letter and silently kills the alternative it is attached to.
-  const deliveredHe = /(?:נמסרה בהצלחה|נמסר ליעד|(?:ה)?(?:חבילה|משלוח|הזמנה)\s+נמסר[ההת]?|נמסר[ההת]?\s+(?:ה)?(?:חבילה|משלוח|הזמנה)(?!\s*לשליח))/i;
+  //
+  // The noun and the verb are not always adjacent either. A real Seestarz SMS
+  // reads "חבילה מSeestarz online מספר 48094292 נמסרה" — merchant and number
+  // sit between them — and was filed as in_transit for it. The gap is bounded
+  // and tempered: it stops at a sentence break, so a חבילה in one sentence
+  // cannot be paired with a נמסרה in the next, and it refuses to cross a
+  // negation, so "החבילה לא נמסרה" and "טרם נמסרה" stay undelivered. That
+  // negation guard is the whole cost of allowing a gap at all.
+  //
+  // `(?![\u0590-\u05FF])` pins the verb's suffix. Without it `[ההת]?` simply
+  // backtracks to empty when the לשליח lookahead fails, matching the bare
+  // נמסר inside נמסרה and reporting "נמסרה לשליח" — a handover to the courier
+  // — as delivered. Caught by the test battery on the first run of this change.
+  const deliveredHe = /(?:נמסרה בהצלחה|נמסר ליעד|(?:ה)?(?:חבילה|משלוח|הזמנה)(?:(?!לא\s|טרם\s|אינה\s|אינו\s|עדיין\s|[.!?\n])[\s\S]){0,60}?\s*נמסר[ההת]?(?![\u0590-\u05FF])(?!\s*לשליח)|נמסר[ההת]?(?![\u0590-\u05FF])\s+(?:ה)?(?:חבילה|משלוח|הזמנה)(?!\s*לשליח))/i;
   if (/\b(delivered|successfully delivered)\b/i.test(lowerText) || deliveredHe.test(lowerText)) {
     status = 'delivered';
   } else if (
