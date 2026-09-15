@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { STORAGE_KEYS } from '../constants/storageKeys';
 import { recordFeatureUse } from '../services/featureUsageService';
 import { FEATURE_IDS } from '../constants/featureIds';
+import { isStandalonePwa } from '../utils/displayMode';
 
 const STORAGE_DISMISS_KEY = STORAGE_KEYS.PWA_BANNER_DISMISSED;
 
@@ -25,10 +26,7 @@ export function InstallPwaBanner({ onVisibilityChange } = {}) {
 
   useEffect(() => {
     // 1. Check if already running as standalone PWA
-    const checkStandalone = 
-      window.matchMedia('(display-mode: standalone)').matches ||
-      window.navigator.standalone === true;
-    setIsStandalone(checkStandalone);
+    setIsStandalone(isStandalonePwa());
 
     // 2. Check if user dismissed recently
     const dismissedTime = localStorage.getItem(STORAGE_DISMISS_KEY);
