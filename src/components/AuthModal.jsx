@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   X, Cloud, Check, AlertCircle,
-  Mail, User, Lock, Loader2, LogOut, Trash2, ArrowLeft, Sparkles
+  Mail, User, Lock, Loader2, LogOut, Trash2, ArrowLeft, Sparkles, Smartphone
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { isStandalonePwa } from '../utils/displayMode';
+import { InstallGuideDialog } from './InstallGuideDialog';
 const LegalDocumentModal = React.lazy(() => import('./LegalDocumentModal').then(module => ({ default: module.LegalDocumentModal })));
 import { APP_VERSION } from '../constants/version';
 import { Modal } from './Modal';
@@ -125,6 +127,14 @@ export function AuthModal({
   const [formSuccess, setFormSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
+
+  // Only iOS: see the note where this is rendered.
+  const suggestInstallFirst = React.useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    const isIOSDevice = /iPad|iPhone|iPod/.test(window.navigator.userAgent || '');
+    return isIOSDevice && !isStandalonePwa();
+  }, []);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   // Registration-only legal consent — mandatory ToS/Privacy acceptance and
@@ -425,6 +435,34 @@ export function AuthModal({
             </div>
           ) : (
             <>
+              {/* Install first, on the one platform where signing in here is
+                  wasted work. iOS gives a home-screen app its own storage
+                  container, so a session created in Safari is invisible to the
+                  installed app and the person signs in twice — reported by a
+                  first-time user who did exactly that. Advisory, not a gate:
+                  the form below stays usable for anyone who wants the browser.
+                  Android and desktop share storage between the browser and the
+                  installed app, so they are deliberately not shown this. */}
+              {suggestInstallFirst && activeTab !== 'forgot' && (
+                <div className="mb-4 p-3 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-start gap-2.5 text-start">
+                  <Smartphone className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" aria-hidden="true" />
+                  <div className="space-y-2">
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      {language === 'he'
+                        ? 'מתקינים את SpotLi למסך הבית קודם? באייפון לאפליקציה יש התחברות נפרדת מספארי, כך שהתחברות כאן תדרוש התחברות נוספת אחרי ההתקנה.'
+                        : 'Install SpotLi to your Home Screen first? On iPhone the app keeps its own sign-in, separate from Safari — so signing in here means signing in again after you install.'}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setShowInstallGuide(true)}
+                      className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors cursor-pointer min-h-[48px]"
+                    >
+                      {language === 'he' ? 'איך מתקינים' : 'How to install'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Social / OAuth Sign-in Buttons */}
               {activeTab !== 'forgot' && (
                 <>
@@ -780,6 +818,13 @@ export function AuthModal({
         onClose={() => setOpenLegalDoc(null)}
         docType={openLegalDoc || 'terms'}
       /></React.Suspense>
+
+      <InstallGuideDialog
+        isOpen={showInstallGuide}
+        onClose={() => setShowInstallGuide(false)}
+        isIOS
+        isRTL={isRTL}
+      />
     </>
   );
 }
