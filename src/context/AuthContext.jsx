@@ -22,6 +22,7 @@ import { cloudAdapter } from '../services/cloudStorageAdapter';
 import { deliveryService } from '../services/deliveryService';
 import { sanitizeString } from '../utils/packageValidator';
 import { LEGAL_VERSION } from '../constants/legalVersion';
+import { isStandalonePwa } from '../utils/displayMode';
 import { STORAGE_KEYS } from '../constants/storageKeys';
 import { INGESTION_EMAIL_DOMAIN } from '../constants/app';
 
@@ -682,6 +683,22 @@ export function AuthProvider({ children }) {
     if (!isFirebaseConfigured || !auth) {
       throw new Error('Firebase Authentication is not configured.');
     }
+    // An installed PWA cannot finish a popup sign-in, and fails at it silently.
+    // Reported from a real iPhone: the Google button span forever. iOS opens the
+    // provider page in a context the app cannot reach, so signInWithPopup's
+    // promise never settles — it does not reject, so the error-code fallback
+    // below never fires, because there is no error. Redirect has to be chosen
+    // before starting; getRedirectResult already handles the return.
+    if (isStandalonePwa()) {
+      try {
+        await signInWithRedirect(auth, provider);
+        return null;
+      } catch (redirectErr) {
+        if (!isMountedRef.current) return null;
+        throw new Error(sanitizeAuthError(redirectErr));
+      }
+    }
+
     try {
       const result = await signInWithPopup(auth, provider);
       if (!isMountedRef.current) return null;
