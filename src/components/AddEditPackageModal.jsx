@@ -20,7 +20,14 @@ import { CollapsibleSection } from './CollapsibleSection';
 // something the parser extracted — editing it says nothing about parse
 // quality. Matches the allowlist enforced in firestore.rules for
 // parseCorrections.
-const AUTOFILL_TRACKED_FIELDS = ['title', 'trackingNumber', 'carrier', 'origin', 'notes'];
+//
+// `status` was missing until a real SMS came back marked in_transit when it
+// said נמסרה. The parser extracts a delivery stage and the form lets the user
+// change it, so correcting it is a parse correction like any other — it just
+// produced no signal anywhere, in either the correction counts or the training
+// examples. There is deliberately no `store`: the form has no store field, so
+// a wrong merchant is corrected as a `title` edit, which is already here.
+const AUTOFILL_TRACKED_FIELDS = ['title', 'trackingNumber', 'carrier', 'origin', 'notes', 'status'];
 
 export function AddEditPackageModal({
   isOpen,
@@ -201,7 +208,11 @@ export function AddEditPackageModal({
             source: initialValues._autoFillSource || 'regex',
             confidence: initialValues._autoFillConfidence || null,
             inputText: initialValues._autoFillInputText || '',
-            values: { title, trackingNumber, carrier, origin, notes }
+            // `status` belongs here for the same reason it is in
+            // AUTOFILL_TRACKED_FIELDS: without a snapshot value, the edited-field
+            // check below short-circuits on `if (!originalValue)` and a
+            // corrected stage can never be detected.
+            values: { title, trackingNumber, carrier, origin, notes, status }
           }
         : null;
     } else {
@@ -243,7 +254,7 @@ export function AddEditPackageModal({
     const snapshot = autoFillSnapshotRef.current;
     if (!snapshot) return;
 
-    const currentValues = { title, trackingNumber, carrier, origin, notes };
+    const currentValues = { title, trackingNumber, carrier, origin, notes, status };
     const editedFields = AUTOFILL_TRACKED_FIELDS.filter((field) => {
       const originalValue = snapshot.values[field];
       if (!originalValue) return false; // parser left it blank — not a correction

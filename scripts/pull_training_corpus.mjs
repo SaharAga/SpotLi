@@ -7,9 +7,16 @@
  * Reads `trainingExamples` — the pasted text plus the before/after field values
  * of a correction, written only for users who explicitly opted into AI training
  * (see src/services/trainingDataService.js). Each document where the user
- * corrected `trackingNumber` or `carrier` is a labeled case: the text is the
- * input, the corrected value is ground truth, and the initial value is what the
- * parser got wrong.
+ * corrected `trackingNumber`, `carrier` or `status` is a labeled case: the text
+ * is the input, the corrected value is ground truth, and the initial value is
+ * what the parser got wrong.
+ *
+ * There is no `store` label, and that is a product gap rather than an omission
+ * here: the add/edit form has no store field, so a wrong merchant is corrected
+ * as a `title` edit and cannot be recovered as a merchant string. Title-only
+ * corrections stay unlabeled for that reason — emitting them as cases scored
+ * on tracking alone would add rows that pass by construction, which is the
+ * failure this whole pass exists to remove.
  *
  * Output goes to `.parser-corpus-real.json`, which is GITIGNORED ON PURPOSE.
  * The text is PII-redacted at write time, but it is still real messages from
@@ -72,11 +79,24 @@ snap.forEach((doc) => {
   const corrected = d.correctedValues || {};
   const initial = d.initialValues || {};
 
-  // Only corrections to the fields this harness scores are labels. A user who
+  // Only corrections to the fields the harness scores are labels. A user who
   // only retitled the package tells us nothing about detection accuracy.
+  //
+  // `status` joined that list after a real SMS was saved as in_transit when it
+  // said נמסרה: the parser guesses a delivery stage, the user fixes it, and
+  // every one of those fixes was landing here and being discarded. The eval
+  // harness scores the stage now, so the correction is a label like any other.
   const trackingChanged = corrected.trackingNumber && corrected.trackingNumber !== initial.trackingNumber;
   const carrierChanged = corrected.carrier && corrected.carrier !== initial.carrier;
-  if (!trackingChanged && !carrierChanged) { skippedNoLabel += 1; return; }
+  const statusChanged = corrected.status && corrected.status !== initial.status;
+  if (!trackingChanged && !carrierChanged && !statusChanged) { skippedNoLabel += 1; return; }
+
+  // A stage correction is only a usable case if the message also carries a
+  // shipment: without a tracking number, `expected.trackingNumber: null` makes
+  // scoreCase read it as a true negative and grade "extracted nothing" as
+  // correct — the opposite of what this row means.
+  const trackingLabel = corrected.trackingNumber || initial.trackingNumber || null;
+  if (!trackingLabel) { skippedNoLabel += 1; return; }
 
   // The same forwarded message pasted twice would otherwise weight one format
   // more heavily than its real share of the traffic.
@@ -88,15 +108,25 @@ snap.forEach((doc) => {
     id: `real-${doc.id.slice(0, 8)}`,
     group: `real-${corrected.carrier || initial.carrier || 'unknown'}`,
     rawText: text,
-    note: `user corrected ${[trackingChanged && 'trackingNumber', carrierChanged && 'carrier'].filter(Boolean).join(' + ')}`,
+    note: `user corrected ${[
+      trackingChanged && 'trackingNumber',
+      carrierChanged && 'carrier',
+      statusChanged && 'status'
+    ].filter(Boolean).join(' + ')}`,
     expected: {
-      trackingNumber: corrected.trackingNumber || initial.trackingNumber || null,
-      carrier: corrected.carrier || initial.carrier || null
+      trackingNumber: trackingLabel,
+      carrier: corrected.carrier || initial.carrier || null,
+      // `deliveryStatus` is the corpus's name for the package's `status` —
+      // `status` already means the parser's confidence tier in the harness.
+      // Declared only when the user actually settled it; a stage nobody
+      // corrected is the parser's own guess, not ground truth.
+      ...(statusChanged ? { deliveryStatus: corrected.status } : {})
     },
     // Kept for triage: what the parser produced at the time of the correction.
     wasParsedAs: {
       trackingNumber: initial.trackingNumber || null,
       carrier: initial.carrier || null,
+      deliveryStatus: initial.status || null,
       source: d.source || null,
       confidence: d.confidence || null
     }
@@ -107,7 +137,7 @@ writeFileSync(OUT_PATH, `${JSON.stringify({ pulledAt: new Date().toISOString(), 
 
 console.log(`\n  Pulled ${snap.size} training examples.`);
 console.log(`    ${cases.length} usable labeled cases`);
-console.log(`    ${skippedNoLabel} skipped — no tracking/carrier correction`);
+console.log(`    ${skippedNoLabel} skipped — no tracking/carrier/status correction, or no shipment in the text`);
 console.log(`    ${skippedDuplicate} skipped — duplicate text`);
 console.log(`    ${skippedNoText} skipped — no input text`);
 console.log(`\n  Written to ${OUT_PATH.replace(`${repoRoot}/`, '')} (gitignored).`);

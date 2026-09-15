@@ -1,7 +1,10 @@
 import { db, isFirebaseConfigured } from './firebase';
 import { redactPII } from '../utils/privacySanitizer';
 
-const TRACKED_FIELDS = ['title', 'trackingNumber', 'carrier', 'origin', 'notes'];
+// `status` is the parser's delivery-stage guess. It is captured for the same
+// reason the others are — the parser produces it and the user corrects it —
+// and it is not redacted below because it is a fixed enum, never free text.
+const TRACKED_FIELDS = ['title', 'trackingNumber', 'carrier', 'origin', 'notes', 'status'];
 // trackingNumber/carrier are excluded from redaction: they're pseudonymous
 // identifiers, not PII, and a tracking number is exactly the value this
 // dataset needs to stay correct — redactPII's credit-card pattern would
