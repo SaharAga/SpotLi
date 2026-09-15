@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.36.0] - 2026-09-15
+
+### Added
+- Changes that permanently failed to sync can now be recovered. The admin
+dashboard's Sync Queue Health card previously showed only a count of
+dead-lettered mutations — each one a change the user made that never reached
+the cloud — with no way to see what they were or to try again; the service had
+a retry function, but nothing called it. The card now lists each failure with
+what it touched and the error that stopped it, and a Retry button puts it back
+in the queue with a fresh retry budget.
+
+### Fixed
+- Signing in with Google now works in the installed app on iPhone. Added to the
+home screen, the Google button spun forever: iOS opens the provider page in a
+context the app cannot reach, so the popup sign-in never completed and never
+failed either — and because nothing was thrown, the existing fallback to the
+redirect flow could not fire. An installed app now takes the redirect flow from
+the start, in any display mode a manifest can ask for; a browser tab keeps
+using the popup. The check that tells those apart is now one helper rather than
+a condition repeated per component.
+
+- Changes made on one device now reach the others even after a failed sync. The
+offline queue only ever replayed on an offline-to-online transition or when a
+new change was queued, so a mutation that failed while *online* — a Firestore
+hiccup, an expired token — was never retried by anything: no `online` event
+fires when the page never left the network, and the offline banner (the only
+place with a manual sync button) is hidden whenever you are online. The queue
+stopped there silently, and the devices quietly disagreed about the package
+list. Pending work now replays when the app starts, once sign-in has been
+restored, and whenever the app returns to the foreground. Retry budgets are
+unchanged, so a mutation that genuinely cannot succeed still lands in the
+dead-letter queue rather than retrying forever.
+
+- A Tapuz SMS is now filed under the order number it quotes instead of the
+session token in its link. Two faults compounded in one real message: "נקלטה
+בתפוז" ("received at Tapuz") matched the rule meant to catch a shop saying an
+order has been received but not yet shipped, which stopped the order-number
+scan from ever running; and the tracking link's 36-character CRM token was then
+accepted as the tracking number, because any path segment containing a digit
+was trusted on a carrier's own domain. A courier saying it has taken the parcel
+in now counts as a shipment when the message links to that courier, while a
+shop's identical wording still does not, and a path segment longer than any
+real tracking format has to match a carrier rule to be believed. The practical
+effect is that a parcel announced twice — once by email, once by SMS — is
+recognised as the package already in the list rather than added a second time.
+
 ## [0.35.0] - 2026-09-14
 
 ### Added
