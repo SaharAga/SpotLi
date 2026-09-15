@@ -1049,6 +1049,56 @@ export function normalizeMessageText(text) {
     .replace(/ {2,}/g, ' ');
 }
 
+/**
+ * Words that end a merchant name rather than belong to it.
+ *
+ * A merchant name runs until the sentence resumes, and in Hebrew it resumes
+ * with a verb or a preposition. Without this, "מ- LA BEAUTE הגיע לחברת ההפצה"
+ * reads the whole clause as the shop's name.
+ */
+const MERCHANT_STOP_WORDS = new Set([
+  'הגיע', 'הגיעה', 'הגיעו', 'נמסר', 'נמסרה', 'נמסרו', 'נשלח', 'נשלחה', 'נקלט',
+  'נקלטה', 'יצא', 'יצאה', 'עבר', 'עברה', 'התקבל', 'התקבלה', 'יונח', 'תימסר',
+  'ממתין', 'ממתינה', 'ממתינים', 'מחכה', 'בדרך', 'עבור', 'אל', 'אליך', 'אליכם',
+  'מספר', "מס'", 'מס', 'שמספרה', 'למעקב', 'לכתובת', 'לחברת', 'לנקודת', 'ללוקר',
+  'לסניף', 'בקישור', 'באתר', 'תודה', 'שלום', 'היי'
+]);
+
+/** Words that mean the slot holds a courier or a place, not a shop. */
+const NOT_A_MERCHANT = /^(?:ה?לוקר|ה?שליח|ה?סניף|ה?נקודת|ה?דואר|ה?מחסן|ה?חנות|ה?כתובת|ה?חברת)/i;
+
+/**
+ * Reads a merchant name off the start of `rest`, stopping where the sentence
+ * resumes.
+ *
+ * @param {string} rest text immediately after the "from" prefix
+ * @returns {string} the merchant, or '' when the slot holds something else
+ */
+function readMerchantWords(rest) {
+  const line = rest.split(/[\n.,:;!?"״]/)[0] || '';
+  const words = line.trim().split(/\s+/).filter(Boolean);
+
+  const taken = [];
+  for (const word of words) {
+    if (taken.length >= 4) break;
+    if (MERCHANT_STOP_WORDS.has(word)) break;
+    // A word that is only punctuation or a bare number is not part of a name.
+    if (!/[A-Za-z\u0590-\u05FF]/.test(word)) break;
+    taken.push(word);
+    if (taken.join(' ').length > 40) break;
+  }
+
+  const candidate = taken.join(' ').trim();
+  if (!candidate || candidate.length < 2 || candidate.length > 40) return '';
+  if (NOT_A_MERCHANT.test(candidate)) return '';
+  // Reject something shaped like a tracking number, not merely something long:
+  // with the /i flag `[A-Z0-9_-]` matches letters, so this used to drop any
+  // single-word shop of eight letters or more ("BeautyBar"). Requiring a digit
+  // keeps RS736102941IL out while letting a real name through.
+  if (/^(?=[A-Z0-9_-]*\d)[A-Z0-9_-]{8,}$/i.test(candidate)) return '';
+  return candidate;
+}
+
 export function parseSmartText(rawText) {
   if (!rawText || typeof rawText !== 'string') {
     return {
@@ -1164,17 +1214,38 @@ export function parseSmartText(rawText) {
    * shop nobody has heard of, which is the whole point.
    */
   const extractMerchantPhrase = (text) => {
-    const match = /(?:ה)?(?:חבילה|משלוח|הזמנה)\s+מ[־-]?\s*([A-Za-z\u0590-\u05FF][A-Za-z0-9\u0590-\u05FF.'&-]*(?:[ \t]+[A-Za-z0-9\u0590-\u05FF.'&-]+){0,3})\s+(?:מספר|מס'|שמספרה)/i.exec(text);
-    if (!match) return '';
+    // The merchant sits on either side of the number, and both shapes are
+    // common in real Israeli courier SMS:
+    //
+    //   A  "חבילה מSeestarz online מספר 48094292 נמסרה"     before it
+    //   B  "מספר משלוח 4046309 מ- LA BEAUTE הגיע לחברת..."   after it
+    //
+    // Shape A alone was matched first, which read Seestarz correctly and left
+    // LA BEAUTE unnamed. What both share is the `מ` prefix; what differs is
+    // only where the number sits, so anchor on the prefix and read forward.
+    // The two anchors are deliberately not equally permissive. Shape A is
+    // introduced by a parcel noun and closed by מספר, so a מ attached straight
+    // to Hebrew ("מקפה עלית") is safely read as the prefix. Shape B has no such
+    // bracket: the word after the number can be any Hebrew verb that simply
+    // begins with מ, and "מספר 12345678 ממתינה" was read as a shop called
+    // "מתינה". So there, the prefix must announce itself — a maqaf or hyphen, a
+    // space, or a Latin letter — and an attached Hebrew word is left alone.
+    const anchors = [
+      // `(?!ספר|ס')` keeps the parcel noun from pairing with the מ of מספר
+      // itself: "החבילה מספר 12345678" was otherwise read as a shop called ספר.
+      /(?:ה)?(?:חבילה|משלוח|הזמנה|שליחות)\s+מ(?!ספר|ס')[־-]?\s*/i,
+      /(?:מספר|מס')\s*(?:משלוח|חבילה|הזמנה)?\s*[A-Za-z0-9-]{4,}\s+מ(?:[־-]\s*|\s+|(?=[A-Za-z]))/i
+    ];
 
-    const candidate = match[1].trim();
-    // The slot can also hold a courier or a place — "החבילה מהלוקר מספר 12" is
-    // not a shop. Those are the words that make the sentence mean something
-    // else, so they disqualify the capture rather than being trimmed out of it.
-    if (/^(?:ה?לוקר|ה?שליח|ה?סניף|ה?נקודת|ה?דואר|ה?מחסן|ה?חנות|ה?כתובת)/i.test(candidate)) return '';
-    if (/^[A-Z0-9_-]{8,}$/i.test(candidate)) return '';
-    if (candidate.length < 2 || candidate.length > 40) return '';
-    return candidate;
+    for (const anchor of anchors) {
+      const match = anchor.exec(text);
+      if (!match) continue;
+
+      const rest = text.slice(match.index + match[0].length);
+      const candidate = readMerchantWords(rest);
+      if (candidate) return candidate;
+    }
+    return '';
   };
 
   // Detect merchant / store
@@ -1212,7 +1283,14 @@ export function parseSmartText(rawText) {
     const quoteMatch = text.match(/["'״”]([^"'״”\n]{3,50})["'״”]/);
     if (quoteMatch && quoteMatch[1]) {
       const candidate = quoteMatch[1].trim();
+      // Israeli courier SMS quote the *courier* — 'הגיע לחברת ההפצה "פוקוס"' —
+      // and that quoted name was becoming the package's item description, so a
+      // LA BEAUTE order was titled "פוקוס". What is quoted is only an item if
+      // nothing right before it says a delivery company is being named.
+      const before = text.slice(Math.max(0, quoteMatch.index - 40), quoteMatch.index);
+      const namesACarrier = /(?:חברת|לחברת|באמצעות|ע["']?י)\s*(?:ה?הפצה|ה?משלוחים|ה?שליחויות|ה?שילוח)?\s*$/i.test(before);
       if (
+        !namesACarrier &&
         !/^[A-Z0-9_-]{8,35}$/i.test(candidate) &&
         !/^(?:order|package|tracking|delivery|shipment|חבילה|משלוח|הזמנה|איסוף)/i.test(candidate) &&
         !/^https?:\/\//i.test(candidate)

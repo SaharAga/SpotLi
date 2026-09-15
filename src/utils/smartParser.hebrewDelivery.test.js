@@ -76,3 +76,49 @@ describe('smartParser — merchant named by sentence shape', () => {
     expect(parseSmartText('חבילה 48094292 נמסרה').store).toBe('');
   });
 });
+
+/**
+ * Second real SMS, reported the same day as the first. Its merchant sits on the
+ * other side of the tracking number, and the courier is quoted — which the item
+ * extractor was reading as the package's description.
+ */
+const LA_BEAUTE_SMS =
+  'לקוח/ה יקר/ה, מספר משלוח 4046309 מ- LA BEAUTE הגיע לחברת ההפצה "פוקוס" ' +
+  'למעקב אחר המשלוח בקישור הבא: https://focuslogistics.co.il ' +
+  'דברו איתנו בוואצפ : https://bit.ly/focuslogistic';
+
+describe('smartParser — merchant after the tracking number', () => {
+  it('names the shop, not the courier, for the reported SMS', () => {
+    const parsed = parseSmartText(LA_BEAUTE_SMS);
+    expect(parsed.trackingNumber).toBe('4046309');
+    expect(parsed.store).toBe('LA BEAUTE');
+    // Was "פוקוס" — the distribution company, quoted two clauses later.
+    expect(parsed.title).toBe('LA BEAUTE Order');
+  });
+
+  it('stops the name where the sentence resumes', () => {
+    // "מ- LA BEAUTE הגיע לחברת ההפצה" — without a stop list the whole clause
+    // becomes the shop's name.
+    expect(parseSmartText(LA_BEAUTE_SMS).store).not.toMatch(/הגיע|לחברת/);
+  });
+
+  it.each([
+    ['a verb that merely starts with מ', 'החבילה מספר 12345678 ממתינה בלוקר', ''],
+    ['another one', 'החבילה מספר 12345678 מוכנה לאיסוף', ''],
+    ['a hyphenated prefix', 'מספר משלוח 4046309 מ-קפה עלית הגיע', 'קפה עלית'],
+    ['a Latin name attached', 'מספר משלוח 4046309 מBeautyBar הגיע', 'BeautyBar'],
+    // The /i flag makes [A-Z0-9_-] match letters, so the identifier guard used
+    // to swallow any single-word shop of eight letters or more.
+    ['a long single-word shop', 'מספר משלוח 4046309 מ-Perfumery הגיע', 'Perfumery'],
+    ['something actually shaped like an ID', 'מספר משלוח 4046309 מ-RS736102941IL הגיע', '']
+  ])('reads %s correctly', (_label, text, want) => {
+    expect(parseSmartText(text).store).toBe(want);
+  });
+
+  it('still lets a quoted item name through when no carrier is being named', () => {
+    // The fix must not blind the item extractor generally — only where the
+    // quote follows a phrase introducing a delivery company.
+    expect(parseSmartText('המשלוח שלך RS736102941IL עם "Mechanical Keyboard" בדרך').title)
+      .toContain('Mechanical Keyboard');
+  });
+});
