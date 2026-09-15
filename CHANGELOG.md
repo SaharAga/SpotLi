@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.37.5] - 2026-09-15
+
+### Fixed
+- Focus Logistics (פוקוס) is now a recognised carrier instead of "Other /
+Universal". It is identified from the distribution-company phrasing its SMS uses
+and from focuslogistics.co.il — deliberately not from the tracking number, which
+is seven bare digits and would otherwise claim order numbers and PINs across
+every other carrier's messages.
+
+- Push notifications are now written in your language only. Every notification
+used to carry both halves — "החבילה נמסרה! | Package Delivered!" — regardless of
+which language you had chosen. A notification is a one-line interruption on a
+lock screen, and half of it was going to a language you did not pick.
+
+The language comes from your account preference, which now also records the
+language detected on first run rather than only an explicit change in Settings —
+without that, anyone on an English device who never opened the language picker
+was sent Hebrew.
+
 ## [0.37.4] - 2026-09-15
 
 ### Fixed
