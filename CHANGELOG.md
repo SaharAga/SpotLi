@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.37.2] - 2026-09-15
+
+### Fixed
+- Smart Import now reads two things it was missing from Israeli courier SMS.
+
+A package is recognised as delivered when the message says so with words
+between the noun and the verb — "חבילה מSeestarz online מספר 48094292 נמסרה"
+was filed as still in transit, because the two had to be adjacent. A handover
+to the courier ("נמסרה לשליח") and a negation ("לא נמסרה", "טרם נמסרה") still
+are not deliveries.
+
+The merchant is read from the sentence rather than looked up in a catalogue, so
+a small shop the app has never heard of is named on the package instead of
+"Package 48094292".
+
+The accuracy harness now scores delivery stage and merchant, not just the
+tracking number. It reported the reported SMS as a clean pass because the only
+thing it measured — the ID — was correct.
+
+- Fixed the Smart Import confirm button doing nothing. A tracking number the
+deterministic parser rates "probable" — the common Israeli-courier case, an
+identifier with no check digit and no carrier URL — was displayed under
+"Successfully extracted shipping details" with "Add this Package to Tracker"
+permanently inert, and nothing on screen said why. Reported from a real Tapuz
+delivery SMS. The button also now looks disabled when it is.
+
+Smart Import also tells you when the number already belongs to a package you
+track, so a follow-up SMS reads as an update to that package rather than
+looking like it will add a duplicate. The badge and its explanation were
+already written; `App` never passed the package list to the modal, so they
+could never appear. Saving already merged rather than duplicating — this is
+the half that says so before you commit.
+
 ## [0.37.1] - 2026-09-15
 
 ### Fixed
