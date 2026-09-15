@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.37.4] - 2026-09-15
+
+### Fixed
+- Added a developer tool that ranks the Hebrew delivery phrasings in a real SMS
+export and reports which ones the parser cannot stage. It runs entirely offline,
+normalizes every message before counting anything, and never writes a raw
+message to its output.
+
+- Smart Import reads six more ways an Israeli courier says what happened to a
+package. Collecting at a post-office counter, a courier closing the job, and a
+request to rate the delivery are all read as delivered; a parcel handed to a
+pickup point is ready for collection rather than delivered; a courier asking to
+hand it over today is out for delivery; and a failed delivery attempt is flagged
+instead of looking like normal transit.
+
+None of these use the word נמסר, so all seven of the measured stage misses —
+across Israel Post, Cheetah, Tapuz, Buzzr and Bar — reported "in transit".
+Measured delivery-stage accuracy on the held-out corpus goes from 81% to 100%.
+
 ## [0.37.3] - 2026-09-15
 
 ### Fixed
