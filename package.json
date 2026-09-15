@@ -1,7 +1,7 @@
 {
   "name": "spotli",
   "private": true,
-  "version": "0.37.4",
+  "version": "0.37.5",
   "type": "module",
   "scripts": {
     "prebuild": "node scripts/generate-carrier-specs.mjs",
