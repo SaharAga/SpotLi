@@ -90,18 +90,22 @@ jobs:
   # Same story for `firestore.rules`, whose deploy step costs ~7m and only
   # matters when the file actually changed.
   #
-  # Both outputs FAIL OPEN: any situation where a real diff cannot be
+  # The same reasoning covers the `code` output below, which skips lint and
+  # the test suite on a diff of pure documentation.
+  #
+  # All three outputs FAIL OPEN: any situation where a real diff cannot be
   # computed (first push, force-push, shallow fetch, an unexpected event)
   # reports `true` and runs everything. A detection bug must never silently
   # skip a deploy — the failure mode of running too much is a slow pipeline,
   # the failure mode of running too little is functions or rules silently
-  # not shipping.
+  # not shipping, or untested code reaching main.
   detect-changes:
     name: Detect Changed Areas
     runs-on: ubuntu-latest
     outputs:
       functions: ${{ steps.check.outputs.functions }}
       rules: ${{ steps.check.outputs.rules }}
+      code: ${{ steps.check.outputs.code }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -118,6 +122,7 @@ jobs:
             echo "$1 — running every job."
             echo "functions=true" >> "$GITHUB_OUTPUT"
             echo "rules=true" >> "$GITHUB_OUTPUT"
+            echo "code=true" >> "$GITHUB_OUTPUT"
             exit 0
           }
 
@@ -135,6 +140,30 @@ jobs:
 
           echo "functions=$(echo "$CHANGED" | grep -qE '^functions/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "rules=$(echo "$CHANGED" | grep -qE '^firestore\.rules$' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+          # A diff of nothing but prose cannot change what oxlint or vitest
+          # sees, yet lint (1m billable) and the test suite (3m billable) ran
+          # in full on every docs PR and again on its merge commit — ~8
+          # billable minutes to re-prove that a README edit did not break the
+          # parser. Markdown anywhere counts as prose, `docs/` included, and
+          # so do `.changes/*.md` changesets: a changeset declares a version
+          # bump, it ships no code, and require-change-declaration above
+          # inspects it independently of this.
+          #
+          # Everything else is code, deliberately — .github/workflows/ most
+          # of all, since a workflow edit is exactly when the full suite
+          # should run. Fails open like the two outputs above: an empty or
+          # uncomputable diff reports `true` and runs everything, because the
+          # cost of running too much is a slow pipeline and the cost of
+          # running too little is a broken main nobody tested.
+          NON_DOC=$(echo "$CHANGED" | grep -vE '(\.md$|^docs/|^LICENSE$)' | grep -c '.' || true)
+
+          if [ -n "$CHANGED" ] && [ "$NON_DOC" -eq 0 ]; then
+            echo "Documentation-only diff — skipping lint and tests."
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          fi
 
   # A release commit (produced by `npm run release`) only ever touches
   # package.json, package-lock.json, CHANGELOG.md, and .changes/ — it
@@ -196,10 +225,13 @@ jobs:
   lint:
     name: Lint Check
     runs-on: ubuntu-latest
-    needs: [detect-release-only-commit]
+    needs: [detect-release-only-commit, detect-changes]
+    # `!= 'false'` rather than `== 'true'`, so an output that never
+    # materialised (detect-changes itself failing) still runs this job.
     if: |
       always() &&
-      (needs.detect-release-only-commit.result == 'skipped' || needs.detect-release-only-commit.outputs.release_only != 'true')
+      (needs.detect-release-only-commit.result == 'skipped' || needs.detect-release-only-commit.outputs.release_only != 'true') &&
+      needs.detect-changes.outputs.code != 'false'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -233,10 +265,13 @@ jobs:
   test:
     name: Automated Unit & Integration Tests
     runs-on: ubuntu-latest
-    needs: [detect-release-only-commit]
+    needs: [detect-release-only-commit, detect-changes]
+    # `!= 'false'` rather than `== 'true'`, so an output that never
+    # materialised (detect-changes itself failing) still runs this job.
     if: |
       always() &&
-      (needs.detect-release-only-commit.result == 'skipped' || needs.detect-release-only-commit.outputs.release_only != 'true')
+      (needs.detect-release-only-commit.result == 'skipped' || needs.detect-release-only-commit.outputs.release_only != 'true') &&
+      needs.detect-changes.outputs.code != 'false'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -317,7 +352,13 @@ jobs:
     needs: [lint, test]
     # lint/test are skipped (not failed) on a release-only commit — this
     # still needs to run there to produce the deploy artifact. Only actual
-    # failures should block it.
+    # failures should block it. The same now applies to a documentation-only
+    # diff, where they skip for a different reason (detect-changes' `code`
+    # output); this job is deliberately NOT gated on that too. deploy-staging
+    # requires `needs.build.result == 'success'` on every ordinary merge to
+    # main, so skipping the build here would silently stop staging deploying
+    # a docs merge — and at ~13s of work behind a warm node_modules cache,
+    # one billable minute is not worth that coupling.
     if: |
       always() &&
       (needs.lint.result == 'success' || needs.lint.result == 'skipped') &&
