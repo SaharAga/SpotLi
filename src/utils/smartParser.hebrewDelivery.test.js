@@ -122,3 +122,49 @@ describe('smartParser — merchant after the tracking number', () => {
       .toContain('Mechanical Keyboard');
   });
 });
+
+/**
+ * The seven stage misses #241 measured and left failing, across five carriers.
+ * Every one produced `in_transit`, because any message carrying a tracking
+ * number falls through to that branch — so a stage the parser had no phrase for
+ * was indistinguishable from one it read correctly.
+ *
+ * They are six phrase families, not seven one-offs.
+ */
+describe('smartParser — delivery stages with no נמסר in them', () => {
+  it.each([
+    // Collected at the counter — Israel Post, domestic and foreign S10.
+    ['collected at the counter', 'לקוח יקר, תודה שאספת את דבר הדואר YY00370128099 בדואר ישראל.', 'delivered'],
+    // The courier closed the job — Bar Group, carrier not in our table.
+    ['the courier closed the job', 'לקוח/ה יקר/ה, שליח דיווח ביצוע שליחות 7920079311 מדלתא. לפרטים ומשוב על השליח: https://octu.io/p8x0TX', 'delivered'],
+    // You are being asked to rate the delivery — Cheetah.
+    ['a delivery rating request', 'היי, המשלוח 101300711 הגיע לד21, איך היה עם השליח? נשמח לשמוע!', 'delivered'],
+    // Handed to a pickup point, not to the recipient — Bar Distribution.
+    ['handed to a pickup point', 'בר הפצה - דבר דואר BAR9018372 נמסר לנקודת האיסוף ברחוב הרצל 44.', 'ready_for_pickup'],
+    // The courier is asking to hand it over today — Tapuz.
+    ['a courier asking to deliver', 'היי, שליח של H&M Israel מבקש למסור חבילה היום. למעקב https://tapuzdelivery.com/tn?tracking_number=jCWLR0', 'out_for_delivery'],
+    // A delivery was attempted and failed — Buzzr.
+    ['a failed delivery attempt', 'באזר: ניסינו למסור את BZR2039485 ולא היית בבית. ננסה שוב מחר בין 09:00-13:00.', 'exception']
+  ])('reads %s', (_label, text, want) => {
+    expect(parseSmartText(text).status).toBe(want);
+  });
+
+  it('does not call a pickup-point handover a delivery', () => {
+    // נמסר is present, and `לנקודת` is why it is not delivered — the same
+    // exclusion `לשליח` already had.
+    expect(parseSmartText('החבילה 48094292 נמסרה לנקודת האיסוף ברחוב הרצל 44').status)
+      .toBe('ready_for_pickup');
+  });
+
+  it('does not treat a courier merely being mentioned as a rating request', () => {
+    // The rating family is the broadest of the three, so it is kept to explicit
+    // rating language: a message that only says a courier is coming is not one.
+    expect(parseSmartText('שליח יגיע אליך מחר עם המשלוח 48094292').status).not.toBe('delivered');
+  });
+
+  it('separates a failed attempt from a courier about to deliver', () => {
+    // Both contain למסור, and they are opposite stages.
+    expect(parseSmartText('ניסינו למסור את BZR2039485 ולא היית בבית').status).toBe('exception');
+    expect(parseSmartText('שליח מבקש למסור את BZR2039485 היום').status).toBe('out_for_delivery');
+  });
+});

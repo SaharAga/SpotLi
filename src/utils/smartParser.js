@@ -1382,22 +1382,45 @@ export function parseSmartText(rawText) {
   // backtracks to empty when the לשליח lookahead fails, matching the bare
   // נמסר inside נמסרה and reporting "נמסרה לשליח" — a handover to the courier
   // — as delivered. Caught by the test battery on the first run of this change.
-  const deliveredHe = /(?:נמסרה בהצלחה|נמסר ליעד|(?:ה)?(?:חבילה|משלוח|הזמנה)(?:(?!לא\s|טרם\s|אינה\s|אינו\s|עדיין\s|[.!?\n])[\s\S]){0,60}?\s*נמסר[ההת]?(?![\u0590-\u05FF])(?!\s*לשליח)|נמסר[ההת]?(?![\u0590-\u05FF])\s+(?:ה)?(?:חבילה|משלוח|הזמנה)(?!\s*לשליח))/i;
-  if (/\b(delivered|successfully delivered)\b/i.test(lowerText) || deliveredHe.test(lowerText)) {
+  //
+  // `לנקודת` joins `לשליח` as a destination that is not the recipient: a parcel
+  // "נמסר לנקודת האיסוף" has been handed to a pickup point, which is
+  // ready_for_pickup and is matched below.
+  const deliveredHe = /(?:נמסרה בהצלחה|נמסר ליעד|(?:ה)?(?:חבילה|משלוח|הזמנה)(?:(?!לא\s|טרם\s|אינה\s|אינו\s|עדיין\s|[.!?\n])[\s\S]){0,60}?\s*נמסר[ההת]?(?![\u0590-\u05FF])(?!\s*ל(?:שליח|נקודת))|נמסר[ההת]?(?![\u0590-\u05FF])\s+(?:ה)?(?:חבילה|משלוח|הזמנה)(?!\s*ל(?:שליח|נקודת)))/i;
+
+  // Three more ways a message says the delivery already happened, none of which
+  // use נמסר at all. Each was a held-out corpus case reporting in_transit —
+  // fixing a regex because a case there failed is what that corpus is for.
+  //
+  // - collected at the counter: "תודה שאספת את דבר הדואר …"      (Israel Post)
+  // - the courier closed the job: "שליח דיווח ביצוע שליחות …"     (Bar Group)
+  // - you are asked to rate the delivery: "איך היה עם השליח?"      (Cheetah)
+  //
+  // The third is the broadest and the most reliable: nobody is asked to rate a
+  // courier before the courier has been. It is kept to explicit rating language
+  // rather than any mention of a שליח, which would sweep up every message that
+  // merely says one is on the way.
+  const deliveredEventHe = /(?:תודה שאספת|תודה שאספתם|דיווח ביצוע|איך היה עם השליח|משוב על השליח|לדרג את השליח|דירוג השליח|לדרג את חווית המשלוח|לדרג את חוויית המשלוח)/i;
+
+  if (
+    /\b(delivered|successfully delivered)\b/i.test(lowerText) ||
+    deliveredHe.test(lowerText) ||
+    deliveredEventHe.test(lowerText)
+  ) {
     status = 'delivered';
   } else if (
     lockerPin ||
     redirectInfo.isRedirected ||
     /\b(ready for pickup|ready for collection|available for pickup|waiting for pickup|delivered to locker)\b/i.test(lowerText) ||
-    /(?:מוכנה לאיסוף|מוכן לאיסוף|ממתינה לאיסוף|ממתין לאיסוף|ממתינה בלוקר|ממתין בלוקר|הגיעה לנקודת|הגיע לנקודת|הגיע לסניף|הגיעה לסניף|הגיע לסוכנות|הגיעה לסוכנות|הגיעה ללוקר|הגיע ללוקר|הועברה ללוקר|הועברה לנקודת|מחכה לך בנקודת|מחכה לך בלוקר|מחכה בלוקר|מחכה לך בסניף|מדף\s*\d+)/i.test(lowerText)
+    /(?:מוכנה לאיסוף|מוכן לאיסוף|ממתינה לאיסוף|ממתין לאיסוף|ממתינה בלוקר|ממתין בלוקר|הגיעה לנקודת|הגיע לנקודת|הגיע לסניף|הגיעה לסניף|הגיע לסוכנות|הגיעה לסוכנות|הגיעה ללוקר|הגיע ללוקר|הועברה ללוקר|הועברה לנקודת|מחכה לך בנקודת|מחכה לך בלוקר|מחכה בלוקר|מחכה לך בסניף|מדף\s*\d+|נמסר[ההת]?\s+לנקודת|הועבר[ההת]?\s+לנקודת|הגיע[הה]?\s+לנקודת)/i.test(lowerText)
   ) {
     status = 'ready_for_pickup';
   } else if (
     /\b(out for delivery|with courier)\b/i.test(lowerText) ||
-    /(?:יוצאת למסירה|יוצא למסירה|יצאה עם שליח|נמסרה לשליח|השליח בדרך אליך|שליח\s+[^\n]+בדרך אליך|תסופק היום|יסופק היום|היום עם שליח|מגיע היום|צפוי להגיע היום)/i.test(lowerText)
+    /(?:יוצאת למסירה|יוצא למסירה|יצאה עם שליח|נמסרה לשליח|השליח בדרך אליך|שליח\s+[^\n]+בדרך אליך|תסופק היום|יסופק היום|היום עם שליח|מגיע היום|צפוי להגיע היום|מבקש למסור|מבקשים למסור|בדרך למסור|נמסר[ההת]?\s+(?:ה)?(?:חבילה|משלוח|הזמנה)\s+לשליח)/i.test(lowerText)
   ) {
     status = 'out_for_delivery';
-  } else if (/\b(delivery issue|delivery failed|customs clearance)\b/i.test(lowerText) || /(?:עיכוב במכס|בעיה במסירה|מסירה נכשלה)/i.test(lowerText)) {
+  } else if (/\b(delivery issue|delivery failed|customs clearance)\b/i.test(lowerText) || /(?:עיכוב במכס|בעיה במסירה|מסירה נכשלה|ניסינו למסור|ניסיון מסירה|לא היית בבית|לא היית בכתובת|לא נמצאת בכתובת|לא נמצאתם בכתובת)/i.test(lowerText)) {
     status = 'exception';
   } else if (bestTracking || /\b(shipped|in transit|dispatched|on its way)\b/i.test(lowerText) || /(?:נשלחה|נשלח|בדרך)/i.test(lowerText)) {
     status = status === 'ordered' ? 'in_transit' : status;

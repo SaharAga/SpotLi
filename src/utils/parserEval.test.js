@@ -17,12 +17,13 @@ const THRESHOLDS = {
   carrierAccuracy: 0.95,
   // Delivery stage and merchant were not scored at all until a real Seestarz
   // SMS came back with the right tracking number, the wrong stage and no
-  // merchant — and the harness called it green. These floors are set below the
-  // measured 81% / 75%, and the seven stage misses behind that 81% are left
-  // failing on purpose: they span five carriers, so they are a gap in the
-  // parser, not a Tapuz quirk, and fixing them by editing regexes until this
-  // held-out corpus goes quiet is the one thing its header forbids.
-  deliveryStatusAccuracy: 0.78,
+  // merchant — and the harness called it green.
+  //
+  // Stage started at 81%: seven misses across five carriers, all reporting
+  // in_transit. They turned out to be six phrase families with no נמסר in them
+  // at all, and naming those families took the measured rate to 100%. The floor
+  // moves with it — a ratchet only works if it is raised when accuracy is.
+  deliveryStatusAccuracy: 0.97,
   storeAccuracy: 0.70
 };
 
