@@ -205,7 +205,7 @@ service cloud.firestore {
         request.resource.data.editedFields.size() > 0 &&
         request.resource.data.editedFields.size() <= 10 &&
         request.resource.data.editedFields.hasOnly([
-          'title', 'trackingNumber', 'carrier', 'origin', 'destination', 'notes'
+          'title', 'trackingNumber', 'carrier', 'origin', 'destination', 'notes', 'status'
         ]) &&
         (!('timestamp' in request.resource.data) || (request.resource.data.timestamp is string && request.resource.data.timestamp.size() <= 60));
       allow read: if isAdmin();
