@@ -25,6 +25,7 @@ import {
   shouldAdvanceStatus
 } from './gmailPackageSync.js';
 import { logUsageEvent } from './analyticsEvents.js';
+import { isAutomatedSource } from './automatedSources.js';
 import { safeCompareTokens } from './inboundEmailHandler.js';
 import {
   findExistingOrderMatch,
@@ -176,7 +177,7 @@ export async function syncHistoryForConnection({ db, connection, clientSecret, n
     if (statusUpdate && trackingNumberToDocId.has(statusUpdate.trackingNumber)) {
       const docId = trackingNumberToDocId.get(statusUpdate.trackingNumber);
       const existingData = existingPackagesMap.get(statusUpdate.trackingNumber) || {};
-      const patch = { updatedAt: new Date().toISOString() };
+      const patch = { updatedAt: new Date().toISOString(), lastUpdateSource: 'gmail_sync' };
 
       if (shouldAdvanceStatus(existingData.status, statusUpdate.status)) {
         patch.status = statusUpdate.status;
@@ -219,7 +220,7 @@ export async function syncHistoryForConnection({ db, connection, clientSecret, n
     const orderStatusUpdate = buildOrderStatusUpdateFromGmailMessage({ gmailMessage: msgRes.data });
     if (orderStatusUpdate && storeToOrderStatusDocId.has(orderStatusUpdate.store.toUpperCase())) {
       const existing = storeToOrderStatusDocId.get(orderStatusUpdate.store.toUpperCase());
-      const patch = { title: orderStatusUpdate.title, updatedAt: new Date().toISOString() };
+      const patch = { title: orderStatusUpdate.title, updatedAt: new Date().toISOString(), lastUpdateSource: 'gmail_sync_order_status' };
       if (shouldAdvanceStatus(existing.status, orderStatusUpdate.status)) {
         patch.status = orderStatusUpdate.status;
       }
@@ -246,6 +247,7 @@ export async function syncHistoryForConnection({ db, connection, clientSecret, n
           const existingData = match.existingData || {};
           const patch = {
             updatedAt: new Date().toISOString(),
+            lastUpdateSource: isAutomatedSource(pkg.source) ? pkg.source : 'gmail_sync',
             trackingNumber: pkg.trackingNumber,
             carrier: pkg.carrier,
             ...(pkg.status && shouldAdvanceStatus(existingData.status, pkg.status) ? { status: pkg.status } : {}),

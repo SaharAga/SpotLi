@@ -20,6 +20,7 @@ import {
 } from './gmailPackageSync.js';
 import { findExistingOrderMatch, isGenericPackageTitle } from './orderCorrelationService.js';
 import { logUsageEvent } from './analyticsEvents.js';
+import { isAutomatedSource } from './automatedSources.js';
 import { GMAIL_AI_LIMITS, GMAIL_BACKFILL_LIMITS } from './config.js';
 import { checkAndIncrementUsage } from './guards.js';
 
@@ -155,7 +156,7 @@ export async function runBackfillForUser({ db, uid, refreshToken, clientSecret, 
       if (existingDocId) {
         orderStatusUpdates.push({
           docId: existingDocId,
-          patch: { status: orderStatusUpdate.status, title: orderStatusUpdate.title, updatedAt: new Date().toISOString() }
+          patch: { status: orderStatusUpdate.status, title: orderStatusUpdate.title, updatedAt: new Date().toISOString(), lastUpdateSource: 'gmail_sync_order_status' }
         });
         skipped += 1;
         continue;
@@ -184,6 +185,7 @@ export async function runBackfillForUser({ db, uid, refreshToken, clientSecret, 
           const existingData = match.existingData || {};
           const patch = {
             updatedAt: new Date().toISOString(),
+            lastUpdateSource: isAutomatedSource(pkg.source) ? pkg.source : 'gmail_sync',
             trackingNumber: pkg.trackingNumber,
             carrier: pkg.carrier,
             ...(pkg.status ? { status: pkg.status } : {}),

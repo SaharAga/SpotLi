@@ -30,7 +30,7 @@ service cloud.firestore {
         'isRedirected', 'originalPickupLocation', 'redirectedAt', 'redirectReason',
         'store', 'orderNumber', 'createdAt', 'updatedAt', 'userId',
         'shelfNumber', 'localTrackingNumber', 'localCarrier', 'aliases', 'customsDetails',
-        'source', 'confidence', 'lockerPin', 'schemaVersion', 'isDemo'
+        'source', 'lastUpdateSource', 'confidence', 'lockerPin', 'schemaVersion', 'isDemo'
       ];
       
       // Must stay in lockstep with VALID_STATUSES in src/utils/packageValidator.js
@@ -80,6 +80,7 @@ service cloud.firestore {
         (!('aliases' in data) || (data.aliases is list && data.aliases.size() <= 10)) &&
         (!('customsDetails' in data) || (data.customsDetails is map)) &&
         (!('source' in data) || (data.source is string && data.source.size() <= 50)) &&
+        (!('lastUpdateSource' in data) || data.lastUpdateSource == null || (data.lastUpdateSource is string && data.lastUpdateSource.size() <= 50)) &&
         (!('confidence' in data) || (data.confidence is string && data.confidence.size() <= 20)) &&
         (!('lockerPin' in data) || (data.lockerPin is string && data.lockerPin.size() <= 50)) &&
         (!('schemaVersion' in data) || (data.schemaVersion is number && data.schemaVersion >= 1 && data.schemaVersion <= 100)) &&
