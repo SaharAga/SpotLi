@@ -233,6 +233,40 @@ describe('createScheduledTrackingRefreshHandler', () => {
     expect(stats.lookups).toBe(TRACKING_REFRESH_LIMITS.MAX_LOOKUPS_PER_RUN);
   });
 
+  it('serves the least-recently-polled first, so the cap cannot strand anyone', async () => {
+    // Without an ordering the ceiling always served the head of the map —
+    // insertion order, so the same users and the same packages every run — and
+    // anything past the cap was never looked up at all. The cap has to be a
+    // delay for everyone, not a permanent exclusion for the tail.
+    const overflow = TRACKING_REFRESH_LIMITS.MAX_LOOKUPS_PER_RUN + 5;
+    const packages = Array.from({ length: overflow }, (_, i) => ({
+      id: `p${i}`, trackingNumber: `RS${i}`, status: 'in_transit'
+    }));
+
+    // The numbers at the END of the map are the stalest, so they must win.
+    const pollState = {};
+    packages.forEach((pkg, i) => {
+      pollState[`RS${i}`] = { nextEligibleAt: 0, lastPolledAt: overflow - i };
+    });
+
+    const db = fakeDb({ users: [{ id: 'u1', packages }], pollState });
+    const looked = [];
+    const resolve = vi.fn(async ({ trackingNumber }) => {
+      looked.push(trackingNumber);
+      return { tracked: false };
+    });
+
+    await createScheduledTrackingRefreshHandler({ db, resolve, now: () => 10_000 })();
+
+    expect(looked).toHaveLength(TRACKING_REFRESH_LIMITS.MAX_LOOKUPS_PER_RUN);
+    // The five stalest are the last five by index, and none may be missing.
+    for (let i = overflow - 5; i < overflow; i += 1) {
+      expect(looked).toContain(`RS${i}`);
+    }
+    // The freshest-polled are the ones deferred instead.
+    expect(looked).not.toContain('RS0');
+  });
+
   it('backs a quiet number off and resets a productive one', async () => {
     const quietDb = fakeDb({
       users: [{ id: 'u1', packages: [{ id: 'p1', trackingNumber: 'RS1', status: 'in_transit' }] }]

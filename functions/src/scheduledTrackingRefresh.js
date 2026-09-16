@@ -223,8 +223,15 @@ export function createScheduledTrackingRefreshHandler({
         continue;
       }
       due.push({ number, holders, state, stateRef });
-      if (due.length >= MAX_LOOKUPS_PER_RUN) break;
     }
+
+    // Oldest-polled first. Without this the per-run ceiling would always serve
+    // the same head of the map — insertion order, so the same users and the
+    // same packages — and anything past the cap would never be looked up at
+    // all. Sorting by last poll makes the ceiling a delay for everyone rather
+    // than a permanent exclusion for the tail.
+    due.sort((a, b) => (Number(a.state?.lastPolledAt) || 0) - (Number(b.state?.lastPolledAt) || 0));
+    due.length = Math.min(due.length, MAX_LOOKUPS_PER_RUN);
 
     for (let i = 0; i < due.length; i += CONCURRENCY) {
       const chunk = due.slice(i, i + CONCURRENCY);
