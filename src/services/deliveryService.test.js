@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, beforeAll } from 'vitest';
-import { deliveryService, canTransition, TRANSITION_MATRIX } from './deliveryService';
+import { deliveryService, canTransition, TRANSITION_MATRIX, findPackageByAnyTrackingNumber } from './deliveryService';
 import { exportToJSON, exportRawToJSON } from '../utils/exportUtils';
 
 describe('Delivery Service and Storage Persistence', () => {
@@ -821,5 +821,44 @@ describe('Delivery Service and Storage Persistence', () => {
         globalThis.localStorage.setItem = originalSetItem;
       }
     });
+  });
+});
+
+describe('findPackageByAnyTrackingNumber', () => {
+  const packages = [
+    { id: 'a', trackingNumber: '19611199', aliases: [] },
+    { id: 'b', trackingNumber: 'RS948219481IL', aliases: ['LOCAL-77'] }
+  ];
+
+  it('returns the first number that matches, in the order given', () => {
+    // Order is the caller's ranking, so a better candidate must win even when a
+    // weaker one later in the list also matches something.
+    expect(findPackageByAnyTrackingNumber(packages, ['RS948219481IL', '19611199'])?.id).toBe('b');
+    expect(findPackageByAnyTrackingNumber(packages, ['19611199', 'RS948219481IL'])?.id).toBe('a');
+  });
+
+  it('falls through an unknown number to a later one that matches', () => {
+    expect(findPackageByAnyTrackingNumber(packages, ['GAIH50911204', '19611199'])?.id).toBe('a');
+  });
+
+  it('still searches each package aliases and local tracking number', () => {
+    expect(findPackageByAnyTrackingNumber(packages, ['local 77'])?.id).toBe('b');
+  });
+
+  it('ignores empty, null and duplicate entries', () => {
+    expect(findPackageByAnyTrackingNumber(packages, [null, '', undefined, '19611199'])?.id).toBe('a');
+    expect(findPackageByAnyTrackingNumber(packages, ['NOPE', 'NOPE'])).toBeNull();
+  });
+
+  it('honours excludeId so editing a package is not a duplicate of itself', () => {
+    expect(findPackageByAnyTrackingNumber(packages, ['19611199'], 'a')).toBeNull();
+  });
+
+  it('accepts a bare string as well as a list', () => {
+    expect(findPackageByAnyTrackingNumber(packages, '19611199')?.id).toBe('a');
+  });
+
+  it('returns null for a non-list of packages', () => {
+    expect(findPackageByAnyTrackingNumber(null, ['19611199'])).toBeNull();
   });
 });

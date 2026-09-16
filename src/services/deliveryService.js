@@ -81,6 +81,42 @@ export function findPackageByTrackingNumber(packages, trackingNumber, excludeId 
 }
 
 /**
+ * Finds an existing package matching ANY of several tracking numbers, in the order given.
+ *
+ * A handover SMS routinely carries two numbers — the courier's own tracking number
+ * and the merchant's shipment number — and which of them the parser ranks first is
+ * a scoring decision, not a statement about which one the user already has. A YDM
+ * message reading `מספר שליחות: 19611199` / `מספר מעקב: GAIH50911204` ranked the
+ * courier number first, so matching on the primary alone filed a second copy of a
+ * package that was already on the dashboard under the other number.
+ *
+ * Order is preserved so the strongest candidate still wins when more than one
+ * matches; `findPackageByTrackingNumber` already searches each package's aliases
+ * and local tracking number, so this only widens the left-hand side.
+ *
+ * @param {Array<object>} packages
+ * @param {Array<string|null|undefined>|string} trackingNumbers - tried in order
+ * @param {string|null} [excludeId=null]
+ * @returns {object|null}
+ */
+export function findPackageByAnyTrackingNumber(packages, trackingNumbers, excludeId = null) {
+  if (!Array.isArray(packages)) return null;
+  const list = Array.isArray(trackingNumbers) ? trackingNumbers : [trackingNumbers];
+
+  const seen = new Set();
+  for (const number of list) {
+    if (!number) continue;
+    const canonical = normalizeTrackingNumber(number);
+    if (!canonical || seen.has(canonical)) continue;
+    seen.add(canonical);
+
+    const match = findPackageByTrackingNumber(packages, number, excludeId);
+    if (match) return match;
+  }
+  return null;
+}
+
+/**
  * Merges new package details into an existing package entity (e.g. when connecting
  * a domestic delivery or SMS alert to a global shipment).
  *
@@ -180,6 +216,7 @@ export const deliveryService = {
   TRANSITION_MATRIX,
   normalizeTrackingNumber,
   findPackageByTrackingNumber,
+  findPackageByAnyTrackingNumber,
   mergePackageData,
   /**
    * Helper to derive the storage key for a user or guest

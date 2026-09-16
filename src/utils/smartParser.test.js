@@ -5,7 +5,8 @@ import {
   extractUrlsAndTrackings, 
   extractPickupLocation,
   unwrapRedirectUrl,
-  extractAllTrackingDetails
+  extractAllTrackingDetails,
+  alternateTrackingNumbers
 } from './smartParser';
 
 describe('smartParser - extractUrlsAndTrackings', () => {
@@ -402,3 +403,46 @@ describe('smartParser - parseSmartText', () => {
   });
 });
 
+
+describe('alternateTrackingNumbers', () => {
+  it('returns the other numbers a handover SMS named, excluding the primary', () => {
+    const parsed = parseSmartText('שליח מטעם I-HERB. מספר שליחות: 19611199 מספר מעקב: GAIH50911204');
+    const alternates = alternateTrackingNumbers(parsed);
+
+    expect(alternates).toContain('19611199');
+    expect(alternates).not.toContain(parsed.trackingNumber);
+  });
+
+  it('drops candidates the scorer did not accept', () => {
+    // An alias is persistent: a wrong one silently attaches every future message
+    // carrying that number to the wrong package, so only 'probable' survives.
+    const parsed = {
+      trackingNumber: 'AA1',
+      candidates: [
+        { value: 'AA1', status: 'probable', falsePositiveFlags: [] },
+        { value: 'BB2', status: 'probable', falsePositiveFlags: [] },
+        { value: 'CC3', status: 'uncertain', falsePositiveFlags: [] },
+        { value: 'DD4', status: 'none', falsePositiveFlags: [] },
+        { value: 'EE5', status: 'probable', falsePositiveFlags: ['promotional_context'] }
+      ]
+    };
+    expect(alternateTrackingNumbers(parsed)).toEqual(['BB2']);
+  });
+
+  it('deduplicates numbers that differ only by spacing or case', () => {
+    const parsed = {
+      trackingNumber: 'aa-1',
+      candidates: [
+        { value: 'AA1', status: 'probable', falsePositiveFlags: [] },
+        { value: 'bb 2', status: 'probable', falsePositiveFlags: [] },
+        { value: 'BB-2', status: 'probable', falsePositiveFlags: [] }
+      ]
+    };
+    expect(alternateTrackingNumbers(parsed)).toEqual(['bb 2']);
+  });
+
+  it('returns an empty list for a parse with no candidates', () => {
+    expect(alternateTrackingNumbers(null)).toEqual([]);
+    expect(alternateTrackingNumbers({ trackingNumber: 'AA1' })).toEqual([]);
+  });
+});

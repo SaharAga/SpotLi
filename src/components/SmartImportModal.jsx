@@ -3,9 +3,9 @@ import {
   X, Sparkles, CheckCircle2, ArrowRight,
   AlertCircle, ImagePlus, Trash2, Loader2, ShieldAlert, Flag
 } from 'lucide-react';
-import { parseSmartText } from '../utils/smartParser';
+import { parseSmartText, alternateTrackingNumbers } from '../utils/smartParser';
 import { getCarrier } from '../types/carriers';
-import { findPackageByTrackingNumber } from '../services/deliveryService';
+import { findPackageByAnyTrackingNumber } from '../services/deliveryService';
 import { useLanguage } from '../context/LanguageContext';
 import { ModalHeader } from './ui/Primitives';
 import { parseWithAi } from '../services/aiParseService';
@@ -95,7 +95,10 @@ export function SmartImportModal({
 
   const matchedExistingPackage = React.useMemo(() => {
     if (!parsed || !parsed.trackingNumber) return null;
-    return findPackageByTrackingNumber(packages, parsed.trackingNumber);
+    // Every number the parser found, best first — not just the one it ranked
+    // highest. A handover SMS names the courier's number and the merchant's
+    // shipment number side by side, and the dashboard may hold either.
+    return findPackageByAnyTrackingNumber(packages, [parsed.trackingNumber, ...alternateTrackingNumbers(parsed)]);
   }, [packages, parsed]);
 
   useEffect(() => {
@@ -328,6 +331,11 @@ export function SmartImportModal({
         title: parsed.title,
         titleHe: parsed.titleHe,
         trackingNumber: parsed.trackingNumber,
+        // The other numbers this message named. Kept so a package that really is
+        // new still matches the next message about it, whichever number that one
+        // quotes — the parser's ranking can differ between two messages about the
+        // same shipment.
+        aliases: alternateTrackingNumbers(parsed),
         carrierId: parsed.carrier || 'other',
         category: parsed.category || 'electronics',
         status: parsed.status || 'ready_for_pickup',

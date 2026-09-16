@@ -3,7 +3,7 @@ import { Sparkles, AlertTriangle, ExternalLink, MapPin, Key, ShoppingBag, Wand2 
 import { CARRIER_LIST, getCarrier } from '../types/carriers.js';
 import { CATEGORIES, SELECTABLE_STATUSES, getStatusMeta } from '../types/stages.js';
 import { toLocalISODate } from '../utils/dateUtils';
-import { findPackageByTrackingNumber } from '../services/deliveryService.js';
+import { findPackageByAnyTrackingNumber } from '../services/deliveryService.js';
 import { detectCarrier } from '../utils/carrierDetector.js';
 import { parseSmartText } from '../utils/smartParser.js';
 import { useLanguage } from '../context/LanguageContext';
@@ -97,8 +97,15 @@ export function AddEditPackageModal({
   // Check for duplicate tracking number against existing package list
   const duplicatePackage = React.useMemo(() => {
     if (!trackingNumber || !trackingNumber.trim()) return null;
-    return findPackageByTrackingNumber(packages, trackingNumber, editPackage?.id || null);
-  }, [packages, trackingNumber, editPackage?.id]);
+    // Alias-aware, to match what the save path in App.jsx will actually do —
+    // otherwise Smart Import can hand over a package whose alias matches an
+    // existing one, show no duplicate warning, and then merge on save.
+    return findPackageByAnyTrackingNumber(
+      packages,
+      [trackingNumber, ...(Array.isArray(initialValues?.aliases) ? initialValues.aliases : [])],
+      editPackage?.id || null
+    );
+  }, [packages, trackingNumber, initialValues?.aliases, editPackage?.id]);
 
   // Live courier & SMS intelligence extraction from typed or pasted tracking field
   const liveIntelligence = React.useMemo(() => {

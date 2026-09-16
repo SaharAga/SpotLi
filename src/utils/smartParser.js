@@ -1567,3 +1567,49 @@ export function extractAllTrackingDetails(rawText) {
   const parsed = parseSmartText(rawText);
   return parsed.allPackages || [];
 }
+
+/**
+ * The tracking numbers a parse found *besides* the one it ranked first.
+ *
+ * A courier handover SMS routinely names two: the courier's own tracking number
+ * and the merchant's shipment number ("מספר שליחות: 19611199 / מספר מעקב:
+ * GAIH50911204"). Which one scores higher is a ranking decision and says nothing
+ * about which one the user already has on the dashboard, so both have to reach
+ * the duplicate check — and both are worth keeping as aliases on a package that
+ * really is new, so the next message about it matches whichever number it quotes.
+ *
+ * Only candidates the scorer actually accepted are returned. A number it rated
+ * `uncertain` or `none`, or flagged as a false positive, is an order total or a
+ * phone number far more often than an identifier, and an alias is persistent:
+ * a wrong one silently attaches every future message carrying that number to
+ * the wrong package.
+ *
+ * @param {object} parsed - a `parseSmartText` result
+ * @returns {Array<string>} distinct alternates, best first, never including the primary
+ */
+export function alternateTrackingNumbers(parsed) {
+  if (!parsed || !Array.isArray(parsed.candidates)) return [];
+
+  // Same transform as deliveryService's normalizeTrackingNumber, inlined rather
+  // than imported so a parser utility does not pull a storage service (and its
+  // localStorage access) into every consumer. It is only used to compare
+  // candidates against each other here; the match itself renormalizes.
+  const canonicalize = (value) => (typeof value === 'string' ? value.replace(/[\s-]+/g, '').toUpperCase() : '');
+
+  const primary = canonicalize(parsed.trackingNumber || '');
+  const seen = new Set(primary ? [primary] : []);
+  const alternates = [];
+
+  for (const candidate of parsed.candidates) {
+    if (!candidate?.value) continue;
+    if (candidate.status !== 'probable') continue;
+    if (candidate.falsePositiveFlags?.length) continue;
+
+    const canonical = canonicalize(candidate.value);
+    if (!canonical || seen.has(canonical)) continue;
+    seen.add(canonical);
+    alternates.push(candidate.value);
+  }
+
+  return alternates;
+}
