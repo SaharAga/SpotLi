@@ -18,6 +18,9 @@ import { createFeatureAdoptionRollupHandler } from './featureAdoptionRollup.js';
 import { createNewPackagePushHandler } from './newPackagePush.js';
 import { createUpdatePackagePushHandler } from './updatePackagePush.js';
 import { createCarrierTrackingHandler } from './carrierProxy.js';
+import { createScheduledTrackingRefreshHandler } from './scheduledTrackingRefresh.js';
+import { createRegisterTrackingNumberHandler } from './registerTrackingNumber.js';
+import { TRACKING_REFRESH_LIMITS } from './config.js';
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
 const track17ApiKey = defineSecret('TRACK17_API_KEY');
@@ -284,6 +287,32 @@ export const featureAdoptionRollup = onSchedule(
  * Firestore path rather than hooked into each ingestion function
  * individually, since every one of them already writes here.
  */
+/**
+ * Enrols every new parcel with 17TRACK.
+ *
+ * Bound to the Firestore path rather than to each ingestion function, for the
+ * same reason `notifyOnNewPackage` is: manual add, Smart Import, Gmail sync and
+ * the forwarded-email webhook all already write here, and a parcel that reaches
+ * the dashboard by any route should be watched.
+ *
+ * Unlike the push trigger this is deliberately NOT scoped to automated sources.
+ * A number the user typed in themselves is exactly the one live tracking has to
+ * cover, because there is no inbox pipeline behind it to notice anything later.
+ */
+export const registerTrackingNumber = onDocumentCreated(
+  {
+    document: 'users/{uid}/packages/{packageId}',
+    secrets: [track17ApiKey],
+    timeoutSeconds: 60,
+    memory: '256MiB'
+  },
+  (event) =>
+    createRegisterTrackingNumberHandler({
+      db: getFirestore(),
+      track17ApiKey: track17ApiKey.value() || process.env.TRACK17_API_KEY || ''
+    })(event)
+);
+
 export const notifyOnNewPackage = onDocumentCreated(
   {
     document: 'users/{uid}/packages/{packageId}',
@@ -321,6 +350,34 @@ export const notifyOnPackageUpdated = onDocumentUpdated(
       vapidPrivateKey: vapidPrivateKey.value(),
       vapidSubject: 'mailto:support@spotliapp.com'
     })(event)
+);
+
+/**
+ * Background tracking refresh.
+ *
+ * The counterpart to `queryCarrierTracking`: that one answers a user who is
+ * looking at the app, this one runs when nobody is. It is the only path that
+ * can notice a parcel was delivered when the courier's SMS carried no tracking
+ * number to match on — and because it writes server-side with
+ * `lastUpdateSource: 'live_tracking'`, `updatePackagePush` turns what it finds
+ * into an actual notification.
+ *
+ * Cadence comes from TRACKING_REFRESH_LIMITS.INTERVAL_HOURS so it moves with
+ * the budget it is paced against, rather than drifting from it.
+ */
+export const scheduledTrackingRefresh = onSchedule(
+  {
+    schedule: `every ${TRACKING_REFRESH_LIMITS.INTERVAL_HOURS} hours`,
+    timeZone: 'Etc/UTC',
+    secrets: [track17ApiKey],
+    timeoutSeconds: 540,
+    memory: '256MiB'
+  },
+  () =>
+    createScheduledTrackingRefreshHandler({
+      db: getFirestore(),
+      track17ApiKey: track17ApiKey.value() || process.env.TRACK17_API_KEY || ''
+    })()
 );
 
 /**

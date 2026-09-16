@@ -275,6 +275,19 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Background tracking-refresh bookkeeping
+    // (functions/src/scheduledTrackingRefresh.js): when each tracking number
+    // was last looked up and how long to wait before the next attempt. Keyed by
+    // tracking number rather than by user, because upstream quota is spent per
+    // number no matter how many people hold that parcel. Written only by Cloud
+    // Functions via the Admin SDK. Closed to clients in both directions: it is
+    // not the user's data to read (a number here may belong to somebody else's
+    // package), and a client that could write it could park a rival's parcel at
+    // the maximum backoff and silently stop it ever refreshing.
+    match /trackingPollState/{trackingNumber} {
+      allow read, write: if false;
+    }
+
     // Gmail OAuth connections (functions/src/gmailAuth.js) — refresh
     // tokens and sync cursors for the Gmail auto-sync feature. Written only
     // by Cloud Functions via the Admin SDK, which bypasses these rules

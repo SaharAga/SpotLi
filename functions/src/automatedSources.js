@@ -13,7 +13,11 @@ export const AUTOMATED_SOURCES = Object.freeze([
   'gmail_sync',
   'gmail_sync_order_status',
   'gmail_sync_ai',
-  'email_forwarding'
+  'email_forwarding',
+  // The scheduled background tracking refresh. It is the one source that can
+  // tell a user something they could not have seen themselves: a courier marked
+  // the parcel delivered and never sent an SMS carrying its number.
+  'live_tracking'
 ]);
 
 const AUTOMATED_SOURCE_SET = new Set(AUTOMATED_SOURCES);
