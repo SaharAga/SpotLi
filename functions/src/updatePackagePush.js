@@ -4,7 +4,7 @@
  */
 
 import { sendPushToUser } from './pushNotifications.js';
-import { formatUpdatePushTitleAndBody } from './pushPayload.js';
+import { formatUpdatePushTitleAndBody, getUserLanguage } from './pushPayload.js';
 
 /**
  * Determines whether the difference between before and after warrants a push notification.
@@ -55,7 +55,7 @@ export function createUpdatePackagePushHandler({ db, webpush, vapidPublicKey, va
     const uid = event.params?.uid;
     if (!uid) return;
 
-    const { title, body } = formatUpdatePushTitleAndBody(before, after);
+    const { title, body } = formatUpdatePushTitleAndBody(before, after, await getUserLanguage(db, uid));
     const payload = {
       title,
       body,

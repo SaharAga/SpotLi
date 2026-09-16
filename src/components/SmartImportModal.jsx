@@ -419,10 +419,22 @@ export function SmartImportModal({
 
   const detectedCarrierObj = parsed ? getCarrier(parsed.carrier) : null;
   const showLowConfidenceHint = parseSource === 'ai' && (aiConfidence === 'low' || aiConfidence === 'medium');
-  const canApplyParsed = parsed?.trackingNumber && (
-    (parseSource === 'regex' && parsed.candidateStatus === 'verified') ||
+  // A deterministic result only ever reaches `parsed` at `verified` or
+  // `probable` — `uncertain` and `none` are withheld in runTextParse, which is
+  // where that judgement belongs. Requiring `verified` here as well meant a
+  // `probable` result was displayed under "successfully extracted" with the
+  // confirm button permanently dead: reported from a real Tapuz SMS, whose
+  // 8-digit number has no check digit and no carrier URL, so it can never be
+  // more than `probable`. That is the exact case the fallback exists to serve
+  // — the comment there says the user is better served by a pre-filled form
+  // they can correct, and this gate was refusing to open it.
+  //
+  // Nothing is auto-applied by this: the button hands the parse to a form the
+  // user reviews and saves themselves.
+  const canApplyParsed = Boolean(parsed?.trackingNumber && (
+    (parseSource === 'regex' && (parsed.candidateStatus === 'verified' || parsed.candidateStatus === 'probable')) ||
     (parseSource === 'ai' && parsed.isGroundedCandidate === true && aiConfidence && aiConfidence !== 'none' && aiConfidence !== 'uncertain')
-  );
+  ));
 
   return (
     <Modal
@@ -700,7 +712,7 @@ export function SmartImportModal({
                       type="button"
                       onClick={handleApply}
                       disabled={!canApplyParsed}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/20 transition-ui cursor-pointer min-h-[48px]"
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/20 transition-ui cursor-pointer min-h-[48px] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-600 disabled:shadow-none"
                     >
                       <span>{language === 'he' ? 'המשך להוספת חבילה זו למעקב' : 'Add this Package to Tracker'}</span>
                       <ArrowRight className="w-4 h-4 rtl:rotate-180" />

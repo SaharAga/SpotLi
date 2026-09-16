@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { sanitizeString, validatePackage, validatePackageList } from './packageValidator';
 import { parseSmartText, extractTrackingCandidates, detectCarrierFromPhrasing } from './smartParser';
+import { validateUPUS10Mod11 } from './carrierDetector';
 import { CARRIER_LIST } from '../types/carriers';
 import { GOLD_STANDARD_CARRIER_SAMPLES } from './bistDiagnostics';
 import { deliveryService, TRANSITION_MATRIX, canTransition } from '../services/deliveryService';
@@ -140,16 +141,62 @@ describe('High-Assurance Property-Based Verification (fast-check)', () => {
   });
 
   describe('Completeness Property for Smart Parsing', () => {
-    // Known valid tracking number formats across carriers
+    /**
+     * Israel Post numbers carry a UPU S10 check digit, and the parser
+     * deliberately refuses an unlabeled one whose digit does not verify — see
+     * candidateScorer.js, "Unlabeled, it must wait for a carrier domain or a
+     * check digit". Generating nine independent random digits therefore
+     * produced a verifying number only about one time in eleven, and this
+     * property asserted the parser must extract the other ten: an assertion
+     * the parser is designed to falsify.
+     *
+     * It only went red when the draw also landed on a prefix Israel Post
+     * actually issues (RS, RR, EE, CP…), because any other prefix is never
+     * recognised as Israel Post and never reaches the checksum gate. That made
+     * it a rare, seed-dependent failure rather than a constant one — it sat
+     * here unnoticed until it failed a CI run that touched nothing but
+     * workflow YAML, costing a re-run to diagnose.
+     *
+     * The serial now carries its correct check digit. The weights are restated
+     * from validateUPUS10Mod11 rather than imported, because that function
+     * verifies a number and cannot produce one; the test immediately below
+     * holds every generated value to that real validator, so the restatement
+     * cannot drift from the implementation without failing loudly.
+     */
+    const S10_WEIGHTS = [8, 6, 4, 2, 3, 5, 9, 7];
+    const withS10CheckDigit = (prefixAndSerial) => {
+      const serial = prefixAndSerial.slice(2);
+      const sum = [...serial].reduce((acc, digit, i) => acc + Number(digit) * S10_WEIGHTS[i], 0);
+      const remainder = sum % 11;
+      // 11 - remainder, with the two special cases S10 defines: 11 -> 5, 10 -> 0.
+      const checkDigit = remainder === 0 ? 5 : remainder === 1 ? 0 : 11 - remainder;
+      return `${prefixAndSerial}${checkDigit}IL`;
+    };
+    const israelPostS10 = fc.stringMatching(/^[A-Z]{2}\d{8}$/).map(withS10CheckDigit);
+
+    // Known valid tracking number formats across carriers.
     const validTrackingGenerators = [
       // Only the self-identifying samples belong in the unlabeled property;
       // the all-digit ones are covered by the labeled property below.
       fc.constantFrom(...Object.values(GOLD_STANDARD_CARRIER_SAMPLES).filter((v) => /[A-Z]/i.test(v))),
-      fc.stringMatching(/^[A-Z]{2}\d{9}IL$/),
+      israelPostS10,
       fc.stringMatching(/^1Z[0-9A-Z]{16}$/),
       fc.stringMatching(/^LP\d{14}$/),
       fc.stringMatching(/^YT\d{16}$/)
     ];
+
+    // Guards the generator above: if the S10 algorithm in carrierDetector.js
+    // ever changes, this fails here — pointing at the generator — instead of
+    // silently feeding unverifiable numbers back into the completeness
+    // property and turning it flaky again.
+    it('the Israel Post generator emits numbers that pass the real S10 validator', () => {
+      fc.assert(
+        fc.property(israelPostS10, (trackingNum) => {
+          expect(validateUPUS10Mod11(trackingNum)).toBe(true);
+        }),
+        { numRuns: 200 }
+      );
+    });
 
     /**
      * Bare digit runs are handled separately from the generators above.

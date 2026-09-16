@@ -34,6 +34,9 @@ npm run dev                  # Vite dev server, http://localhost:5173
 npm run build                # production build to dist/ (fails if Firebase env vars missing)
 npm run lint                 # oxlint
 npm test                     # vitest run (Node environment by default)
+
+npm run eval:parser          # Smart Import accuracy against the held-out corpus
+npm run corpus:sms -- FILE   # rank real SMS phrasings the parser cannot stage
 ```
 
 Run a single test file: `npx vitest run src/utils/smartParser.test.js`
@@ -41,6 +44,17 @@ Run tests matching a name: `npx vitest run -t "some test name"`
 
 Cloud Functions (`functions/`) have their own `package.json`/`vitest.config.js` — `cd functions`
 before running its lint/test/build.
+
+**Measuring the parser against reality.** `eval:parser` scores the held-out corpus in
+`src/tests/fixtures/parserEvalCorpus.js`, which now scores delivery stage and merchant as
+well as the tracking number — it scored only the number and the carrier until a real SMS
+came back correctly numbered, wrongly staged and with no merchant, and the harness called
+it green. `corpus:sms` goes a step further and reads a real export
+(`adb shell content query --uri content://sms/inbox --projection body > sms.txt`), ranking
+the phrasings the parser could not stage by how often they actually occur. It runs offline,
+normalizes every message before counting so a counted phrase cannot carry a tracking number,
+and writes a gitignored report. Use it before hand-picking corpus cases: a hand-picked set
+can only contain phrasings someone already imagined.
 
 `npm run prepare` (runs on `npm install`) points git at `.githooks/`, which pre-commit-scans for
 accidentally committed secrets (`scripts/pre_commit_secrets_check.js`). Don't bypass it.

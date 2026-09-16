@@ -156,6 +156,13 @@ export const CARRIER_URL_RULES = [
       /\/tracking\/([A-Z0-9_-]+)/i
     ]
   },
+  // Focus Logistics (focuslogistics.co.il)
+  {
+    carrierId: 'focus',
+    hostPattern: /focuslogistics\.co\.il/i,
+    paramNames: ['num', 'track', 'tracking', 'barcode', 'id', 'code'],
+    pathPatterns: [/\/tracking\/([A-Z0-9_-]+)/i]
+  },
   // Chita Delivery / Cheetah (chtr.co.il, chita-il.com, chita.co.il)
   {
     carrierId: 'chita',
@@ -416,6 +423,10 @@ const HEBREW_CARRIER_PHRASES = [
   // Anchored to a distribution-company phrase or the carrier's own host, since
   // "cargo" is an ordinary English word and Flying Cargo is a separate carrier.
   { carrierId: 'cargo', patterns: [/קרגו\s*שליחויות/i, /cargo\s*express/i, /חברת\s*ה?הפצה\s*CARGO/i, /cargo-?ship/i] },
+  // Same shape as CARGO above: "פוקוס" is an ordinary Hebrew word, so the bare
+  // form is deliberately absent — it is matched only where a distribution
+  // company is being named, or by the carrier's own host.
+  { carrierId: 'focus', patterns: [/חברת\s*ה?הפצה\s*["'״׳’]?\s*פוקוס/i, /מחברת\s*פוקוס/i, /פוקוס\s*לוגיסטיק/i, /focus\s*logistics/i, /focuslogistics/i] },
   { carrierId: 'getpackage', patterns: [/גט\s*פקג['׳`״’‘]/i, /getpackage/i] },
   { carrierId: 'zigzag', patterns: [/זיגזג\s*שליחויות/i, /שליח\s*זיגזג/i, /זיגזג/i, /zigzag/i] },
   { carrierId: 'orian', patterns: [/אוריאן/i, /orian/i] },
@@ -1049,6 +1060,56 @@ export function normalizeMessageText(text) {
     .replace(/ {2,}/g, ' ');
 }
 
+/**
+ * Words that end a merchant name rather than belong to it.
+ *
+ * A merchant name runs until the sentence resumes, and in Hebrew it resumes
+ * with a verb or a preposition. Without this, "מ- LA BEAUTE הגיע לחברת ההפצה"
+ * reads the whole clause as the shop's name.
+ */
+const MERCHANT_STOP_WORDS = new Set([
+  'הגיע', 'הגיעה', 'הגיעו', 'נמסר', 'נמסרה', 'נמסרו', 'נשלח', 'נשלחה', 'נקלט',
+  'נקלטה', 'יצא', 'יצאה', 'עבר', 'עברה', 'התקבל', 'התקבלה', 'יונח', 'תימסר',
+  'ממתין', 'ממתינה', 'ממתינים', 'מחכה', 'בדרך', 'עבור', 'אל', 'אליך', 'אליכם',
+  'מספר', "מס'", 'מס', 'שמספרה', 'למעקב', 'לכתובת', 'לחברת', 'לנקודת', 'ללוקר',
+  'לסניף', 'בקישור', 'באתר', 'תודה', 'שלום', 'היי'
+]);
+
+/** Words that mean the slot holds a courier or a place, not a shop. */
+const NOT_A_MERCHANT = /^(?:ה?לוקר|ה?שליח|ה?סניף|ה?נקודת|ה?דואר|ה?מחסן|ה?חנות|ה?כתובת|ה?חברת)/i;
+
+/**
+ * Reads a merchant name off the start of `rest`, stopping where the sentence
+ * resumes.
+ *
+ * @param {string} rest text immediately after the "from" prefix
+ * @returns {string} the merchant, or '' when the slot holds something else
+ */
+function readMerchantWords(rest) {
+  const line = rest.split(/[\n.,:;!?"״]/)[0] || '';
+  const words = line.trim().split(/\s+/).filter(Boolean);
+
+  const taken = [];
+  for (const word of words) {
+    if (taken.length >= 4) break;
+    if (MERCHANT_STOP_WORDS.has(word)) break;
+    // A word that is only punctuation or a bare number is not part of a name.
+    if (!/[A-Za-z\u0590-\u05FF]/.test(word)) break;
+    taken.push(word);
+    if (taken.join(' ').length > 40) break;
+  }
+
+  const candidate = taken.join(' ').trim();
+  if (!candidate || candidate.length < 2 || candidate.length > 40) return '';
+  if (NOT_A_MERCHANT.test(candidate)) return '';
+  // Reject something shaped like a tracking number, not merely something long:
+  // with the /i flag `[A-Z0-9_-]` matches letters, so this used to drop any
+  // single-word shop of eight letters or more ("BeautyBar"). Requiring a digit
+  // keeps RS736102941IL out while letting a real name through.
+  if (/^(?=[A-Z0-9_-]*\d)[A-Z0-9_-]{8,}$/i.test(candidate)) return '';
+  return candidate;
+}
+
 export function parseSmartText(rawText) {
   if (!rawText || typeof rawText !== 'string') {
     return {
@@ -1150,6 +1211,54 @@ export function parseSmartText(rawText) {
     }
   }
 
+  /**
+   * Merchant named by sentence shape rather than by catalogue.
+   *
+   * `detectStore` recognises a fixed list of large retailers. Most Israeli
+   * courier SMS name a shop that will never be on such a list — the reported
+   * case was "חבילה מSeestarz online מספר 48094292", a small store whose name
+   * the message states outright while the app titled the package
+   * "Package 48094292" and showed no merchant at all.
+   *
+   * The grammar is the signal: "<parcel> from <merchant> number <id>". Reading
+   * the slot between the two keywords needs no catalogue and so works for a
+   * shop nobody has heard of, which is the whole point.
+   */
+  const extractMerchantPhrase = (text) => {
+    // The merchant sits on either side of the number, and both shapes are
+    // common in real Israeli courier SMS:
+    //
+    //   A  "חבילה מSeestarz online מספר 48094292 נמסרה"     before it
+    //   B  "מספר משלוח 4046309 מ- LA BEAUTE הגיע לחברת..."   after it
+    //
+    // Shape A alone was matched first, which read Seestarz correctly and left
+    // LA BEAUTE unnamed. What both share is the `מ` prefix; what differs is
+    // only where the number sits, so anchor on the prefix and read forward.
+    // The two anchors are deliberately not equally permissive. Shape A is
+    // introduced by a parcel noun and closed by מספר, so a מ attached straight
+    // to Hebrew ("מקפה עלית") is safely read as the prefix. Shape B has no such
+    // bracket: the word after the number can be any Hebrew verb that simply
+    // begins with מ, and "מספר 12345678 ממתינה" was read as a shop called
+    // "מתינה". So there, the prefix must announce itself — a maqaf or hyphen, a
+    // space, or a Latin letter — and an attached Hebrew word is left alone.
+    const anchors = [
+      // `(?!ספר|ס')` keeps the parcel noun from pairing with the מ of מספר
+      // itself: "החבילה מספר 12345678" was otherwise read as a shop called ספר.
+      /(?:ה)?(?:חבילה|משלוח|הזמנה|שליחות)\s+מ(?!ספר|ס')[־-]?\s*/i,
+      /(?:מספר|מס')\s*(?:משלוח|חבילה|הזמנה)?\s*[A-Za-z0-9-]{4,}\s+מ(?:[־-]\s*|\s+|(?=[A-Za-z]))/i
+    ];
+
+    for (const anchor of anchors) {
+      const match = anchor.exec(text);
+      if (!match) continue;
+
+      const rest = text.slice(match.index + match[0].length);
+      const candidate = readMerchantWords(rest);
+      if (candidate) return candidate;
+    }
+    return '';
+  };
+
   // Detect merchant / store
   const storeInfo = detectStore(cleanText);
   let detectedStore = '';
@@ -1168,6 +1277,15 @@ export function parseSmartText(rawText) {
     } else if (['iherb', 'superpharm'].includes(storeInfo.id)) {
       category = 'health';
     }
+  } else {
+    // Fallback only. A catalogue hit carries a Hebrew name, a brand colour and
+    // an id the UI keys off; a phrase carries a name and nothing else, so it
+    // must never displace one.
+    const merchantPhrase = extractMerchantPhrase(cleanText);
+    if (merchantPhrase) {
+      detectedStore = merchantPhrase;
+      detectedStoreHe = merchantPhrase;
+    }
   }
 
   // Extract explicit product / item candidate from text if present
@@ -1176,7 +1294,14 @@ export function parseSmartText(rawText) {
     const quoteMatch = text.match(/["'״”]([^"'״”\n]{3,50})["'״”]/);
     if (quoteMatch && quoteMatch[1]) {
       const candidate = quoteMatch[1].trim();
+      // Israeli courier SMS quote the *courier* — 'הגיע לחברת ההפצה "פוקוס"' —
+      // and that quoted name was becoming the package's item description, so a
+      // LA BEAUTE order was titled "פוקוס". What is quoted is only an item if
+      // nothing right before it says a delivery company is being named.
+      const before = text.slice(Math.max(0, quoteMatch.index - 40), quoteMatch.index);
+      const namesACarrier = /(?:חברת|לחברת|באמצעות|ע["']?י)\s*(?:ה?הפצה|ה?משלוחים|ה?שליחויות|ה?שילוח)?\s*$/i.test(before);
       if (
+        !namesACarrier &&
         !/^[A-Z0-9_-]{8,35}$/i.test(candidate) &&
         !/^(?:order|package|tracking|delivery|shipment|חבילה|משלוח|הזמנה|איסוף)/i.test(candidate) &&
         !/^https?:\/\//i.test(candidate)
@@ -1255,22 +1380,58 @@ export function parseSmartText(rawText) {
   // matched further down.
   // No \b anywhere: it is defined on ASCII \w, so it never matches against a
   // Hebrew letter and silently kills the alternative it is attached to.
-  const deliveredHe = /(?:נמסרה בהצלחה|נמסר ליעד|(?:ה)?(?:חבילה|משלוח|הזמנה)\s+נמסר[ההת]?|נמסר[ההת]?\s+(?:ה)?(?:חבילה|משלוח|הזמנה)(?!\s*לשליח))/i;
-  if (/\b(delivered|successfully delivered)\b/i.test(lowerText) || deliveredHe.test(lowerText)) {
+  //
+  // The noun and the verb are not always adjacent either. A real Seestarz SMS
+  // reads "חבילה מSeestarz online מספר 48094292 נמסרה" — merchant and number
+  // sit between them — and was filed as in_transit for it. The gap is bounded
+  // and tempered: it stops at a sentence break, so a חבילה in one sentence
+  // cannot be paired with a נמסרה in the next, and it refuses to cross a
+  // negation, so "החבילה לא נמסרה" and "טרם נמסרה" stay undelivered. That
+  // negation guard is the whole cost of allowing a gap at all.
+  //
+  // `(?![\u0590-\u05FF])` pins the verb's suffix. Without it `[ההת]?` simply
+  // backtracks to empty when the לשליח lookahead fails, matching the bare
+  // נמסר inside נמסרה and reporting "נמסרה לשליח" — a handover to the courier
+  // — as delivered. Caught by the test battery on the first run of this change.
+  //
+  // `לנקודת` joins `לשליח` as a destination that is not the recipient: a parcel
+  // "נמסר לנקודת האיסוף" has been handed to a pickup point, which is
+  // ready_for_pickup and is matched below.
+  const deliveredHe = /(?:נמסרה בהצלחה|נמסר ליעד|(?:ה)?(?:חבילה|משלוח|הזמנה)(?:(?!לא\s|טרם\s|אינה\s|אינו\s|עדיין\s|[.!?\n])[\s\S]){0,60}?\s*נמסר[ההת]?(?![\u0590-\u05FF])(?!\s*ל(?:שליח|נקודת))|נמסר[ההת]?(?![\u0590-\u05FF])\s+(?:ה)?(?:חבילה|משלוח|הזמנה)(?!\s*ל(?:שליח|נקודת)))/i;
+
+  // Three more ways a message says the delivery already happened, none of which
+  // use נמסר at all. Each was a held-out corpus case reporting in_transit —
+  // fixing a regex because a case there failed is what that corpus is for.
+  //
+  // - collected at the counter: "תודה שאספת את דבר הדואר …"      (Israel Post)
+  // - the courier closed the job: "שליח דיווח ביצוע שליחות …"     (Bar Group)
+  // - you are asked to rate the delivery: "איך היה עם השליח?"      (Cheetah)
+  //
+  // The third is the broadest and the most reliable: nobody is asked to rate a
+  // courier before the courier has been. It is kept to explicit rating language
+  // rather than any mention of a שליח, which would sweep up every message that
+  // merely says one is on the way.
+  const deliveredEventHe = /(?:תודה שאספת|תודה שאספתם|דיווח ביצוע|איך היה עם השליח|משוב על השליח|לדרג את השליח|דירוג השליח|לדרג את חווית המשלוח|לדרג את חוויית המשלוח)/i;
+
+  if (
+    /\b(delivered|successfully delivered)\b/i.test(lowerText) ||
+    deliveredHe.test(lowerText) ||
+    deliveredEventHe.test(lowerText)
+  ) {
     status = 'delivered';
   } else if (
     lockerPin ||
     redirectInfo.isRedirected ||
     /\b(ready for pickup|ready for collection|available for pickup|waiting for pickup|delivered to locker)\b/i.test(lowerText) ||
-    /(?:מוכנה לאיסוף|מוכן לאיסוף|ממתינה לאיסוף|ממתין לאיסוף|ממתינה בלוקר|ממתין בלוקר|הגיעה לנקודת|הגיע לנקודת|הגיע לסניף|הגיעה לסניף|הגיע לסוכנות|הגיעה לסוכנות|הגיעה ללוקר|הגיע ללוקר|הועברה ללוקר|הועברה לנקודת|מחכה לך בנקודת|מחכה לך בלוקר|מחכה בלוקר|מחכה לך בסניף|מדף\s*\d+)/i.test(lowerText)
+    /(?:מוכנה לאיסוף|מוכן לאיסוף|ממתינה לאיסוף|ממתין לאיסוף|ממתינה בלוקר|ממתין בלוקר|הגיעה לנקודת|הגיע לנקודת|הגיע לסניף|הגיעה לסניף|הגיע לסוכנות|הגיעה לסוכנות|הגיעה ללוקר|הגיע ללוקר|הועברה ללוקר|הועברה לנקודת|מחכה לך בנקודת|מחכה לך בלוקר|מחכה בלוקר|מחכה לך בסניף|מדף\s*\d+|נמסר[ההת]?\s+לנקודת|הועבר[ההת]?\s+לנקודת|הגיע[הה]?\s+לנקודת)/i.test(lowerText)
   ) {
     status = 'ready_for_pickup';
   } else if (
     /\b(out for delivery|with courier)\b/i.test(lowerText) ||
-    /(?:יוצאת למסירה|יוצא למסירה|יצאה עם שליח|נמסרה לשליח|השליח בדרך אליך|שליח\s+[^\n]+בדרך אליך|תסופק היום|יסופק היום|היום עם שליח|מגיע היום|צפוי להגיע היום)/i.test(lowerText)
+    /(?:יוצאת למסירה|יוצא למסירה|יצאה עם שליח|נמסרה לשליח|השליח בדרך אליך|שליח\s+[^\n]+בדרך אליך|תסופק היום|יסופק היום|היום עם שליח|מגיע היום|צפוי להגיע היום|מבקש למסור|מבקשים למסור|בדרך למסור|נמסר[ההת]?\s+(?:ה)?(?:חבילה|משלוח|הזמנה)\s+לשליח)/i.test(lowerText)
   ) {
     status = 'out_for_delivery';
-  } else if (/\b(delivery issue|delivery failed|customs clearance)\b/i.test(lowerText) || /(?:עיכוב במכס|בעיה במסירה|מסירה נכשלה)/i.test(lowerText)) {
+  } else if (/\b(delivery issue|delivery failed|customs clearance)\b/i.test(lowerText) || /(?:עיכוב במכס|בעיה במסירה|מסירה נכשלה|ניסינו למסור|ניסיון מסירה|לא היית בבית|לא היית בכתובת|לא נמצאת בכתובת|לא נמצאתם בכתובת)/i.test(lowerText)) {
     status = 'exception';
   } else if (bestTracking || /\b(shipped|in transit|dispatched|on its way)\b/i.test(lowerText) || /(?:נשלחה|נשלח|בדרך)/i.test(lowerText)) {
     status = status === 'ordered' ? 'in_transit' : status;

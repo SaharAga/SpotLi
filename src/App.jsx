@@ -89,6 +89,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { useAuth, AuthProvider } from './context/AuthContext';
 import { isAdminUser } from './constants/admin';
 import { getCarrier } from './types/carriers';
+import { untrackedReasonKey } from './services/carrierApiProxy';
 import { getTabPredicate, ARCHIVED_TAB } from './types/stages';
 import { STORAGE_KEYS } from './constants/storageKeys';
 import { LEGAL_VERSION } from './constants/legalVersion';
@@ -337,6 +338,20 @@ export function DashboardContent() {
     saveError,
     clearSaveError
   } = usePackages(user, triggerCloudSync);
+
+  // Keep the stored preference in step with the language actually in use.
+  //
+  // Push notifications are written server-side, so the Cloud Function's only
+  // way to know which language to use is `users/{uid}.preferences.language`.
+  // The account screen writes it, but only when someone opens the picker — so
+  // a user on an English device who never did got Hebrew notifications, having
+  // been shown an English app the whole time. First-run detection has to reach
+  // the server too, not just localStorage.
+  useEffect(() => {
+    if (!user?.id || !language) return;
+    if (user.preferences?.language === language) return;
+    updateUserPreferences({ language });
+  }, [user?.id, user?.preferences?.language, language, updateUserPreferences]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
@@ -988,13 +1003,10 @@ export function DashboardContent() {
   const handleRefreshSinglePackage = useCallback(async (pkg) => {
     const res = await deliveryService.refreshPackageTracking(pkg, user?.id || null);
 
-    // Lookup worked, but this carrier has no live feed. Say so plainly rather
-    // than reporting a successful refresh that changed nothing.
+    // The lookup ran but produced no tracking data. Which of the three reasons
+    // it was decides what the user should do about it — see untrackedReasonKey.
     if (res.success && res.tracked === false) {
-      const key = res.reason === 'carrier-unavailable'
-        ? 'tracking.carrierUnavailable'
-        : 'tracking.notSupported';
-      showToast(t(key).replace('{carrier}', carrierLabel(pkg)), 'info');
+      showToast(t(untrackedReasonKey(res.reason)).replace('{carrier}', carrierLabel(pkg)), 'info');
       return;
     }
 
@@ -1236,6 +1248,12 @@ export function DashboardContent() {
           onClose={() => closeModal(MODAL.SMART_IMPORT)}
           onParsedResult={handleSmartImportResult}
           onShowToast={showToast}
+          // Without this the modal's duplicate check ran against its own empty
+          // default forever, so "Matching Existing Package" never appeared and
+          // a second SMS about a package already being tracked looked like it
+          // would add a duplicate. The save path deduplicates either way; this
+          // is the half that says so before the user commits.
+          packages={packages}
           uid={user?.id}
           onSwitchToManual={(rawText) => {
             closeModal(MODAL.SMART_IMPORT);

@@ -30,7 +30,7 @@ service cloud.firestore {
         'isRedirected', 'originalPickupLocation', 'redirectedAt', 'redirectReason',
         'store', 'orderNumber', 'createdAt', 'updatedAt', 'userId',
         'shelfNumber', 'localTrackingNumber', 'localCarrier', 'aliases', 'customsDetails',
-        'source', 'confidence', 'lockerPin', 'schemaVersion'
+        'source', 'confidence', 'lockerPin', 'schemaVersion', 'isDemo'
       ];
       
       // Must stay in lockstep with VALID_STATUSES in src/utils/packageValidator.js
@@ -84,6 +84,7 @@ service cloud.firestore {
         (!('lockerPin' in data) || (data.lockerPin is string && data.lockerPin.size() <= 50)) &&
         (!('schemaVersion' in data) || (data.schemaVersion is number && data.schemaVersion >= 1 && data.schemaVersion <= 100)) &&
         (!('isPinned' in data) || data.isPinned is bool) &&
+        (!('isDemo' in data) || data.isDemo is bool) &&
         (!('isArchived' in data) || data.isArchived is bool) &&
         (!('checkpoints' in data) || (data.checkpoints is list && data.checkpoints.size() <= 50)) &&
         (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 50)) &&
@@ -204,7 +205,7 @@ service cloud.firestore {
         request.resource.data.editedFields.size() > 0 &&
         request.resource.data.editedFields.size() <= 10 &&
         request.resource.data.editedFields.hasOnly([
-          'title', 'trackingNumber', 'carrier', 'origin', 'destination', 'notes'
+          'title', 'trackingNumber', 'carrier', 'origin', 'destination', 'notes', 'status'
         ]) &&
         (!('timestamp' in request.resource.data) || (request.resource.data.timestamp is string && request.resource.data.timestamp.size() <= 60));
       allow read: if isAdmin();

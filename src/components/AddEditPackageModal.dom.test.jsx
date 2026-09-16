@@ -18,6 +18,65 @@ describe('AddEditPackageModal (rendered)', () => {
     cleanup();
   });
 
+  describe('optional fields are folded away', () => {
+    it('shows only the essentials on a fresh add, with the rest behind drawers', () => {
+      // 16 fields, 14 of them optional, made a 1,878px scroll in a 633px
+      // window. The two required ones and the two a person adding by hand
+      // always knows stay out; everything else waits behind a heading.
+      renderWithLanguage(<AddEditPackageModal isOpen onClose={vi.fn()} onSave={vi.fn()} />);
+
+      expect(screen.getByPlaceholderText(/RS948219481IL/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /order details/i })).toHaveAttribute('aria-expanded', 'false');
+      expect(screen.getByRole('button', { name: /pickup & locker details/i })).toHaveAttribute('aria-expanded', 'false');
+      expect(screen.getByRole('button', { name: /store return window/i })).toHaveAttribute('aria-expanded', 'false');
+
+      // Collapsed means unmounted, not merely invisible: a hidden input still
+      // in the tab order is its own trap.
+      expect(screen.queryByPlaceholderText(/Shenzhen, China/i)).not.toBeInTheDocument();
+    });
+
+    it('opens a drawer on demand', async () => {
+      const user = userEvent.setup();
+      renderWithLanguage(<AddEditPackageModal isOpen onClose={vi.fn()} onSave={vi.fn()} />);
+
+      await user.click(screen.getByRole('button', { name: /order details/i }));
+      expect(screen.getByPlaceholderText(/Shenzhen, China/i)).toBeInTheDocument();
+    });
+
+    it('opens by itself for a package that already has those fields', () => {
+      // The property that makes folding safe. Data the user cannot see is
+      // worse than a long form.
+      renderWithLanguage(
+        <AddEditPackageModal
+          isOpen
+          onClose={vi.fn()}
+          onSave={vi.fn()}
+          editPackage={{
+            id: 'pkg-1', title: 'Headphones', trackingNumber: 'RS948219481IL',
+            carrier: 'israel-post', status: 'ready_for_pickup',
+            pickupCode: '4892', pickupLocation: 'Azrieli Mall'
+          }}
+        />
+      );
+
+      expect(screen.getByRole('button', { name: /pickup & locker details/i })).toHaveAttribute('aria-expanded', 'true');
+      expect(screen.getByDisplayValue('4892')).toBeInTheDocument();
+    });
+
+    it('keeps the action row out of the scrolling region', () => {
+      // It used to be the last thing in a 1,878px scroll, so submitting meant
+      // travelling the whole form. jsdom loads no stylesheets, so this asserts
+      // the structure that makes it pinned rather than the geometry.
+      renderWithLanguage(<AddEditPackageModal isOpen onClose={vi.fn()} onSave={vi.fn()} />);
+
+      const submit = screen.getByRole('button', { name: /add to tracking/i });
+      const scroller = document.querySelector('form > .overflow-y-auto');
+      expect(scroller, 'the fields scroll in their own region').not.toBeNull();
+      expect(scroller.contains(submit)).toBe(false);
+      expect(submit.closest('form')).not.toBeNull();
+    });
+  });
+
   it('does not submit when the required fields are empty', async () => {
     const user = userEvent.setup();
     const onSave = vi.fn();

@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   X, Cloud, Check, AlertCircle,
-  Mail, User, Lock, Loader2, LogOut, Trash2, ArrowLeft, Sparkles
+  Mail, User, Lock, Loader2, LogOut, Trash2, ArrowLeft, Sparkles, Smartphone, ChevronRight
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { isStandalonePwa } from '../utils/displayMode';
+import { InstallGuideDialog } from './InstallGuideDialog';
 const LegalDocumentModal = React.lazy(() => import('./LegalDocumentModal').then(module => ({ default: module.LegalDocumentModal })));
 import { APP_VERSION } from '../constants/version';
 import { Modal } from './Modal';
@@ -125,6 +127,14 @@ export function AuthModal({
   const [formSuccess, setFormSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
+
+  // Only iOS: see the note where this is rendered.
+  const suggestInstallFirst = React.useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    const isIOSDevice = /iPad|iPhone|iPod/.test(window.navigator.userAgent || '');
+    return isIOSDevice && !isStandalonePwa();
+  }, []);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   // Registration-only legal consent — mandatory ToS/Privacy acceptance and
@@ -425,6 +435,33 @@ export function AuthModal({
             </div>
           ) : (
             <>
+              {/* Install first, on the one platform where signing in here is
+                  wasted work. iOS gives a home-screen app its own storage
+                  container, so a session created in Safari is invisible to the
+                  installed app and the person signs in twice — reported by a
+                  first-time user who did exactly that. Advisory, not a gate:
+                  the form below stays usable for anyone who wants the browser.
+                  Android and desktop share storage between the browser and the
+                  installed app, so they are deliberately not shown this. */}
+              {suggestInstallFirst && activeTab !== 'forgot' && (
+                <button
+                  type="button"
+                  onClick={() => setShowInstallGuide(true)}
+                  className="w-full mb-4 px-3 py-2 rounded-2xl bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 transition-colors cursor-pointer flex items-center gap-2.5 text-start min-h-[48px]"
+                >
+                  <Smartphone className="w-4 h-4 text-blue-400 shrink-0" aria-hidden="true" />
+                  <span className="flex-1 text-xs font-bold text-slate-200">
+                    {language === 'he'
+                      ? 'משתמשים באייפון? התקינו את האפליקציה קודם'
+                      : 'Using an iPhone? Install the app first'}
+                  </span>
+                  <ChevronRight
+                    className={`w-4 h-4 text-blue-400 shrink-0 ${isRTL ? 'rotate-180' : ''}`}
+                    aria-hidden="true"
+                  />
+                </button>
+              )}
+
               {/* Social / OAuth Sign-in Buttons */}
               {activeTab !== 'forgot' && (
                 <>
@@ -780,6 +817,13 @@ export function AuthModal({
         onClose={() => setOpenLegalDoc(null)}
         docType={openLegalDoc || 'terms'}
       /></React.Suspense>
+
+      <InstallGuideDialog
+        isOpen={showInstallGuide}
+        onClose={() => setShowInstallGuide(false)}
+        isIOS
+        isRTL={isRTL}
+      />
     </>
   );
 }

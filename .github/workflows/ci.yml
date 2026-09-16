@@ -90,18 +90,31 @@ jobs:
   # Same story for `firestore.rules`, whose deploy step costs ~7m and only
   # matters when the file actually changed.
   #
-  # Both outputs FAIL OPEN: any situation where a real diff cannot be
+  # The same reasoning covers the `code` output below, which skips lint and
+  # the test suite on a diff of pure documentation.
+  #
+  # All three outputs FAIL OPEN: any situation where a real diff cannot be
   # computed (first push, force-push, shallow fetch, an unexpected event)
   # reports `true` and runs everything. A detection bug must never silently
   # skip a deploy — the failure mode of running too much is a slow pipeline,
   # the failure mode of running too little is functions or rules silently
-  # not shipping.
-  detect-changes:
-    name: Detect Changed Areas
+  # not shipping, or untested code reaching main.
+  # One job answers every "should the rest of this run?" question. These were
+  # three separate jobs (Detect Changed Areas / Detect Release Commit / Detect
+  # Release-Only Commit), each doing its own full-history checkout for a few
+  # seconds of git and shell. Actions bills per job rounded up to the whole
+  # minute, so three near-instant jobs cost three minutes of the allowance on
+  # every push while doing well under one minute of work.
+  detect:
+    name: Detect Changes & Release State
     runs-on: ubuntu-latest
     outputs:
       functions: ${{ steps.check.outputs.functions }}
       rules: ${{ steps.check.outputs.rules }}
+      code: ${{ steps.check.outputs.code }}
+      release_only: ${{ steps.check.outputs.release_only }}
+      is_release: ${{ steps.check.outputs.is_release }}
+      version: ${{ steps.check.outputs.version }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -113,93 +126,133 @@ jobs:
           EVENT: ${{ github.event_name }}
           BASE_REF: ${{ github.base_ref }}
           BEFORE_SHA: ${{ github.event.before }}
+          REF: ${{ github.ref }}
         run: |
-          run_everything() {
-            echo "$1 — running every job."
-            echo "functions=true" >> "$GITHUB_OUTPUT"
-            echo "rules=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          }
+          # Defaults are the safe answers: run every job, deploy nothing. Each
+          # is narrowed below only once the diff is known to be trustworthy,
+          # so any unexpected state (first push, force-push, unreachable base)
+          # errs toward running too much rather than skipping a real check.
+          FUNCTIONS=true
+          RULES=true
+          CODE=true
+          RELEASE_ONLY=false
+          IS_RELEASE=false
 
+          CHANGED=""
+          DIFF_OK=false
           if [ "$EVENT" = "pull_request" ]; then
-            git fetch origin "$BASE_REF" --depth=1 || run_everything "Could not fetch $BASE_REF"
-            CHANGED=$(git diff --name-only "origin/$BASE_REF...HEAD") || run_everything "diff against $BASE_REF failed"
+            if git fetch origin "$BASE_REF" --depth=1 && CHANGED=$(git diff --name-only "origin/$BASE_REF...HEAD"); then
+              DIFF_OK=true
+            else
+              echo "Could not diff against $BASE_REF — running every job."
+            fi
           elif [ -n "$BEFORE_SHA" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ] && git cat-file -e "$BEFORE_SHA" 2>/dev/null; then
-            CHANGED=$(git diff --name-only "$BEFORE_SHA" HEAD) || run_everything "diff against $BEFORE_SHA failed"
+            if CHANGED=$(git diff --name-only "$BEFORE_SHA" HEAD); then
+              DIFF_OK=true
+            else
+              echo "Could not diff against $BEFORE_SHA — running every job."
+            fi
           else
-            run_everything "No usable before-SHA (first push or force-push)"
+            echo "No usable before-SHA (first push or force-push) — running every job."
           fi
 
-          echo "Changed files:"
-          echo "$CHANGED"
+          if [ "$DIFF_OK" = true ]; then
+            echo "Changed files:"
+            echo "$CHANGED"
 
-          echo "functions=$(echo "$CHANGED" | grep -qE '^functions/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
-          echo "rules=$(echo "$CHANGED" | grep -qE '^firestore\.rules$' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+            echo "$CHANGED" | grep -qE '^functions/' && FUNCTIONS=true || FUNCTIONS=false
+            echo "$CHANGED" | grep -qE '^firestore\.rules$' && RULES=true || RULES=false
 
-  # A release commit (produced by `npm run release`) only ever touches
-  # package.json, package-lock.json, CHANGELOG.md, and .changes/ — it
-  # carries no code the PR that preceded it didn't already carry, and that
-  # PR already ran the full suite below against this exact code. Re-running
-  # lint/test/functions on the release push is pure duplication (and doubles
-  # CI time on every release); skip them there and rely on the PR's
-  # already-green run. Any push whose diff touches anything else still runs
-  # everything, same as a PR does.
-  #
-  # package-lock.json joined that list when the release script started
-  # bumping the lockfile's own version alongside package.json's (0.31.1).
-  # Until then the lock was left at whatever version it happened to carry,
-  # which is how it drifted to 0.16.0 for fourteen releases; the fix meant
-  # every release commit now touches a file this pattern did not name, so
-  # no release counted as release-only and the skip quietly stopped working.
-  # This does widen the skip beyond the release case: a push whose only diff
-  # is package-lock.json — `npm update` resolving new versions inside the
-  # existing semver ranges, with no package.json edit — now skips lint/test
-  # too. That is the same bet the other entries already make, and it holds
-  # for the same reason: this job runs only on a push to main, and a change
-  # reaches main through a PR, where the full suite runs against that exact
-  # tree (the pull_request trigger never consults this job). What it does
-  # not cover is a direct push to main, which was already true of every
-  # other name in this list.
-  detect-release-only-commit:
-    name: Detect Release-Only Commit
+            # A diff of nothing but prose cannot change what oxlint or vitest
+            # sees, yet lint and the test suite ran in full on every docs PR
+            # and again on its merge commit. Markdown anywhere counts as
+            # prose, `docs/` included, and so do `.changes/*.md` changesets: a
+            # changeset declares a version bump, it ships no code, and
+            # require-change-declaration inspects it independently of this.
+            #
+            # Everything else is code, deliberately — .github/workflows/ most
+            # of all, since a workflow edit is exactly when the full suite
+            # should run.
+            NON_DOC=$(echo "$CHANGED" | grep -vE '(\.md$|^docs/|^LICENSE$)' | grep -c '.' || true)
+            if [ -n "$CHANGED" ] && [ "$NON_DOC" -eq 0 ]; then
+              echo "Documentation-only diff — skipping lint and tests."
+              CODE=false
+            fi
+
+            # A release commit (produced by `npm run release`) only ever
+            # touches package.json, package-lock.json, CHANGELOG.md and
+            # .changes/ — it carries no code that was not already on main and
+            # already tested by the PR that put it there. Re-running lint and
+            # the full suite against it proves nothing.
+            #
+            # This is evaluated for pull_request as well as push. It used to be
+            # push-only, which meant every release *PR* ran the whole suite
+            # against a version bump — the exact duplication the push side
+            # already refused, paid on every release.
+            #
+            # package-lock.json is in the list because `npm run release` bumps
+            # the lockfile's own version alongside package.json's (0.31.1).
+            # Before that the lock drifted — it sat at 0.16.0 for fourteen
+            # releases — and once the script started touching it, every release
+            # commit named a file this pattern did not, so nothing counted as
+            # release-only and the skip quietly stopped working.
+            #
+            # The bet: anything reaching main arrives through a PR, and a PR
+            # whose diff is more than these four things runs everything. What
+            # it does not cover is a direct push to main, which was already
+            # true before this job was consolidated.
+            NON_RELEASE=$(echo "$CHANGED" | grep -vE '^(package\.json|package-lock\.json|CHANGELOG\.md|\.changes/)' | grep -c '.' || true)
+            if [ -n "$CHANGED" ] && [ "$NON_RELEASE" -eq 0 ]; then
+              RELEASE_ONLY=true
+            fi
+          fi
+
+          # A merge to main is not a release. Deploying every merge meant
+          # several deploys could share one version, so "I'm on 0.15.12"
+          # stopped identifying a build — the exact property the version gate
+          # exists to protect. Deploy happens only on the commit that changes
+          # package.json's version, i.e. the release commit.
+          VERSION=$(node -e 'process.stdout.write(require("./package.json").version)')
+          if [ "$EVENT" = "push" ] && [ "$REF" = "refs/heads/main" ]; then
+            PREV_VERSION=""
+            if [ -n "$BEFORE_SHA" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ] && git cat-file -e "$BEFORE_SHA" 2>/dev/null; then
+              PREV_VERSION=$(git show "$BEFORE_SHA:package.json" 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).version))' || echo "")
+            fi
+            if [ -z "$PREV_VERSION" ]; then
+              PREV_VERSION=$(git show HEAD~1:package.json 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).version))' || echo "")
+            fi
+            if [ "$VERSION" != "$PREV_VERSION" ]; then
+              echo "Release commit: $PREV_VERSION -> $VERSION"
+              IS_RELEASE=true
+            else
+              echo "Not a release commit (version unchanged at $VERSION) — skipping deploy."
+            fi
+          fi
+
+          echo "functions=$FUNCTIONS" >> "$GITHUB_OUTPUT"
+          echo "rules=$RULES" >> "$GITHUB_OUTPUT"
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          echo "release_only=$RELEASE_ONLY" >> "$GITHUB_OUTPUT"
+          echo "is_release=$IS_RELEASE" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+  # Lint used to be its own job. It runs in about a second, but a job is
+  # billed as a whole minute and pays for its own checkout, Node setup and
+  # dependency restore first — so it cost roughly as much as the test suite it
+  # ran beside, for 1/150th of the work. It shares this job's dependency tree
+  # and runs before the suite, so a lint error still reports in seconds.
+  test:
+    name: Lint, Unit & Integration Tests
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    outputs:
-      release_only: ${{ steps.check.outputs.release_only }}
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - id: check
-        env:
-          BEFORE_SHA: ${{ github.event.before }}
-        run: |
-          if [ -z "$BEFORE_SHA" ] || [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BEFORE_SHA" 2>/dev/null; then
-            echo "No usable before-SHA (first push or force-push) — treating as not release-only."
-            echo "release_only=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          CHANGED=$(git diff --name-only "$BEFORE_SHA" HEAD)
-          echo "Changed files:"
-          echo "$CHANGED"
-          NON_RELEASE=$(echo "$CHANGED" | grep -vE '^(package\.json|package-lock\.json|CHANGELOG\.md|\.changes/)' | grep -c '.' || true)
-
-          if [ -n "$CHANGED" ] && [ "$NON_RELEASE" -eq 0 ]; then
-            echo "release_only=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "release_only=false" >> "$GITHUB_OUTPUT"
-          fi
-
-  lint:
-    name: Lint Check
-    runs-on: ubuntu-latest
-    needs: [detect-release-only-commit]
+    needs: [detect]
+    # always() + `!= 'false'` rather than `== 'true'`: a detect that fails
+    # outright leaves both outputs empty, and neither empty value matches, so
+    # the suite still runs. Losing the detector must never silently cost the
+    # tests.
     if: |
       always() &&
-      (needs.detect-release-only-commit.result == 'skipped' || needs.detect-release-only-commit.outputs.release_only != 'true')
+      needs.detect.outputs.release_only != 'true' &&
+      needs.detect.outputs.code != 'false'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -230,51 +283,17 @@ jobs:
       - name: Run Linter
         run: npm run lint
 
-  test:
-    name: Automated Unit & Integration Tests
-    runs-on: ubuntu-latest
-    needs: [detect-release-only-commit]
-    if: |
-      always() &&
-      (needs.detect-release-only-commit.result == 'skipped' || needs.detect-release-only-commit.outputs.release_only != 'true')
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      # `cache: 'npm'` above only caches the download tarballs in ~/.npm —
-      # `npm ci` still wipes and relinks node_modules from scratch every run,
-      # which measured 124-423s per job across this pipeline against 2-110s of
-      # actual work. Caching node_modules itself skips that entirely on a hit.
-      # The key pins OS and Node major alongside the lockfile hash, so a
-      # runner or engine change can never restore a tree built for another.
-      - name: Cache node_modules
-        id: node-modules
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-node22-${{ hashFiles('package-lock.json') }}
-
-      - name: Install Dependencies
-        if: steps.node-modules.outputs.cache-hit != 'true'
-        run: npm ci
-
       - name: Run Test Suite
         run: npm run test
 
   functions:
     name: Cloud Functions Lint & Tests
     runs-on: ubuntu-latest
-    needs: [detect-release-only-commit, detect-changes]
+    needs: [detect]
     if: |
       always() &&
-      (needs.detect-release-only-commit.result == 'skipped' || needs.detect-release-only-commit.outputs.release_only != 'true') &&
-      needs.detect-changes.outputs.functions == 'true'
+      needs.detect.outputs.release_only != 'true' &&
+      needs.detect.outputs.functions == 'true'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -314,13 +333,18 @@ jobs:
   build:
     name: Production Build Verification
     runs-on: ubuntu-latest
-    needs: [lint, test]
-    # lint/test are skipped (not failed) on a release-only commit — this
+    needs: [test]
+    # test is skipped (not failed) on a release-only commit — this
     # still needs to run there to produce the deploy artifact. Only actual
-    # failures should block it.
+    # failures should block it. The same now applies to a documentation-only
+    # diff, where they skip for a different reason (detect's `code`
+    # output); this job is deliberately NOT gated on that too. deploy-staging
+    # requires `needs.build.result == 'success'` on every ordinary merge to
+    # main, so skipping the build here would silently stop staging deploying
+    # a docs merge — and at ~13s of work behind a warm node_modules cache,
+    # one billable minute is not worth that coupling.
     if: |
       always() &&
-      (needs.lint.result == 'success' || needs.lint.result == 'skipped') &&
       (needs.test.result == 'success' || needs.test.result == 'skipped')
     steps:
       - name: Checkout Code
@@ -385,62 +409,20 @@ jobs:
           retention-days: 1
           include-hidden-files: true
 
-  # A merge to main is not a release. Deploying every merge meant several
-  # deploys could share one version, so "I'm on 0.15.12" stopped identifying a
-  # build — the exact property the version gate exists to protect. Deploy now
-  # happens only on the commit that changes package.json's version, i.e. the
-  # release commit produced by `npm run release`.
-  detect-release:
-    name: Detect Release Commit
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    outputs:
-      is_release: ${{ steps.check.outputs.is_release }}
-      version: ${{ steps.check.outputs.version }}
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - id: check
-        env:
-          BEFORE_SHA: ${{ github.event.before }}
-        run: |
-          HEAD_VERSION=$(node -e 'process.stdout.write(require("./package.json").version)')
-          
-          # Check previous version from the commit before this push, falling back to HEAD~1
-          PREV_VERSION=""
-          if [ -n "$BEFORE_SHA" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ] && git cat-file -e "$BEFORE_SHA" 2>/dev/null; then
-            PREV_VERSION=$(git show "$BEFORE_SHA:package.json" 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).version))' || echo "")
-          fi
-          if [ -z "$PREV_VERSION" ]; then
-            PREV_VERSION=$(git show HEAD~1:package.json 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).version))' || echo "")
-          fi
-
-          echo "version=$HEAD_VERSION" >> "$GITHUB_OUTPUT"
-          if [ "$HEAD_VERSION" != "$PREV_VERSION" ]; then
-            echo "Release commit: $PREV_VERSION -> $HEAD_VERSION"
-            echo "is_release=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "Not a release commit (version unchanged at $HEAD_VERSION) — skipping deploy."
-            echo "is_release=false" >> "$GITHUB_OUTPUT"
-          fi
-
   deploy-firebase:
     name: Deploy to Firebase Hosting (production)
     runs-on: ubuntu-latest
-    needs: [build, detect-release, detect-changes]
+    needs: [build, detect]
     # Skips cleanly (instead of failing CI) until FIREBASE_SERVICE_ACCOUNT_DELIVEREE is added as a repo secret.
     # always() + an explicit build-result check: GitHub's implicit success()
     # walks the whole transitive dependency chain, not just direct needs —
-    # since build depends on lint/test, which are legitimately *skipped* (not
+    # since build depends on test, which is legitimately *skipped* (not
     # failed) on a release-only commit, the implicit success() this if would
     # otherwise get silently broke and skipped every release deploy.
     if: |
       always() && needs.build.result == 'success' &&
       github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-      needs.detect-release.outputs.is_release == 'true' &&
+      needs.detect.outputs.is_release == 'true' &&
       vars.FIREBASE_HOSTING_ENABLED == 'true'
     steps:
       - name: Checkout Code
@@ -492,24 +474,24 @@ jobs:
       # rules still match the repo, which is the backstop if this is ever
       # skipped when it should not have been.
       - name: Deploy Firestore rules
-        if: needs.detect-changes.outputs.rules == 'true'
+        if: needs.detect.outputs.rules == 'true'
         run: npx --yes firebase-tools@14 deploy --only firestore:rules --project deliveree-app-2a938 --non-interactive
 
   deploy-functions:
     name: Deploy Cloud Functions
     runs-on: ubuntu-latest
-    needs: [functions, detect-release-only-commit, detect-changes]
+    needs: [functions, detect]
     # Cloud Functions have no staging/production split (one live function
     # set per Firebase project, unlike Hosting's channels) — deploy on every
     # ordinary merge to main that TOUCHES functions/, so a functions/ fix goes
     # live as soon as it merges rather than waiting on the next version-bump
     # release. A merge that touches no functions/ file would redeploy byte
-    # identical code, so it is skipped (see detect-changes).
+    # identical code, so it is skipped (see detect).
     if: |
       always() && needs.functions.result == 'success' &&
       github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-      needs.detect-release-only-commit.outputs.release_only != 'true' &&
-      needs.detect-changes.outputs.functions == 'true' &&
+      needs.detect.outputs.release_only != 'true' &&
+      needs.detect.outputs.functions == 'true' &&
       vars.FIREBASE_HOSTING_ENABLED == 'true'
     steps:
       - name: Checkout Code
@@ -554,20 +536,20 @@ jobs:
   deploy-staging:
     name: Deploy to Firebase Hosting (staging)
     runs-on: ubuntu-latest
-    needs: [build, detect-release-only-commit, detect-changes]
+    needs: [build, detect]
     # Deploys on every ordinary merge to main, for pre-release visibility —
     # EXCEPT on a release-only commit, which carries no code the preceding
     # merge didn't already carry and deploy to staging; redeploying the same
     # code there is pure duplication right before the production deploy below
     # (which stays gated on is_release in deploy-firebase).
     # always() + an explicit build-result check: GitHub's implicit success()
-    # walks the whole transitive dependency chain, and lint/test being
+    # walks the whole transitive dependency chain, and test being
     # legitimately skipped on a release-only commit broke it silently
     # without this — see deploy-firebase above.
     if: |
       always() && needs.build.result == 'success' &&
       github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-      needs.detect-release-only-commit.outputs.release_only != 'true' &&
+      needs.detect.outputs.release_only != 'true' &&
       vars.FIREBASE_HOSTING_ENABLED == 'true'
     steps:
       - name: Checkout Code
@@ -621,6 +603,6 @@ jobs:
       # rules still match the repo, which is the backstop if this is ever
       # skipped when it should not have been.
       - name: Deploy Firestore rules
-        if: needs.detect-changes.outputs.rules == 'true'
+        if: needs.detect.outputs.rules == 'true'
         run: npx --yes firebase-tools@14 deploy --only firestore:rules --project deliveree-app-2a938 --non-interactive
 

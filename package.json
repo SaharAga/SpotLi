@@ -1,7 +1,7 @@
 {
   "name": "spotli",
   "private": true,
-  "version": "0.36.0",
+  "version": "0.37.5",
   "type": "module",
   "scripts": {
     "prebuild": "node scripts/generate-carrier-specs.mjs",
@@ -27,6 +27,7 @@
     "sync:status": "node scripts/agent-sync-channel.mjs status",
     "eval:parser": "node scripts/eval_parser.mjs",
     "corpus:pull": "node scripts/pull_training_corpus.mjs",
+    "corpus:sms": "node scripts/analyze_sms_corpus.mjs",
     "review:messages": "node scripts/review_messages.mjs"
   },
   "dependencies": {
