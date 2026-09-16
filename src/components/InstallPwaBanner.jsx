@@ -26,8 +26,11 @@ export function InstallPwaBanner({ onVisibilityChange } = {}) {
   const [showIOSGuide, setShowIOSGuide] = useState(false);
 
   useEffect(() => {
-    // 1. Check if already running as standalone PWA
-    setIsStandalone(isStandalonePwa());
+    // 1. Check if already running as standalone PWA.
+    // Held in a local too: the state setter below is asynchronous, so `isStandalone`
+    // is still false further down this same effect, and step 3 needs the real answer.
+    const standalone = isStandalonePwa();
+    setIsStandalone(standalone);
 
     // 2. Check if user dismissed recently
     const dismissedTime = localStorage.getItem(STORAGE_DISMISS_KEY);
@@ -42,7 +45,7 @@ export function InstallPwaBanner({ onVisibilityChange } = {}) {
     const ua = window.navigator.userAgent;
     const isIOSDevice = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
     const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
-    if (isIOSDevice && isSafari && !checkStandalone) {
+    if (isIOSDevice && isSafari && !standalone) {
       setIsIOS(true);
     }
 
