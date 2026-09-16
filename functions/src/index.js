@@ -19,6 +19,7 @@ import { createNewPackagePushHandler } from './newPackagePush.js';
 import { createUpdatePackagePushHandler } from './updatePackagePush.js';
 import { createCarrierTrackingHandler } from './carrierProxy.js';
 import { createScheduledTrackingRefreshHandler } from './scheduledTrackingRefresh.js';
+import { createRegisterTrackingNumberHandler } from './registerTrackingNumber.js';
 import { TRACKING_REFRESH_LIMITS } from './config.js';
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
@@ -286,6 +287,32 @@ export const featureAdoptionRollup = onSchedule(
  * Firestore path rather than hooked into each ingestion function
  * individually, since every one of them already writes here.
  */
+/**
+ * Enrols every new parcel with 17TRACK.
+ *
+ * Bound to the Firestore path rather than to each ingestion function, for the
+ * same reason `notifyOnNewPackage` is: manual add, Smart Import, Gmail sync and
+ * the forwarded-email webhook all already write here, and a parcel that reaches
+ * the dashboard by any route should be watched.
+ *
+ * Unlike the push trigger this is deliberately NOT scoped to automated sources.
+ * A number the user typed in themselves is exactly the one live tracking has to
+ * cover, because there is no inbox pipeline behind it to notice anything later.
+ */
+export const registerTrackingNumber = onDocumentCreated(
+  {
+    document: 'users/{uid}/packages/{packageId}',
+    secrets: [track17ApiKey],
+    timeoutSeconds: 60,
+    memory: '256MiB'
+  },
+  (event) =>
+    createRegisterTrackingNumberHandler({
+      db: getFirestore(),
+      track17ApiKey: track17ApiKey.value() || process.env.TRACK17_API_KEY || ''
+    })(event)
+);
+
 export const notifyOnNewPackage = onDocumentCreated(
   {
     document: 'users/{uid}/packages/{packageId}',
