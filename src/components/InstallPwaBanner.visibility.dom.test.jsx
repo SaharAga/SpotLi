@@ -89,3 +89,48 @@ describe('InstallPwaBanner visibility reporting', () => {
     ).not.toThrow();
   });
 });
+
+/**
+ * The iOS Safari branch, which shipped broken and white-screened the app on
+ * every iPhone.
+ *
+ * `checkStandalone` survived a rename to `isStandalonePwa()` in one place and
+ * not the other. Because the reference sat behind `isIOSDevice && isSafari &&`,
+ * JS short-circuiting meant no other platform ever evaluated it — the whole
+ * suite above passed, desktop was fine, and only a real iPhone hit the
+ * ReferenceError, which took down the entire render tree.
+ *
+ * Every test above renders under jsdom's default user agent, so none of them
+ * could reach this branch. Pinning it means setting a real iOS Safari UA.
+ */
+function mockUserAgent(ua) {
+  Object.defineProperty(window.navigator, 'userAgent', { value: ua, configurable: true });
+}
+
+const IOS_SAFARI_UA =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 ' +
+  '(KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+
+describe('InstallPwaBanner on iOS Safari', () => {
+  it('renders without throwing', () => {
+    // The regression test. Before the fix this threw
+    // "ReferenceError: checkStandalone is not defined".
+    mockUserAgent(IOS_SAFARI_UA);
+    expect(() => renderBanner()).not.toThrow();
+  });
+
+  it('offers the add-to-home-screen guide when not installed', () => {
+    mockUserAgent(IOS_SAFARI_UA);
+    const onVisibilityChange = renderBanner();
+    expect(onVisibilityChange).toHaveBeenCalledWith(true);
+  });
+
+  it('stays out of the way once already installed', () => {
+    // The branch the broken reference was guarding: an iPhone already running
+    // the installed PWA must not be told to install it again.
+    mockUserAgent(IOS_SAFARI_UA);
+    mockStandalone(true);
+    const onVisibilityChange = renderBanner();
+    expect(onVisibilityChange).toHaveBeenLastCalledWith(false);
+  });
+});
