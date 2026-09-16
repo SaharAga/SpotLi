@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { validateUserProfile, sanitizeAuthError } from './AuthContext';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 let mockStore = {};
 
@@ -78,7 +80,8 @@ describe('AuthContext - validateUserProfile', () => {
         defaultCarrier: 'all',
         language: 'he',
         theme: 'dark',
-        dateFormat: 'DD/MM/YYYY'
+        dateFormat: 'DD/MM/YYYY',
+        autoArchiveDelivered: false
       }
     });
   });
@@ -138,7 +141,8 @@ describe('AuthContext - validateUserProfile', () => {
       defaultCarrier: 'all',
       language: 'he',
       theme: 'dark',
-      dateFormat: 'DD/MM/YYYY'
+      dateFormat: 'DD/MM/YYYY',
+      autoArchiveDelivered: false
     });
   });
 
@@ -279,5 +283,49 @@ describe('AuthContext - migrateGuestDataToUser', () => {
 
     // Guest storage must be cleaned up
     expect(localStorage.getItem('deliveree_packages_guest')).toBeNull();
+  });
+});
+
+/**
+ * `updateUserPreferences` writes a preferences object; `validateUserProfile`
+ * rebuilds one from a fixed list of keys on every rehydrate. They are two
+ * separate lists in one file, and drift between them is invisible: the write
+ * succeeds, Firestore holds the value, and it is dropped on the way back.
+ *
+ * That is exactly what happened to `autoArchiveDelivered` — the toggle held for
+ * the session and was off again on the next load.
+ */
+describe('AuthContext preferences — write list and read list agree', () => {
+  const source = readFileSync(
+    resolve(process.cwd(), 'src/context/AuthContext.jsx'),
+    'utf8'
+  );
+
+  const keysOf = (block) => new Set([...block.matchAll(/^\s*([A-Za-z][A-Za-z0-9]*)\s*:/gm)].map((m) => m[1]));
+
+  it('keeps every written preference key in the validated profile', () => {
+    const written = source.match(/const sanitizedPrefs = \{([\s\S]*?)\n {4}\};/);
+    expect(written, 'sanitizedPrefs block not found').not.toBeNull();
+
+    const readBack = source.match(/const preferences = safeObj\.preferences[\s\S]*?\n {6}\};/);
+    expect(readBack, 'preferences block not found').not.toBeNull();
+
+    const missing = [...keysOf(written[1])].filter((key) => !keysOf(readBack[0]).has(key));
+    expect(missing, 'preferences written but discarded on read').toEqual([]);
+  });
+
+  it('round-trips autoArchiveDelivered instead of silently dropping it', () => {
+    expect(validateUserProfile({
+      id: 'u1', name: 'A', email: 'a@b.c',
+      preferences: { autoArchiveDelivered: true }
+    }).preferences.autoArchiveDelivered).toBe(true);
+
+    // A profile that has never set it is off, not undefined — the auto-archive
+    // check treats `undefined` as "not decided yet" and would re-prompt.
+    expect(validateUserProfile({ id: 'u1', name: 'A', email: 'a@b.c' })
+      .preferences.autoArchiveDelivered).toBe(false);
+    expect(validateUserProfile({
+      id: 'u1', name: 'A', email: 'a@b.c', preferences: { language: 'en' }
+    }).preferences.autoArchiveDelivered).toBe(false);
   });
 });

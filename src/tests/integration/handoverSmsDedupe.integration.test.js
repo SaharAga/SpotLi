@@ -89,3 +89,53 @@ describe('Integration: courier handover SMS matches a package held under its oth
     )).toBeNull();
   });
 });
+
+/**
+ * The two real YDM messages, as received. They arrived minutes apart and fail
+ * in opposite directions, which is why both are pinned here rather than one
+ * standing in for the other.
+ */
+describe('Integration: the YDM messages, carrier and merchant', () => {
+  it('names the courier and the merchant on the handover message', () => {
+    const parsed = parseSmartText(YDM_HANDOVER_SMS);
+
+    // Was `other` / `Other / Universal`: nothing knew the sign-off.
+    expect(parsed.carrier).toBe('ydm');
+    // Was empty. `\biherb\b` could not see across the hyphen in "I-HERB", so an
+    // iHerb parcel came back with no merchant and no brand colour.
+    expect(parsed.store).toBe('iHerb');
+  });
+
+  it('reads a delivery confirmation that carries no tracking number at all', () => {
+    // The second message. It proves delivery and names nothing to match on —
+    // no number, and an empty merchant slot in the courier's own template
+    // ("החבילה שלך מ נמסרה"). Smart Import cannot connect it to a package; only
+    // live tracking can. What it must not do is invent something.
+    const deliveredSms = `Gal aga איזה כיף לך!
+החבילה שלך מ נמסרה
+בהצלחה לGal aga בכתובת: שדרות בן גוריון 23 ראש העין
+לכניסה: http://ydm-feedback.co.il/?phone=0526808680
+תודה רבה,
+קבוצת YDM`;
+
+    const parsed = parseSmartText(deliveredSms);
+
+    expect(parsed.carrier).toBe('ydm');
+    expect(parsed.status).toBe('delivered');
+    expect(parsed.trackingNumber).toBe('');
+    // The empty merchant slot must stay empty rather than absorbing the verb
+    // that follows it.
+    expect(parsed.store).toBe('');
+  });
+
+  it('does not file the courier as the merchant', () => {
+    // "שליח מטעם <name>" introduces the shop, but the same shape also
+    // introduces the courier. A bare courier name is the dangerous case: it is
+    // absent from the carrier phrase list on purpose, because words like פוקוס
+    // are ordinary Hebrew and only anchored forms are safe to match there.
+    expect(parseSmartText('שליח מטעם קבוצת YDM בדרך אליך').store).toBe('');
+    expect(parseSmartText('שליח של פוקוס בדרך אליך').store).toBe('');
+    // A shop nobody has catalogued still comes through.
+    expect(parseSmartText('שליח מטעם BeautyBar בדרך אליך').store).toBe('BeautyBar');
+  });
+});

@@ -298,6 +298,37 @@ export const CARRIERS = {
     sample: 'CRG9104821',
     country: 'Israel'
   },
+  'ydm': {
+    id: 'ydm',
+    name: 'YDM Group',
+    hebrewName: 'קבוצת YDM',
+    color: 'from-sky-600 to-cyan-700',
+    badgeBg: 'bg-sky-500/10 border-sky-500/30 text-sky-400',
+    accentColor: '#0284c7',
+    logoText: 'YDM',
+    website: 'https://ydm.co.il',
+    // Their SMS links a per-message short URL (ilto.run/<code>) whose path is a
+    // message id, not a parcel id, so there is no URL to rebuild from a tracking
+    // number. This points at the company rather than inventing one that 404s.
+    getTrackingUrl: () => 'https://ydm.co.il',
+    fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
+    // Deliberately no number rules at all — YDM is recognised from its sign-off
+    // and its feedback host (HEBREW_CARRIER_PHRASES, CARRIER_URL_RULES), never
+    // from the shape of a number.
+    //
+    // Two shapes were observed and both were rejected. The shipment number
+    // `19611199` is eight bare digits, indistinguishable from an order number
+    // or a phone suffix — the same reason `focus` below carries no bare-digit
+    // rule. A `YDM` prefix looks tempting and is worse than useless: `tapuz`
+    // already claims `^(TPZ|YDM|TAPUZ)\d{6,12}$` at a higher priority, so such a
+    // rule would be shadowed while implying a format nobody has seen. The only
+    // real tracking number we have is `GAIH50911204`, and one sample is not a
+    // format — generalising it to `^[A-Z]{4}\d{8}$` would swallow other
+    // carriers' waybills wholesale.
+    patterns: [],
+    sample: 'GAIH50911204',
+    country: 'Israel'
+  },
   'focus': {
     id: 'focus',
     name: 'Focus Logistics',
