@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.38.0] - 2026-09-16
+
+### Added
+- Every package is now enrolled with the tracking network the moment it is added,
+instead of only when someone happened to tap refresh. Live tracking is what
+catches the updates a courier SMS cannot — their final "delivered" message often
+carries no tracking number at all — and a parcel the network was never told
+about could never produce one.
+
+- Added a background tracking refresh that runs every six hours on the server, so
+a package can be updated — and notify you — without the app being open. Until
+now "live tracking" only happened when you tapped refresh, which meant a parcel
+could be delivered and sit at "in transit" indefinitely if the courier's SMS
+carried no tracking number. Lookups are paced against a per-run budget and back
+off numbers that keep coming back empty.
+
 ## [0.37.7] - 2026-09-16
 
 ### Fixed
