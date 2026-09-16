@@ -18,6 +18,8 @@ import { createFeatureAdoptionRollupHandler } from './featureAdoptionRollup.js';
 import { createNewPackagePushHandler } from './newPackagePush.js';
 import { createUpdatePackagePushHandler } from './updatePackagePush.js';
 import { createCarrierTrackingHandler } from './carrierProxy.js';
+import { createScheduledTrackingRefreshHandler } from './scheduledTrackingRefresh.js';
+import { TRACKING_REFRESH_LIMITS } from './config.js';
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
 const track17ApiKey = defineSecret('TRACK17_API_KEY');
@@ -321,6 +323,34 @@ export const notifyOnPackageUpdated = onDocumentUpdated(
       vapidPrivateKey: vapidPrivateKey.value(),
       vapidSubject: 'mailto:support@spotliapp.com'
     })(event)
+);
+
+/**
+ * Background tracking refresh.
+ *
+ * The counterpart to `queryCarrierTracking`: that one answers a user who is
+ * looking at the app, this one runs when nobody is. It is the only path that
+ * can notice a parcel was delivered when the courier's SMS carried no tracking
+ * number to match on — and because it writes server-side with
+ * `lastUpdateSource: 'live_tracking'`, `updatePackagePush` turns what it finds
+ * into an actual notification.
+ *
+ * Cadence comes from TRACKING_REFRESH_LIMITS.INTERVAL_HOURS so it moves with
+ * the budget it is paced against, rather than drifting from it.
+ */
+export const scheduledTrackingRefresh = onSchedule(
+  {
+    schedule: `every ${TRACKING_REFRESH_LIMITS.INTERVAL_HOURS} hours`,
+    timeZone: 'Etc/UTC',
+    secrets: [track17ApiKey],
+    timeoutSeconds: 540,
+    memory: '256MiB'
+  },
+  () =>
+    createScheduledTrackingRefreshHandler({
+      db: getFirestore(),
+      track17ApiKey: track17ApiKey.value() || process.env.TRACK17_API_KEY || ''
+    })()
 );
 
 /**

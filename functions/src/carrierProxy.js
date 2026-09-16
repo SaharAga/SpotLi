@@ -269,6 +269,43 @@ export async function query17TrackApi(trackingNumber, carrierId, apiKey) {
 }
 
 /**
+ * Resolves live tracking for one parcel, picking the route by carrier.
+ *
+ * Extracted from the onCall handler so the scheduled refresh uses exactly the
+ * same resolution. The handler keeps what only an interactive call needs —
+ * authentication, argument validation, per-user rate limiting — and this keeps
+ * what "where does tracking for this parcel come from" means. Two copies of
+ * that answer would drift the moment a carrier moved between routes.
+ *
+ * @param {{ trackingNumber: string, carrierId?: string, track17ApiKey?: string }} params
+ * @returns {Promise<object>} a tracking record, tracked true or false
+ */
+export async function resolveLiveTracking({ trackingNumber, carrierId = '', track17ApiKey = '' }) {
+  // GAASH is recognised by id or by its number shape, because a parcel imported
+  // before the carrier was known still carries a GAA… number.
+  const isGaash = carrierId === 'gaash' || /^GAA[A-Z0-9]{7,15}$/i.test(trackingNumber);
+
+  if (!isGaash && !track17ApiKey) {
+    return {
+      carrier: carrierId || 'other',
+      tracked: false,
+      reason: 'api-key-required',
+      message: 'Direct live query for this carrier requires a 17TRACK API key.',
+      status: null,
+      checkpoints: []
+    };
+  }
+
+  // 1. Direct Open Carrier: GAASH Worldwide ($0, No API Key, No Bot Blockers)
+  if (isGaash) {
+    return fetchGaashTracking(trackingNumber);
+  }
+
+  // 2. Carriers requiring 17TRACK API (Israel Post, GCX, DHL, FedEx, etc.)
+  return query17TrackApi(trackingNumber, carrierId, track17ApiKey);
+}
+
+/**
  * Creates the onCall carrier tracking handler
  * @param {object} options
  * @param {object} [options.db] - Optional Firestore instance
@@ -296,6 +333,9 @@ export function createCarrierTrackingHandler({ db, track17ApiKey = '' } = {}) {
       throw new HttpsError('invalid-argument', 'trackingNumber exceeds 100 characters.');
     }
 
+    // Mirrors resolveLiveTracking's own check, ahead of the rate limiter: a
+    // request that cannot possibly produce data should not spend the caller's
+    // daily quota to find that out.
     const isGaash = carrierId === 'gaash' || /^GAA[A-Z0-9]{7,15}$/i.test(trackingNumber);
     if (!isGaash && !track17ApiKey) {
       return {
@@ -326,12 +366,6 @@ export function createCarrierTrackingHandler({ db, track17ApiKey = '' } = {}) {
       }
     }
 
-    // 1. Direct Open Carrier: GAASH Worldwide ($0, No API Key, No Bot Blockers)
-    if (isGaash) {
-      return fetchGaashTracking(trackingNumber);
-    }
-
-    // 2. Carriers requiring 17TRACK API (Israel Post, GCX, DHL, FedEx, etc.)
-    return query17TrackApi(trackingNumber, carrierId, track17ApiKey);
+    return resolveLiveTracking({ trackingNumber, carrierId, track17ApiKey });
   };
 }

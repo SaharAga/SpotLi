@@ -73,3 +73,41 @@ export const CARRIER_TRACKING_LIMITS = Object.freeze({
   GLOBAL_DAILY_CALLS: 2000
 });
 
+
+/**
+ * Budget and pacing for the scheduled background tracking refresh
+ * (scheduledTrackingRefresh.js).
+ *
+ * Deliberately conservative, because what 17TRACK actually meters is not
+ * confirmed. Their usual model bills per registered tracking number, which
+ * would make re-querying an already-registered parcel nearly free — if that
+ * holds, `INTERVAL_HOURS` can drop to 1 and only `MAX_LOOKUPS_PER_RUN` needs
+ * raising with it. Until it is confirmed from the dashboard, every knob here
+ * assumes a query costs something, and each run logs what it actually spent so
+ * the guess can be checked against the real counter.
+ */
+export const TRACKING_REFRESH_LIMITS = Object.freeze({
+  /** How often the scheduler fires. The one knob to change on new quota facts. */
+  INTERVAL_HOURS: 6,
+  /** Hard ceiling on upstream lookups in a single run. */
+  MAX_LOOKUPS_PER_RUN: 60,
+  /** Users scanned per run; a cap, not a target. */
+  MAX_USERS_PER_RUN: 500,
+  /** Packages read per user per run. */
+  MAX_PACKAGES_PER_USER: 100,
+  /** Concurrent upstream lookups. Small: 17TRACK is not ours to hammer. */
+  CONCURRENCY: 4,
+  /** Shortest gap between two lookups of the same number. */
+  MIN_INTERVAL_MS: 6 * 60 * 60 * 1000,
+  /**
+   * Longest gap a repeatedly-unproductive number backs off to. A number the
+   * network has never heard of costs the same as a real one, so without a
+   * ceiling-bounded backoff a handful of dead numbers would quietly eat the
+   * whole budget forever.
+   */
+  MAX_INTERVAL_MS: 4 * 24 * 60 * 60 * 1000,
+  /** Backoff multiplier applied per consecutive unproductive lookup. */
+  BACKOFF_FACTOR: 2,
+  /** After this many consecutive failures a number is parked at MAX_INTERVAL_MS. */
+  MAX_CONSECUTIVE_FAILURES: 8
+});
