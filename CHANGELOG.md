@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.38.1] - 2026-09-16
+
+### Fixed
+- Fixed the app failing to load at all on iPhone. A leftover reference to a
+renamed variable sat behind an iOS-only condition, so it threw on every iOS
+Safari device and on no other platform — the whole app rendered as an error
+screen. Undefined identifiers are now a lint error, so this class of bug cannot
+reach a build again.
+
 ## [0.38.0] - 2026-09-16
 
 ### Added
