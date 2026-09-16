@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.37.7] - 2026-09-16
+
+### Fixed
+- Fixed a courier handover SMS being filed as a new package when the dashboard
+already held it under the other number in the message. These messages name two
+numbers — the courier's tracking number and the merchant's shipment number — and
+the duplicate check only ever looked at the one the parser ranked first. It now
+checks every number the message named, and keeps the others as aliases so a later
+message matches whichever number it quotes.
+
+- Added YDM Group as a recognised courier, so its messages no longer import as
+"Other / Universal", and taught the merchant reader two things it was missing:
+`I-HERB` as iHerb (the hyphen hid it), and the "שליח מטעם <shop>" phrasing that
+names a merchant with no parcel number in the message.
+
+Fixed the auto-archive preference not surviving a reload for signed-in users. It
+was written to the cloud correctly but dropped when the profile was read back,
+so the toggle held for the session and reset on the next load.
+
 ## [0.37.6] - 2026-09-16
 
 ### Fixed
