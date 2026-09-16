@@ -57,6 +57,16 @@ export const packageSchema = z.object({
   store: z.string().max(100).optional().transform(s => (s ? sanitizeString(s, 100) : undefined)),
   orderNumber: z.string().max(100).optional().transform(s => (s ? sanitizeString(s, 100) : undefined)),
   source: z.string().max(50).optional().transform(s => (s ? sanitizeString(s, 50) : undefined)),
+  // Write provenance, not package data: which server-side pipeline produced
+  // the *most recent* write. The update push trigger reads it to tell an
+  // automated status change from one the user just made themselves.
+  //
+  // Always forced to null here, because this schema is the single choke point
+  // every client write passes through (upsertPackage, savePackages,
+  // upsertPackageRemote). Preserving an incoming value would recreate exactly
+  // the bug `source` has — a marker that survives merges makes the guard look
+  // right while it silently keeps firing.
+  lastUpdateSource: z.unknown().optional().transform(() => null),
   confidence: z.string().max(20).optional().transform(s => (s ? sanitizeString(s, 20) : undefined)),
   lockerPin: z.string().max(50).optional().transform(s => (s ? sanitizeString(s, 50) : undefined)),
   shelfNumber: z.string().max(50).optional().transform(s => (s ? sanitizeString(s, 50) : undefined)),
@@ -245,6 +255,7 @@ export const repairingPackageSchema = z.preprocess(
     store: repairedString(100),
     orderNumber: repairedString(100),
     source: repairedString(50),
+    lastUpdateSource: z.unknown().optional().transform(() => null),
     confidence: repairedString(20),
     lockerPin: repairedString(50),
     shelfNumber: repairedString(50),
@@ -384,7 +395,7 @@ export const CLOUD_WRITABLE_KEYS = Object.freeze([
   'isRedirected', 'originalPickupLocation', 'redirectedAt', 'redirectReason',
   'store', 'orderNumber', 'createdAt', 'updatedAt', 'userId',
   'shelfNumber', 'localTrackingNumber', 'localCarrier', 'aliases',
-  'customsDetails', 'source', 'confidence', 'lockerPin', 'schemaVersion'
+  'customsDetails', 'source', 'lastUpdateSource', 'confidence', 'lockerPin', 'schemaVersion'
 ]);
 
 const CLOUD_WRITABLE_KEY_SET = new Set(CLOUD_WRITABLE_KEYS);

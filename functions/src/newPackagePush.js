@@ -13,8 +13,7 @@
 
 import { sendPushToUser } from './pushNotifications.js';
 import { formatPushTitleAndBody, getUserLanguage } from './pushPayload.js';
-
-const AUTOMATED_SOURCES = new Set(['gmail_sync', 'gmail_sync_order_status', 'gmail_sync_ai', 'email_forwarding']);
+import { isAutomatedSource } from './automatedSources.js';
 
 /**
  * @param {{ db: FirebaseFirestore.Firestore, webpush: object, vapidPublicKey: string, vapidPrivateKey: string, vapidSubject: string }} deps
@@ -22,7 +21,7 @@ const AUTOMATED_SOURCES = new Set(['gmail_sync', 'gmail_sync_order_status', 'gma
 export function createNewPackagePushHandler({ db, webpush, vapidPublicKey, vapidPrivateKey, vapidSubject }) {
   return async function handler(event) {
     const pkg = event.data?.data();
-    if (!pkg || !AUTOMATED_SOURCES.has(pkg.source)) return;
+    if (!pkg || !isAutomatedSource(pkg.source)) return;
 
     const uid = event.params?.uid;
     if (!uid) return;

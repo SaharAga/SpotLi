@@ -65,7 +65,7 @@ describe('Firestore package rules contract', () => {
       'isRedirected', 'originalPickupLocation', 'redirectedAt', 'redirectReason',
       'store', 'orderNumber', 'createdAt', 'updatedAt', 'userId',
       'shelfNumber', 'localTrackingNumber', 'localCarrier', 'aliases', 'customsDetails',
-      'source', 'confidence', 'lockerPin', 'schemaVersion'
+      'source', 'lastUpdateSource', 'confidence', 'lockerPin', 'schemaVersion'
     ];
 
     for (const key of requiredKeys) {

@@ -170,7 +170,7 @@ export function createInboundEmailHandler({ db, webhookToken }) {
             existingData = existingDoc.data() || {};
             existingDocId = existingDoc.id;
 
-            const patch = { updatedAt: nowIso };
+            const patch = { updatedAt: nowIso, lastUpdateSource: 'email_forwarding' };
             if (shouldAdvanceStatus(existingData.status, inferredStatus)) {
               patch.status = inferredStatus;
             }

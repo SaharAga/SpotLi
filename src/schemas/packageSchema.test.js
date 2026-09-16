@@ -244,3 +244,39 @@ describe('parsePackageList — no silent truncation', () => {
     expect(result.overflow).toBe(false);
   });
 });
+
+// The server's update-push trigger cannot see who wrote a document, so it reads
+// a `lastUpdateSource` marker instead. That guard is only worth anything if the
+// client reliably clears the marker: a stale value left behind by a Gmail-sync
+// write would make every later manual edit of that package look automated, and
+// the user would keep getting notified about their own changes — with the guard
+// in place and apparently working.
+//
+// This schema is the choke point every client write passes through
+// (upsertPackage, savePackages, upsertPackageRemote all parse first), which is
+// why the clearing lives here and not at each write site.
+describe('lastUpdateSource is never authored by the client', () => {
+  const base = {
+    id: 'pkg-1', title: 'T', trackingNumber: 'AB1', status: 'in_transit', userId: 'u1'
+  };
+
+  it('emits an explicit null so a merge write clears the server-set marker', () => {
+    const parsed = parsePackage(base);
+    expect(parsed).toHaveProperty('lastUpdateSource');
+    expect(parsed.lastUpdateSource).toBeNull();
+  });
+
+  it('clears a marker the server set, rather than echoing it back', () => {
+    expect(parsePackage({ ...base, lastUpdateSource: 'gmail_sync' }).lastUpdateSource).toBeNull();
+    expect(parsePackageList([{ ...base, lastUpdateSource: 'email_forwarding' }]).packages[0].lastUpdateSource).toBeNull();
+  });
+
+  it('clears it on the repair path too', () => {
+    // A package that fails strict validation is repaired rather than dropped;
+    // that branch is a second, easily forgotten way into the same write.
+    const repaired = parsePackage({
+      ...base, status: 'not-a-status', checkpoints: 'garbage', lastUpdateSource: 'gmail_sync_ai'
+    });
+    expect(repaired.lastUpdateSource).toBeNull();
+  });
+});

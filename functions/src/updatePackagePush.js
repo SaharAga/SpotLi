@@ -1,10 +1,26 @@
 /**
- * Fires a Web Push notification when an existing package is updated with
- * a meaningful lifecycle progression (status advance, locker PIN, pickup location, or reroute).
+ * Fires a Web Push notification when an *automated* ingestion source updates an
+ * existing package with a meaningful lifecycle progression (status advance,
+ * locker PIN, pickup location, or reroute).
+ *
+ * Scoped by `lastUpdateSource` for the same reason `newPackagePush` is scoped by
+ * `source`: a change the user made themselves — editing a status, correcting a
+ * pickup point, tapping refresh — happened on a screen they are already looking
+ * at, so notifying them about it is redundant noise. Until this guard existed,
+ * every manual status change pushed a notification back at the person who had
+ * just made it.
+ *
+ * A Firestore trigger cannot see who wrote the document, so provenance has to
+ * ride along on it. `source` is the wrong field: it records how a package was
+ * *created* and survives every later merge, so a manual edit to a Gmail-created
+ * package would still look automated. `lastUpdateSource` is per-write instead —
+ * stamped by the server-side pipelines, and forced back to `null` by the
+ * client's schema on every write it makes.
  */
 
 import { sendPushToUser } from './pushNotifications.js';
 import { formatUpdatePushTitleAndBody, getUserLanguage } from './pushPayload.js';
+import { isAutomatedSource } from './automatedSources.js';
 
 /**
  * Determines whether the difference between before and after warrants a push notification.
@@ -50,6 +66,8 @@ export function createUpdatePackagePushHandler({ db, webpush, vapidPublicKey, va
     const after = event.data?.after?.data();
     if (!before || !after) return;
 
+    // Fail closed: an unmarked write is treated as the user's own.
+    if (!isAutomatedSource(after.lastUpdateSource)) return;
     if (!hasMeaningfulPackageUpdate(before, after)) return;
 
     const uid = event.params?.uid;

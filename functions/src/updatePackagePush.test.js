@@ -1,12 +1,25 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createUpdatePackagePushHandler, hasMeaningfulPackageUpdate } from './updatePackagePush.js';
 
-function fakeDbWithNoTokens() {
+// Every `after` below carries an automated marker unless the test is about the
+// marker itself: without one the handler returns before it looks at anything,
+// which would make these assertions pass for the wrong reason.
+const AUTOMATED = { lastUpdateSource: 'gmail_sync' };
+
+// `sendPushToUser` returns early when the user has no subscribed device, so a
+// fake with no tokens never reaches webpush at all — asserting against it would
+// pass whether or not the handler decided to send. Every "did/didn't push" test
+// below therefore uses a db that does have a token, and watches
+// `sendNotification`.
+function fakeDbWithOneToken() {
   return {
     collection: () => ({
       doc: () => ({
         collection: () => ({
-          get: async () => ({ empty: true, docs: [] })
+          get: async () => ({
+            empty: false,
+            docs: [{ id: 'tok0', data: () => ({ endpoint: 'https://push.example/abc' }), ref: { delete: async () => {} } }]
+          })
         })
       })
     })
@@ -76,8 +89,8 @@ describe('hasMeaningfulPackageUpdate', () => {
 
 describe('createUpdatePackagePushHandler', () => {
   const baseDeps = () => ({
-    db: fakeDbWithNoTokens(),
-    webpush: { sendNotification: vi.fn(), setVapidDetails: vi.fn() },
+    db: fakeDbWithOneToken(),
+    webpush: { sendNotification: vi.fn().mockResolvedValue(undefined), setVapidDetails: vi.fn() },
     vapidPublicKey: 'pub',
     vapidPrivateKey: 'priv',
     vapidSubject: 'mailto:test@example.com'
@@ -88,9 +101,9 @@ describe('createUpdatePackagePushHandler', () => {
     const handler = createUpdatePackagePushHandler(deps);
     await handler(makeUpdateEvent(
       { id: 'pkg1', status: 'in_transit' },
-      { id: 'pkg1', status: 'in_transit' }
+      { id: 'pkg1', status: 'in_transit', ...AUTOMATED }
     ));
-    expect(deps.webpush.setVapidDetails).not.toHaveBeenCalled();
+    expect(deps.webpush.sendNotification).not.toHaveBeenCalled();
   });
 
   it('attempts to send push when status advances to ready_for_pickup', async () => {
@@ -98,8 +111,9 @@ describe('createUpdatePackagePushHandler', () => {
     const handler = createUpdatePackagePushHandler(deps);
     await expect(handler(makeUpdateEvent(
       { id: 'pkg1', status: 'in_transit', title: 'AliExpress' },
-      { id: 'pkg1', status: 'ready_for_pickup', title: 'AliExpress', pickupLocation: 'Dizengoff Center', lockerPin: '1234' }
+      { id: 'pkg1', status: 'ready_for_pickup', title: 'AliExpress', pickupLocation: 'Dizengoff Center', lockerPin: '1234', ...AUTOMATED }
     ))).resolves.not.toThrow();
+    expect(deps.webpush.sendNotification).toHaveBeenCalledTimes(1);
   });
 
   it('never throws when the push send itself fails', async () => {
@@ -118,15 +132,52 @@ describe('createUpdatePackagePushHandler', () => {
     const handler = createUpdatePackagePushHandler(deps);
     await expect(handler(makeUpdateEvent(
       { id: 'pkg1', status: 'in_transit' },
-      { id: 'pkg1', status: 'delivered' }
+      { id: 'pkg1', status: 'delivered', ...AUTOMATED }
     ))).resolves.toBeUndefined();
+  });
+
+  it('stays silent when the user changes the status themselves', async () => {
+    // The whole point of the guard: a manual status change is something the
+    // user is already looking at, so pushing it back at them is noise. The
+    // client's schema writes an explicit null to clear any stale marker.
+    const deps = baseDeps();
+    const handler = createUpdatePackagePushHandler(deps);
+    await handler(makeUpdateEvent(
+      { id: 'pkg1', status: 'in_transit', source: 'gmail_sync' },
+      { id: 'pkg1', status: 'delivered', source: 'gmail_sync', lastUpdateSource: null }
+    ));
+    expect(deps.webpush.sendNotification).not.toHaveBeenCalled();
+  });
+
+  it('stays silent when the marker is absent entirely', async () => {
+    // Fail closed. Every package written before this field existed has no
+    // marker, and so would any future write path that forgets to stamp one.
+    const deps = baseDeps();
+    const handler = createUpdatePackagePushHandler(deps);
+    await handler(makeUpdateEvent(
+      { id: 'pkg1', status: 'in_transit' },
+      { id: 'pkg1', status: 'delivered' }
+    ));
+    expect(deps.webpush.sendNotification).not.toHaveBeenCalled();
+  });
+
+  it('does not read the creation source as update provenance', async () => {
+    // `source` persists through every merge, so keying on it would fire on
+    // every manual edit of a Gmail-created package.
+    const deps = baseDeps();
+    const handler = createUpdatePackagePushHandler(deps);
+    await handler(makeUpdateEvent(
+      { id: 'pkg1', status: 'in_transit', source: 'email_forwarding' },
+      { id: 'pkg1', status: 'delivered', source: 'email_forwarding' }
+    ));
+    expect(deps.webpush.sendNotification).not.toHaveBeenCalled();
   });
 
   it('does nothing when data is missing or deleted', async () => {
     const deps = baseDeps();
     const handler = createUpdatePackagePushHandler(deps);
     await handler({ data: { before: null, after: null }, params: { uid: 'u1' } });
-    expect(deps.webpush.setVapidDetails).not.toHaveBeenCalled();
+    expect(deps.webpush.sendNotification).not.toHaveBeenCalled();
   });
 
   it('does nothing when uid param is missing', async () => {
@@ -134,9 +185,9 @@ describe('createUpdatePackagePushHandler', () => {
     const handler = createUpdatePackagePushHandler(deps);
     await handler(makeUpdateEvent(
       { id: 'pkg1', status: 'in_transit' },
-      { id: 'pkg1', status: 'delivered' },
+      { id: 'pkg1', status: 'delivered', ...AUTOMATED },
       null
     ));
-    expect(deps.webpush.setVapidDetails).not.toHaveBeenCalled();
+    expect(deps.webpush.sendNotification).not.toHaveBeenCalled();
   });
 });
