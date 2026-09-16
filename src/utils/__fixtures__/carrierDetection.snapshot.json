@@ -3974,6 +3974,16 @@
     "confidence": "none",
     "isValidChecksum": null
   },
+  "GAIH50911204": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "gaih50911204": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
   "FCS4046309": {
     "carrierId": "focus",
     "confidence": "high",

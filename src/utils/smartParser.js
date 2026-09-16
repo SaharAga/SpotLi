@@ -1,6 +1,6 @@
 import { detectCarrier, sanitizeTrackingNumber } from './carrierDetector.js';
 import { detectStore } from './storeDetector.js';
-import { getCarrier } from '../types/carriers.js';
+import { getCarrier, CARRIER_LIST } from '../types/carriers.js';
 import { sanitizeString } from './packageValidator.js';
 import { toLocalISODate } from './dateUtils.js';
 import { extractAndScoreCandidates, classifyConfidenceTier } from './candidateScorer.js';
@@ -155,6 +155,16 @@ export const CARRIER_URL_RULES = [
       /\/item\/([A-Z0-9_-]+)/i,
       /\/tracking\/([A-Z0-9_-]+)/i
     ]
+  },
+  // YDM Group. Only the feedback host is listed: their tracking links are
+  // `ilto.run/<code>` short URLs whose path is a message id, and that domain has
+  // not been confirmed as YDM-exclusive — mapping a shortener to one carrier
+  // would misattribute every other sender that uses it.
+  {
+    carrierId: 'ydm',
+    hostPattern: /ydm-?feedback\.co\.il/i,
+    paramNames: [],
+    pathPatterns: []
   },
   // Focus Logistics (focuslogistics.co.il)
   {
@@ -427,6 +437,11 @@ const HEBREW_CARRIER_PHRASES = [
   // form is deliberately absent — it is matched only where a distribution
   // company is being named, or by the carrier's own host.
   { carrierId: 'focus', patterns: [/חברת\s*ה?הפצה\s*["'״׳’]?\s*פוקוס/i, /מחברת\s*פוקוס/i, /פוקוס\s*לוגיסטיק/i, /focus\s*logistics/i, /focuslogistics/i] },
+  // "קבוצת YDM" is how their messages sign off. Unlike פוקוס or CARGO the bare
+  // token is not an ordinary word in either language, so it needs no phrase
+  // anchor — the risk here is the opposite one, a brand written only as an
+  // acronym being missed.
+  { carrierId: 'ydm', patterns: [/קבוצת\s*YDM/i, /\bYDM\b/, /ydm-?feedback/i] },
   { carrierId: 'getpackage', patterns: [/גט\s*פקג['׳`״’‘]/i, /getpackage/i] },
   { carrierId: 'zigzag', patterns: [/זיגזג\s*שליחויות/i, /שליח\s*זיגזג/i, /זיגזג/i, /zigzag/i] },
   { carrierId: 'orian', patterns: [/אוריאן/i, /orian/i] },
@@ -1075,6 +1090,22 @@ const MERCHANT_STOP_WORDS = new Set([
   'לסניף', 'בקישור', 'באתר', 'תודה', 'שלום', 'היי'
 ]);
 
+/**
+ * Every display name a courier goes by, for rejecting a courier sitting in the
+ * merchant slot.
+ *
+ * The carrier *phrase* list cannot serve here: a name that is also an ordinary
+ * word — פוקוס, CARGO — is deliberately listed there only with an anchor like
+ * "חברת ההפצה", so bare "שליח של פוקוס" would sail past it and be filed as the
+ * shop. Matching the catalogue's own names instead catches the bare form, which
+ * is exactly the case that matters in this slot.
+ */
+const CARRIER_DISPLAY_NAMES = new Set(
+  CARRIER_LIST.flatMap((carrier) => [carrier.name, carrier.hebrewName, carrier.logoText])
+    .filter(Boolean)
+    .map((name) => name.trim().toLowerCase())
+);
+
 /** Words that mean the slot holds a courier or a place, not a shop. */
 const NOT_A_MERCHANT = /^(?:ה?לוקר|ה?שליח|ה?סניף|ה?נקודת|ה?דואר|ה?מחסן|ה?חנות|ה?כתובת|ה?חברת)/i;
 
@@ -1245,7 +1276,13 @@ export function parseSmartText(rawText) {
       // `(?!ספר|ס')` keeps the parcel noun from pairing with the מ of מספר
       // itself: "החבילה מספר 12345678" was otherwise read as a shop called ספר.
       /(?:ה)?(?:חבילה|משלוח|הזמנה|שליחות)\s+מ(?!ספר|ס')[־-]?\s*/i,
-      /(?:מספר|מס')\s*(?:משלוח|חבילה|הזמנה)?\s*[A-Za-z0-9-]{4,}\s+מ(?:[־-]\s*|\s+|(?=[A-Za-z]))/i
+      /(?:מספר|מס')\s*(?:משלוח|חבילה|הזמנה)?\s*[A-Za-z0-9-]{4,}\s+מ(?:[־-]\s*|\s+|(?=[A-Za-z]))/i,
+      //   C  "שליח מטעם I-HERB בדרך אליך"                       named outright
+      //
+      // A handover SMS often names no parcel and no number at all, only who the
+      // courier is carrying for. "מטעם"/"של" state the relationship explicitly,
+      // so unlike the bare מ prefix above this one needs no bracketing keyword.
+      /(?:ה)?שליח(?:ים|ות)?\s+(?:מטעם|של)\s+/i
     ];
 
     for (const anchor of anchors) {
@@ -1254,7 +1291,14 @@ export function parseSmartText(rawText) {
 
       const rest = text.slice(match.index + match[0].length);
       const candidate = readMerchantWords(rest);
-      if (candidate) return candidate;
+      // A courier carries *for* a shop, but the same sentence shape also
+      // introduces the courier itself ("שליח מטעם קבוצת YDM"). A name the
+      // carrier detector recognises is the delivery company, not the merchant —
+      // and filing it as the shop would put the courier's name on the package.
+      if (!candidate) continue;
+      if (detectCarrierFromPhrasing(candidate)) continue;
+      if (CARRIER_DISPLAY_NAMES.has(candidate.trim().toLowerCase())) continue;
+      return candidate;
     }
     return '';
   };
@@ -1566,4 +1610,50 @@ export function parseSmartText(rawText) {
 export function extractAllTrackingDetails(rawText) {
   const parsed = parseSmartText(rawText);
   return parsed.allPackages || [];
+}
+
+/**
+ * The tracking numbers a parse found *besides* the one it ranked first.
+ *
+ * A courier handover SMS routinely names two: the courier's own tracking number
+ * and the merchant's shipment number ("מספר שליחות: 19611199 / מספר מעקב:
+ * GAIH50911204"). Which one scores higher is a ranking decision and says nothing
+ * about which one the user already has on the dashboard, so both have to reach
+ * the duplicate check — and both are worth keeping as aliases on a package that
+ * really is new, so the next message about it matches whichever number it quotes.
+ *
+ * Only candidates the scorer actually accepted are returned. A number it rated
+ * `uncertain` or `none`, or flagged as a false positive, is an order total or a
+ * phone number far more often than an identifier, and an alias is persistent:
+ * a wrong one silently attaches every future message carrying that number to
+ * the wrong package.
+ *
+ * @param {object} parsed - a `parseSmartText` result
+ * @returns {Array<string>} distinct alternates, best first, never including the primary
+ */
+export function alternateTrackingNumbers(parsed) {
+  if (!parsed || !Array.isArray(parsed.candidates)) return [];
+
+  // Same transform as deliveryService's normalizeTrackingNumber, inlined rather
+  // than imported so a parser utility does not pull a storage service (and its
+  // localStorage access) into every consumer. It is only used to compare
+  // candidates against each other here; the match itself renormalizes.
+  const canonicalize = (value) => (typeof value === 'string' ? value.replace(/[\s-]+/g, '').toUpperCase() : '');
+
+  const primary = canonicalize(parsed.trackingNumber || '');
+  const seen = new Set(primary ? [primary] : []);
+  const alternates = [];
+
+  for (const candidate of parsed.candidates) {
+    if (!candidate?.value) continue;
+    if (candidate.status !== 'probable') continue;
+    if (candidate.falsePositiveFlags?.length) continue;
+
+    const canonical = canonicalize(candidate.value);
+    if (!canonical || seen.has(canonical)) continue;
+    seen.add(canonical);
+    alternates.push(candidate.value);
+  }
+
+  return alternates;
 }

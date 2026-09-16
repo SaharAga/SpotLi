@@ -49,7 +49,8 @@ describe('Google Authentication Lifecycle & OAuth Synchronization', () => {
         defaultCarrier: 'all',
         language: 'he',
         theme: 'dark',
-        dateFormat: 'DD/MM/YYYY'
+        dateFormat: 'DD/MM/YYYY',
+        autoArchiveDelivered: false
       });
     });
 

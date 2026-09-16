@@ -261,7 +261,10 @@ const STORE_MATCHERS = [
   },
   {
     id: 'iherb',
-    patterns: [/\biherb\b/i, /אייהרב/i, /אי\s*הרב/i, /איי\s*הרב/i, /איהרב/i]
+    // `I-HERB` is how the couriers write it. A real YDM handover SMS read
+    // "שליח מטעם I-HERB", and `\biherb\b` missed it over the hyphen, so an
+    // iHerb parcel came back with no merchant at all.
+    patterns: [/\bi[-\s]?herb\b/i, /אייהרב/i, /אי\s*הרב/i, /איי\s*הרב/i, /איהרב/i]
   },
   {
     id: 'asos',

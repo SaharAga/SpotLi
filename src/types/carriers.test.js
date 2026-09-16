@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { CARRIERS, CARRIER_LIST, DETECTION_RULES, GENERIC_RULE_PRIORITY, getCarrier } from './carriers';
+import { detectCarrier } from '../utils/carrierDetector';
 
 describe('getCarrier', () => {
   it('returns the requested carrier', () => {
@@ -35,7 +36,26 @@ describe('carrier detection rule table', () => {
   it('matches every carrier sample to a rule of that same carrier', () => {
     for (const carrier of CARRIER_LIST) {
       if (carrier.id === 'other') continue;
+      // A carrier may legitimately have no number rules: some couriers are only
+      // ever identified by a phrase or a host, because every number shape they
+      // use is also somebody else's. Claiming a shape on one observed sample
+      // routes other carriers' parcels to them, which is the failure this rule
+      // table exists to prevent — so an empty list is a deliberate statement,
+      // not a gap. Its `sample` still documents a real number for the corpus.
+      if (carrier.patterns.length === 0) continue;
       expect(carrier.patterns.some((r) => r.test(carrier.sample.toUpperCase()))).toBe(true);
+    }
+  });
+
+  it('keeps a phrase-only carrier out of the number rule table entirely', () => {
+    // The corollary of the exemption above: an empty pattern list must actually
+    // contribute nothing to detection, so a phrase-only carrier can never win a
+    // number it has no claim to.
+    const phraseOnly = CARRIER_LIST.filter((c) => c.id !== 'other' && c.patterns.length === 0);
+    expect(phraseOnly.length).toBeGreaterThan(0);
+    for (const carrier of phraseOnly) {
+      expect(DETECTION_RULES.some((r) => r.carrierId === carrier.id)).toBe(false);
+      expect(detectCarrier(carrier.sample).carrierId).not.toBe(carrier.id);
     }
   });
 

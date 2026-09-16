@@ -341,18 +341,27 @@ export function validateUserProfile(raw) {
   const aiTrainingOptIn = Boolean(safeObj.aiTrainingOptIn);
   const aiTrainingOptInUpdatedAt = sanitizeString(safeObj.aiTrainingOptInUpdatedAt, 50) || null;
 
+  // Must list every key `updateUserPreferences` writes. This rebuilds the
+  // profile from scratch on every rehydrate — sign-in, cross-tab sync, a cached
+  // profile — so a key missing here is silently dropped no matter how reliably
+  // it was stored. `autoArchiveDelivered` was written to Firestore and then
+  // discarded on the way back, which is why the toggle held for the session and
+  // was off again on the next load. The parity test in AuthContext.preferences
+  // fails if the two lists drift again.
   const preferences = safeObj.preferences && typeof safeObj.preferences === 'object' && !Array.isArray(safeObj.preferences)
     ? {
         defaultCarrier: sanitizeString(safeObj.preferences.defaultCarrier, 50) || 'all',
         language: sanitizeString(safeObj.preferences.language, 10) || 'he',
         theme: sanitizeString(safeObj.preferences.theme, 10) || 'dark',
-        dateFormat: sanitizeString(safeObj.preferences.dateFormat, 20) || 'DD/MM/YYYY'
+        dateFormat: sanitizeString(safeObj.preferences.dateFormat, 20) || 'DD/MM/YYYY',
+        autoArchiveDelivered: Boolean(safeObj.preferences.autoArchiveDelivered)
       }
     : {
         defaultCarrier: 'all',
         language: 'he',
         theme: 'dark',
-        dateFormat: 'DD/MM/YYYY'
+        dateFormat: 'DD/MM/YYYY',
+        autoArchiveDelivered: false
       };
 
   return {

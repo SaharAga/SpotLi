@@ -7,7 +7,7 @@ import { PackageCard } from './components/PackageCard';
 import { PackageTable } from './components/PackageTable';
 import { LegalConsentGate } from './components/LegalConsentGate';
 import { ModalLoadingFallback } from './components/ModalLoadingFallback';
-import { findPackageByTrackingNumber, mergePackageData } from './services/deliveryService';
+import { findPackageByAnyTrackingNumber, mergePackageData } from './services/deliveryService';
 import { deriveMood } from './utils/ambientMood';
 import { getBundledLocations } from './utils/locationBundling';
 
@@ -860,7 +860,15 @@ export function DashboardContent() {
     // Check if updating by ID or matching duplicate tracking number
     let existingPkg = packages.find(p => p.id === pkgData.id);
     if (!existingPkg && pkgData.trackingNumber) {
-      existingPkg = findPackageByTrackingNumber(packages, pkgData.trackingNumber);
+      // Match on every number the incoming package carries, not just its primary.
+      // Smart Import puts the other numbers an SMS named into `aliases`, and a
+      // courier handover message often quotes only the merchant's shipment number
+      // — which may be exactly the number the dashboard already holds.
+      existingPkg = findPackageByAnyTrackingNumber(packages, [
+        pkgData.trackingNumber,
+        pkgData.localTrackingNumber,
+        ...(Array.isArray(pkgData.aliases) ? pkgData.aliases : [])
+      ]);
     }
 
     const targetId = existingPkg ? existingPkg.id : (pkgData.id || `pkg-${Date.now()}`);
