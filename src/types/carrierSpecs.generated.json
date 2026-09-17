@@ -231,6 +231,17 @@
         }
       ]
     },
+    "ydm": {
+      "id": "ydm",
+      "name": "YDM Group",
+      "hebrewName": "קבוצת YDM",
+      "website": "https://ydm.co.il",
+      "country": "Israel",
+      "domains": [
+        "ydm.co.il"
+      ],
+      "patterns": []
+    },
     "focus": {
       "id": "focus",
       "name": "Focus Logistics",

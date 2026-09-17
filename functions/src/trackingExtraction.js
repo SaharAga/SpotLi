@@ -680,8 +680,8 @@ function matchDeliveryStatus(subject = '', body = '') {
 
   // 5. In Transit / Shipped
   if (
-    /\b(shipped|in transit|dispatched|on its way|departed|in delivery)\b/i.test(combined) ||
-    /(?:נשלחה|נשלח|בדרך|נמסרה לחברת השליחויות|יצאה לדרך)/i.test(combined)
+    /\b(shipped|in transit|dispatched|on its way|departed|in delivery|shipping status(?: has been)? updated|shipping update|new shipping information)\b/i.test(combined) ||
+    /(?:נשלחה|נשלח|בדרך|נמסרה לחברת השליחויות|יצאה לדרך|עודכן סטטוס המשלוח|עדכון סטטוס משלוח|פרטי המשלוח עודכנו)/i.test(combined)
   ) {
     return 'in_transit';
   }
