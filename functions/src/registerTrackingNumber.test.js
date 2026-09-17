@@ -84,7 +84,19 @@ describe('createRegisterTrackingNumberHandler', () => {
 
   it('sends no carrier code for a courier 17TRACK has no mapping for', async () => {
     // Omitting the code is 17TRACK's auto-detect mode, which is the whole point
-    // for the Israeli couriers that have no catalogue id on our side.
+    // for couriers that have no catalogue id on our side, provided the number matches
+    // a global tracking pattern so quota isn't wasted.
+    const db = fakeDb();
+    const register = vi.fn().mockResolvedValue(true);
+
+    await createRegisterTrackingNumberHandler({ db, track17ApiKey: 'k', register })(
+      event({ trackingNumber: 'RR123456789IL', carrier: 'some-courier' })
+    );
+
+    expect(register).toHaveBeenCalledWith('RR123456789IL', undefined, 'k');
+  });
+
+  it('sends the mapped carrier code for a courier 17TRACK has a mapping for', async () => {
     const db = fakeDb();
     const register = vi.fn().mockResolvedValue(true);
 
@@ -92,7 +104,18 @@ describe('createRegisterTrackingNumberHandler', () => {
       event({ trackingNumber: 'GAIH50911204', carrier: 'ydm' })
     );
 
-    expect(register).toHaveBeenCalledWith('GAIH50911204', undefined, 'k');
+    expect(register).toHaveBeenCalledWith('GAIH50911204', 101357, 'k');
+  });
+
+  it('rejects unsupported domestic carriers with non-global tracking numbers to protect quota', async () => {
+    const db = fakeDb();
+    const register = vi.fn().mockResolvedValue(true);
+
+    await createRegisterTrackingNumberHandler({ db, track17ApiKey: 'k', register })(
+      event({ trackingNumber: '48142143', carrier: 'tapuz' })
+    );
+
+    expect(register).not.toHaveBeenCalled();
   });
 
   it('never re-enrols a number already registered', async () => {
