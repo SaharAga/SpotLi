@@ -731,7 +731,7 @@ export function extractPickupLocation(text) {
   if (!text || typeof text !== 'string') return '';
 
   const patterns = [
-    /(?:נקודת\s*איסוף|בנקודת\s*איסוף|נקודת\s*מסירה|בנקודת\s*מסירה|מרכז\s*מסירה|במרכז\s*מסירה|בלוקר|לוקר|ביחידת\s*(?:ה)?דואר|יחידת\s*(?:ה)?דואר|בסוכנות\s*(?:ה)?דואר|סוכנות\s*(?:ה)?דואר|בסניף\s*מסירה|סניף\s*מסירה|בסניף|סניף|בכתובת|כתובת\s*לאיסוף|בחנות|בבית\s*עסק|נקודת\s*חלוקה|בנקודת\s*חלוקה|איסוף\s*מ|מחכה\s*לך\s*ב|ממתינה\s*לך\s*ב|נמצאת\s*ב)[\s:-]+([^,.\r\n]{2,60})/i,
+    /(?:נקודת\s*איסוף|בנקודת\s*איסוף|נקודת\s*מסירה|בנקודת\s*מסירה|מרכז\s*מסירה|במרכז\s*מסירה|בלוקר|לוקר|ביחידת\s*(?:ה)?דואר|יחידת\s*(?:ה)?דואר|בסוכנות\s*(?:ה)?דואר|סוכנות\s*(?:ה)?דואר|בסניף\s*מסירה|סניף\s*מסירה|בסניף|סניף|בכתובת|כתובת\s*לאיסוף|בחנות|בבית\s*עסק|נקודת\s*חלוקה|בנקודת\s*חלוקה|איסוף\s*מ|מחכה\s*לך\s*ב|(?:ממתינה|ממתין)\s*לך\s*ב|נמצאת\s*ב)[\s:-]+([^,.\r\n]{2,60})/i,
     /(?:waiting\s+(?:for\s+you\s+)?at\s+(?:the\s+)?(?:pickup\s+point|locker|branch)|at\s+(?:the\s+)?pickup\s+point|at\s+(?:the\s+)?locker|at\s+(?:the\s+)?branch|pickup\s+location|pickup\s+point|locker\s+location|waiting\s+(?:for\s+you\s+)?at)[\s:-]+([^,.\r\n]{2,60})/i
   ];
 
@@ -987,7 +987,7 @@ export function extractDatesAndStatus(text) {
   const tomorrowISO = toLocalISODate(tomorrow);
 
   // 1. Relative dates with delivery phrasing
-  if (/(?:תסופק היום|יסופק היום|היום עם שליח|השליח בדרך אליך היום|בדרך אליך היום|מגיע היום|צפוי להגיע היום|היום בין השעות|delivered today|out for delivery today)/i.test(text)) {
+  if (/(?:תסופק היום|יסופק היום|היום עם שליח|השליח בדרך אליך היום|בדרך אליך היום|מגיע היום|צפוי להגיע היום|מתוכנן להגיע היום|מתוכננת להגיע היום|היום בין השעות|delivered today|out for delivery today)/i.test(text)) {
     return { expectedDeliveryDate: todayISO, statusHint: 'out_for_delivery' };
   }
 
@@ -1086,7 +1086,7 @@ const MERCHANT_STOP_WORDS = new Set([
   'הגיע', 'הגיעה', 'הגיעו', 'נמסר', 'נמסרה', 'נמסרו', 'נשלח', 'נשלחה', 'נקלט',
   'נקלטה', 'יצא', 'יצאה', 'עבר', 'עברה', 'התקבל', 'התקבלה', 'יונח', 'תימסר',
   'ממתין', 'ממתינה', 'ממתינים', 'מחכה', 'בדרך', 'עבור', 'אל', 'אליך', 'אליכם',
-  'מספר', "מס'", 'מס', 'שמספרה', 'למעקב', 'לכתובת', 'לחברת', 'לנקודת', 'ללוקר',
+  'מספר', "מס'", 'מס', 'שמספרה', 'שמספרו', 'שמספר', 'למעקב', 'לכתובת', 'לחברת', 'לנקודת', 'ללוקר',
   'לסניף', 'בקישור', 'באתר', 'תודה', 'שלום', 'היי'
 ]);
 
@@ -1192,13 +1192,16 @@ export function parseSmartText(rawText) {
     const top = scoredCandidates[0];
     bestTracking = top.value;
     const detected = detectCarrier(bestTracking);
+    const hasDistinctivePrefix = /[A-Z]/i.test(bestTracking) || top.checksum === 'pass';
     const topCarrier = (phraseCarrier && phraseCarrier !== 'other')
       ? phraseCarrier
-      : (top.carrierCandidates && top.carrierCandidates[0] && top.carrierCandidates[0] !== 'other')
-        ? top.carrierCandidates[0]
-        : (urlCarrier && urlCarrier !== 'other')
-          ? urlCarrier
-          : (detected.carrierId !== 'other' ? detected.carrierId : 'other');
+      : (urlCarrier && urlCarrier !== 'other' && !hasDistinctivePrefix)
+        ? urlCarrier
+        : (top.carrierCandidates && top.carrierCandidates[0] && top.carrierCandidates[0] !== 'other')
+          ? top.carrierCandidates[0]
+          : (urlCarrier && urlCarrier !== 'other')
+            ? urlCarrier
+            : (detected.carrierId !== 'other' ? detected.carrierId : 'other');
     // A bare digit run tells you nothing about which carrier issued it. Ten
     // digits matches DHL and twelve matches FedEx, so "שליחות 7920079333" —
     // an Israeli courier's own job number — was being labelled DHL purely on
@@ -1276,7 +1279,7 @@ export function parseSmartText(rawText) {
       // `(?!ספר|ס')` keeps the parcel noun from pairing with the מ of מספר
       // itself: "החבילה מספר 12345678" was otherwise read as a shop called ספר.
       /(?:ה)?(?:חבילה|משלוח|הזמנה|שליחות)\s+מ(?!ספר|ס')[־-]?\s*/i,
-      /(?:מספר|מס')\s*(?:משלוח|חבילה|הזמנה)?\s*[A-Za-z0-9-]{4,}\s+מ(?:[־-]\s*|\s+|(?=[A-Za-z]))/i,
+      /(?:מספר|מס')\s*(?:משלוח|חבילה|הזמנה)?\s*[A-Za-z0-9-]{4,}\s+(?:מאת\s+|מ(?:[־-]\s*|\s+|(?=[A-Za-z])))/i,
       //   C  "שליח מטעם I-HERB בדרך אליך"                       named outright
       //
       // A handover SMS often names no parcel and no number at all, only who the
@@ -1455,7 +1458,7 @@ export function parseSmartText(rawText) {
   // courier before the courier has been. It is kept to explicit rating language
   // rather than any mention of a שליח, which would sweep up every message that
   // merely says one is on the way.
-  const deliveredEventHe = /(?:תודה שאספת|תודה שאספתם|דיווח ביצוע|איך היה עם השליח|משוב על השליח|לדרג את השליח|דירוג השליח|לדרג את חווית המשלוח|לדרג את חוויית המשלוח)/i;
+  const deliveredEventHe = /(?:תודה שאספת|תודה שאספתם|דיווח ביצוע|השליח דיווח שמסר|שליח דיווח על ביצוע שליחות|דיווח שמסר|נמסרה לדלת|נמסר לדלת|נמסרה ליד הדלת|נמסר ליד הדלת|איך היה עם השליח|משוב על השליח|לדרג את השליח|דירוג השליח|לדרג את חווית המשלוח|לדרג את חוויית המשלוח)/i;
 
   if (
     /\b(delivered|successfully delivered)\b/i.test(lowerText) ||
@@ -1467,20 +1470,21 @@ export function parseSmartText(rawText) {
     lockerPin ||
     redirectInfo.isRedirected ||
     /\b(ready for pickup|ready for collection|available for pickup|waiting for pickup|delivered to locker)\b/i.test(lowerText) ||
-    /(?:מוכנה לאיסוף|מוכן לאיסוף|ממתינה לאיסוף|ממתין לאיסוף|ממתינה בלוקר|ממתין בלוקר|הגיעה לנקודת|הגיע לנקודת|הגיע לסניף|הגיעה לסניף|הגיע לסוכנות|הגיעה לסוכנות|הגיעה ללוקר|הגיע ללוקר|הועברה ללוקר|הועברה לנקודת|מחכה לך בנקודת|מחכה לך בלוקר|מחכה בלוקר|מחכה לך בסניף|מדף\s*\d+|נמסר[ההת]?\s+לנקודת|הועבר[ההת]?\s+לנקודת|הגיע[הה]?\s+לנקודת)/i.test(lowerText)
+    /(?:מוכנה לאיסוף|מוכן לאיסוף|ממתינה לאיסוף|ממתין לאיסוף|ממתינה בלוקר|ממתין בלוקר|(?:ממתינה|ממתין|מחכה)\s*לך\s*ב[־-]?|הגיעה לנקודת|הגיע לנקודת|הגיע לסניף|הגיעה לסניף|הגיע לסוכנות|הגיעה לסוכנות|הגיעה ללוקר|הגיע ללוקר|הועברה ללוקר|הועברה לנקודת|מחכה לך בנקודת|מחכה לך בלוקר|מחכה בלוקר|מחכה לך בסניף|מדף\s*\d+|נמסר[ההת]?\s+לנקודת|הועבר[ההת]?\s+לנקודת|הגיע[הה]?\s+לנקודת)/i.test(lowerText)
   ) {
     status = 'ready_for_pickup';
   } else if (
     /\b(out for delivery|with courier)\b/i.test(lowerText) ||
-    /(?:יוצאת למסירה|יוצא למסירה|יצאה עם שליח|נמסרה לשליח|השליח בדרך אליך|שליח\s+[^\n]+בדרך אליך|תסופק היום|יסופק היום|היום עם שליח|מגיע היום|צפוי להגיע היום|מבקש למסור|מבקשים למסור|בדרך למסור|נמסר[ההת]?\s+(?:ה)?(?:חבילה|משלוח|הזמנה)\s+לשליח)/i.test(lowerText)
+    /(?:יוצאת למסירה|יוצא למסירה|יצאה עם שליח|נמסרה לשליח|יצא(?:ה)?\s*לאספקה|מתוכנן להגיע היום|מתוכננת להגיע היום|בדקות הקרובות|בשעה הקרובה|השליח בדרך אליך|שליח\s+[^\n]+בדרך אליך|תסופק היום|יסופק היום|היום עם שליח|מגיע היום|צפוי להגיע היום|מבקש למסור|מבקשים למסור|בדרך למסור|נמסר[ההת]?\s+(?:ה)?(?:חבילה|משלוח|הזמנה)\s+לשליח)/i.test(lowerText)
   ) {
     status = 'out_for_delivery';
   } else if (/\b(delivery issue|delivery failed|customs clearance)\b/i.test(lowerText) || /(?:עיכוב במכס|בעיה במסירה|מסירה נכשלה|ניסינו למסור|ניסיון מסירה|לא היית בבית|לא היית בכתובת|לא נמצאת בכתובת|לא נמצאתם בכתובת)/i.test(lowerText)) {
     status = 'exception';
   } else if (
     bestTracking ||
-    /\b(shipped|in transit|dispatched|on its way|shipping status(?: has been)? updated|shipping update|new shipping information)\b/i.test(lowerText) ||
-    /(?:נשלחה|נשלח|בדרך|עודכן סטטוס המשלוח|עדכון סטטוס משלוח|פרטי המשלוח עודכנו)/i.test(lowerText)
+    /\b(shipped|in transit|dispatched|on its way)\b/i.test(lowerText) ||
+    /\b(?:shipping status (?:has been )?updated|new shipping information|shipping update|status update)\b/i.test(lowerText) ||
+    /(?:נשלחה|נשלח|בדרך|עודכן סטטוס המשלוח|סטטוס המשלוח עודכן|עדכון סטטוס משלוח|פרטי משלוח חדשים|פרטי המשלוח עודכנו|עדכון לגבי המשלוח|עדכון על המשלוח|מחו"ל טרם הגיע למחסננו)/i.test(lowerText)
   ) {
     status = status === 'ordered' ? 'in_transit' : status;
   }

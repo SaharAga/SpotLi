@@ -67,7 +67,7 @@ describe('carrier detection rule table', () => {
   it('defaults unprioritised rules to the generic tier, after every explicit rule', () => {
     const explicit = DETECTION_RULES.filter((r) => r.priority !== GENERIC_RULE_PRIORITY);
     expect(explicit.length).toBeGreaterThan(0);
-    for (const r of explicit) expect(r.confidence).toBe('high');
+    for (const r of explicit) expect(['high', 'medium']).toContain(r.confidence);
     for (const r of DETECTION_RULES.filter((x) => x.priority === GENERIC_RULE_PRIORITY)) {
       expect(r.confidence).toBe('medium');
     }

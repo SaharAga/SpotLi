@@ -320,48 +320,48 @@
     "isValidChecksum": null
   },
   "11234567": {
-    "carrierId": "other",
-    "confidence": "none",
+    "carrierId": "cargo",
+    "confidence": "medium",
     "isValidChecksum": null
   },
   "21234567": {
-    "carrierId": "other",
-    "confidence": "none",
+    "carrierId": "cargo",
+    "confidence": "medium",
     "isValidChecksum": null
   },
   "31234567": {
-    "carrierId": "other",
-    "confidence": "none",
+    "carrierId": "cargo",
+    "confidence": "medium",
     "isValidChecksum": null
   },
   "41234567": {
-    "carrierId": "other",
-    "confidence": "none",
+    "carrierId": "cargo",
+    "confidence": "medium",
     "isValidChecksum": null
   },
   "51234567": {
-    "carrierId": "other",
-    "confidence": "none",
+    "carrierId": "cargo",
+    "confidence": "medium",
     "isValidChecksum": null
   },
   "61234567": {
-    "carrierId": "other",
-    "confidence": "none",
+    "carrierId": "cargo",
+    "confidence": "medium",
     "isValidChecksum": null
   },
   "71234567": {
-    "carrierId": "other",
-    "confidence": "none",
+    "carrierId": "cargo",
+    "confidence": "medium",
     "isValidChecksum": null
   },
   "81234567": {
-    "carrierId": "other",
-    "confidence": "none",
+    "carrierId": "cargo",
+    "confidence": "medium",
     "isValidChecksum": null
   },
   "91234567": {
-    "carrierId": "other",
-    "confidence": "none",
+    "carrierId": "cargo",
+    "confidence": "medium",
     "isValidChecksum": null
   },
   "112345678": {
@@ -1010,8 +1010,8 @@
     "isValidChecksum": null
   },
   "01234567": {
-    "carrierId": "other",
-    "confidence": "none",
+    "carrierId": "cargo",
+    "confidence": "medium",
     "isValidChecksum": null
   },
   "012345678": {

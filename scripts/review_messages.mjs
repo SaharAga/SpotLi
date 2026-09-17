@@ -178,6 +178,7 @@ const FOOD_DELIVERY = new RegExp([
   'domino', 'דומינו', 'pizza', 'פיצה', 'סושי', 'sushi', 'burger', 'בורגר',
   'mcdonald', 'מקדונלד', 'kfc', 'cofix', 'קופיקס', 'cibus', 'סיבוס',
   '10bis', 'tenbis', 'תן ביס', 'yango\\s*deli', 'getir', 'גטיר',
+  'carrefour', 'carrefouril', 'papa johns', 'papajohns', 'myorder', 'nono_group', 'tortilla',
   'רמי לוי', 'יוחננוף', 'ויקטורי', 'טיב טעם', 'am:?pm', 'מסעדה', 'תפריט',
   'ארוחה', 'המנה שלך', 'הזמנת האוכל'
 ].join('|'), 'i');
@@ -192,6 +193,11 @@ const FOOD_DELIVERY = new RegExp([
  */
 const DATA_PLAN = /חביל(?:ה|ת|ות)\s*(?:ה)?גלישה|נפח\s*(?:ה)?גלישה|מחזור\s*החיוב|יחידות\s*MB/i;
 
+/**
+ * Courier driver recruitment advertisements (e.g. GetPackage driver recruitment).
+ */
+const DRIVER_RECRUITMENT = /באפליקציית השליח|היכנס לאפליקציה ותתחיל להרוויח/i;
+
 const includeFood = args.includes('--include-food');
 
 const messages = await readMessages(inputPath);
@@ -199,6 +205,7 @@ const candidates = messages
   .filter((m) => COURIER_HINT.test(m.body))
   .filter((m) => includeFood || !(FOOD_DELIVERY.test(m.sender) || FOOD_DELIVERY.test(m.body)))
   .filter((m) => !DATA_PLAN.test(m.body))
+  .filter((m) => !DRIVER_RECRUITMENT.test(m.body))
   .filter((m) => !senderFilter || m.sender.toLowerCase().includes(senderFilter.toLowerCase()));
 
 const buckets = { verified: [], probable: [], uncertain: [], nothing: [] };

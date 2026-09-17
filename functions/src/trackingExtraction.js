@@ -649,7 +649,7 @@ function matchDeliveryStatus(subject = '', body = '') {
   // 1. Delivered
   if (
     /\b(delivered|successfully delivered|package delivered|item delivered)\b/i.test(combined) ||
-    /(?:נמסרה בהצלחה|נמסר ליעד|החבילה נמסרה|נמסר בהצלחה)/i.test(combined)
+    /(?:נמסרה בהצלחה|נמסר ליעד|החבילה נמסרה|נמסר בהצלחה|השליח דיווח שמסר|שליח דיווח על ביצוע שליחות|דיווח שמסר|נמסרה לדלת|נמסר לדלת|נמסרה ליד הדלת|נמסר ליד הדלת)/i.test(combined)
   ) {
     return 'delivered';
   }
@@ -665,7 +665,7 @@ function matchDeliveryStatus(subject = '', body = '') {
   // 3. Out for delivery (courier on the road)
   if (
     /\b(out for delivery|with (?:the\s+)?courier|on its way to you today|delivery today|arriving today)\b/i.test(combined) ||
-    /(?:יוצאת למסירה|יצאה עם שליח|נמסרה לשליח|השליח בדרך אליך|חלוקה היום|מגיע היום)/i.test(combined)
+    /(?:יוצאת למסירה|יצאה עם שליח|נמסרה לשליח|השליח בדרך אליך|חלוקה היום|מגיע היום|יצא(?:ה)?\s*לאספקה|מתוכנן להגיע היום|מתוכננת להגיע היום)/i.test(combined)
   ) {
     return 'out_for_delivery';
   }
@@ -680,8 +680,9 @@ function matchDeliveryStatus(subject = '', body = '') {
 
   // 5. In Transit / Shipped
   if (
-    /\b(shipped|in transit|dispatched|on its way|departed|in delivery|shipping status(?: has been)? updated|shipping update|new shipping information)\b/i.test(combined) ||
-    /(?:נשלחה|נשלח|בדרך|נמסרה לחברת השליחויות|יצאה לדרך|עודכן סטטוס המשלוח|עדכון סטטוס משלוח|פרטי המשלוח עודכנו)/i.test(combined)
+    /\b(shipped|in transit|dispatched|on its way|departed|in delivery)\b/i.test(combined) ||
+    /\b(?:shipping status (?:has been )?updated|new shipping information|shipping update|status update)\b/i.test(combined) ||
+    /(?:נשלחה|נשלח|בדרך|נמסרה לחברת השליחויות|יצאה לדרך|עודכן סטטוס המשלוח|סטטוס המשלוח עודכן|עדכון סטטוס משלוח|פרטי משלוח חדשים|פרטי המשלוח עודכנו|עדכון לגבי המשלוח|עדכון על המשלוח|מחו"ל טרם הגיע למחסננו)/i.test(combined)
   ) {
     return 'in_transit';
   }

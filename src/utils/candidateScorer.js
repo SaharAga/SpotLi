@@ -157,6 +157,9 @@ const SHIPPED_MARKERS = [
   /בדרך\s*אלי(?:ך|כם)/,
   /נמסר(?:ה|ו)?/, /אצל\s*השליח/, /עם\s*השליח/, /הועבר(?:ה|ו)?\s*לשליח/,
   /ממתינ(?:ה|ות)\s*לאיסוף/, /מחכה\s*לך/, /הגיע(?:ה|ו)?\s*ל/,
+  /נסרק(?:ה|ו)?\s*ל/,
+  /\b(?:shipping status (?:has been )?updated|new shipping information|shipping update|status update)\b/i,
+  /(?:עודכן סטטוס המשלוח|סטטוס המשלוח עודכן|פרטי משלוח חדשים|פרטי המשלוח עודכנו|עדכון לגבי המשלוח|עדכון על המשלוח|מחו"ל טרם הגיע למחסננו)/i,
   /\bshipped\b/i, /\bdispatched\b/i, /\bout\s+for\s+delivery\b/i,
   /\bon\s+its\s+way\b/i, /\bin\s+transit\b/i, /\bready\s+for\s+(?:pickup|collection)\b/i,
   /\bhas\s+been\s+delivered\b/i, /\barrived\b/i
@@ -184,7 +187,7 @@ const NOT_YET_SHIPPED_MARKERS = [
  * courier. A shop's own "ההזמנה נקלטה ותטופל" carries no such link and stays
  * vetoed; the courier's does, and the parcel really is in its hands.
  */
-const COURIER_INTAKE_MARKER = /נקלט(?:ה|ו)?\s*ב/;
+const COURIER_INTAKE_MARKER = /(?:נקלט(?:ה|ו)?\s*ב|נסרק(?:ה|ו)?\s*ל)/;
 
 /**
  * Whether the message states the parcel is already on its way.
@@ -304,6 +307,14 @@ export function detectFalsePositiveFlags(candidate, fullText = '', startIdx = -1
 
   if (FALSE_POSITIVE_PATTERNS.order_number.test(candidate.trim())) {
     flags.push('order_number');
+  }
+
+  // An order number in a message where shipment has not yet occurred is not a tracking number
+  if (fullText && startIdx >= 0 && !isShipmentInProgress(fullText)) {
+    const before = fullText.slice(Math.max(0, startIdx - 35), startIdx).toLowerCase();
+    if (/(?:הזמנה|הזמנתך|ההזמנה(?:\s*שלך)?|order)(?:(?:\s+\S+){0,3}\s*(?:ש?מספר(?:ה|ו)?|מס['׳`״’‘]?|number|no|#))?\s*[:#-]?\s*$/i.test(before)) {
+      flags.push('order_number');
+    }
   }
 
   if (FALSE_POSITIVE_PATTERNS.repeated_digits.test(clean)) {
@@ -805,7 +816,7 @@ export function extractAndScoreCandidates(text) {
   const HEB_SHIPMENT_NOUN = "(?:חבילה|חבילת|חבילתך|משלוח|משלוחך|פריט|שליחות)";
   const HEB_NUMBER_LABEL = "(?:ש?מספר(?:ה|ו)?|מס['׳`״’‘]?)";
   const hebrewNumberedPattern = new RegExp(
-    `(?:${HEB_SHIPMENT_NOUN}(?:\\s+[^\\s:=#-]{1,20}){0,3}\\s+${HEB_NUMBER_LABEL}\\s*[:=#-]?\\s*([A-Za-z0-9_-]{5,35})`
+    `(?:${HEB_SHIPMENT_NOUN}(?:\\s+[^\\s:=#]{1,30}){0,4}[ ,;]*${HEB_NUMBER_LABEL}[\\s:=#-]+([A-Za-z0-9_-]{5,35})`
       + `|${HEB_SHIPMENT_NOUN}[\\s:=#-]+([A-Za-z0-9_-]{6,35}))`,
     'gi'
   );
@@ -856,7 +867,7 @@ export function extractAndScoreCandidates(text) {
     const ORDER_NOUN = "(?:הזמנה|הזמנתך|ההזמנה\\s*שלך|מספר\\s*הזמנה|order)";
     const ORDER_LABEL = "(?:ש?מספר(?:ה|ו)?|מס['׳`״’‘]?|number|no|#)";
     const orderLabelPattern = new RegExp(
-      `(?:${ORDER_NOUN}(?:\\s+[^\\s:=#-]{1,20}){0,3}\\s*${ORDER_LABEL}|${ORDER_NOUN})[\\s:=#-]+([A-Za-z0-9_-]{5,35})`,
+      `(?:${ORDER_NOUN}(?:\\s+[^\\s:=#]{1,30}){0,4}[ ,;]*${ORDER_LABEL}|${ORDER_NOUN})[\\s:=#-]+([A-Za-z0-9_-]{5,35})`,
       'gi'
     );
     let orderMatch;
@@ -950,6 +961,7 @@ export function extractAndScoreCandidates(text) {
       highestConfidence: ruleEval.highestConfidence,
       priority: ruleEval.bestPriority,
       checksum: ruleEval.checksum,
+      fromGrouped: true,
       urlDomainMatch: checkUrlDomainMatch(primaryCarrier, normalizedText),
       labelProximity: calculateLabelProximity(normalizedText, start, end),
       falsePositiveFlags: detectFalsePositiveFlags(joined, normalizedText, start, end),
@@ -1073,6 +1085,19 @@ export function extractAndScoreCandidates(text) {
     const bIsCourier = b.formatMatch && b.score >= 0.35 && b.carrierCandidates.some((c) => c !== 'other');
     if (aIsCourier !== bIsCourier && (a.fromOrderLabel || b.fromOrderLabel)) {
       return aIsCourier ? -1 : 1;
+    }
+
+    // When both candidates have strong direct label proximity (labelProximity >= 0.8)
+    // and neither is from a synthetic grouped run or URL path, carrier priority decides:
+    // domestic delivery couriers (e.g. Chita = 30) outrank origin/marketplace codes (e.g. Shein = 146).
+    const aDirect = !a.fromUrlPath && !a.fromGrouped && (a.labelProximity ?? 0) >= 0.8;
+    const bDirect = !b.fromUrlPath && !b.fromGrouped && (b.labelProximity ?? 0) >= 0.8;
+    if (aDirect && bDirect && a.formatMatch && b.formatMatch && a.score >= 0.7 && b.score >= 0.7) {
+      const aPri = a.priority ?? 999;
+      const bPri = b.priority ?? 999;
+      if (aPri !== bPri) {
+        return aPri - bPri;
+      }
     }
 
     if (b.score !== a.score) {

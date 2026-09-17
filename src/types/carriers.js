@@ -291,6 +291,7 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://cargoexpress.co.il/track?tracknum=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
+      rule(/^\d{8}$/, { confidence: 'medium', priority: 65 }),
       rule(/^CRG\d{7,12}$/i, { confidence: 'high', priority: 70 }),
       rule(/^CARGO\d{6,10}$/i, { confidence: 'high', priority: 71 }),
       rule(/^ECSA\d{6,9}$/i, { confidence: 'high', priority: 72 })
@@ -402,6 +403,7 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://orian.com/track?num=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
+      rule(/^90\d{8}$/, { confidence: 'high', priority: 99 }),
       rule(/^(OR|ORN)\d{8,12}$/i, { confidence: 'high', priority: 100 }),
       rule(/^\d{9}-\d$/i, { confidence: 'high', priority: 101 })
     ],
@@ -765,6 +767,7 @@ export const CARRIERS = {
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
       rule(/^1Z[0-9A-Z]{16}$/i, { confidence: 'high', priority: 160 }),
+      rule(/^W\d{10}$/i, { confidence: 'high', priority: 161 }),
       rule(/^\d{9}$/),
       rule(/^\d{11}$/)
     ],

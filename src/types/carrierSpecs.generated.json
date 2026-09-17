@@ -112,6 +112,7 @@
         "e-post.co.il",
         "epost.co.il",
         "hfd.co.il",
+        "hfd.sh",
         "hfdi.co.il",
         "my.hfd.co.il"
       ],
@@ -208,6 +209,13 @@
         "cloud.amital.co.il"
       ],
       "patterns": [
+        {
+          "source": "^\\d{8}$",
+          "flags": "",
+          "confidence": "medium",
+          "checksum": "not-applicable",
+          "priority": 65
+        },
         {
           "source": "^CRG\\d{7,12}$",
           "flags": "i",
@@ -329,6 +337,13 @@
       ],
       "patterns": [
         {
+          "source": "^90\\d{8}$",
+          "flags": "",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 99
+        },
+        {
           "source": "^(OR|ORN)\\d{8,12}$",
           "flags": "i",
           "confidence": "high",
@@ -351,6 +366,7 @@
       "website": "https://bardistribution.co.il",
       "country": "Israel",
       "domains": [
+        "bar2go.co.il",
         "bardistribution.co.il",
         "barexpress.co.il"
       ],
@@ -728,6 +744,13 @@
           "priority": 160
         },
         {
+          "source": "^W\\d{10}$",
+          "flags": "i",
+          "confidence": "high",
+          "checksum": "not-applicable",
+          "priority": 161
+        },
+        {
           "source": "^\\d{9}$",
           "flags": "",
           "confidence": "medium",
@@ -982,6 +1005,14 @@
     },
     {
       "carrierId": "cargo",
+      "source": "^\\d{8}$",
+      "flags": "",
+      "confidence": "medium",
+      "checksum": "not-applicable",
+      "priority": 65
+    },
+    {
+      "carrierId": "cargo",
       "source": "^CRG\\d{7,12}$",
       "flags": "i",
       "confidence": "high",
@@ -1027,6 +1058,14 @@
       "confidence": "high",
       "checksum": "not-applicable",
       "priority": 90
+    },
+    {
+      "carrierId": "orian",
+      "source": "^90\\d{8}$",
+      "flags": "",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 99
     },
     {
       "carrierId": "orian",
@@ -1211,6 +1250,14 @@
       "confidence": "high",
       "checksum": "not-applicable",
       "priority": 160
+    },
+    {
+      "carrierId": "ups",
+      "source": "^W\\d{10}$",
+      "flags": "i",
+      "confidence": "high",
+      "checksum": "not-applicable",
+      "priority": 161
     },
     {
       "carrierId": "royal-mail",
