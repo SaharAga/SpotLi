@@ -458,3 +458,72 @@ Items in this shipment: Relocation Leopard Bag`;
     expect(parsed.carrier).toBe('tapuz');
   });
 });
+
+describe('smartParser - Message History Triage improvements', () => {
+  it('detects in_transit for English shipping status update phrasing', () => {
+    const text = 'Your shipping status has been updated. Package is moving smoothly.';
+    const res = parseSmartText(text);
+    expect(res.status).toBe('in_transit');
+  });
+
+  it('detects in_transit for Hebrew shipping status update phrasing', () => {
+    const text = 'עודכן סטטוס המשלוח עבור החבילה שלך.';
+    const res = parseSmartText(text);
+    expect(res.status).toBe('in_transit');
+  });
+
+  it('detects in_transit for customs/warehouse update phrasing', () => {
+    const text = 'עדכון על המשלוח: מחו"ל טרם הגיע למחסננו.';
+    const res = parseSmartText(text);
+    expect(res.status).toBe('in_transit');
+  });
+
+  it('parses UPS Israel PickUP W-prefixed tracking with store and masculine pickup phrasing', () => {
+    const text = 'משלוח מ-VAPORIZA SHOP שמספרו W5862333472 הגיע והוא ממתין לך ב- טוטו לוטו מרום גולן. קוד איסוף 1234';
+    const res = parseSmartText(text);
+    expect(res.trackingNumber).toBe('W5862333472');
+    expect(res.carrier).toBe('ups');
+    expect(res.status).toBe('ready_for_pickup');
+    expect(res.store).toBe('VAPORIZA SHOP');
+    expect(res.pickupLocation).toBe('טוטו לוטו מרום גולן');
+  });
+
+  it('parses CARGO 8-digit tracking with hyphenated store name and delivered status', () => {
+    const text = 'חבילה מ-addictonline מספר 67455927 נמסרה בהצלחה. תודה שבחרת בנו!';
+    const res = parseSmartText(text);
+    expect(res.trackingNumber).toBe('67455927');
+    expect(res.carrier).toBe('cargo');
+    expect(res.status).toBe('delivered');
+    expect(res.store).toBe('addictonline');
+  });
+
+  it('parses Terminal-X with hyphenated store and delivered phrasing', () => {
+    const text = 'חבילה מ-TERMINAL-X מספר 40973019. השליח דיווח שמסר ליד הדלת.';
+    const res = parseSmartText(text);
+    expect(res.trackingNumber).toBe('40973019');
+    expect(res.status).toBe('delivered');
+    expect(res.store).toBe('TERMINAL-X');
+  });
+
+  it('parses iHerb courier intake scan with order number as tracking in transit', () => {
+    const text = 'ההזמנה שלך מ I-HERB , שמספרה 19611199 נסרקה לחברת ההפצה. המשלוח בדרך.';
+    const res = parseSmartText(text);
+    expect(res.trackingNumber).toBe('19611199');
+    expect(res.status).toBe('in_transit');
+  });
+
+  it('handles out for delivery phrasing with arrival today', () => {
+    const text = 'משלוח שמספרו CRG1234567 יצא לאספקה ומתוכנן להגיע היום';
+    const res = parseSmartText(text);
+    expect(res.status).toBe('out_for_delivery');
+  });
+
+  it('parses Orian 90 domestic 10-digit format', () => {
+    const text = 'אוריאן: משלוח שמספרו 9072341041 יצא לאספקה';
+    const res = parseSmartText(text);
+    expect(res.trackingNumber).toBe('9072341041');
+    expect(res.carrier).toBe('orian');
+    expect(res.status).toBe('out_for_delivery');
+  });
+});
+

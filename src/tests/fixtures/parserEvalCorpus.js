@@ -368,6 +368,20 @@ export const PARSER_EVAL_CORPUS = [
     expected: { trackingNumber: 'RE477128799SE', carrier: 'israel-post', deliveryStatus: 'delivered' }
   },
   {
+    id: 'pos-real-ups-pickup',
+    group: 'real-world',
+    note: 'UPS Israel / PickUP format W + 10 digits with masculine ממתין לך ב- and hyphenated merchant',
+    rawText: 'משלוח מ-VAPORIZA SHOP שמספרו W5862333472 הגיע והוא ממתין לך ב- טוטו לוטו מרום גולן',
+    expected: { trackingNumber: 'W5862333472', carrier: 'ups', deliveryStatus: 'ready_for_pickup', store: 'VAPORIZA SHOP' }
+  },
+  {
+    id: 'pos-real-cargo-delivered',
+    group: 'real-world',
+    note: 'Cargo 8-digit tracking number with store domain and doorstep delivery phrasing',
+    rawText: 'חבילתך מספר 67455927 מאת addictonline.co.il נמסרה ליד הדלת. תודה שבחרת CARGO',
+    expected: { trackingNumber: '67455927', carrier: 'cargo', deliveryStatus: 'delivered' }
+  },
+  {
     id: 'neg-real-ilp-portal-otp',
     group: 'negative-otp',
     note: 'Israel Post sends login OTPs from the same sender as real shipment notices',

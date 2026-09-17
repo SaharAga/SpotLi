@@ -56,11 +56,11 @@ const carriersExport = {};
  */
 const KNOWN_CARRIER_DOMAINS = {
   'chita': ['chtr.co.il', 'chita.co.il', 'chita-il.com', 'chita-delivery.co.il', 'cheetahint.com', 'u.cheetahint.com'],
-  'hfd': ['epost.co.il', 'e-post.co.il', 'hfd.co.il', 'hfdi.co.il', 'my.hfd.co.il'],
+  'hfd': ['epost.co.il', 'e-post.co.il', 'hfd.co.il', 'hfdi.co.il', 'my.hfd.co.il', 'hfd.sh'],
   'boxit': ['boxit.co.il', 'box-it.co.il', 'my.boxit.co.il'],
   'buzzr': ['buzzr.co.il', 'link.buzzr.co.il'],
   'tapuz': ['tapuzdelivery.co.il', 'tapuzdelivery.com', 'tapuz.co.il'],
-  'bar-distribution': ['bardistribution.co.il', 'barexpress.co.il'],
+  'bar-distribution': ['bardistribution.co.il', 'barexpress.co.il', 'bar2go.co.il'],
   'lionwheel': ['tracking.lionwheel.com', 'lionwheel.com'],
   'zigzag': ['zigzag.co.il', 'zigzag24.co.il', 'zig-zag.co.il', 'api.zig-zag.co.il'],
   // Israel Post serves tracking from several hosts; only the mypost one was
