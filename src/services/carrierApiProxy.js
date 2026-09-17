@@ -172,8 +172,27 @@ export const LIVE_TRACKING_CARRIERS = Object.freeze(
  */
 export const UNTRACKED_REASONS = Object.freeze({
   UNSUPPORTED: 'carrier-unsupported',
-  UNAVAILABLE: 'carrier-unavailable'
+  UNAVAILABLE: 'carrier-unavailable',
+  RATE_LIMITED: 'rate-limited',
+  NOT_SIGNED_IN: 'not-signed-in'
 });
+
+/**
+ * Turns a callable-function failure into a reason worth showing.
+ *
+ * Only the cases a user can act on are named; anything else stays null so the
+ * caller falls back to the honest "could not check". Claiming a specific cause
+ * we do not have is worse than admitting ignorance.
+ *
+ * @param {unknown} err
+ * @returns {string|null}
+ */
+export function proxyFailureReason(err) {
+  const code = String(err?.code || '').replace(/^functions\//, '');
+  if (code === 'resource-exhausted') return UNTRACKED_REASONS.RATE_LIMITED;
+  if (code === 'unauthenticated' || code === 'permission-denied') return UNTRACKED_REASONS.NOT_SIGNED_IN;
+  return null;
+}
 
 /**
  * Carriers the 17TRACK proxy carries an explicit catalogue ID for.
@@ -250,6 +269,17 @@ export function untrackedReasonKey(reason) {
     case UNTRACKED_REASONS.UNSUPPORTED:
       return 'tracking.notSupported';
 
+    // Causes the user can actually do something about, each previously
+    // indistinguishable from a network outage.
+    case UNTRACKED_REASONS.RATE_LIMITED:
+      return 'tracking.rateLimited';
+
+    case UNTRACKED_REASONS.NOT_SIGNED_IN:
+      return 'tracking.notSignedIn';
+
+    case 'api-key-required':
+      return 'tracking.notConfigured';
+
     // Everything else is the lookup itself failing — an unreachable gateway, an
     // HTTP error from 17TRACK, a missing API key. Unknown reasons land here too:
     // "we could not check" is the honest answer for a reason we do not know,
@@ -321,7 +351,13 @@ async function queryCarrierLive(carrier, trackingNumber) {
       upstreamReason = res.data.reason;
     }
   } catch (err) {
-    // Cloud function proxy not available or failed; proceed to direct gateway fallback
+    // Keep why it failed. Swallowing this meant a missing API key, an exhausted
+    // daily quota and a genuine outage all surfaced as the same "tracking is
+    // unreachable", which is unactionable for the user and undiagnosable for
+    // us — the evidence was discarded at the only point it existed.
+    upstreamReason = proxyFailureReason(err);
+    console.warn('[CarrierProxy] queryCarrierTracking failed:', err?.code || err?.message);
+    // Still fall through to the direct gateway fallback below.
   }
 
   // 2. Direct client fallback for open carriers

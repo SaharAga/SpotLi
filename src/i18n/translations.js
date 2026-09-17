@@ -85,6 +85,9 @@ export const translations = {
       notSupported: 'Live tracking isn\u2019t available for {carrier} yet \u2014 update this package manually.',
       notConfirmed: '{carrier} has no confirmed live feed \u2014 a refresh will still try, but you may need to update this package manually.',
       carrierUnavailable: '{carrier} tracking is unreachable right now. Nothing was changed.',
+      rateLimited: 'Daily live-tracking limit reached. Try again tomorrow, or update this package manually.',
+      notSignedIn: 'Sign in to use live tracking \u2014 nothing was changed.',
+      notConfigured: 'Live tracking isn\u2019t configured on the server yet. Nothing was changed.',
       untrackedBatch: '{count} packages have no live tracking and were left unchanged.',
       manualBadge: 'Manual tracking'
     },
@@ -463,6 +466,9 @@ export const translations = {
       notSupported: 'מעקב אוטומטי עבור {carrier} עדיין לא נתמך \u2014 יש לעדכן את החבילה ידנית.',
       notConfirmed: 'לא קיים מעקב אוטומטי מאומת עבור {carrier} \u2014 רענון עדיין ינסה, וייתכן שיהיה צורך לעדכן את החבילה ידנית.',
       carrierUnavailable: 'לא ניתן להתחבר כרגע למערכת המעקב של {carrier}. שום פרט לא שונה.',
+      rateLimited: 'הגעת למכסת המעקב היומית. אפשר לנסות שוב מחר או לעדכן את החבילה ידנית.',
+      notSignedIn: 'יש להתחבר כדי להשתמש במעקב חי \u2014 שום פרט לא שונה.',
+      notConfigured: 'המעקב החי עדיין לא מוגדר בשרת. שום פרט לא שונה.',
       untrackedBatch: '{count} חבילות ללא מעקב אוטומטי נותרו ללא שינוי.',
       manualBadge: 'מעקב ידני'
     },

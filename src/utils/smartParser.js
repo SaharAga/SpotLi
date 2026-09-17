@@ -1332,6 +1332,38 @@ export function parseSmartText(rawText) {
     }
   }
 
+  /**
+   * Strips the rules and separators that survive an HTML email flattened to
+   * text.
+   *
+   * The item-label pattern below has to allow `-` inside a name ("T-Shirt",
+   * "Cross-Body Bag"), and a run of dashes is exactly what a table rule or a
+   * divider row collapses to. So `עבור: ----------------------- Relocation
+   * Leopard Bag` was read whole, and the package was titled
+   * "SEESTARZ - ----------------------- Relocation Leopard Bag".
+   *
+   * Trimming the edges rather than rejecting the whole candidate keeps the real
+   * name, which is usually sitting right after the rule.
+   *
+   * @param {string} value
+   * @returns {string} the cleaned name, or '' when nothing legible is left
+   */
+  const stripSeparators = (value) => {
+    const cleaned = String(value || '')
+      // Edge runs of divider characters, either side.
+      .replace(/^[\s\-–—_=*·.|]{2,}/, '')
+      .replace(/[\s\-–—_=*·.|]{2,}$/, '')
+      // An internal rule is a break between fields, not part of a name.
+      .replace(/[\-–—_=*·|]{3,}/g, ' ')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+
+    // Whatever is left has to actually read as a name. Two letters is the
+    // shortest plausible one; a string of punctuation is not a product.
+    const letters = cleaned.replace(/[^A-Za-z0-9\u0590-\u05FF]/g, '');
+    return letters.length >= 2 ? cleaned : '';
+  };
+
   // Extract explicit product / item candidate from text if present
   const extractItemCandidate = (text) => {
     if (!text || typeof text !== 'string') return null;
@@ -1350,7 +1382,7 @@ export function parseSmartText(rawText) {
         !/^(?:order|package|tracking|delivery|shipment|חבילה|משלוח|הזמנה|איסוף)/i.test(candidate) &&
         !/^https?:\/\//i.test(candidate)
       ) {
-        return candidate;
+        return stripSeparators(candidate) || null;
       }
     }
     const labelMatch = text.match(/(?:item|product|מוצר|פריט|עבור|for)\s*[:：-]\s*([A-Za-z0-9\u0590-\u05FF\s-]{3,50})(?:[,\n.]|$)/i);
@@ -1360,7 +1392,7 @@ export function parseSmartText(rawText) {
         !/^(?:order|package|tracking|delivery|shipment|pickup|חבילה|משלוח|הזמנה|איסוף)/i.test(candidate) &&
         !/^[A-Z0-9_-]{8,35}$/i.test(candidate)
       ) {
-        return candidate;
+        return stripSeparators(candidate) || null;
       }
     }
     const parenMatch = text.match(/\(([A-Za-z0-9\u0590-\u05FF\s-]{3,40})\)/);
@@ -1370,7 +1402,7 @@ export function parseSmartText(rawText) {
         !/^(?:מדף|סניף|לוקר|קוד|חבילה|מספר|order|package|shelf|code|\d+)/i.test(candidate) &&
         !/^[A-Z0-9_-]{8,35}$/i.test(candidate)
       ) {
-        return candidate;
+        return stripSeparators(candidate) || null;
       }
     }
     return null;
