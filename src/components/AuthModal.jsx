@@ -322,28 +322,31 @@ export function AuthModal({
       className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8"
     >
         {/* Header */}
-        <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-600/10">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/20">
-              <Cloud className="w-5 h-5" />
+        <div className="p-6 border-b border-slate-800 flex flex-col bg-slate-900">
+          <div className="w-10 h-1 bg-slate-700/80 rounded-full mx-auto -mt-2 mb-4 shrink-0 lg:hidden" aria-hidden="true" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-blue-600 text-white shadow-sm">
+                <Cloud className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                  <span>{language === 'he' ? 'חשבון וסנכרון ענן' : 'Account & Cloud Sync'}</span>
+                  <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono">v{APP_VERSION}</span>
+                </h2>
+                <p className="text-xs text-slate-400">
+                  {language === 'he' ? 'סנכרון החבילות שלך מכל מכשיר' : 'Access your packages from any device'}
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                <span>{language === 'he' ? 'חשבון וסנכרון ענן' : 'Account & Cloud Sync'}</span>
-                <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono">v{APP_VERSION}</span>
-              </h2>
-              <p className="text-xs text-slate-400">
-                {language === 'he' ? 'סנכרון החבילות שלך מכל מכשיר' : 'Access your packages from any device'}
-              </p>
-            </div>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
-            aria-label="Close"
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
 
         {/* Body */}
@@ -795,7 +798,7 @@ export function AuthModal({
                 <button
                   type="submit"
                   disabled={isLoading || isGoogleLoading}
-                  className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:from-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/20 transition-ui cursor-pointer min-h-[48px] flex items-center justify-center gap-2 disabled:opacity-50 mt-3"
+                  className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl shadow-sm transition-colors cursor-pointer min-h-[48px] flex items-center justify-center gap-2 disabled:opacity-50 mt-3"
                 >
                   {isLoading && <Loader2 className="w-4 h-4 animate-spin text-white" />}
                   <span>

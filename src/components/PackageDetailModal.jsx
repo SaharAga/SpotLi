@@ -307,6 +307,8 @@ export function PackageDetailModal({
           header of an ordinary package into a wall of alarm red.
         */}
         <div className="p-4 sm:p-6 border-b border-slate-800/80 relative flex flex-col gap-3">
+          {/* Native mobile drag handle indicator */}
+          <div className="w-10 h-1 bg-slate-700/80 rounded-full mx-auto -mt-1 mb-1 shrink-0 lg:hidden" aria-hidden="true" />
           <div
             aria-hidden="true"
             className={`pointer-events-none absolute inset-0 bg-gradient-to-r ${carrier.color} opacity-10`}
@@ -431,7 +433,7 @@ export function PackageDetailModal({
                 {isLinearStage && effectiveIndex < STAGES.length - 1 && canTransition(pkg.status, STAGES[effectiveIndex + 1]?.id) && (
                   <button
                     onClick={handleAdvanceStage}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold transition-ui shadow-md min-h-[48px]"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-colors shadow-sm min-h-[48px]"
                   >
                     <span>{t('detailModal.advanceStageBtn')}</span>
                   </button>
@@ -517,9 +519,7 @@ export function PackageDetailModal({
 
           {/* Pickup Information Card */}
           {(pkg.pickupCode || pkg.pickupLocation) && (
-            <div className="flex flex-col gap-3 p-5 rounded-3xl bg-gradient-to-br from-emerald-500/10 to-teal-900/40 border-2 border-emerald-500/30 shadow-lg shadow-emerald-900/20 relative overflow-hidden">
-              <div className="absolute top-0 end-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl" />
-              
+            <div className="flex flex-col gap-3 p-5 rounded-2xl bg-emerald-950/30 border border-emerald-500/25 relative overflow-hidden">
               <div className="flex flex-wrap items-start justify-between gap-4 relative z-10">
                 <div className="flex flex-col gap-2 flex-1">
                   {pkg.pickupCode && (
@@ -837,7 +837,7 @@ export function PackageDetailModal({
 
           {/* Customs Clearance Banner */}
           {pkg.customsDetails?.required && (
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-rose-950/50 via-slate-900 to-rose-950/30 border border-rose-500/40 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+            <div className="p-4 rounded-2xl bg-rose-950/30 border border-rose-500/30 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-rose-500/20 text-rose-400">
                   <ShieldAlert className="w-5 h-5" />
@@ -955,7 +955,7 @@ export function PackageDetailModal({
 
           {/* Return Policy & Window Box (Delivered or Return Set) */}
           {(pkg.status === 'delivered' || pkg.returnDeadline) && (
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-950/40 to-slate-900 border border-blue-500/30 flex flex-col gap-3">
+            <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col gap-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400">

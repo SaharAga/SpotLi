@@ -221,13 +221,17 @@ export function BackButton({ onClick, label, className = '' }) {
  */
 export function ModalHeader({ title, subtitle, onClose, closeLabel = 'Back', actions, titleId }) {
   return (
-    <div className="flex items-center gap-3 p-4 sm:p-6 border-b border-slate-800">
-      {onClose && <BackButton onClick={onClose} label={closeLabel} className="shrink-0" />}
-      <div className="min-w-0 flex-1 flex flex-col gap-1">
-        <Title id={titleId}>{title}</Title>
-        {subtitle && <p className="text-sm text-slate-400 leading-relaxed">{subtitle}</p>}
+    <div className="flex flex-col border-b border-slate-800">
+      {/* Native sheet drag handle indicator for mobile sheet appearance */}
+      <div className="w-10 h-1 bg-slate-700/80 rounded-full mx-auto mt-2.5 -mb-1 shrink-0 lg:hidden" aria-hidden="true" />
+      <div className="flex items-center gap-3 p-4 sm:p-6">
+        {onClose && <BackButton onClick={onClose} label={closeLabel} className="shrink-0" />}
+        <div className="min-w-0 flex-1 flex flex-col gap-1">
+          <Title id={titleId}>{title}</Title>
+          {subtitle && <p className="text-sm text-slate-400 leading-relaxed">{subtitle}</p>}
+        </div>
+        {actions}
       </div>
-      {actions}
     </div>
   );
 }
