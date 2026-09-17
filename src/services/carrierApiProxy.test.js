@@ -8,7 +8,8 @@ import {
   hasDirectCarrierAdapter,
   untrackedReasonKey,
   UNTRACKED_REASONS,
-  LIVE_TRACKING_CARRIERS
+  LIVE_TRACKING_CARRIERS,
+  proxyFailureReason
 } from './carrierApiProxy';
 import { CARRIERS, CARRIER_LIST } from '../types/carriers';
 
@@ -367,13 +368,38 @@ describe('carrierApiProxy Service', () => {
         UNTRACKED_REASONS.UNAVAILABLE,
         'upstream-error',
         'upstream-17track-http-503',
-        'api-key-required',
         'nonce-fetch-failed',
         'invalid-tracking-number',
         'missing-tracking-number'
       ]) {
         expect(untrackedReasonKey(reason)).toBe('tracking.carrierUnavailable');
       }
+    });
+
+    /**
+     * The three causes a user can act on, each of which used to be
+     * indistinguishable from a network outage.
+     *
+     * "Tapuz tracking is unreachable" was shown for a server with no API key,
+     * for an exhausted daily quota, and for a genuine outage alike — so the
+     * message was unactionable for the user and the evidence was gone before
+     * anyone could diagnose it.
+     */
+    it('names the causes a user can do something about', () => {
+      expect(untrackedReasonKey('api-key-required')).toBe('tracking.notConfigured');
+      expect(untrackedReasonKey(UNTRACKED_REASONS.RATE_LIMITED)).toBe('tracking.rateLimited');
+      expect(untrackedReasonKey(UNTRACKED_REASONS.NOT_SIGNED_IN)).toBe('tracking.notSignedIn');
+    });
+
+    it('maps a callable failure to a reason, or to none when it cannot tell', () => {
+      // Claiming a specific cause we do not have is worse than admitting
+      // ignorance, so anything unrecognised stays null and falls back to
+      // "could not check".
+      expect(proxyFailureReason({ code: 'functions/resource-exhausted' })).toBe(UNTRACKED_REASONS.RATE_LIMITED);
+      expect(proxyFailureReason({ code: 'functions/unauthenticated' })).toBe(UNTRACKED_REASONS.NOT_SIGNED_IN);
+      expect(proxyFailureReason({ code: 'functions/internal' })).toBeNull();
+      expect(proxyFailureReason(new Error('boom'))).toBeNull();
+      expect(proxyFailureReason(null)).toBeNull();
     });
 
     // An unknown reason must not be reported as a fact about the carrier: we
