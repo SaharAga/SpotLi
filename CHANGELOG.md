@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.38.2] - 2026-09-17
+
+### Fixed
+- Enhanced shipment stage and carrier parsing across client and Cloud Functions: added domestic formats for UPS Israel PickUP, Cargo Express, and Orian; fixed store names with leading hyphens in Hebrew number anchors; and expanded stage detection for status updates and courier handovers.
+
+- Inferred `in_transit` status for shipping update notifications (such as "shipping status has been updated" or "new shipping information"), preventing them from defaulting to `ordered`.
+
+- Mapped 7 Israeli couriers (Cheetah, HFD, Exelot, GAASH, GCX, YDM, Focus) to their official 17TRACK catalogue IDs in both Cloud Functions proxy and client live-tracking configurations.
+
+- Add 17TRACK real-time webhook endpoint (`track17Webhook`) with SHA-256 signature verification and quota guard on package enrolment to prevent burning 17TRACK registrations on unsupported couriers.
+
 ## [0.38.1] - 2026-09-16
 
 ### Fixed
