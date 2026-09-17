@@ -36,7 +36,7 @@ const entries = files.map((file) => {
   const raw = readFileSync(join(CHANGES_DIR, file), 'utf8');
   const match = raw.match(/^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/);
   if (!match) throw new Error(`${file}: expected a --- front-matter block. See .changes/README.md`);
-  const type = (match[1].match(/type:\s*(\w+)/) || [])[1];
+  const type = (match[1].match(/(?:type|["']?spotli["']?):\s*(\w+)/) || [])[1];
   if (!RANK[type]) throw new Error(`${file}: type must be major, minor or patch (got ${type ?? 'nothing'})`);
   const body = match[2].trim();
   if (!body) throw new Error(`${file}: the description is empty`);
