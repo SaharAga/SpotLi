@@ -185,7 +185,8 @@ export const UNTRACKED_REASONS = Object.freeze({
  * asked to identify it from the number alone.
  */
 const TRACK17_MAPPED_CARRIERS = Object.freeze(new Set([
-  'israel-post', 'cainiao', 'dhl', 'fedex', 'ups', 'usps',
+  'israel-post', 'chita', 'hfd', 'exelot', 'gaash', 'gcx', 'ydm', 'focus',
+  'cainiao', 'dhl', 'fedex', 'ups', 'usps',
   'royal-mail', '4px', 'yunexpress', 'yanwen', 'aramex'
 ]));
 

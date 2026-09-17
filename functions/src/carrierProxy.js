@@ -47,6 +47,13 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = FETCH_TIMEOUT_MS)
  */
 export const TRACK17_CARRIER_MAP = {
   'israel-post': 9061,
+  'chita': 101496,
+  'hfd': 100327,
+  'exelot': 100032,
+  'gaash': 100145,
+  'gcx': 100173,
+  'ydm': 101357,
+  'focus': 101503,
   'cainiao': 190094,
   'dhl': 100001,
   'fedex': 100003,

@@ -137,8 +137,10 @@ describe('carrierApiProxy Service', () => {
       // detail screen told users DHL had no live tracking.
       expect(isLiveTrackingConfirmed('dhl')).toBe(true);
       expect(isLiveTrackingConfirmed('fedex')).toBe(true);
-      // Neither: still attempted via auto-detect, but nothing is promised.
-      expect(isLiveTrackingConfirmed('chita')).toBe(false);
+      expect(isLiveTrackingConfirmed('chita')).toBe(true);
+      expect(isLiveTrackingConfirmed('hfd')).toBe(true);
+      // Unmapped: still attempted via auto-detect, but nothing is promised.
+      expect(isLiveTrackingConfirmed('tapuz')).toBe(false);
       expect(isLiveTrackingConfirmed('other')).toBe(false);
     });
   });
