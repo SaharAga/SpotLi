@@ -10,7 +10,7 @@ export const STAGES = [
     desc: 'Merchant received order and is preparing the package',
     hebrewDesc: 'ההזמנה התקבלה על ידי המוכר ונארזת למשלוח',
     color: 'slate',
-    badgeClass: 'bg-slate-500/10 text-slate-400 border-slate-500/30'
+    badgeClass: 'bg-slate-500/10 text-slate-400 border-slate-500/20'
   },
   {
     id: 'shipped',
@@ -21,7 +21,7 @@ export const STAGES = [
     desc: 'Package handed over to carrier at origin sorting center',
     hebrewDesc: 'החבילה נמסרה לחברת השילוח במרכז המיון במדינת המוצא',
     color: 'blue',
-    badgeClass: 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+    badgeClass: 'bg-blue-500/10 text-blue-400 border-blue-500/20'
   },
   {
     id: 'in_transit',
@@ -32,7 +32,7 @@ export const STAGES = [
     desc: 'Package is travelling internationally or moving between distribution hubs',
     hebrewDesc: 'החבילה בטיסה בינלאומית או במעבר בין מרכזי הפצה',
     color: 'cyan',
-    badgeClass: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
+    badgeClass: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
   },
   {
     id: 'customs',
@@ -43,7 +43,7 @@ export const STAGES = [
     desc: 'Arrived in destination country and undergoing import inspection',
     hebrewDesc: 'החבילה נחתה בישראל ונמצאת בבדיקת מכס / שחרור מהיר',
     color: 'purple',
-    badgeClass: 'bg-purple-500/10 text-purple-400 border-purple-500/30'
+    badgeClass: 'bg-purple-500/10 text-purple-400 border-purple-500/20'
   },
   {
     id: 'out_for_delivery',
@@ -54,7 +54,7 @@ export const STAGES = [
     desc: 'With local courier or awaiting pickup at local branch/locker',
     hebrewDesc: 'נמסר לשליח או ממתין לאיסוף בנקודת מסירה / לוקר / סניף דואר',
     color: 'amber',
-    badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+    badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/20'
   },
   {
     id: 'delivered',
@@ -65,7 +65,7 @@ export const STAGES = [
     desc: 'Package successfully delivered or collected',
     hebrewDesc: 'החבילה נמסרה בהצלחה לידי הלקוח',
     color: 'emerald',
-    badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+    badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
   }
 ];
 
@@ -94,7 +94,7 @@ export const STATUS_DEFINITIONS = Object.freeze({
     desc: 'Merchant received order and is preparing the package',
     hebrewDesc: 'ההזמנה התקבלה על ידי המוכר ונארזת למשלוח',
     color: 'slate',
-    badgeClass: 'bg-slate-500/10 text-slate-400 border-slate-500/30'
+    badgeClass: 'bg-slate-500/10 text-slate-400 border-slate-500/20'
   },
   shipped: {
     id: 'shipped',
@@ -104,7 +104,7 @@ export const STATUS_DEFINITIONS = Object.freeze({
     desc: 'Package handed over to carrier at origin sorting center',
     hebrewDesc: 'החבילה נמסרה לחברת השילוח במרכז המיון במדינת המוצא',
     color: 'blue',
-    badgeClass: 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+    badgeClass: 'bg-blue-500/10 text-blue-400 border-blue-500/20'
   },
   in_transit: {
     id: 'in_transit',
@@ -114,7 +114,7 @@ export const STATUS_DEFINITIONS = Object.freeze({
     desc: 'Package is travelling internationally or moving between distribution hubs',
     hebrewDesc: 'החבילה בטיסה בינלאומית או במעבר בין מרכזי הפצה',
     color: 'cyan',
-    badgeClass: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
+    badgeClass: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
   },
   customs: {
     id: 'customs',
@@ -124,7 +124,7 @@ export const STATUS_DEFINITIONS = Object.freeze({
     desc: 'Arrived in destination country and undergoing import inspection',
     hebrewDesc: 'החבילה נחתה בישראל ונמצאת בבדיקת מכס / שחרור מהיר',
     color: 'purple',
-    badgeClass: 'bg-purple-500/10 text-purple-400 border-purple-500/30'
+    badgeClass: 'bg-purple-500/10 text-purple-400 border-purple-500/20'
   },
   out_for_delivery: {
     id: 'out_for_delivery',
@@ -134,7 +134,7 @@ export const STATUS_DEFINITIONS = Object.freeze({
     desc: 'With local courier or awaiting pickup at local branch/locker',
     hebrewDesc: 'נמסר לשליח או ממתין לאיסוף בנקודת מסירה / לוקר / סניף דואר',
     color: 'amber',
-    badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+    badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/20'
   },
   /*
    * Not a member of STAGES. STAGES is the linear stepper every package walks,
@@ -157,7 +157,7 @@ export const STATUS_DEFINITIONS = Object.freeze({
     desc: 'Waiting at a locker, branch or pickup point to be collected',
     hebrewDesc: 'ממתין לאיסוף בלוקר, בנקודת חלוקה או בסניף',
     color: 'teal',
-    badgeClass: 'bg-teal-500/10 text-teal-400 border-teal-500/30'
+    badgeClass: 'bg-teal-500/10 text-teal-400 border-teal-500/20'
   },
   delivered: {
     id: 'delivered',
@@ -167,7 +167,7 @@ export const STATUS_DEFINITIONS = Object.freeze({
     desc: 'Package successfully delivered or collected',
     hebrewDesc: 'החבילה נמסרה בהצלחה לידי הלקוח',
     color: 'emerald',
-    badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+    badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
   },
   exception: {
     id: 'exception',
@@ -177,7 +177,7 @@ export const STATUS_DEFINITIONS = Object.freeze({
     desc: 'Delivery issue, address problem, or delivery exception reported',
     hebrewDesc: 'בעיה או עיכוב במסירת המשלוח על ידי חברת השילוח',
     color: 'rose',
-    badgeClass: 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+    badgeClass: 'bg-rose-500/10 text-rose-400 border-rose-500/20'
   },
   returned_to_sender: {
     id: 'returned_to_sender',
@@ -187,7 +187,7 @@ export const STATUS_DEFINITIONS = Object.freeze({
     desc: 'Package was returned or is being returned to the sender',
     hebrewDesc: 'החבילה הוחזרה לשולח או שלא נאספה בזמן מהנקודה',
     color: 'orange',
-    badgeClass: 'bg-orange-500/10 text-orange-400 border-orange-500/30'
+    badgeClass: 'bg-orange-500/10 text-orange-400 border-orange-500/20'
   },
   archived: {
     id: 'archived',

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  X, Sparkles, CheckCircle2, ArrowRight,
+  X, Sparkles, CheckCircle2, ArrowRight, ClipboardCheck,
   AlertCircle, ImagePlus, Trash2, Loader2, ShieldAlert, Flag
 } from 'lucide-react';
 import { parseSmartText, alternateTrackingNumbers } from '../utils/smartParser';
@@ -476,10 +476,10 @@ export function SmartImportModal({
           )}
 
           {/* Quick Paste Button */}
-          <div className="flex items-center justify-between p-3.5 bg-blue-950/40 border border-blue-500/30 rounded-2xl">
+          <div className="flex items-center justify-between p-3.5 bg-slate-900 border border-slate-800 rounded-2xl">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400">
-                <Sparkles className="w-4 h-4" />
+                <ClipboardCheck className="w-4 h-4" />
               </div>
               <span className="text-xs font-semibold text-slate-200">
                 {language === 'he' ? 'העתקת הודעה מהודעות או מהאימייל?' : 'Copied a tracking code or SMS?'}
@@ -488,9 +488,9 @@ export function SmartImportModal({
             <button
               type="button"
               onClick={handleClipboardPaste}
-              className="px-3.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-ui shadow-md shadow-blue-500/20 cursor-pointer min-h-[48px] flex items-center justify-center"
+              className="px-3.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition-colors shadow-sm cursor-pointer min-h-[48px] flex items-center justify-center"
             >
-              {language === 'he' ? 'הדבק מלוח ההעתקה 📋' : 'Paste from Clipboard 📋'}
+              {language === 'he' ? 'הדבק מהלוח' : 'Paste from Clipboard'}
             </button>
           </div>
 
@@ -538,12 +538,12 @@ export function SmartImportModal({
                 <button
                   type="submit"
                   disabled={isAiParsing}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold transition-ui shadow-md shadow-blue-500/20 cursor-pointer min-h-[48px] disabled:opacity-50"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-colors shadow-sm cursor-pointer min-h-[48px] disabled:opacity-50"
                 >
-                  {isAiParsing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                  {isAiParsing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4 rtl:rotate-180" />}
                   <span>
                     {isAiParsing
-                      ? (language === 'he' ? 'מנתח עם AI...' : 'Trying AI parsing...')
+                      ? (language === 'he' ? 'מזהה פרטים...' : 'Extracting details...')
                       : (language === 'he' ? 'חלץ פרטי משלוח' : 'Extract Shipping Details')}
                   </span>
                 </button>
@@ -635,18 +635,18 @@ export function SmartImportModal({
                     )}
                   </div>
                   {matchedExistingPackage && (
-                    <p className="text-xs text-blue-200/80 bg-blue-500/10 p-2 rounded-lg border border-blue-500/20">
-                      ℹ️ {t('modal.existingMatchFound')}
+                    <p className="text-xs text-blue-200/90 bg-blue-500/10 p-2 rounded-lg border border-blue-500/20">
+                      {t('modal.existingMatchFound')}
                     </p>
                   )}
 
                   {showLowConfidenceHint && (
-                    <div className="flex items-start gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30">
+                    <div className="flex items-start gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
                       <ShieldAlert className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
                       <p className="text-xs text-amber-200/90 leading-relaxed">
                         {language === 'he'
-                          ? 'AI לא בטוח לגמרי בתוצאה הזו — כדאי לבדוק את הפרטים לפני השמירה.'
-                          : 'AI wasn’t fully confident here — worth double-checking the details before saving.'}
+                          ? 'המערכת לא הייתה בטוחה לגמרי בתוצאה — כדאי לבדוק את הפרטים לפני השמירה.'
+                          : 'The system wasn’t fully confident here — worth double-checking the details before saving.'}
                       </p>
                     </div>
                   )}

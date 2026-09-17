@@ -162,18 +162,17 @@ export function AboutModal({
       className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8 max-h-[90vh] flex flex-col"
     >
         {/* Header */}
-        <div className="p-5 sm:p-6 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-purple-600/10 shrink-0">
-          <div className="flex flex-1 min-w-0 items-center gap-3">
-            <div className="relative group shrink-0">
-              <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 opacity-80 blur-sm group-hover:opacity-100 transition duration-500" />
-              <div className="relative w-11 h-11 rounded-2xl bg-slate-950 border border-slate-700/80 flex items-center justify-center overflow-hidden shadow-md">
+        <div className="p-5 sm:p-6 border-b border-slate-800 flex flex-col shrink-0 bg-slate-900">
+          <div className="w-10 h-1 bg-slate-700/80 rounded-full mx-auto -mt-2 mb-3 shrink-0 lg:hidden" aria-hidden="true" />
+          <div className="flex items-center justify-between">
+            <div className="flex flex-1 min-w-0 items-center gap-3">
+              <div className="relative w-11 h-11 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center overflow-hidden shadow-sm shrink-0">
                 <img
                   src="/icons/app-icon.png"
                   alt="SpotLi"
                   className="w-full h-full object-cover"
                 />
               </div>
-            </div>
             <div>
               <div className="flex items-center gap-2">
                 <h2 id="about-modal-title" className="text-base sm:text-lg font-black tracking-tight text-slate-100">
@@ -198,6 +197,7 @@ export function AboutModal({
             <ArrowLeft className="w-5 h-5 rtl:rotate-180" aria-hidden="true" />
           </button>
         </div>
+      </div>
 
         {/* Scrollable Content */}
         <div className="flex-1 p-5 sm:p-6 overflow-y-auto space-y-6 text-xs text-slate-300 pb-8">

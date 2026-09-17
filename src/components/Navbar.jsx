@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Plus, Sparkles, Menu, X, LogIn,
-  ClipboardCheck, Edit3, ShieldCheck
+  ClipboardCheck, Edit3, ShieldCheck, ArrowRight
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -62,6 +62,17 @@ export function Navbar({
   const handleQuickClipboardPaste = async () => {
     setIsAddActionSheetOpen(false);
     onOpenSmartImport();
+  };
+
+  const sheetTouchStartY = useRef(0);
+  const handleSheetTouchStart = (e) => {
+    sheetTouchStartY.current = e.touches[0].clientY;
+  };
+  const handleSheetTouchEnd = (e) => {
+    const deltaY = e.changedTouches[0].clientY - sheetTouchStartY.current;
+    if (deltaY > 50) {
+      setIsAddActionSheetOpen(false);
+    }
   };
 
   return (
@@ -233,11 +244,18 @@ export function Navbar({
       {isAddActionSheetOpen && (
         <div className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-950/80 backdrop-blur-md animate-fade-in" role="dialog" aria-modal="true">
           <div className="fixed inset-0" onClick={() => setIsAddActionSheetOpen(false)} />
-          <div className="relative w-full max-w-lg max-h-[85dvh] overflow-y-auto bg-slate-900 border-t sm:border border-slate-800 rounded-t-3xl sm:rounded-3xl p-4 sm:p-6 pb-[max(1rem,env(safe-area-inset-bottom,0px))] shadow-2xl space-y-4 z-10 animate-slide-up">
+          <div
+            onTouchStart={handleSheetTouchStart}
+            onTouchEnd={handleSheetTouchEnd}
+            className="relative w-full max-w-lg max-h-[85dvh] overflow-y-auto bg-slate-900 border-t sm:border border-slate-800 rounded-t-3xl sm:rounded-3xl p-4 sm:p-6 pb-[max(1rem,env(safe-area-inset-bottom,0px))] shadow-2xl space-y-4 z-10 animate-slide-up"
+          >
+            {/* Native drag handle indicator */}
+            <div className="w-10 h-1 bg-slate-700/80 rounded-full mx-auto -mt-1 mb-2 sm:hidden" aria-hidden="true" />
+
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
                 <Plus className="w-5 h-5 text-blue-400" />
-                <span>{language === 'he' ? 'הוספת חבילה חדשה' : 'Add New Shipment'}</span>
+                <span>{language === 'he' ? 'הוספת חבילה' : 'Add Package'}</span>
               </h3>
               <button
                 onClick={() => setIsAddActionSheetOpen(false)}
@@ -249,25 +267,25 @@ export function Navbar({
             </div>
 
             <div className="grid grid-cols-1 gap-2.5">
-              {/* Option 1: 1-Click Clipboard Auto-Paste */}
+              {/* Option 1: Clipboard Auto-Paste */}
               <button
                 onClick={handleQuickClipboardPaste}
-                className="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-blue-600/20 to-indigo-600/20 border border-blue-500/40 hover:border-blue-500 transition-ui text-start cursor-pointer min-h-[48px]"
+                className="flex items-center justify-between p-4 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/70 hover:border-slate-600 transition-ui text-start cursor-pointer min-h-[48px]"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-blue-600 text-white shadow-md">
+                  <div className="p-2.5 rounded-xl bg-blue-600 text-white shadow-sm">
                     <ClipboardCheck className="w-5 h-5" />
                   </div>
                   <div>
                     <span className="text-sm font-bold text-slate-100 block">
-                      {language === 'he' ? 'הדבקה חכמה מלוח ההעתקה' : 'Smart Clipboard Auto-Paste'}
+                      {language === 'he' ? 'הדבקה מלוח ההעתקה' : 'Paste from Clipboard'}
                     </span>
-                    <span className="text-xs text-blue-300">
-                      {language === 'he' ? 'זיהוי אוטומטי מ-SMS, אימייל או מספר מעקב' : 'Auto-detect carrier and code from SMS or email'}
+                    <span className="text-xs text-slate-400">
+                      {language === 'he' ? 'זיהוי מספר מעקב וספק מהודעה' : 'Detect tracking number and carrier from text'}
                     </span>
                   </div>
                 </div>
-                <Sparkles className="w-4 h-4 text-blue-400 shrink-0" />
+                <ArrowRight className="w-4 h-4 text-slate-400 rtl:rotate-180 shrink-0" />
               </button>
 
               {/* Option 2: Manual Form Entry */}

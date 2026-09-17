@@ -353,6 +353,11 @@
                 opacity 90ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
+
   body {
     overflow-x: hidden;
     overflow-y: auto;
@@ -439,6 +444,7 @@
          panel owns the viewport now; scrolling belongs to its inner
          content region. */
       overflow: hidden !important;
+      overscroll-behavior: contain !important;
     }
 
     [data-modal-panel] {
@@ -452,6 +458,7 @@
       border-block: 0 !important;
       display: flex;
       flex-direction: column;
+      overscroll-behavior-y: contain !important;
       padding-top: env(safe-area-inset-top, 0px);
       /* Default: the panel owns the whole viewport and reserves nothing but
          the home indicator. Room for the tab bar is added back below, and
@@ -498,6 +505,10 @@
     [data-modal-panel] > form > .overflow-y-auto {
       max-height: none !important;
     }
+  }
+
+  .overflow-y-auto {
+    overscroll-behavior-y: contain;
   }
 
   .min-h-touch {

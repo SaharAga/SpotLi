@@ -377,7 +377,7 @@ function PackageCardImpl({
                 {language === 'he' ? carrier.hebrewName : carrier.name}
               </span>
               {pkg.pickupCode && (
-                <div className="ms-1 inline-flex items-center rounded-lg bg-emerald-500/15 dark:bg-emerald-500/20 border border-emerald-500/30 dark:border-emerald-500/40 font-mono text-xs font-bold overflow-hidden shrink-0 shadow-sm min-h-[44px]">
+                <div className="ms-1 inline-flex items-center rounded-xl bg-emerald-500/10 border border-emerald-500/25 font-mono text-xs font-semibold overflow-hidden shrink-0 min-h-[44px]">
                   {onOpenLockerMode ? (
                     <button
                       type="button"
@@ -387,13 +387,13 @@ function PackageCardImpl({
                       }}
                       title={language === 'he' ? 'פתח מצב לוקר מוגדל' : 'Open Full-Screen Locker Mode'}
                       aria-label={language === 'he' ? `פתח מצב לוקר — PIN ${pkg.pickupCode}` : `Open Locker Mode — PIN ${pkg.pickupCode}`}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 hover:bg-emerald-500/25 dark:hover:bg-emerald-500/30 text-emerald-800 dark:text-emerald-200 transition-colors cursor-pointer min-h-[44px]"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 hover:bg-emerald-500/15 text-emerald-300 transition-colors cursor-pointer min-h-[44px]"
                     >
-                      <Sun className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 shrink-0" aria-hidden="true" />
+                      <Sun className="w-3.5 h-3.5 text-amber-400 shrink-0" aria-hidden="true" />
                       <span>PIN {pkg.pickupCode}</span>
                     </button>
                   ) : (
-                    <span className="px-3 py-1.5 text-emerald-800 dark:text-emerald-200 min-h-[44px] flex items-center">
+                    <span className="px-3 py-1.5 text-emerald-300 min-h-[44px] flex items-center">
                       PIN {pkg.pickupCode}
                     </span>
                   )}
@@ -401,10 +401,10 @@ function PackageCardImpl({
                     type="button"
                     onClick={handleCopyPin}
                     title={language === 'he' ? 'העתק קוד איסוף' : 'Copy pickup PIN'}
-                    className="px-2.5 py-1.5 hover:bg-emerald-500/25 dark:hover:bg-emerald-500/30 border-s border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:text-emerald-900 dark:hover:text-emerald-100 transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+                    className="px-2.5 py-1.5 hover:bg-emerald-500/15 border-s border-emerald-500/25 text-emerald-400 hover:text-emerald-200 transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
                     aria-label={language === 'he' ? 'העתק קוד איסוף' : 'Copy pickup PIN'}
                   >
-                    {copiedPin ? <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />}
+                    {copiedPin ? <Check className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />}
                   </button>
                 </div>
               )}
@@ -468,19 +468,19 @@ function PackageCardImpl({
 
         {/* Pickup Location & Same-Location Bundling Tag with 1-Tap Navigation */}
         {pkg.pickupLocation && (
-          <div className="flex items-center justify-between gap-2 p-1 rounded-2xl bg-slate-950/70 border border-slate-800 text-slate-300 shadow-sm">
+          <div className="flex items-center justify-between gap-1.5 p-1 rounded-xl bg-slate-950/60 border border-slate-800/80 text-slate-300">
             <button
               type="button"
               onClick={handleOpenNavigation}
               title={language === 'he' ? 'פתח ניווט לנקודת האיסוף (Waze / Maps)' : 'Open navigation (Waze / Maps)'}
               aria-label={language === 'he' ? `נווט אל ${pkg.pickupLocation}` : `Navigate to ${pkg.pickupLocation}`}
-              className="flex-1 min-w-0 flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl hover:bg-slate-900/90 hover:text-emerald-300 transition-colors cursor-pointer min-h-[48px] text-start group/nav"
+              className="flex-1 min-w-0 flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-900/90 hover:text-emerald-300 transition-colors cursor-pointer min-h-[48px] text-start group/nav"
             >
               <div className="flex items-center gap-2 min-w-0">
                 <MapPin className="w-4 h-4 text-emerald-400 shrink-0 group-hover/nav:scale-110 transition-transform" aria-hidden="true" />
                 <span className="truncate text-xs font-medium">{pkg.pickupLocation}</span>
               </div>
-              <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 group-hover/nav:bg-emerald-500/25 transition-colors flex items-center gap-1 text-[11px] font-bold shrink-0">
+              <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 group-hover/nav:bg-emerald-500/20 transition-colors flex items-center gap-1 text-[11px] font-semibold shrink-0">
                 <Navigation className="w-3.5 h-3.5 rtl:rotate-180" aria-hidden="true" />
                 <span className="hidden sm:inline">{language === 'he' ? 'נווט' : 'Navigate'}</span>
               </span>
@@ -494,7 +494,7 @@ function PackageCardImpl({
                   triggerHapticFeedback('selection');
                   if (onOpenLockerMode) onOpenLockerMode(pkg);
                 }}
-                className="px-3 py-2 rounded-xl bg-indigo-500/25 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/40 text-xs font-bold transition-all cursor-pointer min-h-[48px] flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 shadow-sm shrink-0"
+                className="px-3 py-2 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 text-xs font-semibold transition-colors cursor-pointer min-h-[48px] flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 shrink-0"
                 aria-label={
                   language === 'he'
                     ? `עוד ${sameLocationSiblings.length} חבילות באותה נקודה. פתח מסך איסוף מרוכז.`
