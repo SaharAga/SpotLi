@@ -79,6 +79,8 @@ describe('inferDeliveryStatus', () => {
   it('infers in_transit correctly', () => {
     expect(inferDeliveryStatus('Your package has shipped and is on its way', '')).toBe('in_transit');
     expect(inferDeliveryStatus('ההזמנה שלך בדרך', '')).toBe('in_transit');
+    expect(inferDeliveryStatus('Your shipping status has been updated', 'The following items have been updated with new shipping information.')).toBe('in_transit');
+    expect(inferDeliveryStatus('עדכון סטטוס משלוח', 'פרטי המשלוח עודכנו')).toBe('in_transit');
   });
 });
 

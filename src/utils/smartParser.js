@@ -1477,7 +1477,11 @@ export function parseSmartText(rawText) {
     status = 'out_for_delivery';
   } else if (/\b(delivery issue|delivery failed|customs clearance)\b/i.test(lowerText) || /(?:עיכוב במכס|בעיה במסירה|מסירה נכשלה|ניסינו למסור|ניסיון מסירה|לא היית בבית|לא היית בכתובת|לא נמצאת בכתובת|לא נמצאתם בכתובת)/i.test(lowerText)) {
     status = 'exception';
-  } else if (bestTracking || /\b(shipped|in transit|dispatched|on its way)\b/i.test(lowerText) || /(?:נשלחה|נשלח|בדרך)/i.test(lowerText)) {
+  } else if (
+    bestTracking ||
+    /\b(shipped|in transit|dispatched|on its way|shipping status(?: has been)? updated|shipping update|new shipping information)\b/i.test(lowerText) ||
+    /(?:נשלחה|נשלח|בדרך|עודכן סטטוס המשלוח|עדכון סטטוס משלוח|פרטי המשלוח עודכנו)/i.test(lowerText)
+  ) {
     status = status === 'ordered' ? 'in_transit' : status;
   }
 

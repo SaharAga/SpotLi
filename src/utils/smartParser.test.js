@@ -445,4 +445,16 @@ describe('alternateTrackingNumbers', () => {
     expect(alternateTrackingNumbers(null)).toEqual([]);
     expect(alternateTrackingNumbers({ trackingNumber: 'AA1' })).toEqual([]);
   });
+
+  it('infers in_transit status for shipping update notifications', () => {
+    const text = `SEESTARZ ORDER 470543
+Your shipping status has been updated
+The following items have been updated with new shipping information.
+Tapuz Shipping tracking number: 48142143
+Items in this shipment: Relocation Leopard Bag`;
+    const parsed = parseSmartText(text);
+    expect(parsed.status).toBe('in_transit');
+    expect(parsed.trackingNumber).toBe('48142143');
+    expect(parsed.carrier).toBe('tapuz');
+  });
 });

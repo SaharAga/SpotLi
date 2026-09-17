@@ -20,6 +20,7 @@ import { createUpdatePackagePushHandler } from './updatePackagePush.js';
 import { createCarrierTrackingHandler } from './carrierProxy.js';
 import { createScheduledTrackingRefreshHandler } from './scheduledTrackingRefresh.js';
 import { createRegisterTrackingNumberHandler } from './registerTrackingNumber.js';
+import { createTrack17WebhookHandler } from './track17Webhook.js';
 import { TRACKING_REFRESH_LIMITS } from './config.js';
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
@@ -311,6 +312,26 @@ export const registerTrackingNumber = onDocumentCreated(
       db: getFirestore(),
       track17ApiKey: track17ApiKey.value() || process.env.TRACK17_API_KEY || ''
     })(event)
+);
+
+/**
+ * 17TRACK Real-Time Webhook Endpoint.
+ *
+ * Receives instant push notifications from 17TRACK when courier status changes.
+ * Validates sha256 signature against TRACK17_API_KEY before updating package state.
+ */
+export const track17Webhook = onRequest(
+  {
+    cors: false,
+    secrets: [track17ApiKey],
+    timeoutSeconds: 30,
+    memory: '256MiB'
+  },
+  (req, res) =>
+    createTrack17WebhookHandler({
+      db: getFirestore(),
+      track17ApiKey: track17ApiKey.value() || process.env.TRACK17_API_KEY || ''
+    })(req, res)
 );
 
 export const notifyOnNewPackage = onDocumentCreated(

@@ -42,7 +42,15 @@ export function isRegisterablePackage(pkg) {
   // either way not something to spend an enrolment on.
   if (number.length < 6 || number.length > 40) return false;
   // A real tracking number carries at least one digit.
-  return /\d/.test(number);
+  if (!/\d/.test(number)) return false;
+
+  // QUOTA GUARD: 17TRACK free tier provides 200 registered packages lifetime.
+  // Domestic couriers without 17TRACK integration (Tapuz, Buzzr, Baldar,
+  // Cargo Express, ZigZag) will never succeed in 17TRACK and must not burn quota attempts.
+  const isCarrierSupported = Boolean(pkg.carrier && TRACK17_CARRIER_MAP[pkg.carrier]);
+  const isGlobalFormat = /^[A-Z]{2}\d{9}[A-Z]{2}$/i.test(number) || /^1Z[A-Z0-9]{16}$/i.test(number);
+
+  return isCarrierSupported || isGlobalFormat;
 }
 
 /**
