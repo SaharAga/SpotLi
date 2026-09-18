@@ -72,7 +72,11 @@ export function FilterBar({
     { id: 'delivered', label: t('chips.done'), count: tabCounts.delivered ?? 0 }
   ];
 
-  const isFiltered = activeTab !== 'all' || selectedCarrier !== 'all' || sortBy !== 'newest';
+  // Only light up the drawer badge when non-default secondary filters are set
+  // (carrier, sort order, or the hidden archived status tab). Primary status
+  // tabs (all, transit, customs, delivered) are prominent on the main surface
+  // and do not represent a "hidden drawer filter".
+  const isFiltered = activeTab === ARCHIVED_TAB || selectedCarrier !== 'all' || sortBy !== 'newest';
 
   // Just a search bar with everything else — status, carrier, sort — tucked
   // behind one "Filters" button beside it, opening a small panel rather

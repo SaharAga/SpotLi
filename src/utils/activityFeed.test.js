@@ -32,13 +32,21 @@ describe('buildActivityFeed', () => {
     expect(feed.map((e) => e.title)).toEqual(['Newer', 'Older']);
   });
 
-  it('excludes archived packages', () => {
+  it('excludes archived packages by default', () => {
     const feed = buildActivityFeed([
       pkg('a', 'Live', [{ id: '1', title: 'Moving', timestamp: '2026-09-03T10:00:00Z' }]),
       pkg('b', 'Done', [{ id: '2', title: 'Delivered', timestamp: '2026-09-04T10:00:00Z' }], { isArchived: true })
     ]);
     expect(feed).toHaveLength(1);
     expect(feed[0].title).toBe('Moving');
+  });
+
+  it('includes archived packages when includeArchived is true', () => {
+    const feed = buildActivityFeed([
+      pkg('a', 'Live', [{ id: '1', title: 'Moving', timestamp: '2026-09-03T10:00:00Z' }]),
+      pkg('b', 'Done', [{ id: '2', title: 'Delivered', timestamp: '2026-09-04T10:00:00Z' }], { isArchived: true })
+    ], { includeArchived: true });
+    expect(feed).toHaveLength(2);
   });
 
   it('drops checkpoints with an unusable timestamp rather than guessing a position', () => {

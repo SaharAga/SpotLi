@@ -13,13 +13,13 @@ import { toLocalISODate } from './dateUtils';
  */
 
 /** Newest first, and never trust the stored order — carriers append out of order. */
-export function buildActivityFeed(packages, { limit = 200 } = {}) {
+export function buildActivityFeed(packages, { limit = 200, includeArchived = false } = {}) {
   if (!Array.isArray(packages)) return [];
 
   const events = [];
 
   for (const pkg of packages) {
-    if (!pkg || pkg.isArchived) continue;
+    if (!pkg || (!includeArchived && pkg.isArchived)) continue;
     const checkpoints = Array.isArray(pkg.checkpoints) ? pkg.checkpoints : [];
 
     for (const cp of checkpoints) {

@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
-import { Package, MapPin, Clock, Inbox, CheckCircle2, Truck, AlertCircle } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Package, MapPin, Clock, Inbox, CheckCircle2, Truck, AlertCircle, Archive } from 'lucide-react';
 import { Modal } from './Modal';
 import { useLanguage } from '../context/LanguageContext';
 import { getCarrier } from '../types/carriers';
 import { buildActivityFeed, groupActivityByDay, dayLabel } from '../utils/activityFeed';
+import { triggerHapticFeedback } from '../utils/haptics';
 import { Title, Button } from './ui/Primitives';
 
 /**
@@ -72,9 +73,30 @@ export function ActivityModal({ isOpen, onClose, packages = [], onOpenPackage })
   const { language, isRTL } = useLanguage();
   const he = language === 'he';
 
+  const [includeArchived, setIncludeArchived] = useState(() => {
+    try {
+      return localStorage.getItem('deliveree_activity_include_archived') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleIncludeArchived = () => {
+    triggerHapticFeedback('selection');
+    setIncludeArchived((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('deliveree_activity_include_archived', String(next));
+      } catch {
+        // Ignore
+      }
+      return next;
+    });
+  };
+
   const days = useMemo(
-    () => groupActivityByDay(buildActivityFeed(packages)),
-    [packages]
+    () => groupActivityByDay(buildActivityFeed(packages, { includeArchived })),
+    [packages, includeArchived]
   );
 
   const total = useMemo(
@@ -107,10 +129,28 @@ export function ActivityModal({ isOpen, onClose, packages = [], onOpenPackage })
               : (he ? 'מה שהשתנה במשלוחים שלך' : 'What moved on your packages')}
           </p>
         </div>
-        <div className="hidden lg:block shrink-0">
-          <Button onClick={onClose}>
-            {he ? 'סגור' : 'Close'}
-          </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={includeArchived}
+            onClick={handleToggleIncludeArchived}
+            aria-label={he ? 'הצג חבילות בארכיון' : 'Include archived packages'}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer min-h-[48px] focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none ${
+              includeArchived
+                ? 'bg-blue-600/20 border-blue-500/50 text-blue-300 shadow-sm shadow-blue-500/10'
+                : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+            title={he ? 'הצג גם חבילות מהארכיון' : 'Include archived packages'}
+          >
+            <Archive className="w-3.5 h-3.5" aria-hidden="true" />
+            <span>{he ? 'ארכיון' : 'Archived'}</span>
+          </button>
+          <div className="hidden lg:block shrink-0">
+            <Button onClick={onClose}>
+              {he ? 'סגור' : 'Close'}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -128,6 +168,16 @@ export function ActivityModal({ isOpen, onClose, packages = [], onOpenPackage })
                 ? 'ברגע שחברות השילוח יעדכנו על המשלוחים שלך, כל מה שזז יופיע כאן.'
                 : 'As carriers report on your packages, everything that moves shows up here.'}
             </p>
+            {!includeArchived && Array.isArray(packages) && packages.some((p) => p && p.isArchived) && (
+              <button
+                type="button"
+                onClick={handleToggleIncludeArchived}
+                className="mt-2 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors cursor-pointer min-h-[48px]"
+              >
+                <Archive className="w-4 h-4" aria-hidden="true" />
+                <span>{he ? 'הצג עדכונים מחבילות בארכיון' : 'Show updates from archived packages'}</span>
+              </button>
+            )}
           </div>
         ) : (
           <div className="flex flex-col gap-6">
