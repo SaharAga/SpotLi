@@ -57,6 +57,7 @@ function PackageCardImpl({
   const daysInfo = getDaysRemaining(pkg.expectedDeliveryDate, language);
   const pickupCountdown = getPickupCountdown(pkg.pickupDeadline);
   const returnCountdown = getReturnCountdown(pkg.returnDeadline);
+  const isPickupReady = pkg.status === 'ready_for_pickup' || Boolean(pkg.pickupCode);
   const sameLocationSiblings = React.useMemo(() => {
     return findSameLocationPackages(pkg, packages);
   }, [pkg, packages]);
@@ -321,9 +322,12 @@ function PackageCardImpl({
         onTouchEnd={handleTouchEnd}
         style={{
           transform: swipeOffset ? `translateX(${swipeOffset}px)` : 'none',
-          transition: isSwiping ? 'none' : 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)'
+          transition: isSwiping ? 'none' : 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
+          ...(isPickupReady ? { boxShadow: '0 0 14px rgba(16, 185, 129, 0.2)' } : {})
         }}
-        className={`group relative bg-slate-900/90 hover:bg-slate-900 border rounded-2xl p-4 transition-all duration-200 cursor-pointer flex flex-col gap-3 shadow-sm hover:shadow-xl hover:shadow-slate-950/40 hover:-translate-y-0.5 ${
+        className={`group relative bg-slate-900/90 hover:bg-slate-900 border rounded-2xl p-4 transition-all duration-200 cursor-pointer flex flex-col gap-3 shadow-sm hover:shadow-xl hover:shadow-slate-950/40 hover:-translate-y-0.5 active:scale-[0.985] active:brightness-95 transition-transform duration-150 ease-out ${
+          isPickupReady ? 'shadow-emerald-500/10 border-emerald-500/30' : ''
+        } ${
           pkg.isPinned ? 'border-blue-500/50 ring-1 ring-blue-500/20' : 'border-slate-800/80 hover:border-slate-700'
         }`}
       >
@@ -367,12 +371,19 @@ function PackageCardImpl({
                   </span>
                 )}
                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border ${stage.badgeClass}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                    stage.color === 'emerald' ? 'bg-emerald-400' :
-                    stage.color === 'amber' ? 'bg-amber-400' :
-                    stage.color === 'rose' ? 'bg-rose-400' :
-                    stage.color === 'orange' ? 'bg-orange-400' : 'bg-blue-400'
-                  }`} aria-hidden="true" />
+                  <span className="relative flex items-center justify-center w-2 h-2 shrink-0" aria-hidden="true">
+                    {(pkg.status === 'in_transit' || pkg.status === 'out_for_delivery') && (
+                      <span className={`absolute inline-flex h-full w-full rounded-full animate-ping opacity-75 ${
+                        stage.color === 'amber' ? 'bg-amber-400' : 'bg-blue-400'
+                      }`} />
+                    )}
+                    <span className={`relative w-1.5 h-1.5 rounded-full shrink-0 ${
+                      stage.color === 'emerald' ? 'bg-emerald-400' :
+                      stage.color === 'amber' ? 'bg-amber-400' :
+                      stage.color === 'rose' ? 'bg-rose-400' :
+                      stage.color === 'orange' ? 'bg-orange-400' : 'bg-blue-400'
+                    }`} />
+                  </span>
                   <span>{language === 'he' ? stage.hebrewLabel : stage.label}</span>
                 </span>
               </div>
@@ -451,10 +462,14 @@ function PackageCardImpl({
                       type="button"
                       onClick={handleCopyPin}
                       title={language === 'he' ? 'העתק קוד איסוף' : 'Copy pickup PIN'}
-                      className="px-2.5 py-1.5 hover:bg-emerald-500/20 border-s border-emerald-500/30 text-emerald-300 hover:text-white transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      className="px-2.5 py-1.5 hover:bg-emerald-500/20 border-s border-emerald-500/30 text-emerald-300 hover:text-white transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center active:scale-95"
                       aria-label={language === 'he' ? 'העתק קוד איסוף' : 'Copy pickup PIN'}
                     >
-                      {copiedPin ? <Check className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />}
+                      {copiedPin ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-400 scale-110 transition-transform duration-200" aria-hidden="true" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5 transition-transform duration-200" aria-hidden="true" />
+                      )}
                     </button>
                   </div>
                 )}
@@ -532,7 +547,7 @@ function PackageCardImpl({
         {/* In-Card Journey Stepper Bar: for packages in standard progression */}
         {pkg.status !== 'archived' && pkg.status !== 'exception' && pkg.status !== 'returned_to_sender' && !pkg.pickupLocation && (
           <div className="w-full py-1" aria-hidden="true">
-            <div className="h-1.5 w-full bg-slate-800/80 rounded-full overflow-hidden flex">
+            <div className="h-1.5 w-full bg-slate-800/80 rounded-full overflow-hidden flex relative">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
                   pkg.status === 'delivered'
@@ -546,9 +561,22 @@ function PackageCardImpl({
                     pkg.status === 'delivered' ? '100%' :
                     (pkg.status === 'ready_for_pickup' || pkg.status === 'out_for_delivery') ? '85%' :
                     (pkg.status === 'customs' || pkg.status === 'in_transit') ? '60%' :
-                    pkg.status === 'shipped' ? '35%' : '15%'
+                    pkg.status === 'shipped' ? '35%' : '15%',
+                  transition: 'all 500ms cubic-bezier(0.16, 1, 0.3, 1)'
                 }}
               />
+              {pkg.status !== 'delivered' && (
+                <div
+                  className="absolute top-0 bottom-0 w-2 rounded-full bg-white/60 animate-pulse"
+                  style={{
+                    insetInlineStart: `calc(${
+                      (pkg.status === 'ready_for_pickup' || pkg.status === 'out_for_delivery') ? '85%' :
+                      (pkg.status === 'customs' || pkg.status === 'in_transit') ? '60%' :
+                      pkg.status === 'shipped' ? '35%' : '15%'
+                    } - 6px)`
+                  }}
+                />
+              )}
             </div>
           </div>
         )}
@@ -617,7 +645,7 @@ function PackageCardImpl({
               onClick={handleMarkDelivered}
               aria-label={pkg.status === 'delivered' ? t('card.markActive') : t('card.markDelivered')}
               title={pkg.status === 'delivered' ? t('card.markActive') : t('card.markDelivered')}
-              className={`p-2 rounded-xl transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer ${
+              className={`p-2 rounded-xl transition-all duration-150 active:scale-90 active:rotate-[-6deg] min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer ${
                 pkg.status === 'delivered' ? 'text-emerald-400 bg-emerald-500/15 border border-emerald-500/25' : 'text-slate-400 hover:text-emerald-400 hover:bg-slate-800'
               }`}
             >
