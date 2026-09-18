@@ -15,6 +15,7 @@ const MODAL_IDS = { ANALYTICS: 'analytics', ACTIVITY: 'activity', ACCOUNT: 'acco
 export function Navbar({
   isDemoMode,
   activeModal,
+  activeTab,
   onGoToTab,
   onOpenAddModal,
   onOpenSmartImport,
@@ -341,7 +342,7 @@ export function Navbar({
           or when the add action sheet is open, giving the sub-modal full-screen height. */}
       {(!activeModal || activeModal === MODAL_IDS.ANALYTICS || activeModal === MODAL_IDS.ACTIVITY || activeModal === MODAL_IDS.ACCOUNT) && !isAddActionSheetOpen && (
         <BottomNav
-          activeTab={TAB_FOR_MODAL[activeModal] || 'status'}
+          activeTab={activeTab || TAB_FOR_MODAL[activeModal] || 'status'}
           onOpenStatus={switchTab(null)}
           onOpenInsights={switchTab(MODAL_IDS.ANALYTICS)}
           onOpenAdd={() => setIsAddActionSheetOpen(true)}
