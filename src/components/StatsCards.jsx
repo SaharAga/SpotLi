@@ -50,7 +50,7 @@ function StatsCardsImpl({ packages = [], activeFilter, onSelectFilter }) {
   ];
 
   return (
-    <div className="flex items-start gap-2.5 sm:gap-6 my-5 sm:my-6">
+    <div className="grid grid-cols-4 gap-2 sm:gap-4 my-5 sm:my-6">
       {cells.map((cell) => {
         const isActive = activeFilter === cell.id;
         return (
@@ -58,12 +58,14 @@ function StatsCardsImpl({ packages = [], activeFilter, onSelectFilter }) {
             key={cell.id}
             onClick={() => onSelectFilter(cell.id)}
             aria-current={isActive ? 'true' : undefined}
-            className={`flex-1 min-w-0 flex flex-col items-start gap-1 text-start rounded-xl px-1 py-1 min-h-[48px] cursor-pointer transition-opacity focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none ${
-              isActive ? 'opacity-100' : 'opacity-80 hover:opacity-100'
-            }`}
+            className={`flex flex-col items-start justify-between p-3 sm:p-3.5 rounded-2xl border transition-all duration-200 cursor-pointer min-h-[64px] text-start ${
+              isActive
+                ? 'bg-slate-900 border-blue-500/50 shadow-sm shadow-blue-500/10 ring-1 ring-blue-500/20'
+                : 'bg-slate-900/40 hover:bg-slate-900/70 border-slate-800/80 hover:border-slate-700/80'
+            } focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none`}
           >
             <span
-              className={`font-semibold leading-none tracking-tight [font-variant-numeric:tabular-nums] ${cell.tone} text-2xl sm:text-3xl`}
+              className={`font-bold leading-none tracking-tight [font-variant-numeric:tabular-nums] ${cell.tone} text-2xl sm:text-3xl`}
             >
               {cell.count}
             </span>
@@ -73,14 +75,14 @@ function StatsCardsImpl({ packages = [], activeFilter, onSelectFilter }) {
                 promoting it. The fixed height keeps the three numbers on a
                 common baseline whether a label wraps or not. */}
             <span
-              className={`text-xs font-bold leading-tight line-clamp-2 min-h-[2.1em] ${
-                isActive ? 'text-slate-200' : 'text-slate-400'
+              className={`text-[11px] sm:text-xs font-semibold leading-tight line-clamp-2 mt-1.5 min-h-[2.1em] ${
+                isActive ? 'text-slate-100' : 'text-slate-400'
               }`}
             >
               {cell.label}
             </span>
             {isActive && (
-              <span className="block h-0.5 w-6 rounded-full bg-blue-500" aria-hidden="true" />
+              <span className="block h-1 w-6 rounded-full bg-blue-500 mt-1" aria-hidden="true" />
             )}
           </button>
         );

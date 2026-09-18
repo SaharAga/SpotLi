@@ -90,13 +90,13 @@ export function FilterBar({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={t('searchPlaceholder')}
-          className="w-full bg-slate-900 border border-slate-800 text-slate-100 placeholder-slate-500 text-sm rounded-2xl py-3 ps-11 pe-11 transition-ui focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[48px]"
+          className="w-full bg-slate-900/80 hover:bg-slate-900 border border-slate-800/80 text-slate-100 placeholder-slate-500 text-sm rounded-2xl py-3 ps-11 pe-11 transition-all focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-sm min-h-[48px]"
         />
         {searchQuery && (
           <button
             type="button"
             onClick={() => onSearchChange('')}
-            className="absolute top-1/2 -translate-y-1/2 end-1.5 p-2 rounded-lg text-slate-400 hover:text-slate-100 min-h-[48px] min-w-[48px] flex items-center justify-center"
+            className="absolute top-1/2 -translate-y-1/2 end-1.5 p-2 rounded-lg text-slate-400 hover:text-slate-100 min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer"
             aria-label="Clear search"
           >
             <X className="w-4 h-4" aria-hidden="true" />
@@ -128,13 +128,18 @@ export function FilterBar({
                 key={chip.id}
                 onClick={() => onTabChange(chip.id)}
                 aria-pressed={isOn}
-                className={`shrink-0 min-h-[48px] px-3.5 rounded-full text-xs font-bold transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none ${
+                className={`shrink-0 min-h-[48px] px-3.5 rounded-full text-xs font-semibold transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none inline-flex items-center gap-1.5 ${
                   isOn
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/30'
+                    : 'bg-slate-900/60 border border-slate-800/80 text-slate-400 hover:text-slate-200 hover:border-slate-700/80 hover:bg-slate-900'
                 }`}
               >
-                {chip.label} <span className="[font-variant-numeric:tabular-nums] opacity-70">{chip.count}</span>
+                <span>{chip.label}</span>
+                <span className={`[font-variant-numeric:tabular-nums] px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
+                  isOn ? 'bg-blue-700 text-blue-100' : 'bg-slate-800/90 text-slate-400'
+                }`}>
+                  {chip.count}
+                </span>
               </button>
             );
           })}
@@ -146,10 +151,10 @@ export function FilterBar({
           aria-expanded={filtersOpen}
           aria-label={t('filters.status')}
           title={t('filters.moreFilters')}
-          className={`relative shrink-0 ms-auto min-h-[48px] min-w-[48px] rounded-xl border transition-ui flex items-center justify-center ${
+          className={`relative shrink-0 ms-auto min-h-[48px] min-w-[48px] rounded-2xl border transition-all flex items-center justify-center cursor-pointer ${
             filtersOpen
-              ? 'bg-blue-600 border-blue-600 text-white'
-              : 'bg-slate-900 border-slate-800 text-slate-300 hover:text-slate-100 hover:bg-slate-800'
+              ? 'bg-blue-600 border-blue-600 text-white shadow-sm shadow-blue-600/30'
+              : 'bg-slate-900/60 border-slate-800/80 text-slate-300 hover:text-slate-100 hover:bg-slate-900 hover:border-slate-700'
           }`}
         >
           <SlidersHorizontal className="w-4 h-4" aria-hidden="true" />

@@ -323,204 +323,244 @@ function PackageCardImpl({
           transform: swipeOffset ? `translateX(${swipeOffset}px)` : 'none',
           transition: isSwiping ? 'none' : 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)'
         }}
-        className={`group relative bg-slate-900 hover:bg-slate-800 border rounded-2xl p-3.5 transition-ui duration-200 cursor-pointer flex flex-col gap-2 shadow-sm hover:shadow-md ${
-          pkg.isPinned ? 'border-blue-500/40 ring-1 ring-blue-500/20' : 'border-slate-800 hover:border-slate-700'
+        className={`group relative bg-slate-900/90 hover:bg-slate-900 border rounded-2xl p-4 transition-all duration-200 cursor-pointer flex flex-col gap-3 shadow-sm hover:shadow-xl hover:shadow-slate-950/40 hover:-translate-y-0.5 ${
+          pkg.isPinned ? 'border-blue-500/50 ring-1 ring-blue-500/20' : 'border-slate-800/80 hover:border-slate-700'
         }`}
       >
-        {/* Row 1: leading icon, title + tracking/carrier meta, status pill */}
+        {/* Header Row: Leading Avatar, Title + Meta, and Status Badge */}
         <div className="flex items-start gap-3">
           <div
             aria-hidden="true"
-            className={`relative p-2 rounded-xl shrink-0 ${stage.badgeClass.split(' ').filter(c => c.startsWith('bg-') || c.startsWith('text-')).join(' ')}`}
+            className={`relative w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
+              pkg.status === 'delivered'
+                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                : pkg.status === 'ready_for_pickup' || pkg.status === 'out_for_delivery'
+                  ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                  : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+            }`}
           >
             {pkg.status === 'returned_to_sender' ? (
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-5 h-5 text-orange-400" />
             ) : pkg.status === 'exception' ? (
-              <AlertTriangle className="w-4 h-4" />
+              <AlertTriangle className="w-5 h-5 text-rose-400" />
             ) : (
-              <Package className="w-4 h-4" />
+              <Package className="w-5 h-5" />
             )}
             {pkg.isPinned && (
               <Pin
-                className="absolute -top-1 -end-1 w-3 h-3 fill-blue-400 text-blue-400"
+                className="absolute -top-1 -end-1 w-3.5 h-3.5 fill-blue-400 text-blue-400"
                 aria-hidden="true"
               />
             )}
           </div>
 
           <div className="min-w-0 flex-1">
-            {/*
-              Two lines, not one. The title is the only thing that tells two
-              cards apart — the status badge beside it repeats across most of
-              the list — and on a 390px screen `line-clamp-1` next to a badge
-              reading "Out for Delivery / Pickup" left about seven characters,
-              so "Sony WH-1000XM5 Headphones" rendered as "Sony W…".
-            */}
-            <h3 className="text-sm font-semibold text-slate-100 group-hover:text-blue-400 transition-colors line-clamp-2">
-              {itemTitle}
-            </h3>
-            {/*
-              Wraps, deliberately, and it costs a line of card height.
-              A 15-character tracking number and a carrier name do not both fit
-              on one 390px row: on a single line the tracking number takes the
-              width and the carrier is left with about 3px — "AliExpress /
-              Cainiao" renders as nothing. Both identify the parcel, so the row
-              takes a second line instead of cutting one to zero. (Tried and
-              reverted: `shrink-0` on the number with the carrier truncating
-              reproduces the 3px result.)
-            */}
-            <div className="flex flex-wrap items-center gap-x-1.5 text-xs text-slate-400 mt-0.5">
-              <span className="font-mono"><bdi dir="ltr">{pkg.trackingNumber}</bdi></span>
-              <span className="opacity-50">·</span>
-              <span className="min-w-0 truncate">
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="text-[15px] font-semibold text-slate-100 group-hover:text-blue-400 transition-colors line-clamp-2 leading-snug">
+                {itemTitle}
+              </h3>
+              
+              <div className="shrink-0 flex items-center gap-1.5 ms-2">
+                {pkg.isDemo && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                    {t('firstTimeEmpty.demoBadge')}
+                  </span>
+                )}
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border ${stage.badgeClass}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                    stage.color === 'emerald' ? 'bg-emerald-400' :
+                    stage.color === 'amber' ? 'bg-amber-400' :
+                    stage.color === 'rose' ? 'bg-rose-400' :
+                    stage.color === 'orange' ? 'bg-orange-400' : 'bg-blue-400'
+                  }`} aria-hidden="true" />
+                  <span>{language === 'he' ? stage.hebrewLabel : stage.label}</span>
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-400 mt-1">
+              <span className="font-mono text-slate-300 font-medium"><bdi dir="ltr">{pkg.trackingNumber}</bdi></span>
+              <span className="text-slate-600">·</span>
+              <span className="text-slate-400 font-medium truncate">
                 {store ? (language === 'he' ? store.hebrewName : store.name) + ' — ' : ''}
                 {language === 'he' ? carrier.hebrewName : carrier.name}
               </span>
-              {pkg.pickupCode && (
-                <div className="ms-1 inline-flex items-center rounded-xl bg-emerald-500/10 border border-emerald-500/25 font-mono text-xs font-semibold overflow-hidden shrink-0 min-h-[44px]">
-                  {onOpenLockerMode ? (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onOpenLockerMode(pkg);
-                      }}
-                      title={language === 'he' ? 'פתח מצב לוקר מוגדל' : 'Open Full-Screen Locker Mode'}
-                      aria-label={language === 'he' ? `פתח מצב לוקר — PIN ${pkg.pickupCode}` : `Open Locker Mode — PIN ${pkg.pickupCode}`}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 hover:bg-emerald-500/15 text-emerald-300 transition-colors cursor-pointer min-h-[44px]"
-                    >
-                      <Sun className="w-3.5 h-3.5 text-amber-400 shrink-0" aria-hidden="true" />
-                      <span>PIN {pkg.pickupCode}</span>
-                    </button>
-                  ) : (
-                    <span className="px-3 py-1.5 text-emerald-300 min-h-[44px] flex items-center">
-                      PIN {pkg.pickupCode}
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    onClick={handleCopyPin}
-                    title={language === 'he' ? 'העתק קוד איסוף' : 'Copy pickup PIN'}
-                    className="px-2.5 py-1.5 hover:bg-emerald-500/15 border-s border-emerald-500/25 text-emerald-400 hover:text-emerald-200 transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
-                    aria-label={language === 'he' ? 'העתק קוד איסוף' : 'Copy pickup PIN'}
-                  >
-                    {copiedPin ? <Check className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />}
-                  </button>
-                </div>
-              )}
-              {pkg.isRedirected && (
-                <span
-                  title={language === 'he' ? 'חברת השילוח העבירה את החבילה לנקודה חלופית' : 'Package was redirected to an alternate pickup location'}
-                  className="ms-1 inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/15 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-500/30 text-xs font-bold shrink-0"
-                >
-                  <AlertTriangle className="w-3 h-3" aria-hidden="true" />
-                  <span>{t('redirectDetection.badge')}</span>
-                </span>
-              )}
-              {pkg.shelfNumber && (
-                <span
-                  title={language === 'he' ? `מספר מדף: ${pkg.shelfNumber}` : `Shelf number: ${pkg.shelfNumber}`}
-                  className="ms-1 inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/15 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-500/30 font-mono text-xs font-bold shrink-0"
-                >
-                  <span>{language === 'he' ? 'מדף' : 'Shelf'} {pkg.shelfNumber}</span>
-                </span>
-              )}
-              {pkg.localCarrier && pkg.localCarrier !== pkg.carrier && (
-                <span
-                  title={language === 'he' ? `הועבר לחלוקה מקומית: ${getCarrier(pkg.localCarrier).hebrewName} (${pkg.localTrackingNumber || ''})` : `Domestic handover: ${getCarrier(pkg.localCarrier).name}`}
-                  className="ms-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 text-xs font-medium shrink-0"
-                >
-                  <span>➔ {language === 'he' ? getCarrier(pkg.localCarrier).hebrewName : getCarrier(pkg.localCarrier).name}</span>
-                </span>
-              )}
-              {pkg.customsDetails?.required && pkg.customsDetails?.status !== 'paid' && (
-                <span
-                  title={language === 'he' ? 'נדרש תשלום מכס' : 'Customs payment required'}
-                  className="ms-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-bold shrink-0"
-                >
-                  <span>{language === 'he' ? 'מכס' : 'Customs'}</span>
-                </span>
-              )}
-              {pkg.confidence === 'sender_reported' && (
-                <span
-                  title={language === 'he'
-                    ? 'הסטטוס מבוסס על אימייל אישור הזמנה, ולא על מעקב מאומת מול חברת השילוח'
-                    : 'Status is based on your order confirmation email, not carrier-verified tracking'}
-                  className="ms-1 inline-flex items-center px-1.5 py-0.5 rounded-md bg-slate-700/50 text-slate-300 border border-slate-600/50 text-xs font-bold shrink-0"
-                >
-                  {language === 'he' ? 'מאישור הזמנה' : 'from order confirmation'}
-                </span>
-              )}
             </div>
-          </div>
-
-          <div className="shrink-0 flex items-start gap-1.5 max-w-[42%]">
-            {pkg.isDemo && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                {t('firstTimeEmpty.demoBadge')}
-              </span>
-            )}
-            <span className={`inline-flex items-center px-2 py-1 rounded-lg text-xs font-semibold border text-end leading-tight ${stage.badgeClass}`}>
-              {language === 'he' ? stage.hebrewLabel : stage.label}
-            </span>
           </div>
         </div>
 
-        {/* Pickup Location & Same-Location Bundling Tag with 1-Tap Navigation */}
-        {pkg.pickupLocation && (
-          <div className="flex items-center justify-between gap-1.5 p-1 rounded-xl bg-slate-950/60 border border-slate-800/80 text-slate-300">
-            <button
-              type="button"
-              onClick={handleOpenNavigation}
-              title={language === 'he' ? 'פתח ניווט לנקודת האיסוף (Waze / Maps)' : 'Open navigation (Waze / Maps)'}
-              aria-label={language === 'he' ? `נווט אל ${pkg.pickupLocation}` : `Navigate to ${pkg.pickupLocation}`}
-              className="flex-1 min-w-0 flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-900/90 hover:text-emerald-300 transition-colors cursor-pointer min-h-[48px] text-start group/nav"
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <MapPin className="w-4 h-4 text-emerald-400 shrink-0 group-hover/nav:scale-110 transition-transform" aria-hidden="true" />
-                <span className="truncate text-xs font-medium">{pkg.pickupLocation}</span>
-              </div>
-              <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 group-hover/nav:bg-emerald-500/20 transition-colors flex items-center gap-1 text-[11px] font-semibold shrink-0">
-                <Navigation className="w-3.5 h-3.5 rtl:rotate-180" aria-hidden="true" />
-                <span className="hidden sm:inline">{language === 'he' ? 'נווט' : 'Navigate'}</span>
-              </span>
-            </button>
-
-            {sameLocationSiblings.length > 0 && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  triggerHapticFeedback('selection');
-                  if (onOpenLockerMode) onOpenLockerMode(pkg);
-                }}
-                className="px-3 py-2 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 text-xs font-semibold transition-colors cursor-pointer min-h-[48px] flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 shrink-0"
-                aria-label={
-                  language === 'he'
-                    ? `עוד ${sameLocationSiblings.length} חבילות באותה נקודה. פתח מסך איסוף מרוכז.`
-                    : `${sameLocationSiblings.length} other packages at this location. Open bundled pickup mode.`
-                }
-                title={
-                  language === 'he'
-                    ? `פתח מסך איסוף מרוכז עבור ${sameLocationSiblings.length + 1} חבילות`
-                    : `Open bundled pickup screen for ${sameLocationSiblings.length + 1} packages`
-                }
+        {/* Secondary Contextual Tags Strip (if any) */}
+        {(pkg.confidence === 'sender_reported' || (pkg.customsDetails?.required && pkg.customsDetails?.status !== 'paid') || (pkg.localCarrier && pkg.localCarrier !== pkg.carrier)) && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {pkg.confidence === 'sender_reported' && (
+              <span
+                title={language === 'he'
+                  ? 'הסטטוס מבוסס על אימייל אישור הזמנה, ולא על מעקב מאומת מול חברת השילוח'
+                  : 'Status is based on your order confirmation email, not carrier-verified tracking'}
+                className="inline-flex items-center px-2 py-0.5 rounded-lg bg-slate-800/90 text-slate-300 border border-slate-700/80 text-xs font-medium"
               >
-                <Layers className="w-3.5 h-3.5 text-indigo-300" aria-hidden="true" />
-                <span>{language === 'he' ? `עוד ${sameLocationSiblings.length} כאן` : `+${sameLocationSiblings.length} here`}</span>
-              </button>
+                {language === 'he' ? 'מאישור הזמנה' : 'from order confirmation'}
+              </span>
             )}
+            {pkg.customsDetails?.required && pkg.customsDetails?.status !== 'paid' && (
+              <span
+                title={language === 'he' ? 'נדרש תשלום מכס' : 'Customs payment required'}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-500/25 text-xs font-semibold"
+              >
+                <span>{language === 'he' ? 'מכס' : 'Customs'}</span>
+              </span>
+            )}
+            {pkg.localCarrier && pkg.localCarrier !== pkg.carrier && (
+              <span
+                title={language === 'he' ? `הועבר לחלוקה מקומית: ${getCarrier(pkg.localCarrier).hebrewName} (${pkg.localTrackingNumber || ''})` : `Domestic handover: ${getCarrier(pkg.localCarrier).name}`}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-cyan-500/15 text-cyan-300 border border-cyan-500/25 text-xs font-medium"
+              >
+                <span>➔ {language === 'he' ? getCarrier(pkg.localCarrier).hebrewName : getCarrier(pkg.localCarrier).name}</span>
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Digital Pickup Pass Widget: when pickup info, PIN, or locker location is active */}
+        {(pkg.pickupLocation || pkg.pickupCode || pkg.shelfNumber || pkg.isRedirected) && (
+          <div className="rounded-2xl bg-gradient-to-br from-emerald-950/30 via-slate-950/60 to-slate-950/80 border border-emerald-500/20 p-3 flex flex-col gap-2.5 shadow-inner">
+            {(pkg.pickupCode || pkg.shelfNumber || pkg.isRedirected) && (
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                {pkg.pickupCode && (
+                  <div className="inline-flex items-center rounded-xl bg-emerald-500/15 border border-emerald-500/30 font-mono text-xs font-semibold overflow-hidden shrink-0 min-h-[44px]">
+                    {onOpenLockerMode ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenLockerMode(pkg);
+                        }}
+                        title={language === 'he' ? 'פתח מצב לוקר מוגדל' : 'Open Full-Screen Locker Mode'}
+                        aria-label={language === 'he' ? `פתח מצב לוקר — PIN ${pkg.pickupCode}` : `Open Locker Mode — PIN ${pkg.pickupCode}`}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 hover:bg-emerald-500/20 text-emerald-200 transition-colors cursor-pointer min-h-[44px]"
+                      >
+                        <Sun className="w-4 h-4 text-amber-400 shrink-0" aria-hidden="true" />
+                        <span className="font-bold text-sm tracking-wider">PIN {pkg.pickupCode}</span>
+                      </button>
+                    ) : (
+                      <span className="px-3 py-1.5 text-emerald-200 font-bold text-sm tracking-wider min-h-[44px] flex items-center">
+                        PIN {pkg.pickupCode}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={handleCopyPin}
+                      title={language === 'he' ? 'העתק קוד איסוף' : 'Copy pickup PIN'}
+                      className="px-2.5 py-1.5 hover:bg-emerald-500/20 border-s border-emerald-500/30 text-emerald-300 hover:text-white transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+                      aria-label={language === 'he' ? 'העתק קוד איסוף' : 'Copy pickup PIN'}
+                    >
+                      {copiedPin ? <Check className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />}
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-1.5 ms-auto">
+                  {pkg.shelfNumber && (
+                    <span
+                      title={language === 'he' ? `מספר מדף: ${pkg.shelfNumber}` : `Shelf number: ${pkg.shelfNumber}`}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/25 font-mono text-xs font-semibold"
+                    >
+                      <span>{language === 'he' ? 'מדף' : 'Shelf'} {pkg.shelfNumber}</span>
+                    </span>
+                  )}
+                  {pkg.isRedirected && (
+                    <span
+                      title={language === 'he' ? 'חברת השילוח העבירה את החבילה לנקודה חלופית' : 'Package was redirected to an alternate pickup location'}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/25 text-xs font-semibold"
+                    >
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-400" aria-hidden="true" />
+                      <span>{t('redirectDetection.badge')}</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {pkg.pickupLocation && (
+              <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-800/80">
+                <button
+                  type="button"
+                  onClick={handleOpenNavigation}
+                  title={language === 'he' ? 'פתח ניווט לנקודת האיסוף (Waze / Maps)' : 'Open navigation (Waze / Maps)'}
+                  aria-label={language === 'he' ? `נווט אל ${pkg.pickupLocation}` : `Navigate to ${pkg.pickupLocation}`}
+                  className="flex-1 min-w-0 flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl hover:bg-slate-900/90 hover:text-emerald-300 transition-colors cursor-pointer min-h-[48px] text-start group/nav"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <MapPin className="w-4 h-4 text-emerald-400 shrink-0 group-hover/nav:scale-110 transition-transform" aria-hidden="true" />
+                    <span className="truncate text-xs font-medium text-slate-200">{pkg.pickupLocation}</span>
+                  </div>
+                  <span className="p-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 group-hover/nav:bg-emerald-500/25 transition-colors flex items-center gap-1 text-[11px] font-semibold shrink-0">
+                    <Navigation className="w-3.5 h-3.5 rtl:rotate-180" aria-hidden="true" />
+                    <span className="hidden sm:inline">{language === 'he' ? 'נווט' : 'Navigate'}</span>
+                  </span>
+                </button>
+
+                {sameLocationSiblings.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      triggerHapticFeedback('selection');
+                      if (onOpenLockerMode) onOpenLockerMode(pkg);
+                    }}
+                    className="px-3 py-2 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 text-xs font-semibold transition-colors cursor-pointer min-h-[48px] flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 shrink-0"
+                    aria-label={
+                      language === 'he'
+                        ? `עוד ${sameLocationSiblings.length} חבילות באותה נקודה. פתח מסך איסוף מרוכז.`
+                        : `${sameLocationSiblings.length} other packages at this location. Open bundled pickup mode.`
+                    }
+                    title={
+                      language === 'he'
+                        ? `פתח מסך איסוף מרוכז עבור ${sameLocationSiblings.length + 1} חבילות`
+                        : `Open bundled pickup screen for ${sameLocationSiblings.length + 1} packages`
+                    }
+                  >
+                    <Layers className="w-3.5 h-3.5 text-indigo-300" aria-hidden="true" />
+                    <span>{language === 'he' ? `עוד ${sameLocationSiblings.length} כאן` : `+${sameLocationSiblings.length} here`}</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* In-Card Journey Stepper Bar: for packages in standard progression */}
+        {pkg.status !== 'archived' && pkg.status !== 'exception' && pkg.status !== 'returned_to_sender' && !pkg.pickupLocation && (
+          <div className="w-full py-1" aria-hidden="true">
+            <div className="h-1.5 w-full bg-slate-800/80 rounded-full overflow-hidden flex">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  pkg.status === 'delivered'
+                    ? 'bg-emerald-500'
+                    : pkg.status === 'ready_for_pickup' || pkg.status === 'out_for_delivery'
+                      ? 'bg-teal-500'
+                      : 'bg-blue-500'
+                }`}
+                style={{
+                  width:
+                    pkg.status === 'delivered' ? '100%' :
+                    (pkg.status === 'ready_for_pickup' || pkg.status === 'out_for_delivery') ? '85%' :
+                    (pkg.status === 'customs' || pkg.status === 'in_transit') ? '60%' :
+                    pkg.status === 'shipped' ? '35%' : '15%'
+                }}
+              />
+            </div>
           </div>
         )}
 
         {/* Optional Countdown Banner for Pickup or Return */}
         {pkg.status !== 'delivered' && pickupCountdown.hasDeadline && (
-          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold border ${
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border ${
             pickupCountdown.urgency === 'critical' || pickupCountdown.urgency === 'expired'
-              ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+              ? 'bg-rose-500/15 text-rose-300 border-rose-500/25'
               : pickupCountdown.urgency === 'warning'
-                ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-                : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                ? 'bg-amber-500/15 text-amber-300 border-amber-500/25'
+                : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25'
           }`}>
             <Clock className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
             <span className="truncate">{language === 'he' ? pickupCountdown.formattedHe : pickupCountdown.formattedEn}</span>
@@ -528,34 +568,27 @@ function PackageCardImpl({
         )}
 
         {pkg.status === 'delivered' && returnCountdown.hasDeadline && (
-          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold border ${
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border ${
             returnCountdown.urgency === 'critical' || returnCountdown.urgency === 'expired'
-              ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+              ? 'bg-rose-500/15 text-rose-300 border-rose-500/25'
               : returnCountdown.urgency === 'warning'
-                ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-                : 'bg-blue-500/15 text-blue-300 border-blue-500/30'
+                ? 'bg-amber-500/15 text-amber-300 border-amber-500/25'
+                : 'bg-blue-500/15 text-blue-300 border-blue-500/25'
           }`}>
             <RotateCcw className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
             <span className="truncate">{language === 'he' ? returnCountdown.formattedHe : returnCountdown.formattedEn}</span>
           </div>
         )}
 
-        {/* Row 2: expected date + quick actions, all on one line */}
-        <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800">
-          {/*
-            `flex-wrap` and a non-shrinking date: the date and the
-            days-remaining pill both used to compete with the action icons on
-            one line, and the date lost — "Aug 20, 2026" rendered as "A…",
-            which tells the user strictly less than showing nothing. Both now
-            wrap to a second line before either gets cut.
-          */}
-          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-slate-400 min-w-0">
-            <Calendar className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-            <span className="shrink-0 whitespace-nowrap">{formatDate(pkg.expectedDeliveryDate, language)}</span>
+        {/* Footer Row: Arrival Date + Quick Actions */}
+        <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-slate-800/80 mt-auto">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-slate-400 min-w-0">
+            <Calendar className="w-3.5 h-3.5 shrink-0 text-slate-500" aria-hidden="true" />
+            <span className="shrink-0 whitespace-nowrap font-medium text-slate-300">{formatDate(pkg.expectedDeliveryDate, language)}</span>
             {daysInfo && pkg.status !== 'delivered' && (
               <span
-                className={`shrink-0 text-xs px-1.5 py-0.2 rounded-md font-bold ${
-                  daysInfo.isUrgent ? 'bg-amber-500/15 text-amber-400' : 'bg-slate-800 text-slate-400'
+                className={`shrink-0 text-xs px-2 py-0.5 rounded-md font-semibold ${
+                  daysInfo.isUrgent ? 'bg-amber-500/15 text-amber-300 border border-amber-500/25' : 'bg-slate-800/80 text-slate-400'
                 }`}
               >
                 {daysInfo.text}
@@ -563,10 +596,6 @@ function PackageCardImpl({
             )}
           </div>
 
-          {/* Only the two highest-frequency actions stay visible; everything
-              else (copy, carrier link, pin, edit, archive, delete) lives in
-              the overflow menu — the whole card is already the "view
-              details" tap target, so a 7-icon row was pure clutter. */}
           <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
             {onRefreshTracking && (
               <button
@@ -575,11 +604,11 @@ function PackageCardImpl({
                 disabled={isRefreshing}
                 title={t('card.refreshStatus')}
                 aria-label={t('card.refreshStatus')}
-                className={`p-2 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-slate-800 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center ${
+                className={`p-2 rounded-xl text-slate-400 hover:text-emerald-400 hover:bg-slate-800 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer ${
                   isRefreshing ? 'animate-spin text-emerald-400' : ''
                 }`}
               >
-                {isRefreshing ? <Loader2 className="w-3.5 h-3.5" aria-hidden="true" /> : <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />}
+                {isRefreshing ? <Loader2 className="w-4 h-4" aria-hidden="true" /> : <RefreshCw className="w-4 h-4" aria-hidden="true" />}
               </button>
             )}
 
@@ -588,11 +617,11 @@ function PackageCardImpl({
               onClick={handleMarkDelivered}
               aria-label={pkg.status === 'delivered' ? t('card.markActive') : t('card.markDelivered')}
               title={pkg.status === 'delivered' ? t('card.markActive') : t('card.markDelivered')}
-              className={`p-2 rounded-lg transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center ${
-                pkg.status === 'delivered' ? 'text-emerald-500 bg-emerald-500/10' : 'text-slate-400 hover:text-emerald-500 hover:bg-slate-800'
+              className={`p-2 rounded-xl transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer ${
+                pkg.status === 'delivered' ? 'text-emerald-400 bg-emerald-500/15 border border-emerald-500/25' : 'text-slate-400 hover:text-emerald-400 hover:bg-slate-800'
               }`}
             >
-              <CheckCircle className={`w-3.5 h-3.5 ${pkg.status === 'delivered' ? 'fill-emerald-500/20' : ''}`} aria-hidden="true" />
+              <CheckCircle className={`w-4 h-4 ${pkg.status === 'delivered' ? 'fill-emerald-400/20' : ''}`} aria-hidden="true" />
             </button>
 
             <div className="relative">

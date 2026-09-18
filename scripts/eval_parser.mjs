@@ -28,7 +28,8 @@ const { createServer } = await import('vite');
 const vite = await createServer({
   root: repoRoot,
   logLevel: 'error',
-  server: { middlewareMode: true },
+  configFile: false,
+  server: { middlewareMode: true, watch: null },
   appType: 'custom'
 });
 
