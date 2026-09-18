@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { List, BarChart3, Plus, Activity, User } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { triggerHapticFeedback } from '../utils/haptics';
 
 /**
  * Mobile bottom tab bar.
@@ -81,7 +82,10 @@ function BottomNavImpl({
       <button
         key={id}
         type="button"
-        onClick={onClick}
+        onClick={() => {
+          triggerHapticFeedback('selection');
+          if (onClick) onClick();
+        }}
         aria-current={isActive ? 'page' : undefined}
         className={`flex-1 min-w-0 flex flex-col items-center justify-center gap-1 min-h-[48px] px-1 py-1 rounded-xl cursor-pointer transition-colors ${
           isActive ? 'text-slate-100' : 'text-slate-500 hover:text-slate-300'
@@ -122,7 +126,10 @@ function BottomNavImpl({
 
       <button
         type="button"
-        onClick={onOpenAdd}
+        onClick={() => {
+          triggerHapticFeedback('medium');
+          if (onOpenAdd) onOpenAdd();
+        }}
         aria-label={isHe ? 'הוסף חבילה' : 'Add package'}
         className="shrink-0 -mt-5 mx-1 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shadow-lg shadow-blue-600/40 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 focus:outline-none"
       >

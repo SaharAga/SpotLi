@@ -93,7 +93,7 @@ export function AnalyticsModal({
         </div>
 
         {/* Scrollable Body */}
-        <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+        <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar min-h-0 flex-1">
           {/* Top Key Metrics Row */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {/* Total Packages */}

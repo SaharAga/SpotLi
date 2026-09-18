@@ -125,6 +125,7 @@ function PackageCardImpl({
     const success = await copyToClipboard(pkg.trackingNumber);
     if (success) {
       setCopied(true);
+      triggerHapticFeedback('light');
       if (onShowToast) onShowToast(t('card.copied'), 'success');
       if (copyTrackingTimerRef.current) clearTimeout(copyTrackingTimerRef.current);
       copyTrackingTimerRef.current = setTimeout(() => setCopied(false), 2000);
@@ -146,7 +147,7 @@ function PackageCardImpl({
     const success = await copyToClipboard(pkg.pickupCode);
     if (success) {
       setCopiedPin(true);
-      triggerHapticFeedback();
+      triggerHapticFeedback('light');
       if (onShowToast) {
         onShowToast(language === 'he' ? 'קוד איסוף הועתק!' : 'Pickup code copied!', 'success');
       }
@@ -204,6 +205,7 @@ function PackageCardImpl({
   const handleMarkDelivered = (e) => {
     e.stopPropagation();
     if (pkg.status !== 'delivered') {
+      triggerHapticFeedback('success');
       confetti({
         particleCount: 80,
         spread: 60,
@@ -212,6 +214,7 @@ function PackageCardImpl({
       onStatusChange(pkg.id, 'delivered');
       if (onShowToast) onShowToast(language === 'he' ? 'החבילה סומנה כנמסרה! 🎉' : 'Package marked as delivered! 🎉', 'success');
     } else {
+      triggerHapticFeedback('selection');
       onStatusChange(pkg.id, 'in_transit');
       if (onShowToast) onShowToast(language === 'he' ? 'החבילה הוחזרה למצב פעיל' : 'Package marked as active', 'info');
     }
@@ -307,6 +310,7 @@ function PackageCardImpl({
         aria-label={`${itemTitle} — ${language === 'he' ? stage.hebrewLabel : stage.label}`}
         onClick={() => {
           if (Math.abs(swipeOffset) > 5) return;
+          triggerHapticFeedback('light');
           if (typeof onOpenDetails === 'function') {
             onOpenDetails(pkg);
           }
