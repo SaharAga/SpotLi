@@ -66,6 +66,7 @@ export function AnalyticsModal({
       onClose={onClose}
       componentName="AnalyticsModal"
       labelledBy="analytics-modal-title"
+      isTabScreen={true}
       className="relative w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8 flex flex-col max-h-[90vh]"
     >
         {/* Header */}

@@ -322,7 +322,7 @@ export function Navbar({
         onOpenSettings={switchTab(MODAL_IDS.ACCOUNT)}
         onOpenSmartImport={onOpenSmartImport}
         onOpenConnectModal={onOpenConnectModal}
-        onOpenAnalytics={onOpenAnalytics}
+        onOpenAnalytics={switchTab(MODAL_IDS.ANALYTICS)}
         onOpenFeedback={onOpenFeedback}
         onOpenAdminFeedback={onOpenAdminFeedback}
         onOpenAbout={onOpenAbout}

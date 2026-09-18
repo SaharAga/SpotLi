@@ -467,6 +467,28 @@
       animation: sheetSlideUp 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
+    [data-modal-panel][data-tab-screen="true"],
+    [data-modal-panel][data-no-animate="true"] {
+      animation: none !important;
+      transform: none !important;
+      opacity: 1 !important;
+    }
+
+    [data-modal-overlay][data-tab-screen="true"],
+    [data-modal-overlay][data-no-animate="true"] {
+      animation: none !important;
+      opacity: 1 !important;
+      background: var(--color-slate-950) !important;
+      backdrop-filter: none !important;
+    }
+
+    /* Keep the loading fallback solid and un-animated on mobile so background feed never flashes */
+    body[data-bottom-nav='true'] [data-testid="modal-loading-fallback"] {
+      background: var(--color-slate-950) !important;
+      backdrop-filter: none !important;
+      animation: none !important;
+    }
+
     /* Clears the bottom tab bar, which stays visible on top of the tab
        screens (BottomNav, z-[60]) rather than being covered by them.
 

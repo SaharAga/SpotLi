@@ -618,6 +618,22 @@ export function DashboardContent() {
     return () => window.removeEventListener('sw-update-ready', handleSwUpdate);
   }, []);
 
+  // Preload primary tab chunks on idle so tab switches (Insights, Activity, Account) are instantaneous
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const preload = () => {
+      import('./components/AnalyticsModal');
+      import('./components/ActivityModal');
+      import('./components/AccountModal');
+    };
+    if ('requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(preload);
+      return () => window.cancelIdleCallback(id);
+    }
+    const timer = setTimeout(preload, 600);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Hands over to the waiting service worker and reloads onto the fresh
   // bundle. A bare reload would come back on the OLD worker, which is still
   // the controlling one until it is told to step aside.
@@ -1367,7 +1383,7 @@ export function DashboardContent() {
           onOpenAuth={() => openModal(MODAL.AUTH, { initialMode: 'signin' })}
           onOpenSmartImport={() => openModal(MODAL.SMART_IMPORT)}
           onOpenConnectModal={() => openModal(MODAL.INGESTION_GUIDE)}
-          onOpenAnalytics={() => openModal(MODAL.ANALYTICS)}
+          onOpenAnalytics={() => goToTab(MODAL.ANALYTICS)}
           onOpenLockerMap={() => openModal(MODAL.LOCKER_MAP)}
           onOpenFeedback={() => openModal(MODAL.FEEDBACK)}
           onOpenAdminFeedback={isAdminUser(user) ? () => openModal(MODAL.ADMIN_FEEDBACK) : undefined}

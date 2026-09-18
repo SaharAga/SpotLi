@@ -149,10 +149,10 @@ export function FeedbackModal({
       isOpen={isOpen}
       onClose={onClose}
       componentName="FeedbackModal"
-      className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8"
+      className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8 flex flex-col max-h-[88vh] sm:max-h-[85vh]"
     >
         {/* Header */}
-        <div className="p-6 border-b border-slate-800 flex flex-col bg-slate-900">
+        <div className="p-4 sm:p-6 border-b border-slate-800 flex flex-col bg-slate-900 shrink-0">
           <div className="w-10 h-1 bg-slate-700/80 rounded-full mx-auto -mt-2 mb-4 shrink-0 lg:hidden" aria-hidden="true" />
           <div className="flex items-center justify-between">
             <div className="flex flex-1 min-w-0 items-center gap-3">
@@ -179,8 +179,9 @@ export function FeedbackModal({
       </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs">
-          {/* Feedback Type Tabs */}
+        <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1 overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs overscroll-contain">
+            {/* Feedback Type Tabs */}
           <div>
             <label id="feedback-type-label" className="block text-xs font-bold text-slate-300 mb-1.5">
               {language === 'he' ? 'סוג המשוב' : 'Feedback Category'}
@@ -403,26 +404,27 @@ export function FeedbackModal({
                 : 'Device model and screen specs will be included automatically for debugging.'}
             </span>
           </div>
+        </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-1/3 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-slate-100 font-semibold text-xs transition-ui cursor-pointer min-h-[48px]"
-            >
-              {language === 'he' ? 'ביטול' : 'Cancel'}
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-white font-bold text-xs transition-ui shadow-md shadow-indigo-500/20 cursor-pointer min-h-[48px]"
-            >
-              <Send className={`w-3.5 h-3.5 ${isRTL ? 'rotate-180' : ''}`} aria-hidden="true" />
-              <span>{isSubmitting ? (language === 'he' ? 'שולח משוב...' : 'Sending...') : (language === 'he' ? 'שלח משוב' : 'Submit Feedback')}</span>
-            </button>
-          </div>
-        </form>
-      </Modal>
+        {/* Action Buttons (Pinned Footer) */}
+        <div className="p-4 sm:px-6 border-t border-slate-800 bg-slate-900/95 backdrop-blur-sm flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-1/3 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-slate-100 font-semibold text-xs transition-ui cursor-pointer min-h-[48px]"
+          >
+            {language === 'he' ? 'ביטול' : 'Cancel'}
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-white font-bold text-xs transition-ui shadow-md shadow-indigo-500/20 cursor-pointer min-h-[48px]"
+          >
+            <Send className={`w-3.5 h-3.5 ${isRTL ? 'rotate-180' : ''}`} aria-hidden="true" />
+            <span>{isSubmitting ? (language === 'he' ? 'שולח משוב...' : 'Sending...') : (language === 'he' ? 'שלח משוב' : 'Submit Feedback')}</span>
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }
