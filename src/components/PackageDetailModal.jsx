@@ -380,7 +380,7 @@ export function PackageDetailModal({
         </div>
 
         {/* Modal Body */}
-        <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1">
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-6 min-h-0 flex-1">
           {/* Stepper Progress Section & Status Transition Override */}
           <div className="p-4 rounded-2xl bg-slate-950/40 border border-slate-800/80 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">

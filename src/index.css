@@ -450,14 +450,15 @@
     [data-modal-panel] {
       width: 100% !important;
       max-width: none !important;
-      height: 100dvh;
-      max-height: none !important;
+      height: 100dvh !important;
+      max-height: 100dvh !important;
       margin: 0 !important;
       border-radius: 0 !important;
       border-inline: 0 !important;
       border-block: 0 !important;
       display: flex;
       flex-direction: column;
+      overflow: hidden !important;
       overscroll-behavior-y: contain !important;
       padding-top: env(safe-area-inset-top, 0px);
       /* Default: the panel owns the whole viewport and reserves nothing but
@@ -520,13 +521,36 @@
        844px of panel holding an 81px header and a 633px form. The form fills
        what the header leaves, and its own scroll region does the scrolling. */
     [data-modal-panel] > form {
-      flex: 1 1 auto;
+      flex: 1 1 0% !important;
+      min-height: 0 !important;
       max-height: none !important;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden !important;
     }
 
-    [data-modal-panel] > form > .overflow-y-auto {
+    [data-modal-panel] > form > .overflow-y-auto,
+    [data-modal-panel] > .overflow-y-auto,
+    [data-modal-panel] div.overflow-y-auto {
+      min-height: 0 !important;
+      flex: 1 1 0% !important;
       max-height: none !important;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
     }
+  }
+
+  /* Modal panel constraints for desktop: ensure scrollable containers shrink cleanly */
+  [data-modal-panel] {
+    overflow: hidden;
+  }
+  [data-modal-panel] > form {
+    min-height: 0;
+  }
+  [data-modal-panel] > form > .overflow-y-auto,
+  [data-modal-panel] > .overflow-y-auto {
+    min-height: 0;
+    -webkit-overflow-scrolling: touch;
   }
 
   .overflow-y-auto {

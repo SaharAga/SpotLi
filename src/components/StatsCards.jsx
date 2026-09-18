@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { TAB_PREDICATES } from '../types/stages';
+import { triggerHapticFeedback } from '../utils/haptics';
 
 function StatsCardsImpl({ packages = [], activeFilter, onSelectFilter }) {
   const { t } = useLanguage();
@@ -56,7 +57,10 @@ function StatsCardsImpl({ packages = [], activeFilter, onSelectFilter }) {
         return (
           <button
             key={cell.id}
-            onClick={() => onSelectFilter(cell.id)}
+            onClick={() => {
+              triggerHapticFeedback('selection');
+              onSelectFilter(cell.id);
+            }}
             aria-current={isActive ? 'true' : undefined}
             className={`flex flex-col items-start justify-between p-3 sm:p-3.5 rounded-2xl border transition-all duration-200 cursor-pointer min-h-[64px] text-start ${
               isActive

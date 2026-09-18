@@ -3,6 +3,7 @@ import { Search, X, LayoutGrid, List, RefreshCw, Loader2, SlidersHorizontal } fr
 import { useLanguage } from '../context/LanguageContext';
 import { CARRIER_LIST } from '../types/carriers';
 import { TAB_PREDICATES, TAB_IDS, ARCHIVED_TAB } from '../types/stages';
+import { triggerHapticFeedback } from '../utils/haptics';
 
 export function FilterBar({
   searchQuery,
@@ -95,7 +96,10 @@ export function FilterBar({
         {searchQuery && (
           <button
             type="button"
-            onClick={() => onSearchChange('')}
+            onClick={() => {
+              triggerHapticFeedback('selection');
+              onSearchChange('');
+            }}
             className="absolute top-1/2 -translate-y-1/2 end-1.5 p-2 rounded-lg text-slate-400 hover:text-slate-100 min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer"
             aria-label="Clear search"
           >
@@ -126,7 +130,10 @@ export function FilterBar({
             return (
               <button
                 key={chip.id}
-                onClick={() => onTabChange(chip.id)}
+                onClick={() => {
+                  triggerHapticFeedback('selection');
+                  onTabChange(chip.id);
+                }}
                 aria-pressed={isOn}
                 className={`shrink-0 min-h-[48px] px-3.5 rounded-full text-xs font-semibold transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none inline-flex items-center gap-1.5 ${
                   isOn
@@ -147,7 +154,10 @@ export function FilterBar({
 
         <button
           type="button"
-          onClick={() => setFiltersOpen((v) => !v)}
+          onClick={() => {
+            triggerHapticFeedback('selection');
+            setFiltersOpen((v) => !v);
+          }}
           aria-expanded={filtersOpen}
           aria-label={t('filters.status')}
           title={t('filters.moreFilters')}
