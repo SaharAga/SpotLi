@@ -422,7 +422,7 @@ const GENERIC_TRACKING_PARAMS = [
 const HEBREW_CARRIER_PHRASES = [
   { carrierId: 'chita', patterns: [/מחברת\s*צ['׳`״’‘]יטה/i, /מצ['׳`״’‘]יטה/i, /חברת\s*צ['׳`״’‘]יטה/i, /צ['׳`״’‘]יטה\s*שליחויות/i, /שליחויות\s*צ['׳`״’‘]יטה/i, /שליח\s*צ['׳`״’‘]יטה/i, /צ['׳`״’‘]יטה\s*שופס/i, /צ['׳`״’‘]יטה/i, /chita/i] },
   { carrierId: 'israel-post', patterns: [/מדואר\s*ישראל/i, /דואר\s*ישראל/i, /מחברת\s*דואר\s*ישראל/i, /israel\s*post/i, /israelpost/i] },
-  { carrierId: 'hfd', patterns: [/מחברת\s*HFD/i, /מ-?HFD/i, /אי-?פוסט/i, /HFD\s*שליחויות/i, /e-?post/i, /משלוח\s*HFD/i, /HFD/i] },
+  { carrierId: 'hfd', patterns: [/מחברת\s*HFD/i, /מ-?HFD/i, /אי-?פוסט/i, /HFD\s*שליחויות/i, /e-?post/i, /משלוח\s*HFD/i, /\bHFD\b/i] },
   { carrierId: 'boxit', patterns: [/מחברת\s*בוקסיט/i, /מ-?BoxIt/i, /בוקסיט/i, /boxit/i, /חבילת\s*בוקסיט/i] },
   { carrierId: 'buzzr', patterns: [/באזר\s*שליחויות/i, /מחברת\s*באזר/i, /מבאזר/i, /משלוח\s*Buzzr/i, /משלוח\s*באזר/i, /buzzr/i] },
   { carrierId: 'tapuz', patterns: [/תפוז\s*שליחויות/i, /מחברת\s*תפוז/i, /מתפוז/i, /משלוח\s*תפוז/i, /tapuz\s*delivery/i, /tapuz/i] },

@@ -255,6 +255,30 @@ describe('PackageCard Component', () => {
 
     expect(onToggleArchive).toHaveBeenCalledWith('pkg-1');
   });
+
+  it('declares touch-pan-y on interactive card surface and does not engage horizontal swipe on vertical gestures', () => {
+    renderWithLanguage(
+      <PackageCard
+        pkg={basePkg}
+        onOpenDetails={vi.fn()}
+        onToggleArchive={vi.fn()}
+        onDelete={vi.fn()}
+      />
+    );
+
+    const cardButton = screen.getByRole('button', { name: /Wireless Keyboard/i });
+    expect(cardButton).toHaveClass('touch-pan-y');
+
+    // Simulate vertical touch gesture: deltaY = 50, deltaX = 4
+    fireEvent.touchStart(cardButton, { touches: [{ clientX: 100, clientY: 100 }] });
+    fireEvent.touchMove(cardButton, { touches: [{ clientX: 104, clientY: 150 }] });
+
+    // Swipe actions background track should NOT be revealed
+    expect(screen.queryByText(/release to archive/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/release to delete/i)).not.toBeInTheDocument();
+
+    fireEvent.touchEnd(cardButton);
+  });
 });
 
 

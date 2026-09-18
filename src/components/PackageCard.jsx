@@ -77,31 +77,32 @@ function PackageCardImpl({
     const deltaX = e.touches[0].clientX - touchStartXRef.current;
     const deltaY = e.touches[0].clientY - touchStartYRef.current;
 
-    // Only engage horizontal swipe when the gesture is clearly lateral:
-    // deltaX must be at least 2× deltaY (≈26° from horizontal). The previous
-    // 1:1 (45°) threshold fired too easily on diagonal touches — very common
-    // when a finger starts a vertical scroll — hijacking page scroll as a swipe.
-    if (Math.abs(deltaX) < Math.abs(deltaY) * 2) {
+    // If vertical movement is already dominant or noticeable, do NOT engage swipe
+    // so that vertical page scrolling is never delayed or hijacked.
+    if (Math.abs(deltaY) > 8 && Math.abs(deltaX) < 18) {
       return;
     }
 
-    if (Math.abs(deltaX) > 10) {
-      setIsSwiping(true);
-      // Dampen swipe drag distance slightly beyond threshold
-      const sign = Math.sign(deltaX);
-      const absVal = Math.abs(deltaX);
-      const bounded = absVal <= SWIPE_THRESHOLD
-        ? absVal
-        : SWIPE_THRESHOLD + (absVal - SWIPE_THRESHOLD) * 0.45;
-      const boundedOffset = Math.max(-140, Math.min(140, sign * bounded));
-      setSwipeOffset(boundedOffset);
+    // Only engage horizontal swipe when the gesture is clearly lateral
+    if (Math.abs(deltaX) < 18 || Math.abs(deltaX) < Math.abs(deltaY) * 2.5) {
+      return;
+    }
 
-      if (Math.abs(boundedOffset) >= SWIPE_THRESHOLD && !hapticTriggeredRef.current) {
-        triggerHapticFeedback(20);
-        hapticTriggeredRef.current = true;
-      } else if (Math.abs(boundedOffset) < SWIPE_THRESHOLD && hapticTriggeredRef.current) {
-        hapticTriggeredRef.current = false;
-      }
+    setIsSwiping(true);
+    // Dampen swipe drag distance slightly beyond threshold
+    const sign = Math.sign(deltaX);
+    const absVal = Math.abs(deltaX);
+    const bounded = absVal <= SWIPE_THRESHOLD
+      ? absVal
+      : SWIPE_THRESHOLD + (absVal - SWIPE_THRESHOLD) * 0.45;
+    const boundedOffset = Math.max(-140, Math.min(140, sign * bounded));
+    setSwipeOffset(boundedOffset);
+
+    if (Math.abs(boundedOffset) >= SWIPE_THRESHOLD && !hapticTriggeredRef.current) {
+      triggerHapticFeedback(20);
+      hapticTriggeredRef.current = true;
+    } else if (Math.abs(boundedOffset) < SWIPE_THRESHOLD && hapticTriggeredRef.current) {
+      hapticTriggeredRef.current = false;
     }
   };
 
@@ -233,18 +234,6 @@ function PackageCardImpl({
          escape. At z-30 the whole card-plus-menu sat below the install banner
          and the bottom nav (both z-40), and the menu was drawn behind them. */
       className={`relative rounded-2xl transition-ui ${menuOpen ? 'z-50' : 'z-0'}`}
-      /* `content-visibility: auto` implies `contain: layout style paint`, and
-         PAINT containment clips anything a descendant draws outside this box.
-         The row menu is positioned `absolute top-full` — below the card — so
-         it was being clipped away to nothing: the menu opened, and you saw
-         only the sliver that happened to fall inside the card's own bounds.
-         Dropping to `visible` while the menu is open removes the containment
-         for that one card; every other card in the list keeps the
-         skip-rendering win, which is what this was here for. */
-      style={{
-        contentVisibility: menuOpen ? 'visible' : 'auto',
-        containIntrinsicSize: '140px'
-      }}
     >
       {/* Swipe Action Background Track (Email-box style revealed actions) */}
       {(isSwiping || swipeOffset !== 0) && (
@@ -332,7 +321,7 @@ function PackageCardImpl({
           transition: isSwiping ? 'none' : 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
           ...(isPickupReady ? { boxShadow: '0 0 14px rgba(16, 185, 129, 0.2)' } : {})
         }}
-        className={`group relative bg-slate-900/90 hover:bg-slate-900 border rounded-2xl p-4 transition-all duration-200 cursor-pointer flex flex-col gap-3 shadow-sm hover:shadow-xl hover:shadow-slate-950/40 hover:-translate-y-0.5 active:scale-[0.985] active:brightness-95 ${
+        className={`touch-pan-y group relative bg-slate-900/90 hover:bg-slate-900 border rounded-2xl p-4 transition-all duration-200 cursor-pointer flex flex-col gap-3 shadow-sm hover:shadow-xl hover:shadow-slate-950/40 hover:-translate-y-0.5 active:scale-[0.985] active:brightness-95 ${
           isPickupReady ? 'shadow-emerald-500/10 border-emerald-500/30' : ''
         } ${
           pkg.isPinned ? 'border-blue-500/50 ring-1 ring-blue-500/20' : 'border-slate-800/80 hover:border-slate-700'

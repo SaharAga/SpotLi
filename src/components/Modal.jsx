@@ -62,7 +62,8 @@ let previousBodyOverflow = null;
 export function acquireScrollLock() {
   if (typeof document === 'undefined') return;
   if (scrollLockCount === 0) {
-    previousBodyOverflow = document.body.style.overflow;
+    const current = document.body.style.overflow;
+    previousBodyOverflow = current === 'hidden' ? '' : current;
     document.body.style.overflow = 'hidden';
   }
   scrollLockCount += 1;

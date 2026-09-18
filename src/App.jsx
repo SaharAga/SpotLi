@@ -704,7 +704,7 @@ export function DashboardContent() {
 
   // Check for First-Visit Onboarding Tour (only for new unauthenticated visitors with 0 packages)
   useEffect(() => {
-    if (user || loading || packages.length > 0) return;
+    if (user || loading || isDemoMode || packages.length > 0) return;
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         const hasSeenTour = localStorage.getItem(STORAGE_KEYS.ONBOARDING_TOUR_SEEN);
@@ -715,7 +715,7 @@ export function DashboardContent() {
     } catch {
       // Ignore
     }
-  }, [user, loading, packages.length, openModal]);
+  }, [user, loading, isDemoMode, packages.length, openModal]);
 
   // Check for Post-Auth Setup Wizard (runs once newly signed in user has accepted legal terms)
   useEffect(() => {
@@ -1157,6 +1157,14 @@ export function DashboardContent() {
   };
 
   const handleLaunchDemoMode = () => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(STORAGE_KEYS.ONBOARDING_TOUR_SEEN, 'true');
+      }
+    } catch {
+      // Ignore storage errors
+    }
+    closeModal(MODAL.ONBOARDING);
     startDemoMode();
     showToast(language === 'he' ? 'הופעל מצב הדגמה חי' : 'Demo mode loaded with sample packages', 'info');
   };
