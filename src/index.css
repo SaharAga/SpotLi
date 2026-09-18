@@ -303,7 +303,7 @@
   }
 
   html {
-    overflow-x: hidden;
+    overflow-x: clip;
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
   }
@@ -353,14 +353,8 @@
                 opacity 90ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  html,
   body {
-    overscroll-behavior-y: none;
-  }
-
-  body {
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow-x: clip;
     min-height: 100vh;
     -webkit-tap-highlight-color: transparent;
     -webkit-text-size-adjust: 100%;
