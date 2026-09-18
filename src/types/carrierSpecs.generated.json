@@ -210,13 +210,6 @@
       ],
       "patterns": [
         {
-          "source": "^\\d{8}$",
-          "flags": "",
-          "confidence": "medium",
-          "checksum": "not-applicable",
-          "priority": 65
-        },
-        {
           "source": "^CRG\\d{7,12}$",
           "flags": "i",
           "confidence": "high",
@@ -1002,14 +995,6 @@
       "confidence": "high",
       "checksum": "not-applicable",
       "priority": 62
-    },
-    {
-      "carrierId": "cargo",
-      "source": "^\\d{8}$",
-      "flags": "",
-      "confidence": "medium",
-      "checksum": "not-applicable",
-      "priority": 65
     },
     {
       "carrierId": "cargo",

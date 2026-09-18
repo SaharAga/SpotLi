@@ -174,6 +174,50 @@ describe('packageValidator - validatePackage', () => {
     expect(validated.injectedScript).toBeUndefined();
     expect(validated.isAdmin).toBeUndefined();
   });
+
+  it('preserves valid cross-border domestic handover and drops invalid domestic-to-domestic handover', () => {
+    // Valid cross-border handover
+    const validCrossBorder = {
+      id: 'pkg-cross-1',
+      title: 'AliExpress Item',
+      trackingNumber: 'LP00582910482CN',
+      carrier: 'cainiao',
+      localCarrier: 'israel-post',
+      localTrackingNumber: 'RU0126608087Z'
+    };
+    const validRes = validatePackage(validCrossBorder);
+    expect(validRes.carrier).toBe('cainiao');
+    expect(validRes.localCarrier).toBe('israel-post');
+    expect(validRes.localTrackingNumber).toBe('RU0126608087Z');
+
+    // Invalid domestic-to-domestic handover
+    const invalidDomestic = {
+      id: 'pkg-dom-1',
+      title: 'Tapuz Delivery',
+      trackingNumber: '48142143',
+      carrier: 'tapuz',
+      localCarrier: 'cargo',
+      localTrackingNumber: '48142143'
+    };
+    const invalidRes = validatePackage(invalidDomestic);
+    expect(invalidRes.carrier).toBe('tapuz');
+    expect(invalidRes.localCarrier).toBeUndefined();
+    expect(invalidRes.localTrackingNumber).toBeUndefined();
+
+    // Redundant identical carrier and tracking number
+    const selfHandover = {
+      id: 'pkg-self-1',
+      title: 'DHL Item',
+      trackingNumber: '1234567890',
+      carrier: 'dhl',
+      localCarrier: 'dhl',
+      localTrackingNumber: '1234567890'
+    };
+    const selfRes = validatePackage(selfHandover);
+    expect(selfRes.carrier).toBe('dhl');
+    expect(selfRes.localCarrier).toBeUndefined();
+    expect(selfRes.localTrackingNumber).toBeUndefined();
+  });
 });
 
 describe('packageValidator - validatePackageList', () => {

@@ -1087,7 +1087,7 @@ const MERCHANT_STOP_WORDS = new Set([
   'נקלטה', 'יצא', 'יצאה', 'עבר', 'עברה', 'התקבל', 'התקבלה', 'יונח', 'תימסר',
   'ממתין', 'ממתינה', 'ממתינים', 'מחכה', 'בדרך', 'עבור', 'אל', 'אליך', 'אליכם',
   'מספר', "מס'", 'מס', 'שמספרה', 'שמספרו', 'שמספר', 'למעקב', 'לכתובת', 'לחברת', 'לנקודת', 'ללוקר',
-  'לסניף', 'בקישור', 'באתר', 'תודה', 'שלום', 'היי'
+  'לסניף', 'בקישור', 'באתר', 'תודה', 'שלום', 'היי', 'מבקש', 'מבקשת', 'מבקשים', 'לספק', 'למסור'
 ]);
 
 /**
@@ -1475,7 +1475,7 @@ export function parseSmartText(rawText) {
     status = 'ready_for_pickup';
   } else if (
     /\b(out for delivery|with courier)\b/i.test(lowerText) ||
-    /(?:יוצאת למסירה|יוצא למסירה|יצאה עם שליח|נמסרה לשליח|יצא(?:ה)?\s*לאספקה|מתוכנן להגיע היום|מתוכננת להגיע היום|בדקות הקרובות|בשעה הקרובה|השליח בדרך אליך|שליח\s+[^\n]+בדרך אליך|תסופק היום|יסופק היום|היום עם שליח|מגיע היום|צפוי להגיע היום|מבקש למסור|מבקשים למסור|בדרך למסור|נמסר[ההת]?\s+(?:ה)?(?:חבילה|משלוח|הזמנה)\s+לשליח)/i.test(lowerText)
+    /(?:יוצאת למסירה|יוצא למסירה|יצאה עם שליח|נמסרה לשליח|יצא(?:ה)?\s*לאספקה|מתוכנן להגיע היום|מתוכננת להגיע היום|בדקות הקרובות|בשעה הקרובה|השליח בדרך אליך|שליח\s+[^\n]+בדרך אליך|תסופק היום|יסופק היום|היום עם שליח|מגיע היום|צפוי להגיע היום|מבקש(?:ים)?\s+(?:למסור|לספק)|בדרך למסור|נמסר[ההת]?\s+(?:ה)?(?:חבילה|משלוח|הזמנה)\s+לשליח)/i.test(lowerText)
   ) {
     status = 'out_for_delivery';
   } else if (/\b(delivery issue|delivery failed|customs clearance)\b/i.test(lowerText) || /(?:עיכוב במכס|בעיה במסירה|מסירה נכשלה|ניסינו למסור|ניסיון מסירה|לא היית בבית|לא היית בכתובת|לא נמצאת בכתובת|לא נמצאתם בכתובת)/i.test(lowerText)) {
@@ -1528,7 +1528,10 @@ export function parseSmartText(rawText) {
     seenTracking.add(cand.value);
 
     const tn = cand.value;
-    const candCarrier = (cand.carrierCandidates && cand.carrierCandidates[0]) || bestCarrier || 'other';
+    const topCandCarrier = cand.carrierCandidates && cand.carrierCandidates[0];
+    const candCarrier = (cand.distinctive && topCandCarrier)
+      ? topCandCarrier
+      : (bestCarrier !== 'other' ? bestCarrier : (topCandCarrier || 'other'));
     const candCarrierObj = getCarrier(candCarrier);
 
     let candTitle = title;

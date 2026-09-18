@@ -320,48 +320,48 @@
     "isValidChecksum": null
   },
   "11234567": {
-    "carrierId": "cargo",
-    "confidence": "medium",
+    "carrierId": "other",
+    "confidence": "none",
     "isValidChecksum": null
   },
   "21234567": {
-    "carrierId": "cargo",
-    "confidence": "medium",
+    "carrierId": "other",
+    "confidence": "none",
     "isValidChecksum": null
   },
   "31234567": {
-    "carrierId": "cargo",
-    "confidence": "medium",
+    "carrierId": "other",
+    "confidence": "none",
     "isValidChecksum": null
   },
   "41234567": {
-    "carrierId": "cargo",
-    "confidence": "medium",
+    "carrierId": "other",
+    "confidence": "none",
     "isValidChecksum": null
   },
   "51234567": {
-    "carrierId": "cargo",
-    "confidence": "medium",
+    "carrierId": "other",
+    "confidence": "none",
     "isValidChecksum": null
   },
   "61234567": {
-    "carrierId": "cargo",
-    "confidence": "medium",
+    "carrierId": "other",
+    "confidence": "none",
     "isValidChecksum": null
   },
   "71234567": {
-    "carrierId": "cargo",
-    "confidence": "medium",
+    "carrierId": "other",
+    "confidence": "none",
     "isValidChecksum": null
   },
   "81234567": {
-    "carrierId": "cargo",
-    "confidence": "medium",
+    "carrierId": "other",
+    "confidence": "none",
     "isValidChecksum": null
   },
   "91234567": {
-    "carrierId": "cargo",
-    "confidence": "medium",
+    "carrierId": "other",
+    "confidence": "none",
     "isValidChecksum": null
   },
   "112345678": {
@@ -864,6 +864,26 @@
     "confidence": "high",
     "isValidChecksum": null
   },
+  "GAIH50911204": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "gaih50911204": {
+    "carrierId": "other",
+    "confidence": "none",
+    "isValidChecksum": null
+  },
+  "FCS4046309": {
+    "carrierId": "focus",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
+  "fcs4046309": {
+    "carrierId": "focus",
+    "confidence": "high",
+    "isValidChecksum": null
+  },
   "gp94820194": {
     "carrierId": "getpackage",
     "confidence": "high",
@@ -1010,8 +1030,8 @@
     "isValidChecksum": null
   },
   "01234567": {
-    "carrierId": "cargo",
-    "confidence": "medium",
+    "carrierId": "other",
+    "confidence": "none",
     "isValidChecksum": null
   },
   "012345678": {
@@ -3972,26 +3992,6 @@
   "RS123456789012345678XX": {
     "carrierId": "other",
     "confidence": "none",
-    "isValidChecksum": null
-  },
-  "GAIH50911204": {
-    "carrierId": "other",
-    "confidence": "none",
-    "isValidChecksum": null
-  },
-  "gaih50911204": {
-    "carrierId": "other",
-    "confidence": "none",
-    "isValidChecksum": null
-  },
-  "FCS4046309": {
-    "carrierId": "focus",
-    "confidence": "high",
-    "isValidChecksum": null
-  },
-  "fcs4046309": {
-    "carrierId": "focus",
-    "confidence": "high",
     "isValidChecksum": null
   }
 }

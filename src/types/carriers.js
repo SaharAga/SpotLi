@@ -291,7 +291,6 @@ export const CARRIERS = {
     getTrackingUrl: (trackNum) => `https://cargoexpress.co.il/track?tracknum=${encodeURIComponent(trackNum)}`,
     fallbackTrackingUrl: (trackNum) => `https://t.17track.net/en#nums=${encodeURIComponent(trackNum)}`,
     patterns: [
-      rule(/^\d{8}$/, { confidence: 'medium', priority: 65 }),
       rule(/^CRG\d{7,12}$/i, { confidence: 'high', priority: 70 }),
       rule(/^CARGO\d{6,10}$/i, { confidence: 'high', priority: 71 }),
       rule(/^ECSA\d{6,9}$/i, { confidence: 'high', priority: 72 })

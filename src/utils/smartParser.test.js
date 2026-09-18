@@ -488,13 +488,22 @@ describe('smartParser - Message History Triage improvements', () => {
     expect(res.pickupLocation).toBe('טוטו לוטו מרום גולן');
   });
 
-  it('parses CARGO 8-digit tracking with hyphenated store name and delivered status', () => {
+  it('parses 8-digit tracking with hyphenated store name and delivered status', () => {
     const text = 'חבילה מ-addictonline מספר 67455927 נמסרה בהצלחה. תודה שבחרת בנו!';
     const res = parseSmartText(text);
     expect(res.trackingNumber).toBe('67455927');
-    expect(res.carrier).toBe('cargo');
+    expect(res.carrier).toBe('other');
     expect(res.status).toBe('delivered');
     expect(res.store).toBe('addictonline');
+  });
+
+  it('parses Tapuz Delivery SMS without spurious Cargo classification', () => {
+    const text = 'היי Sahar Aga, שליח של Seestarz online מבקש לספק לך חבילה 48142143 היום לשדרות בן גוריון 23 ראש העין. לא צריך לחכות לשליח - יתואם מולך טלפונית ואם יתאים לך - זה יקרה. לאישור השארת חבילה ליד הדלת - בבקשה להשיב לסמס זה "מאושר" בהודעה חוזרת. לינק לסטטוס מעקב https://crm.tapuzdelivery.co.il/Cs/client/delivery-status/YBLADF9LZ34UTJ94KD725A9NB2IDZTQO5ROC. לוואטסאפ עם נציג https://wa.me/972545354495, אין צורך לחכות לשליח בכתובת. אנו נתקשר לפני שנגיע יום נעים.';
+    const res = parseSmartText(text);
+    expect(res.trackingNumber).toBe('48142143');
+    expect(res.carrier).toBe('tapuz');
+    expect(res.status).toBe('out_for_delivery');
+    expect(res.store).toBe('Seestarz online');
   });
 
   it('parses Terminal-X with hyphenated store and delivered phrasing', () => {

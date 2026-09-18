@@ -562,6 +562,48 @@ describe('Delivery Service and Storage Persistence', () => {
       expect(merged.aliases).toContain('RU0126608087Z');
     });
 
+    it('does not create domestic courier handover when existing package is already a domestic Israeli courier', () => {
+      const existing = {
+        id: 'pkg-tapuz-1',
+        trackingNumber: '48142143',
+        carrier: 'tapuz',
+        status: 'in_transit'
+      };
+
+      const incoming = {
+        trackingNumber: '48142143',
+        carrier: 'cargo',
+        status: 'out_for_delivery'
+      };
+
+      const merged = deliveryService.mergePackageData(existing, incoming);
+      expect(merged.carrier).toBe('tapuz');
+      expect(merged.localCarrier).toBeNull();
+      expect(merged.localTrackingNumber).toBeNull();
+      expect(merged.status).toBe('out_for_delivery');
+    });
+
+    it('clears invalid domestic-to-domestic localCarrier if already present on existing package', () => {
+      const existing = {
+        id: 'pkg-tapuz-2',
+        trackingNumber: '48142143',
+        carrier: 'tapuz',
+        localCarrier: 'cargo',
+        localTrackingNumber: '48142143',
+        status: 'in_transit'
+      };
+
+      const incoming = {
+        status: 'delivered'
+      };
+
+      const merged = deliveryService.mergePackageData(existing, incoming);
+      expect(merged.carrier).toBe('tapuz');
+      expect(merged.localCarrier).toBeNull();
+      expect(merged.localTrackingNumber).toBeNull();
+      expect(merged.status).toBe('delivered');
+    });
+
     it('upgrades generic title to specific item title and preserves orderNumber in mergePackageData', () => {
       const existing = {
         id: 'pkg-1',

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sparkles, AlertTriangle, ExternalLink, MapPin, Key, ShoppingBag, Wand2 } from 'lucide-react';
+import { Sparkles, AlertTriangle, ExternalLink, MapPin, Key, ShoppingBag, Wand2, X } from 'lucide-react';
 import { CARRIER_LIST, getCarrier } from '../types/carriers.js';
 import { CATEGORIES, SELECTABLE_STATUSES, getStatusMeta } from '../types/stages.js';
 import { toLocalISODate } from '../utils/dateUtils';
@@ -63,6 +63,8 @@ export function AddEditPackageModal({
   const [pickupDeadline, setPickupDeadline] = useState('');
   const [returnDeadline, setReturnDeadline] = useState('');
   const [returnNotes, setReturnNotes] = useState('');
+  const [localCarrier, setLocalCarrier] = useState('');
+  const [localTrackingNumber, setLocalTrackingNumber] = useState('');
 
   // Snapshot of what Smart Import auto-filled, so a save can detect which
   // fields the user corrected before submitting — the implicit half of the
@@ -158,6 +160,8 @@ export function AddEditPackageModal({
       setPickupDeadline(editPackage.pickupDeadline || '');
       setReturnDeadline(editPackage.returnDeadline || '');
       setReturnNotes(editPackage.returnNotes || '');
+      setLocalCarrier(editPackage.localCarrier || '');
+      setLocalTrackingNumber(editPackage.localTrackingNumber || '');
       autoFillSnapshotRef.current = null;
     } else if (initialValues) {
       const title = initialValues.title || '';
@@ -206,6 +210,8 @@ export function AddEditPackageModal({
       setIsRedirected(isRedirected);
       setOriginalPickupLocation(originalPickupLocation);
       setRedirectReason(redirectReason);
+      setLocalCarrier(initialValues.localCarrier || '');
+      setLocalTrackingNumber(initialValues.localTrackingNumber || '');
 
       // Only Smart Import (regex or AI) prefills carry _autoFillSource —
       // manual "new package" has no initialValues.carrierId either, so this
@@ -248,6 +254,8 @@ export function AddEditPackageModal({
       setPickupDeadline('');
       setReturnDeadline('');
       setReturnNotes('');
+      setLocalCarrier('');
+      setLocalTrackingNumber('');
       autoFillSnapshotRef.current = null;
     }
   }, [editPackage, initialValues, isOpen]);
@@ -369,8 +377,8 @@ export function AddEditPackageModal({
       pickupDeadline: pickupDeadline.trim(),
       returnDeadline: returnDeadline.trim(),
       returnNotes: returnNotes.trim(),
-      localTrackingNumber: editPackage?.localTrackingNumber || initialValues?.localTrackingNumber || undefined,
-      localCarrier: editPackage?.localCarrier || initialValues?.localCarrier || undefined,
+      localTrackingNumber: localTrackingNumber.trim() || undefined,
+      localCarrier: localCarrier.trim() || undefined,
       aliases: editPackage?.aliases || initialValues?.aliases || undefined,
       customsDetails: editPackage?.customsDetails || initialValues?.customsDetails || undefined,
       isPinned: editPackage ? editPackage.isPinned : false,
@@ -552,6 +560,32 @@ export function AddEditPackageModal({
                 ))}
               </optgroup>
             </select>
+            {localCarrier && localCarrier !== carrier && (
+              <div className="mt-2.5 p-3 bg-cyan-950/40 border border-cyan-500/30 rounded-xl flex items-center justify-between gap-2 text-xs text-cyan-200 animate-fade-in">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-semibold text-cyan-400">
+                    {language === 'he' ? 'חברת הפצה מקומית (העברה):' : 'Domestic Handover Courier:'}
+                  </span>
+                  <span className="font-medium">{language === 'he' ? getCarrier(localCarrier).hebrewName : getCarrier(localCarrier).name}</span>
+                  {localTrackingNumber && (
+                    <span className="font-mono text-cyan-300">({localTrackingNumber})</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLocalCarrier('');
+                    setLocalTrackingNumber('');
+                  }}
+                  className="px-3 py-1.5 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 hover:text-white rounded-lg font-medium transition-colors shrink-0 flex items-center gap-1 min-h-[48px] cursor-pointer"
+                  title={language === 'he' ? 'הסר חברת הפצה מקומית' : 'Remove domestic handover'}
+                  aria-label={language === 'he' ? 'הסר חברת הפצה מקומית' : 'Remove domestic handover'}
+                >
+                  <X className="w-4 h-4" />
+                  <span>{language === 'he' ? 'הסר' : 'Remove'}</span>
+                </button>
+              </div>
+            )}
         </div>
 
         {/* Current Status Stage */}
