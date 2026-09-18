@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.38.3] - 2026-09-18
+
+### Fixed
+- Elevate dashboard visual hierarchy with Apple Wallet style package cards, in-card progress stepper, dedicated digital pickup pass, modern KPI card deck, and pill-shaped filter controls.
+
+- Fix spurious Cargo Express carrier identification and domestic handover badges on domestic packages, heal domestic-to-domestic handover states across validator and delivery service, and add UI controls in package modal to inspect and remove local courier handovers.
+
+- Smooth navbar tab transitions with solid opaque backgrounds and tab preloading, and make FeedbackModal scrollable with a pinned action footer.
+
+- Refined mobile sheet ergonomics with touch drag-to-dismiss, top sheet handles, and overscroll containment, softened badge styling, and replaced tech-demo buzzwords across English and Hebrew.
+
 ## [0.38.2] - 2026-09-17
 
 ### Fixed
