@@ -51,7 +51,7 @@ function StatsCardsImpl({ packages = [], activeFilter, onSelectFilter }) {
   ];
 
   return (
-    <div className="grid grid-cols-4 gap-2 sm:gap-4 my-5 sm:my-6">
+    <div className="hidden lg:grid grid-cols-4 gap-4 my-6">
       {cells.map((cell) => {
         const isActive = activeFilter === cell.id;
         return (

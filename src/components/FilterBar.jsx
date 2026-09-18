@@ -84,74 +84,31 @@ export function FilterBar({
   return (
     <div data-testid="filter-bar" className="relative flex flex-col gap-2.5 mb-6">
       <div className="flex items-center gap-2">
-      <div className="relative flex-1 min-w-0">
-        <Search className="absolute top-1/2 -translate-y-1/2 start-4 w-4 h-4 text-slate-400" aria-hidden="true" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder={t('searchPlaceholder')}
-          className="w-full bg-slate-900/80 hover:bg-slate-900 border border-slate-800/80 text-slate-100 placeholder-slate-500 text-sm rounded-2xl py-3 ps-11 pe-11 transition-all focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-sm min-h-[48px]"
-        />
-        {searchQuery && (
-          <button
-            type="button"
-            onClick={() => {
-              triggerHapticFeedback('selection');
-              onSearchChange('');
-            }}
-            className="absolute top-1/2 -translate-y-1/2 end-1.5 p-2 rounded-lg text-slate-400 hover:text-slate-100 min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer"
-            aria-label="Clear search"
-          >
-            <X className="w-4 h-4" aria-hidden="true" />
-          </button>
-        )}
-      </div>
-
-      </div>
-
-      {/* Chip row. The counts sit ON the filters rather than in a separate
-          legend, so one glance answers both "what can I filter by" and "how
-          many are there". Everything finer — carrier, sort, archived — stays
-          behind the one icon at the end, which is also where the view toggles
-          went: a view mode is a preference you set once, not something you
-          reach for on every search. */}
-      <div className="flex items-center gap-2">
-        {/*
-          The fade is the scroll affordance. `no-scrollbar` hides the bar, so a
-          chip cut in half by the container edge read as a broken layout rather
-          than as "there is more this way" — at 390px the Delivered chip is
-          always the one sliced. Masked on the inline-end edge, mirrored for
-          RTL since a mask does not follow writing direction on its own.
-        */}
-        <div className="flex items-center gap-1.5 min-w-0 overflow-x-auto no-scrollbar [mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)] rtl:[mask-image:linear-gradient(to_left,black_calc(100%-2rem),transparent)]">
-          {chips.map((chip) => {
-            const isOn = activeTab === chip.id;
-            return (
-              <button
-                key={chip.id}
-                onClick={() => {
-                  triggerHapticFeedback('selection');
-                  onTabChange(chip.id);
-                }}
-                aria-pressed={isOn}
-                className={`shrink-0 min-h-[48px] px-3.5 rounded-full text-xs font-semibold transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none inline-flex items-center gap-1.5 ${
-                  isOn
-                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/30'
-                    : 'bg-slate-900/60 border border-slate-800/80 text-slate-400 hover:text-slate-200 hover:border-slate-700/80 hover:bg-slate-900'
-                }`}
-              >
-                <span>{chip.label}</span>
-                <span className={`[font-variant-numeric:tabular-nums] px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
-                  isOn ? 'bg-blue-700 text-blue-100' : 'bg-slate-800/90 text-slate-400'
-                }`}>
-                  {chip.count}
-                </span>
-              </button>
-            );
-          })}
+        <div className="relative flex-1 min-w-0">
+          <Search className="absolute top-1/2 -translate-y-1/2 start-4 w-4 h-4 text-slate-400" aria-hidden="true" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder={t('searchPlaceholder')}
+            className="w-full bg-slate-900/80 hover:bg-slate-900 border border-slate-800/80 text-slate-100 placeholder-slate-500 text-sm rounded-2xl py-3 ps-11 pe-11 transition-all focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-sm min-h-[48px]"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => {
+                triggerHapticFeedback('selection');
+                onSearchChange('');
+              }}
+              className="absolute top-1/2 -translate-y-1/2 end-1.5 p-2 rounded-lg text-slate-400 hover:text-slate-100 min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer"
+              aria-label="Clear search"
+            >
+              <X className="w-4 h-4" aria-hidden="true" />
+            </button>
+          )}
         </div>
 
+        {/* Filters Toggle Button */}
         <button
           type="button"
           onClick={() => {
@@ -161,7 +118,7 @@ export function FilterBar({
           aria-expanded={filtersOpen}
           aria-label={t('filters.status')}
           title={t('filters.moreFilters')}
-          className={`relative shrink-0 ms-auto min-h-[48px] min-w-[48px] rounded-2xl border transition-all flex items-center justify-center cursor-pointer ${
+          className={`relative shrink-0 min-h-[48px] min-w-[48px] rounded-2xl border transition-all flex items-center justify-center cursor-pointer ${
             filtersOpen
               ? 'bg-blue-600 border-blue-600 text-white shadow-sm shadow-blue-600/30'
               : 'bg-slate-900/60 border-slate-800/80 text-slate-300 hover:text-slate-100 hover:bg-slate-900 hover:border-slate-700'
@@ -172,7 +129,35 @@ export function FilterBar({
             <span className="absolute -top-1 -end-1 w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-slate-950" aria-hidden="true" />
           )}
         </button>
+      </div>
 
+      {/* Chip row on mobile only (< 1024px). On desktop (>= 1024px), the top KPI StatsCards serve as the status filters */}
+      <div className="flex lg:hidden items-center gap-1.5 min-w-0 overflow-x-auto no-scrollbar [mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)] rtl:[mask-image:linear-gradient(to_left,black_calc(100%-2rem),transparent)]">
+        {chips.map((chip) => {
+          const isOn = activeTab === chip.id;
+          return (
+            <button
+              key={chip.id}
+              onClick={() => {
+                triggerHapticFeedback('selection');
+                onTabChange(chip.id);
+              }}
+              aria-pressed={isOn}
+              className={`shrink-0 min-h-[48px] px-3.5 rounded-full text-xs font-semibold transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none inline-flex items-center gap-1.5 ${
+                isOn
+                  ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/30'
+                  : 'bg-slate-900/60 border border-slate-800/80 text-slate-400 hover:text-slate-200 hover:border-slate-700/80 hover:bg-slate-900'
+              }`}
+            >
+              <span>{chip.label}</span>
+              <span className={`[font-variant-numeric:tabular-nums] px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
+                isOn ? 'bg-blue-700 text-blue-100' : 'bg-slate-800/90 text-slate-400'
+              }`}>
+                {chip.count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {filtersOpen && (
