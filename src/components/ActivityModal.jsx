@@ -68,14 +68,13 @@ function getCheckpointPresentation(event) {
  * still reachable from Account and from any package that has a pickup point,
  * which is the only context it is useful in anyway.
  */
-export function ActivityModal({ isOpen, onClose, packages = [], onOpenPackage, isView = false }) {
+export function ActivityModal({ isOpen, onClose, packages = [], onOpenPackage }) {
   const { language, isRTL } = useLanguage();
   const he = language === 'he';
 
-  const shouldRender = isView || isOpen;
   const days = useMemo(
-    () => (shouldRender ? groupActivityByDay(buildActivityFeed(packages)) : []),
-    [shouldRender, packages]
+    () => groupActivityByDay(buildActivityFeed(packages)),
+    [packages]
   );
 
   const total = useMemo(
@@ -89,10 +88,16 @@ export function ActivityModal({ isOpen, onClose, packages = [], onOpenPackage, i
       minute: '2-digit'
     });
 
-  if (!shouldRender) return null;
-
-  const innerContent = (
-    <>
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      componentName="ActivityModal"
+      overlayClassName="p-3 sm:p-4"
+      ariaLabel={he ? 'פעילות' : 'Activity'}
+      isTabScreen={true}
+      className="relative w-full max-w-lg bg-slate-950 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8 max-h-[90vh] flex flex-col"
+    >
       <div className="flex items-start justify-between gap-3 p-4 sm:p-6 border-b border-slate-800 shrink-0">
         <div className="min-w-0 flex flex-col gap-1">
           <Title>{he ? 'פעילות' : 'Activity'}</Title>
@@ -189,28 +194,6 @@ export function ActivityModal({ isOpen, onClose, packages = [], onOpenPackage, i
           </div>
         )}
       </div>
-    </>
-  );
-
-  if (isView) {
-    return (
-      <div className="w-full max-w-2xl mx-auto bg-slate-950 border border-slate-800 rounded-3xl shadow-xl overflow-hidden flex flex-col my-4">
-        {innerContent}
-      </div>
-    );
-  }
-
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      componentName="ActivityModal"
-      overlayClassName="p-3 sm:p-4"
-      ariaLabel={he ? 'פעילות' : 'Activity'}
-      isTabScreen={true}
-      className="relative w-full max-w-lg bg-slate-950 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8 max-h-[90vh] flex flex-col"
-    >
-      {innerContent}
     </Modal>
   );
 }

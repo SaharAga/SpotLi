@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { Plus, Inbox, ShieldCheck, Sparkles, LogIn, UserPlus, PlayCircle, MessageSquarePlus, RefreshCw, Layers, CheckCircle2, Navigation } from 'lucide-react';
 import { Navbar } from './components/Navbar';
-import { TAB_FOR_MODAL } from './components/BottomNav';
 import { StatsCards } from './components/StatsCards';
 import { FilterBar } from './components/FilterBar';
 import { PackageCard } from './components/PackageCard';
@@ -313,21 +312,8 @@ export function useModalRouter() {
     [stack]
   );
 
-  const activeModal = stack.length > 0 ? stack[stack.length - 1].id : null;
-  const baseTabEntry = stack.find(
-    (entry) =>
-      entry.id === MODAL.ANALYTICS ||
-      entry.id === MODAL.ACTIVITY ||
-      entry.id === MODAL.ACCOUNT
-  );
-  const currentTab = baseTabEntry
-    ? (baseTabEntry.id === MODAL.ANALYTICS ? 'insights' : baseTabEntry.id === MODAL.ACTIVITY ? 'activity' : 'account')
-    : 'status';
-
   return {
-    activeModal,
-    currentTab,
-    stack,
+    activeModal: stack.length > 0 ? stack[stack.length - 1].id : null,
     openModal,
     closeAllModals,
     goToTab,
@@ -396,7 +382,6 @@ export function DashboardContent() {
   // Modals & Active Elements — one router, not twelve booleans.
   const {
     activeModal,
-    currentTab,
     openModal,
     closeModal,
     closeAllModals,
@@ -1329,6 +1314,18 @@ export function DashboardContent() {
       }
     },
     {
+      id: MODAL.ANALYTICS,
+      componentName: 'AnalyticsModal',
+      render: (isOpen) => (
+        <AnalyticsModal
+          isOpen={isOpen}
+          onClose={() => closeModal(MODAL.ANALYTICS)}
+          packages={packages}
+          uid={user?.id}
+        />
+      )
+    },
+    {
       id: MODAL.INGESTION_GUIDE,
       componentName: 'IngestionGuideModal',
       render: (isOpen) => (
@@ -1358,6 +1355,44 @@ export function DashboardContent() {
       )
     },
     {
+      id: MODAL.ACCOUNT,
+      componentName: 'AccountModal',
+      render: (isOpen, payload) => (
+        /*
+          The one Account screen. Navbar used to render a second copy of this
+          component from its own `isAccountSheetOpen` state for the bottom-bar
+          tab — with a *richer* prop set than this one, so the two entry points
+          offered different rows. Being outside the router also meant it pushed
+          no history entry, so the Android back gesture left the app instead of
+          closing the sheet.
+
+          `initialTab` defaults to null, not 'profile': null is the root
+          settings list, which is where the bottom-bar Account tab has always
+          landed. Only the "open my profile" entry point asks for the profile
+          sub-page, and it passes initialTab explicitly.
+        */
+        <AccountModal
+          isOpen={isOpen}
+          onClose={() => closeModal(MODAL.ACCOUNT)}
+          initialTab={payload?.initialTab ?? null}
+          packages={packages}
+          onExportData={handleExportData}
+          onImportData={handleImportData}
+          onOpenExport={() => openModal(MODAL.EXPORT)}
+          onOpenAppTour={() => openModal(MODAL.ONBOARDING)}
+          onOpenAuth={() => openModal(MODAL.AUTH, { initialMode: 'signin' })}
+          onOpenSmartImport={() => openModal(MODAL.SMART_IMPORT)}
+          onOpenConnectModal={() => openModal(MODAL.INGESTION_GUIDE)}
+          onOpenAnalytics={() => goToTab(MODAL.ANALYTICS)}
+          onOpenLockerMap={() => openModal(MODAL.LOCKER_MAP)}
+          onOpenFeedback={() => openModal(MODAL.FEEDBACK)}
+          onOpenAdminFeedback={isAdminUser(user) ? () => openModal(MODAL.ADMIN_FEEDBACK) : undefined}
+          onOpenAbout={() => openModal(MODAL.ABOUT)}
+          onShowToast={showToast}
+        />
+      )
+    },
+    {
       id: MODAL.EXPORT,
       componentName: 'ExportModal',
       render: (isOpen) => (
@@ -1381,6 +1416,21 @@ export function DashboardContent() {
           onOpenLockerMode={handleOpenLockerMode}
           onOpenNavigation={(target) => openModal(MODAL.NAVIGATION_CHOICE, target)}
           onShowToast={showToast}
+        />
+      )
+    },
+    {
+      id: MODAL.ACTIVITY,
+      componentName: 'ActivityModal',
+      render: (isOpen) => (
+        <ActivityModal
+          isOpen={isOpen}
+          onClose={() => closeModal(MODAL.ACTIVITY)}
+          packages={packages}
+          onOpenPackage={(id) => {
+            const target = packages.find((p) => p.id === id);
+            if (target) handleOpenDetails(target);
+          }}
         />
       )
     },
@@ -1609,15 +1659,14 @@ export function DashboardContent() {
       <Navbar
         isDemoMode={isDemoMode}
         activeModal={activeModal}
-        activeTab={currentTab}
         onGoToTab={goToTab}
         onOpenAddModal={() => openModal(MODAL.ADD_EDIT)}
         onOpenSmartImport={() => openModal(MODAL.SMART_IMPORT)}
-        onOpenAnalytics={() => goToTab(MODAL.ANALYTICS)}
+        onOpenAnalytics={() => openModal(MODAL.ANALYTICS)}
         onOpenConnectModal={() => openModal(MODAL.INGESTION_GUIDE)}
         onOpenAuth={() => {
           if (user) {
-            goToTab(MODAL.ACCOUNT, { initialTab: 'profile' });
+            openModal(MODAL.ACCOUNT, { initialTab: 'profile' });
           } else {
             openModal(MODAL.AUTH, { initialMode: 'signin' });
           }
@@ -1656,60 +1705,7 @@ export function DashboardContent() {
           way to scroll it free. 9.25rem = the FAB's offset, its height, and a
           gap. */}
       <main className="relative flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-[calc(9.25rem+env(safe-area-inset-bottom,0px))] lg:pb-6">
-        {currentTab === 'insights' ? (
-          <ErrorBoundary compact componentName="AnalyticsModal" onReset={() => goToTab(null)}>
-            <Suspense fallback={<ModalLoadingFallback />}>
-              <AnalyticsModal
-                isView={true}
-                isOpen={true}
-                packages={packages}
-                uid={user?.id}
-                onClose={() => goToTab(null)}
-              />
-            </Suspense>
-          </ErrorBoundary>
-        ) : currentTab === 'activity' ? (
-          <ErrorBoundary compact componentName="ActivityModal" onReset={() => goToTab(null)}>
-            <Suspense fallback={<ModalLoadingFallback />}>
-              <ActivityModal
-                isView={true}
-                isOpen={true}
-                packages={packages}
-                onClose={() => goToTab(null)}
-                onOpenPackage={(id) => {
-                  const target = packages.find((p) => p.id === id);
-                  if (target) handleOpenDetails(target);
-                }}
-              />
-            </Suspense>
-          </ErrorBoundary>
-        ) : currentTab === 'account' ? (
-          <ErrorBoundary compact componentName="AccountModal" onReset={() => goToTab(null)}>
-            <Suspense fallback={<ModalLoadingFallback />}>
-              <AccountModal
-                inline={true}
-                isView={true}
-                isOpen={true}
-                onClose={() => goToTab(null)}
-                initialTab={getModalPayload(MODAL.ACCOUNT)?.initialTab ?? null}
-                packages={packages}
-                onExportData={handleExportData}
-                onImportData={handleImportData}
-                onOpenExport={() => openModal(MODAL.EXPORT)}
-                onOpenAppTour={() => openModal(MODAL.ONBOARDING)}
-                onOpenAuth={() => openModal(MODAL.AUTH, { initialMode: 'signin' })}
-                onOpenSmartImport={() => openModal(MODAL.SMART_IMPORT)}
-                onOpenConnectModal={() => openModal(MODAL.INGESTION_GUIDE)}
-                onOpenAnalytics={() => goToTab(MODAL.ANALYTICS)}
-                onOpenLockerMap={() => openModal(MODAL.LOCKER_MAP)}
-                onOpenFeedback={() => openModal(MODAL.FEEDBACK)}
-                onOpenAdminFeedback={isAdminUser(user) ? () => openModal(MODAL.ADMIN_FEEDBACK) : undefined}
-                onOpenAbout={() => openModal(MODAL.ABOUT)}
-                onShowToast={showToast}
-              />
-            </Suspense>
-          </ErrorBoundary>
-        ) : loading && !user ? (
+        {loading && !user ? (
           /* SLEEK INITIAL COLD-START SKELETON / LOADING STATE */
           <div className="max-w-2xl mx-auto my-12 p-8 sm:p-12 bg-slate-900/40 border border-slate-800/60 rounded-3xl text-center flex flex-col items-center justify-center animate-pulse">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-gradient-to-tr from-blue-600/30 to-indigo-500/30 border border-blue-500/20 text-blue-400 flex items-center justify-center mb-6 shadow-xl">
