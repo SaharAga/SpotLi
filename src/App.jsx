@@ -1743,15 +1743,15 @@ export function DashboardContent() {
                   return (
                     <div
                       key={cluster.normalizedKey || cluster.location}
-                      className="p-4 rounded-2xl bg-gradient-to-r from-indigo-950 via-slate-900 to-blue-950 text-white border-2 border-indigo-500/40 shadow-xl shadow-indigo-950/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all"
+                      className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 text-slate-100 border border-indigo-500/30 shadow-lg shadow-indigo-950/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all"
                     >
                       <div className="flex items-start gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 shrink-0 mt-0.5">
+                        <div className="w-10 h-10 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0 mt-0.5">
                           <Layers className="w-5 h-5" />
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/30 text-indigo-200 border border-indigo-400/40 text-[11px] font-extrabold uppercase tracking-wide">
+                            <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 text-[11px] font-bold uppercase tracking-wide">
                               {t('locationBundling.dashboardBannerTitle')}
                             </span>
                             <span className="text-xs font-bold text-slate-200">
@@ -1785,9 +1785,9 @@ export function DashboardContent() {
                         <button
                           type="button"
                           onClick={() => handleOpenLockerMode(firstPkg)}
-                          className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs shadow-md shadow-emerald-500/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer min-h-[48px]"
+                          className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-sm transition-colors flex items-center justify-center gap-1.5 cursor-pointer min-h-[48px]"
                         >
-                          <CheckCircle2 className="w-4 h-4 text-slate-950 stroke-[2.5]" />
+                          <CheckCircle2 className="w-4 h-4 stroke-[2.2]" />
                           <span>
                             {(t('locationBundling.openClusterPins') || 'View Pickup Codes ({count})').replace('{count}', String(count))}
                           </span>
