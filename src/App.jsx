@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
-import { Plus, Inbox, ShieldCheck, Sparkles, LogIn, UserPlus, PlayCircle, MessageSquarePlus, RefreshCw, Layers, CheckCircle2, Navigation } from 'lucide-react';
+import { Plus, Inbox, ShieldCheck, Sparkles, LogIn, UserPlus, PlayCircle, MessageSquarePlus, RefreshCw, Layers, CheckCircle2, Navigation, ChevronDown } from 'lucide-react';
 import { Navbar } from './components/Navbar';
 import { StatsCards } from './components/StatsCards';
 import { FilterBar } from './components/FilterBar';
@@ -10,6 +10,7 @@ import { ModalLoadingFallback } from './components/ModalLoadingFallback';
 import { findPackageByAnyTrackingNumber, mergePackageData } from './services/deliveryService';
 import { deriveMood } from './utils/ambientMood';
 import { getBundledLocations } from './utils/locationBundling';
+import { triggerHapticFeedback } from './utils/haptics';
 
 /**
  * Every dialog is loaded on demand.
@@ -378,6 +379,28 @@ export function DashboardContent() {
   }, []);
 
   const [viewMode, setViewMode] = useState('grid');
+
+  const [deliveredCollapsed, setDeliveredCollapsed] = useState(() => {
+    try {
+      const stored = localStorage.getItem('deliveree_delivered_collapsed');
+      return stored !== null ? stored === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const handleToggleDeliveredCollapsed = useCallback(() => {
+    triggerHapticFeedback('selection');
+    setDeliveredCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('deliveree_delivered_collapsed', String(next));
+      } catch {
+        // Ignore
+      }
+      return next;
+    });
+  }, []);
 
   // Modals & Active Elements — one router, not twelve booleans.
   const {
@@ -1239,6 +1262,25 @@ export function DashboardContent() {
     return next;
   }, [packages, searchQuery, selectedCarrier, activeTab, sortBy, language]);
 
+  // On the "All" tab (without an active search query), cleanly separate active shipments
+  // from delivered packages so delivered items can be housed in a tidy collapsible section
+  // at the bottom rather than crowding out active deliveries.
+  const { activeShipments, deliveredShipments } = useMemo(() => {
+    if (activeTab !== 'all' || searchQuery.trim()) {
+      return { activeShipments: filteredPackages, deliveredShipments: [] };
+    }
+    const active = [];
+    const delivered = [];
+    for (const p of filteredPackages) {
+      if (p.status === 'delivered') delivered.push(p);
+      else active.push(p);
+    }
+    if (active.length > 0 && delivered.length > 0) {
+      return { activeShipments: active, deliveredShipments: delivered };
+    }
+    return { activeShipments: filteredPackages, deliveredShipments: [] };
+  }, [filteredPackages, activeTab, searchQuery]);
+
   /**
    * The modal registry. Order is render order, and because <Modal> portals
    * every dialog to document.body in that order, it is also the stacking
@@ -1888,40 +1930,113 @@ export function DashboardContent() {
                   </div>
                 </div>
               )
-            ) : viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-5 animate-fade-in">
-                {/* auto-fit (not auto-fill) collapses unused column tracks to
-                    0fr, so a handful of cards stretch to fill the row
-                    instead of leaving a wide empty gap next to a fixed grid. */}
-                {filteredPackages.map((pkg) => (
-                  <PackageCard
-                    key={pkg.id}
-                    pkg={pkg}
-                    packages={packages}
-                    onOpenDetails={handleOpenDetails}
-                    onEdit={handleEditFromList}
-                    onDelete={handleRequestDelete}
-                    onTogglePin={handleTogglePin}
-                    onToggleArchive={handleToggleArchive}
-                    onStatusChange={handleStatusChange}
-                    onRefreshTracking={handleRefreshSinglePackage}
-                    onOpenLockerMode={handleOpenLockerMode}
-                    onOpenNavigation={handleOpenNavigation}
-                    onShowToast={showToast}
-                  />
-                ))}
-              </div>
             ) : (
-              <div className="animate-fade-in">
-                <PackageTable
-                  packages={filteredPackages}
-                  onOpenDetails={handleOpenDetails}
-                  onEdit={handleEditFromList}
-                  onDelete={handleRequestDelete}
-                  onTogglePin={handleTogglePin}
-                  onStatusChange={handleStatusChange}
-                  onShowToast={showToast}
-                />
+              <div className="space-y-6 animate-fade-in">
+                {viewMode === 'grid' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-5">
+                    {/* auto-fit (not auto-fill) collapses unused column tracks to
+                        0fr, so a handful of cards stretch to fill the row
+                        instead of leaving a wide empty gap next to a fixed grid. */}
+                    {activeShipments.map((pkg) => (
+                      <PackageCard
+                        key={pkg.id}
+                        pkg={pkg}
+                        packages={packages}
+                        onOpenDetails={handleOpenDetails}
+                        onEdit={handleEditFromList}
+                        onDelete={handleRequestDelete}
+                        onTogglePin={handleTogglePin}
+                        onToggleArchive={handleToggleArchive}
+                        onStatusChange={handleStatusChange}
+                        onRefreshTracking={handleRefreshSinglePackage}
+                        onOpenLockerMode={handleOpenLockerMode}
+                        onOpenNavigation={handleOpenNavigation}
+                        onShowToast={showToast}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div>
+                    <PackageTable
+                      packages={activeShipments}
+                      onOpenDetails={handleOpenDetails}
+                      onEdit={handleEditFromList}
+                      onDelete={handleRequestDelete}
+                      onTogglePin={handleTogglePin}
+                      onStatusChange={handleStatusChange}
+                      onShowToast={showToast}
+                    />
+                  </div>
+                )}
+
+                {deliveredShipments.length > 0 && (
+                  <div className="mt-8 pt-4 border-t border-slate-800/80">
+                    <button
+                      type="button"
+                      data-testid="delivered-section-toggle"
+                      onClick={handleToggleDeliveredCollapsed}
+                      aria-expanded={!deliveredCollapsed}
+                      aria-label={t('tabs.delivered')}
+                      className="w-full flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-slate-900/40 hover:bg-slate-900/70 border border-slate-800/80 hover:border-slate-700/80 transition-all cursor-pointer min-h-[48px] focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                          <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                        </div>
+                        <span className="text-xs font-bold text-slate-200">
+                          {t('tabs.delivered')}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-mono [font-variant-numeric:tabular-nums] bg-slate-800 text-slate-400">
+                          {deliveredShipments.length}
+                        </span>
+                      </div>
+                      <ChevronDown
+                        className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                          deliveredCollapsed ? '' : 'rotate-180'
+                        }`}
+                        aria-hidden="true"
+                      />
+                    </button>
+
+                    {!deliveredCollapsed && (
+                      <div className="mt-4">
+                        {viewMode === 'grid' ? (
+                          <div className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-5">
+                            {deliveredShipments.map((pkg) => (
+                              <PackageCard
+                                key={pkg.id}
+                                pkg={pkg}
+                                packages={packages}
+                                onOpenDetails={handleOpenDetails}
+                                onEdit={handleEditFromList}
+                                onDelete={handleRequestDelete}
+                                onTogglePin={handleTogglePin}
+                                onToggleArchive={handleToggleArchive}
+                                onStatusChange={handleStatusChange}
+                                onRefreshTracking={handleRefreshSinglePackage}
+                                onOpenLockerMode={handleOpenLockerMode}
+                                onOpenNavigation={handleOpenNavigation}
+                                onShowToast={showToast}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <div>
+                            <PackageTable
+                              packages={deliveredShipments}
+                              onOpenDetails={handleOpenDetails}
+                              onEdit={handleEditFromList}
+                              onDelete={handleRequestDelete}
+                              onTogglePin={handleTogglePin}
+                              onStatusChange={handleStatusChange}
+                              onShowToast={showToast}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </>

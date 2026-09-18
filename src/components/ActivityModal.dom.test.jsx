@@ -132,4 +132,49 @@ describe('ActivityModal Component', () => {
     expect(screen.getByText('מוכן לאיסוף בסניף')).toBeInTheDocument();
     expect(screen.getByText(/לוקר 14 בסניף דואר דיזנגוף/i)).toBeInTheDocument();
   });
+
+  it('toggles inclusion of archived packages via switch button', () => {
+    localStorage.removeItem('deliveree_activity_include_archived');
+    const packagesWithArchived = [
+      {
+        id: 'pkg-live',
+        title: 'Live Box',
+        isArchived: false,
+        checkpoints: [
+          { id: 'cp-live', title: 'On Plane', timestamp: '2026-09-10T10:00:00Z' }
+        ]
+      },
+      {
+        id: 'pkg-archived',
+        title: 'Archived Box',
+        isArchived: true,
+        checkpoints: [
+          { id: 'cp-arch', title: 'Delivered Yesterday', timestamp: '2026-09-09T10:00:00Z' }
+        ]
+      }
+    ];
+
+    renderWithLanguage(
+      <ActivityModal
+        isOpen={true}
+        onClose={vi.fn()}
+        packages={packagesWithArchived}
+      />
+    );
+
+    // Initially archived is excluded
+    expect(screen.getByText('1 recent updates')).toBeInTheDocument();
+    expect(screen.getByText('On Plane')).toBeInTheDocument();
+    expect(screen.queryByText('Delivered Yesterday')).not.toBeInTheDocument();
+
+    // Toggle switch
+    const toggleBtn = screen.getByRole('switch', { name: /include archived packages/i });
+    expect(toggleBtn).toHaveAttribute('aria-checked', 'false');
+
+    fireEvent.click(toggleBtn);
+
+    expect(toggleBtn).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByText('2 recent updates')).toBeInTheDocument();
+    expect(screen.getByText('Delivered Yesterday')).toBeInTheDocument();
+  });
 });

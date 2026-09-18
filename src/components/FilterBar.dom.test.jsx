@@ -108,4 +108,16 @@ describe('FilterBar – Session 31 a11y & Controls', () => {
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(filtersBtn).toHaveAttribute('aria-expanded', 'false');
   });
+
+  it('only shows filter badge indicator for drawer filters, not primary status tabs', () => {
+    // 1. Primary status tab (transit) should not trigger indicator dot
+    const { rerender, container } = renderFilterBar({ activeTab: 'transit' });
+    let filtersBtn = screen.getByRole('button', { name: /status|filters/i });
+    expect(filtersBtn.querySelector('span[aria-hidden="true"]')).toBeNull();
+
+    // 2. Secondary filter (selectedCarrier) should show indicator dot
+    renderFilterBar({ selectedCarrier: 'dhl' });
+    filtersBtn = screen.getAllByRole('button', { name: /status|filters/i })[1];
+    expect(filtersBtn.querySelector('span[aria-hidden="true"]')).not.toBeNull();
+  });
 });
