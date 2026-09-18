@@ -109,7 +109,9 @@ export function Modal({
   describedBy,
   ariaLabel,
   componentName,
-  initialFocusRef
+  initialFocusRef,
+  animate = true,
+  isTabScreen = false
 }) {
   const panelRef = useRef(null);
   const overlayRef = useRef(null);
@@ -231,16 +233,19 @@ export function Modal({
   if (!isOpen) return null;
   if (typeof document === 'undefined') return null;
 
+  const shouldAnimate = animate && !isTabScreen;
+
   const overlayClasses = twMerge(
     clsx(
-      'fixed inset-0 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in',
+      'fixed inset-0 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md',
+      shouldAnimate && 'animate-fade-in',
       MODAL_LAYERS[layer] || MODAL_LAYERS.base,
       scrollable && 'overflow-y-auto',
       overlayClassName
     )
   );
 
-  const panelClasses = twMerge(clsx('relative outline-none animate-modal-pop', className));
+  const panelClasses = twMerge(clsx('relative outline-none', shouldAnimate && 'animate-modal-pop', className));
 
   // `data-modal-*` are hooks for the mobile full-screen rules in index.css.
   // They exist because every caller passes its own max-w/rounded/my-* classes,
@@ -253,6 +258,8 @@ export function Modal({
       ref={overlayRef}
       className={overlayClasses}
       data-modal-overlay={compact ? undefined : ""}
+      data-tab-screen={isTabScreen ? "true" : undefined}
+      data-no-animate={!shouldAnimate ? "true" : undefined}
       role="dialog"
       aria-modal="true"
       aria-labelledby={labelledBy}
@@ -262,7 +269,17 @@ export function Modal({
       onClick={handleClick}
       onKeyDownCapture={handleKeyDownCapture}
     >
-      <div ref={panelRef} tabIndex={-1} data-modal-panel={compact ? undefined : ""} data-flush-bottom={flushBottom ? "true" : undefined} className={panelClasses} style={style} dir={dir}>
+      <div
+        ref={panelRef}
+        tabIndex={-1}
+        data-modal-panel={compact ? undefined : ""}
+        data-tab-screen={isTabScreen ? "true" : undefined}
+        data-no-animate={!shouldAnimate ? "true" : undefined}
+        data-flush-bottom={flushBottom ? "true" : undefined}
+        className={panelClasses}
+        style={style}
+        dir={dir}
+      >
         <ErrorBoundary compact componentName={componentName} onReset={requestClose}>
           {children}
         </ErrorBoundary>

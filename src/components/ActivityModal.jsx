@@ -95,6 +95,7 @@ export function ActivityModal({ isOpen, onClose, packages = [], onOpenPackage })
       componentName="ActivityModal"
       overlayClassName="p-3 sm:p-4"
       ariaLabel={he ? 'פעילות' : 'Activity'}
+      isTabScreen={true}
       className="relative w-full max-w-lg bg-slate-950 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8 max-h-[90vh] flex flex-col"
     >
       <div className="flex items-start justify-between gap-3 p-4 sm:p-6 border-b border-slate-800 shrink-0">
