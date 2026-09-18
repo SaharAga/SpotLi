@@ -77,8 +77,11 @@ function PackageCardImpl({
     const deltaX = e.touches[0].clientX - touchStartXRef.current;
     const deltaY = e.touches[0].clientY - touchStartYRef.current;
 
-    // Ignore vertical scrolling
-    if (Math.abs(deltaY) > Math.abs(deltaX)) {
+    // Only engage horizontal swipe when the gesture is clearly lateral:
+    // deltaX must be at least 2× deltaY (≈26° from horizontal). The previous
+    // 1:1 (45°) threshold fired too easily on diagonal touches — very common
+    // when a finger starts a vertical scroll — hijacking page scroll as a swipe.
+    if (Math.abs(deltaX) < Math.abs(deltaY) * 2) {
       return;
     }
 
@@ -329,7 +332,7 @@ function PackageCardImpl({
           transition: isSwiping ? 'none' : 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)',
           ...(isPickupReady ? { boxShadow: '0 0 14px rgba(16, 185, 129, 0.2)' } : {})
         }}
-        className={`group relative bg-slate-900/90 hover:bg-slate-900 border rounded-2xl p-4 transition-all duration-200 cursor-pointer flex flex-col gap-3 shadow-sm hover:shadow-xl hover:shadow-slate-950/40 hover:-translate-y-0.5 active:scale-[0.985] active:brightness-95 transition-transform duration-150 ease-out ${
+        className={`group relative bg-slate-900/90 hover:bg-slate-900 border rounded-2xl p-4 transition-all duration-200 cursor-pointer flex flex-col gap-3 shadow-sm hover:shadow-xl hover:shadow-slate-950/40 hover:-translate-y-0.5 active:scale-[0.985] active:brightness-95 ${
           isPickupReady ? 'shadow-emerald-500/10 border-emerald-500/30' : ''
         } ${
           pkg.isPinned ? 'border-blue-500/50 ring-1 ring-blue-500/20' : 'border-slate-800/80 hover:border-slate-700'
