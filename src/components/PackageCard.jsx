@@ -390,7 +390,7 @@ function PackageCardImpl({
         </div>
 
         {/* Secondary Contextual Tags Strip (if any) */}
-        {(pkg.confidence === 'sender_reported' || (pkg.customsDetails?.required && pkg.customsDetails?.status !== 'paid') || (pkg.localCarrier && pkg.localCarrier !== pkg.carrier)) && (
+        {(pkg.confidence === 'sender_reported' || (pkg.customsDetails?.required && pkg.customsDetails?.status !== 'paid') || (pkg.localCarrier && pkg.localCarrier !== pkg.carrier && getCarrier(pkg.carrier).country !== 'Israel')) && (
           <div className="flex items-center gap-1.5 flex-wrap">
             {pkg.confidence === 'sender_reported' && (
               <span
@@ -410,7 +410,7 @@ function PackageCardImpl({
                 <span>{language === 'he' ? 'מכס' : 'Customs'}</span>
               </span>
             )}
-            {pkg.localCarrier && pkg.localCarrier !== pkg.carrier && (
+            {pkg.localCarrier && pkg.localCarrier !== pkg.carrier && getCarrier(pkg.carrier).country !== 'Israel' && (
               <span
                 title={language === 'he' ? `הועבר לחלוקה מקומית: ${getCarrier(pkg.localCarrier).hebrewName} (${pkg.localTrackingNumber || ''})` : `Domestic handover: ${getCarrier(pkg.localCarrier).name}`}
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-cyan-500/15 text-cyan-300 border border-cyan-500/25 text-xs font-medium"

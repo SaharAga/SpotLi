@@ -3,6 +3,7 @@ import { exportRawToJSON } from '../utils/exportUtils.js';
 import { notificationService } from './notificationService';
 import { STORAGE_KEYS } from '../constants/storageKeys';
 import { APP_NAME } from '../constants/app';
+import { getCarrier } from '../types/carriers.js';
 
 /**
  * Builds the result of a save attempt.
@@ -145,9 +146,24 @@ export function mergePackageData(existingPkg, incomingData) {
   const newCheckpoints = (incomingData.checkpoints || []).filter(cp => !existingCheckpointIds.has(cp.id));
   const mergedCheckpoints = [...newCheckpoints, ...(existingPkg.checkpoints || [])];
 
-  const isDomesticCourier = incomingData.carrier && incomingData.carrier !== 'other' && incomingData.carrier !== existingPkg.carrier;
-  const localTrackingNumber = incomingData.localTrackingNumber || (isDomesticCourier ? incomingData.trackingNumber : null) || existingPkg.localTrackingNumber || null;
-  const localCarrier = incomingData.localCarrier || (isDomesticCourier ? incomingData.carrier : null) || existingPkg.localCarrier || null;
+  const existingCarrierObj = getCarrier(existingPkg.carrier);
+  const incomingCarrierObj = incomingData.carrier ? getCarrier(incomingData.carrier) : null;
+  const isHandover = Boolean(
+    incomingCarrierObj &&
+    existingCarrierObj.country !== 'Israel' &&
+    incomingCarrierObj.country === 'Israel'
+  );
+  const isDomesticCourier = isHandover && incomingData.carrier !== 'other';
+  let localTrackingNumber = incomingData.localTrackingNumber || (isDomesticCourier ? incomingData.trackingNumber : null) || existingPkg.localTrackingNumber || null;
+  let localCarrier = incomingData.localCarrier || (isDomesticCourier ? incomingData.carrier : null) || existingPkg.localCarrier || null;
+
+  if (localCarrier) {
+    const localCarrierObj = getCarrier(localCarrier);
+    if (localCarrier === existingPkg.carrier || (localCarrierObj.country === 'Israel' && existingCarrierObj.country === 'Israel')) {
+      localCarrier = null;
+      localTrackingNumber = null;
+    }
+  }
 
   const isGenericTitle = (t) => {
     if (!t || typeof t !== 'string') return true;

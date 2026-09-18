@@ -665,7 +665,7 @@ function matchDeliveryStatus(subject = '', body = '') {
   // 3. Out for delivery (courier on the road)
   if (
     /\b(out for delivery|with (?:the\s+)?courier|on its way to you today|delivery today|arriving today)\b/i.test(combined) ||
-    /(?:יוצאת למסירה|יצאה עם שליח|נמסרה לשליח|השליח בדרך אליך|חלוקה היום|מגיע היום|יצא(?:ה)?\s*לאספקה|מתוכנן להגיע היום|מתוכננת להגיע היום)/i.test(combined)
+    /(?:יוצאת למסירה|יצאה עם שליח|נמסרה לשליח|השליח בדרך אליך|חלוקה היום|מגיע היום|יצא(?:ה)?\s*לאספקה|מתוכנן להגיע היום|מתוכננת להגיע היום|מבקש(?:ים)?\s+(?:למסור|לספק))/i.test(combined)
   ) {
     return 'out_for_delivery';
   }

@@ -167,7 +167,21 @@ const ALLOWED_PACKAGE_KEYS = new Set([
   'createdAt',
   'updatedAt',
   'userId',
-  'schemaVersion'
+  'schemaVersion',
+  'isDemo',
+  'pickupCode',
+  'pickupLocation',
+  'pickupHours',
+  'pickupPhone',
+  'pickupDeadline',
+  'returnDeadline',
+  'returnNotes',
+  'store',
+  'shelfNumber',
+  'localCarrier',
+  'localTrackingNumber',
+  'aliases',
+  'customsDetails'
 ]);
 
 /**
@@ -287,8 +301,20 @@ export function validatePackage(pkg) {
   if (safeObj.returnNotes) output.returnNotes = sanitizeString(safeObj.returnNotes, 500);
   if (safeObj.store) output.store = sanitizeString(safeObj.store, 100);
   if (safeObj.shelfNumber) output.shelfNumber = sanitizeString(safeObj.shelfNumber, 50);
-  if (safeObj.localTrackingNumber) output.localTrackingNumber = sanitizeString(safeObj.localTrackingNumber, 100).toUpperCase().replace(/[^A-Z0-9_-]/g, '');
-  if (safeObj.localCarrier) output.localCarrier = sanitizeString(safeObj.localCarrier, 50).toLowerCase();
+  if (safeObj.localCarrier) {
+    const candidateLocal = sanitizeString(safeObj.localCarrier, 50).toLowerCase();
+    const mainCarrierObj = getCarrier(output.carrier);
+    const localCarrierObj = getCarrier(candidateLocal);
+    if (candidateLocal !== output.carrier && !(mainCarrierObj.country === 'Israel' && localCarrierObj.country === 'Israel')) {
+      output.localCarrier = candidateLocal;
+    }
+  }
+  if (safeObj.localTrackingNumber) {
+    const candidateLocalTn = sanitizeString(safeObj.localTrackingNumber, 100).toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+    if (candidateLocalTn && candidateLocalTn !== output.trackingNumber && output.localCarrier) {
+      output.localTrackingNumber = candidateLocalTn;
+    }
+  }
   if (Array.isArray(safeObj.aliases)) {
     output.aliases = safeObj.aliases.map(a => sanitizeString(a, 100).toUpperCase().replace(/[^A-Z0-9_-]/g, '')).filter(Boolean).slice(0, 10);
   }
