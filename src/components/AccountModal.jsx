@@ -84,7 +84,6 @@ export function AccountModal({
   isOpen,
   onClose,
   inline = false,
-  isView = false,
   include = null,
   initialTab = null,
   onOpenExport,
@@ -106,9 +105,6 @@ export function AccountModal({
   const { user, updateAiTrainingOptIn, deleteUserAccountAndData, syncStatus, lastSyncTime, logout } = useAuth();
   const he = language === 'he';
 
-  const isInlineView = inline || isView;
-  const shouldRender = isInlineView || isOpen;
-
   const [subPage, setSubPage] = useState(initialTab || null);
   const [deleteConfirmationInput, setDeleteConfirmationInput] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
@@ -118,10 +114,10 @@ export function AccountModal({
   const [isTogglingAiOptIn, setIsTogglingAiOptIn] = useState(false);
 
   useEffect(() => {
-    if (shouldRender) {
+    if (isOpen) {
       setSubPage(initialTab || null);
     }
-  }, [shouldRender, initialTab]);
+  }, [isOpen, initialTab]);
 
   const [pushDiagnostics, setPushDiagnostics] = useState(null);
 
@@ -136,11 +132,11 @@ export function AccountModal({
   const userUid = user?.id || user?.uid || null;
 
   useEffect(() => {
-    if (shouldRender) {
+    if (inline || isOpen) {
       setNotificationPrefs(notificationService.getPreferences());
       setPermissionStatus(notificationService.getNotificationPermission());
     }
-  }, [shouldRender]);
+  }, [inline, isOpen]);
 
   // Opening notification settings is a second chance to repair a device whose
   // subscription was never persisted (or was dropped by the browser), for the
@@ -149,7 +145,7 @@ export function AccountModal({
   // read is what makes a silent failure visible instead of leaving the user
   // with a green checkmark and no notifications.
   useEffect(() => {
-    if (!shouldRender) return;
+    if (!(inline || isOpen)) return;
     if (notificationService.getNotificationPermission() !== 'granted') {
       setPushDiagnostics(null);
       return;
@@ -526,7 +522,7 @@ export function AccountModal({
     </div>
   );
 
-  if (inline && include) {
+  if (inline) {
     return (
       <div className="space-y-6">
         {show('profile') && user && renderProfile()}
@@ -546,25 +542,34 @@ export function AccountModal({
     );
   }
 
-  if (!isInlineView && !isOpen) return null;
+  if (!isOpen) return null;
 
   const signedIn = Boolean(user);
 
-  const innerContent = (
+  return (
     <>
-      {subPage ? (
-        <>
-          <ModalHeader
-            title={
-              subPage === 'profile'
-                ? (he ? 'פרופיל וחשבון' : 'Profile & account')
-                : subPage === 'notifications'
-                ? (he ? 'התראות' : 'Notifications')
-                : (he ? 'מחיקת חשבון' : 'Delete account')
-            }
-            onClose={() => setSubPage(null)}
-            closeLabel={he ? 'חזרה' : 'Back'}
-          />
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        componentName="AccountModal"
+        overlayClassName="p-3 sm:p-4"
+        ariaLabel={he ? 'חשבון' : 'Account'}
+        isTabScreen={true}
+        className="relative w-full max-w-lg bg-slate-950 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8 max-h-[90vh] flex flex-col"
+      >
+        {subPage ? (
+          <>
+            <ModalHeader
+              title={
+                subPage === 'profile'
+                  ? (he ? 'פרופיל וחשבון' : 'Profile & account')
+                  : subPage === 'notifications'
+                  ? (he ? 'התראות' : 'Notifications')
+                  : (he ? 'מחיקת חשבון' : 'Delete account')
+              }
+              onClose={() => setSubPage(null)}
+              closeLabel={he ? 'חזרה' : 'Back'}
+            />
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 pb-8 sm:pb-10">
               {subPage === 'profile' && renderProfile()}
               {subPage === 'notifications' && renderNotifications()}
@@ -667,36 +672,6 @@ export function AccountModal({
             </div>
           </>
         )}
-    </>
-  );
-
-  if (isInlineView) {
-    return (
-      <div className="w-full max-w-xl mx-auto bg-slate-950 border border-slate-800 rounded-3xl shadow-xl overflow-hidden flex flex-col my-4">
-        {innerContent}
-        <React.Suspense fallback={null}>
-          <LegalDocumentModal
-            isOpen={!!openLegalDoc}
-            onClose={() => setOpenLegalDoc(null)}
-            docType={openLegalDoc || 'terms'}
-          />
-        </React.Suspense>
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <Modal
-        isOpen={isOpen}
-        onClose={onClose}
-        componentName="AccountModal"
-        overlayClassName="p-3 sm:p-4"
-        ariaLabel={he ? 'חשבון' : 'Account'}
-        isTabScreen={true}
-        className="relative w-full max-w-lg bg-slate-950 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8 max-h-[90vh] flex flex-col"
-      >
-        {innerContent}
       </Modal>
 
       <React.Suspense fallback={null}>

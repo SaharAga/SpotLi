@@ -17,28 +17,26 @@ export function AnalyticsModal({
   isOpen,
   onClose,
   packages = [],
-  uid = null,
-  isView = false
+  uid = null
 }) {
   const { t, language } = useLanguage();
-  const shouldRender = isView || isOpen;
-  useFeatureUsage(FEATURE_IDS.ANALYTICS_MODAL, shouldRender, uid);
+  useFeatureUsage(FEATURE_IDS.ANALYTICS_MODAL, isOpen, uid);
 
-  // Gated on `shouldRender`: the modal stays mounted for the life of the app, so
+  // Gated on `isOpen`: the modal stays mounted for the life of the app, so
   // without this every add, edit and status change would recompute the whole
   // analytics set for a dialog nobody is looking at — the common case by far.
   // The transit-day lookup is built once here and shared by both aggregators
   // that need it, instead of each one re-deriving it per delivered package.
   const analytics = useMemo(() => {
-    if (!shouldRender) return null;
+    if (!isOpen) return null;
     const transitDays = buildTransitDaysMap(packages);
     return {
       metrics: calculateDeliveryMetrics(packages, transitDays),
       leaderboard: calculateCarrierTurnaroundLeaderboard(packages, transitDays)
     };
-  }, [shouldRender, packages]);
+  }, [isOpen, packages]);
 
-  if (!shouldRender || !analytics) return null;
+  if (!isOpen || !analytics) return null;
 
   const { metrics, leaderboard } = analytics;
 
@@ -62,8 +60,15 @@ export function AnalyticsModal({
   const successStrokeDashoffset = circumference - (metrics.deliverySuccessRate / 100) * circumference;
   const onTimeStrokeDashoffset = circumference - (metrics.onTimeRate / 100) * circumference;
 
-  const innerContent = (
-    <>
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      componentName="AnalyticsModal"
+      labelledBy="analytics-modal-title"
+      isTabScreen={true}
+      className="relative w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8 flex flex-col max-h-[90vh]"
+    >
         {/* Header */}
         <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-gradient-to-r from-indigo-600/10 via-purple-600/10 to-blue-600/10 shrink-0">
           <div className="flex items-center gap-3">
@@ -376,32 +381,11 @@ export function AnalyticsModal({
         <div className="hidden p-4 border-t border-slate-800 bg-slate-950/80 lg:flex justify-end shrink-0">
           <button
             onClick={onClose}
-            className="min-w-[120px] min-h-[48px] px-6 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 hover:text-slate-100 text-xs font-bold transition-ui border border-slate-700/60 shadow-md flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+            className="min-w-[120px] min-h-[48px] px-6 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 hover:text-slate-100 text-xs font-bold transition-ui border border-slate-700/60 shadow-md flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             {language === 'he' ? 'סגור' : 'Close'}
           </button>
         </div>
-    </>
-  );
-
-  if (isView) {
-    return (
-      <div className="w-full max-w-4xl mx-auto bg-slate-900 border border-slate-800 rounded-3xl shadow-xl overflow-hidden flex flex-col my-4">
-        {innerContent}
-      </div>
-    );
-  }
-
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      componentName="AnalyticsModal"
-      labelledBy="analytics-modal-title"
-      isTabScreen={true}
-      className="relative w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8 flex flex-col max-h-[90vh]"
-    >
-      {innerContent}
-    </Modal>
+      </Modal>
   );
 }
