@@ -4,8 +4,8 @@
 
 | Attribute | Value |
 | :--- | :--- |
-| **Version** | `v0.33.0` |
-| **Release Date** | 2026-09-13 |
+| **Version** | `v0.38.4` |
+| **Release Date** | 2026-09-18 |
 | **Release Channel** | `alpha` |
 | **Firebase Schema Version** | `1.0.0` |
 | **Build Target** | React 19 + Vite 8 + Tailwind CSS 4 PWA |

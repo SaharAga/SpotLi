@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.38.4] - 2026-09-18
+
+### Fixed
+- fix(ui): prevent swipe gesture from hijacking vertical scroll on package list
+
+Tightened the directional threshold in PackageCard's `handleTouchMove` from
+45° (deltaX > deltaY) to ≈26° (deltaX > 2 × deltaY). The previous threshold
+was too permissive: diagonal touches — common when a finger begins a vertical
+scroll — were incorrectly classified as horizontal swipes, consuming the touch
+event and blocking page scroll. The stricter 2:1 ratio ensures only clearly
+lateral gestures engage swipe-to-delete/archive mode.
+
+Also removed duplicate `transition-transform duration-150 ease-out` utilities
+from the card wrapper className that conflicted with the existing
+`transition-all duration-200`, causing Tailwind to emit an incorrect
+`transition-property: transform` that suppressed hover shadow and lift
+animations.
+
+- Fix modal and feedback scroll containment with pinned submit actions, and integrate tactile haptic feedback across bottom navigation, search filters, stat cards, and package cards.
+
+- Streamline dashboard status filters by adapting responsively: hide redundant upper KPI cards on mobile (<1024px) to elevate package cards above the fold with interactive chips, and preserve 4-column KPI cards on desktop (>=1024px) while hiding duplicate chip rows.
+
+- Restore edge-to-edge full-screen presentation for tab screens.
+
+- Implement sibling view separation for top-level tabs (Status, Insights, Activity, Account) and tactile micro-interactions on PackageCard (card press physics, breathing beacon, radar ping, PIN copy spring animation, stepper progress bar with pulsing active indicator).
+
+- Enhance dashboard ergonomics and activity visibility:
+1. Group active packages at the top on the 'All' tab and house delivered packages in a tidy collapsible section at the bottom, keeping active shipments front-and-center.
+2. Calibrate FilterBar indicator badge so primary status tabs do not trigger a false-alarm 'filtered' dot on the drawer button.
+3. Add an 'Include archived' toggle switch in the Activity feed header and empty state to allow viewing checkpoints from archived packages on demand.
+
 ## [0.38.3] - 2026-09-18
 
 ### Fixed
