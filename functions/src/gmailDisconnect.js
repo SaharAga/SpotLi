@@ -5,7 +5,12 @@
  */
 
 import { HttpsError } from 'firebase-functions/v2/https';
-import { getGmailConnection, getGmailClientForUser, deleteGmailConnection } from './gmailAuth.js';
+import {
+  getGmailConnection,
+  getGmailConnectionsForUser,
+  getGmailClientForUser,
+  deleteGmailConnection
+} from './gmailAuth.js';
 
 /**
  * @param {{ db: FirebaseFirestore.Firestore, clientSecret: string }} deps
@@ -17,30 +22,53 @@ export function createGmailDisconnectHandler({ db, clientSecret }) {
       throw new HttpsError('unauthenticated', 'Sign in required.');
     }
 
-    const connection = await getGmailConnection({ db, uid });
-    if (!connection?.refreshToken) {
-      // Nothing to disconnect — treat as success (idempotent).
+    const targetEmail = request.data?.emailAddress ? String(request.data.emailAddress).trim() : null;
+    const isDisconnectAll = !targetEmail || targetEmail === 'all';
+
+    if (isDisconnectAll) {
+      const connections = await getGmailConnectionsForUser({ db, uid });
+      for (const connection of connections) {
+        if (connection.refreshToken) {
+          const { gmail, oauth2Client } = getGmailClientForUser({
+            clientSecret,
+            refreshToken: connection.refreshToken
+          });
+          try {
+            await gmail.users.stop({ userId: 'me' });
+          } catch (err) {
+            console.warn(`[gmailDisconnect] users.stop failed for ${connection.emailAddress} (continuing):`, err?.message || err);
+          }
+          try {
+            await oauth2Client.revokeToken(connection.refreshToken);
+          } catch (err) {
+            console.warn(`[gmailDisconnect] token revoke failed for ${connection.emailAddress} (continuing):`, err?.message || err);
+          }
+        }
+      }
+      await deleteGmailConnection({ db, uid, emailAddress: 'all' });
       return { ok: true };
     }
 
-    const { gmail, oauth2Client } = getGmailClientForUser({
-      clientSecret,
-      refreshToken: connection.refreshToken
-    });
-
-    try {
-      await gmail.users.stop({ userId: 'me' });
-    } catch (err) {
-      console.warn('[gmailDisconnect] users.stop failed (continuing):', err?.message || err);
+    // Disconnect a specific mailbox
+    const connection = await getGmailConnection({ db, uid, emailAddress: targetEmail });
+    if (connection?.refreshToken) {
+      const { gmail, oauth2Client } = getGmailClientForUser({
+        clientSecret,
+        refreshToken: connection.refreshToken
+      });
+      try {
+        await gmail.users.stop({ userId: 'me' });
+      } catch (err) {
+        console.warn(`[gmailDisconnect] users.stop failed for ${targetEmail} (continuing):`, err?.message || err);
+      }
+      try {
+        await oauth2Client.revokeToken(connection.refreshToken);
+      } catch (err) {
+        console.warn(`[gmailDisconnect] token revoke failed for ${targetEmail} (continuing):`, err?.message || err);
+      }
     }
 
-    try {
-      await oauth2Client.revokeToken(connection.refreshToken);
-    } catch (err) {
-      console.warn('[gmailDisconnect] token revoke failed (continuing):', err?.message || err);
-    }
-
-    await deleteGmailConnection({ db, uid });
+    await deleteGmailConnection({ db, uid, emailAddress: targetEmail, connectionId: connection?.connectionId });
 
     return { ok: true };
   };

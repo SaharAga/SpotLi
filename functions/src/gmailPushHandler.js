@@ -85,12 +85,12 @@ export function createGmailPushHandler({ db, clientSecret, pushToken, geminiApiK
  * @param {{ db: FirebaseFirestore.Firestore, connection: object, clientSecret: string, newHistoryId: string|number, geminiApiKey?: string }} params
  */
 export async function syncHistoryForConnection({ db, connection, clientSecret, newHistoryId, geminiApiKey }) {
-  const { uid, refreshToken, historyId: storedHistoryId } = connection;
+  const { uid, refreshToken, historyId: storedHistoryId, connectionId, emailAddress } = connection;
   const { gmail } = getGmailClientForUser({ clientSecret, refreshToken });
 
   if (!storedHistoryId) {
     // Nothing to diff against yet — just fast-forward.
-    await setGmailConnection({ db, uid, data: { historyId: String(newHistoryId) } });
+    await setGmailConnection({ db, uid, connectionId, data: { historyId: String(newHistoryId), ...(emailAddress ? { emailAddress } : {}) } });
     return { saved: 0 };
   }
 
@@ -118,7 +118,7 @@ export async function syncHistoryForConnection({ db, connection, clientSecret, n
     // backfill already covers the bulk case, and this only happens after
     // extended downtime).
     if (err?.code === 404 || err?.response?.status === 404) {
-      await setGmailConnection({ db, uid, data: { historyId: String(newHistoryId) } });
+      await setGmailConnection({ db, uid, connectionId, data: { historyId: String(newHistoryId), ...(emailAddress ? { emailAddress } : {}) } });
       return { saved: 0, historyExpired: true };
     }
     throw err;
@@ -299,7 +299,7 @@ export async function syncHistoryForConnection({ db, connection, clientSecret, n
     }
   }
 
-  await setGmailConnection({ db, uid, data: { historyId: String(newHistoryId) } });
+  await setGmailConnection({ db, uid, connectionId, data: { historyId: String(newHistoryId), ...(emailAddress ? { emailAddress } : {}) } });
   await logUsageEvent(db, {
     feature: 'gmail_sync',
     type: 'push_sync',

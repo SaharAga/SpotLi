@@ -154,13 +154,13 @@ export function addConnectedAccount(account) {
 /**
  * Calls the gmailDisconnect Cloud Function: revokes the stored refresh
  * token, cancels the Gmail watch subscription, and deletes the server-side
- * gmailConnections/{uid} doc. No client-side forwarding address exists to
- * clean up under the OAuth+push model.
+ * connection doc.
+ * @param {string} [emailAddress] Optional email address to disconnect a specific mailbox, or omitted for all
  */
-export async function revokeGmailConnection() {
+export async function revokeGmailConnection(emailAddress) {
   if (!isFirebaseConfigured || !auth?.currentUser || !functionsInstance) return;
   try {
-    await callFunction('gmailDisconnect', undefined, { timeoutMs: 20000 });
+    await callFunction('gmailDisconnect', emailAddress ? { emailAddress } : undefined, { timeoutMs: 20000 });
   } catch (err) {
     console.warn('[EmailSyncService] gmailDisconnect call failed:', err);
   }
@@ -200,7 +200,7 @@ export async function removeConnectedAccount(email) {
     const current = getConnectedServices();
     const target = current.accounts.find((a) => a.email.toLowerCase() === email.toLowerCase());
     if (target?.service === 'gmail') {
-      await revokeGmailConnection();
+      await revokeGmailConnection(target.email);
     }
 
     const updatedAccounts = current.accounts.filter(
@@ -313,7 +313,19 @@ export async function getGmailConnectionStatus() {
     const data = res?.data || { connected: false };
     if (data.connected) {
       setConnectedService('gmail', true);
-      if (data.emailAddress) {
+      if (Array.isArray(data.accounts) && data.accounts.length > 0) {
+        for (const acc of data.accounts) {
+          const email = acc.email || acc.emailAddress;
+          if (email) {
+            addConnectedAccount({
+              email,
+              service: 'gmail',
+              status: acc.status || 'active',
+              connectedAt: acc.connectedAt || new Date().toISOString()
+            });
+          }
+        }
+      } else if (data.emailAddress) {
         addConnectedAccount({
           email: data.emailAddress,
           service: 'gmail',

@@ -294,7 +294,7 @@ service cloud.firestore {
     // entirely; this explicit deny is defense-in-depth documentation that
     // the client SDK must never read or write here (a refresh token must
     // never reach the client).
-    match /gmailConnections/{uid} {
+    match /gmailConnections/{connectionId=**} {
       allow read, write: if false;
     }
 

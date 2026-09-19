@@ -62,17 +62,27 @@ export function IngestionGuideModal({
     setIsCheckingGmailStatus(true);
     try {
       const gmailStatus = await getGmailConnectionStatus();
-      const accounts = gmailStatus.connected
-        ? [
-            ...nonGmailAccounts,
+      let gmailAccounts = [];
+      if (gmailStatus.connected) {
+        if (Array.isArray(gmailStatus.accounts) && gmailStatus.accounts.length > 0) {
+          gmailAccounts = gmailStatus.accounts.map((acc) => ({
+            email: acc.email || acc.emailAddress || user?.email || 'Gmail Account',
+            service: 'gmail',
+            status: acc.status || 'active',
+            connectedAt: acc.connectedAt
+          }));
+        } else {
+          gmailAccounts = [
             {
               email: gmailStatus.emailAddress || user?.email || 'Gmail Account',
               service: 'gmail',
               status: 'active',
               connectedAt: gmailStatus.connectedAt
             }
-          ]
-        : nonGmailAccounts;
+          ];
+        }
+      }
+      const accounts = [...nonGmailAccounts, ...gmailAccounts];
       setConnectedServicesState({ ...local, gmail: Boolean(gmailStatus.connected), accounts });
       setGmailRenewalError(gmailStatus.connected ? gmailStatus.lastRenewalError || null : null);
     } finally {
@@ -147,18 +157,17 @@ export function IngestionGuideModal({
   };
 
   const handleConnectGmail = async () => {
-    // Only one Gmail account can be connected per user (gmailConnections is
-    // keyed by uid, not per-account), and re-running the OAuth flow re-runs
-    // the 30-day inbox backfill scan on the callback. Re-triggering that for
-    // an account that's already connected would just burn Gmail API/AI
-    // fallback budget for no new packages — disconnect first if the intent
-    // is to switch accounts.
-    if (connectedServices.gmail) {
+    // Bound how many Gmail accounts one user can connect to prevent abuse
+    // and protect Spark/Blaze quotas.
+    const currentGmailCount = (connectedServices.accounts || []).filter(
+      (a) => a.service === 'gmail'
+    ).length;
+    if (currentGmailCount >= 5) {
       if (onShowToast) {
         onShowToast(
           language === 'he'
-            ? 'Gmail כבר מחובר. כדי לחבר חשבון אחר, נתקו קודם את החשבון הנוכחי.'
-            : 'Gmail is already connected. Disconnect the current account first to connect a different one.',
+            ? 'הגעת למגבלת החשבונות המרבית (5 תיבות Gmail מחוברות).'
+            : 'Maximum Gmail account limit reached (5 connected inboxes).',
           'info'
         );
       }

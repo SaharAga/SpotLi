@@ -141,20 +141,32 @@ export const gmailOAuthCallback = onRequest(
     createGmailOAuthCallbackHandler({
       db: getFirestore(),
       clientSecret: gmailOAuthClientSecret.value(),
-      runBackfill: ({ uid }) =>
-        getFirestore()
-          .collection('gmailConnections')
-          .doc(uid)
-          .get()
-          .then((snap) =>
-            runBackfillForUser({
-              db: getFirestore(),
-              uid,
-              refreshToken: snap.data()?.refreshToken,
-              clientSecret: gmailOAuthClientSecret.value(),
-              geminiApiKey: geminiApiKey.value()
-            })
-          )
+      runBackfill: ({ uid, connectionId, refreshToken }) => {
+        const firestore = getFirestore();
+        const secret = gmailOAuthClientSecret.value();
+        const apiKey = geminiApiKey.value();
+        if (refreshToken) {
+          return runBackfillForUser({
+            db: firestore,
+            uid,
+            refreshToken,
+            clientSecret: secret,
+            geminiApiKey: apiKey
+          });
+        }
+        const docRef = connectionId
+          ? firestore.collection('gmailConnections').doc(connectionId)
+          : firestore.collection('gmailConnections').doc(uid);
+        return docRef.get().then((snap) =>
+          runBackfillForUser({
+            db: firestore,
+            uid,
+            refreshToken: snap.data()?.refreshToken,
+            clientSecret: secret,
+            geminiApiKey: apiKey
+          })
+        );
+      }
     })(req, res)
 );
 

@@ -39,7 +39,7 @@ describe('Adversarial Penetration & External Abuse Simulation: Client & Data Lay
 
     it('seals sensitive server-only collections against any direct client reads or writes', () => {
       // OAuth refresh tokens in /gmailConnections
-      expect(rules).toMatch(/match \/gmailConnections\/\{uid\}[\s\S]*?allow read, write: if false;/);
+      expect(rules).toMatch(/match \/gmailConnections\/\{(uid|connectionId)[^}]*\}[\s\S]*?allow read, write: if false;/);
 
       // Rate limits and quota counters in /usage, /carrierUsage, and /gmailAiUsage
       expect(rules).toMatch(/match \/usage\/\{docId\}[\s\S]*?allow read, write: if false;/);

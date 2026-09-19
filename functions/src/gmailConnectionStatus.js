@@ -8,7 +8,7 @@
  */
 
 import { HttpsError } from 'firebase-functions/v2/https';
-import { getGmailConnection } from './gmailAuth.js';
+import { getGmailConnectionsForUser } from './gmailAuth.js';
 
 /**
  * @param {{ db: FirebaseFirestore.Firestore }} deps
@@ -20,16 +20,29 @@ export function createGmailConnectionStatusHandler({ db }) {
       throw new HttpsError('unauthenticated', 'Sign in required.');
     }
 
-    const connection = await getGmailConnection({ db, uid });
-    if (!connection?.refreshToken) {
+    const connections = await getGmailConnectionsForUser({ db, uid });
+    const activeConnections = (connections || []).filter((c) => (c.status === undefined || c.status === 'active') && c.refreshToken);
+
+    if (activeConnections.length === 0) {
       return { connected: false };
     }
 
+    const accounts = activeConnections.map((c) => ({
+      email: c.emailAddress || null,
+      emailAddress: c.emailAddress || null,
+      connectedAt: c.connectedAt || null,
+      status: c.status || 'active',
+      lastRenewalError: c.lastRenewalError || null
+    }));
+
+    const primary = accounts[0];
+
     return {
       connected: true,
-      emailAddress: connection.emailAddress || null,
-      connectedAt: connection.connectedAt || null,
-      lastRenewalError: connection.lastRenewalError || null
+      emailAddress: primary.emailAddress,
+      connectedAt: primary.connectedAt,
+      lastRenewalError: primary.lastRenewalError,
+      accounts
     };
   };
 }
