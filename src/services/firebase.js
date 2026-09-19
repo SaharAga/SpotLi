@@ -107,6 +107,7 @@ const firebaseConfig = {
 export { cleanConfigValue, resolveAuthDomain };
 
 export const isFirebaseConfigured = Boolean(
+  (typeof import.meta === 'undefined' || import.meta.env?.MODE !== 'test') &&
   firebaseConfig.apiKey &&
   firebaseConfig.projectId &&
   firebaseConfig.authDomain

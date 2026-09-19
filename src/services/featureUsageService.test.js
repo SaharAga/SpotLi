@@ -17,12 +17,19 @@ vi.mock('../utils/anonymousId', () => ({
   getOrCreateAnonymousId: vi.fn(() => 'anon-123')
 }));
 
-const { recordFeatureUse } = await import('./featureUsageService');
+const { recordFeatureUse, _enableTestFeatureUsage } = await import('./featureUsageService');
 
 describe('recordFeatureUse', () => {
   beforeEach(() => {
     setDocMock.mockReset();
     docMock.mockClear();
+    _enableTestFeatureUsage(true);
+  });
+
+  it('no-ops in test mode when not explicitly enabled', async () => {
+    _enableTestFeatureUsage(false);
+    await recordFeatureUse('smart_import', { uid: 'user-1' });
+    expect(setDocMock).not.toHaveBeenCalled();
   });
 
   it('rejects an unrecognized feature id', async () => {

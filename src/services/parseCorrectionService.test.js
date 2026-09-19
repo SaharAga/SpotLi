@@ -17,12 +17,19 @@ vi.mock('./firebase', () => ({
   isFirebaseConfigured: true
 }));
 
-const { recordParseCorrection, computeParseCorrectionStats } = await import('./parseCorrectionService');
+const { recordParseCorrection, computeParseCorrectionStats, _enableTestCorrectionReporting } = await import('./parseCorrectionService');
 
 describe('recordParseCorrection', () => {
   beforeEach(() => {
     addDocMock.mockReset();
     collectionMock.mockClear();
+    _enableTestCorrectionReporting(true);
+  });
+
+  it('no-ops in test mode when not explicitly enabled', async () => {
+    _enableTestCorrectionReporting(false);
+    await recordParseCorrection({ source: 'ai', confidence: 'high', editedFields: ['carrier'] });
+    expect(addDocMock).not.toHaveBeenCalled();
   });
 
   it('does nothing when there are no edited fields', async () => {

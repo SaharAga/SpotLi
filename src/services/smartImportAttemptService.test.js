@@ -17,12 +17,19 @@ vi.mock('./firebase', () => ({
   isFirebaseConfigured: true
 }));
 
-const { recordSmartImportAttempt, computeSmartImportMissRateStats } = await import('./smartImportAttemptService');
+const { recordSmartImportAttempt, computeSmartImportMissRateStats, _enableTestAttemptReporting } = await import('./smartImportAttemptService');
 
 describe('recordSmartImportAttempt', () => {
   beforeEach(() => {
     addDocMock.mockReset();
     collectionMock.mockClear();
+    _enableTestAttemptReporting(true);
+  });
+
+  it('no-ops in test mode when not explicitly enabled', async () => {
+    _enableTestAttemptReporting(false);
+    await recordSmartImportAttempt({ source: 'regex', confidence: 'high', carrier: 'ups', corrected: false });
+    expect(addDocMock).not.toHaveBeenCalled();
   });
 
   it('writes an uncorrected attempt', async () => {

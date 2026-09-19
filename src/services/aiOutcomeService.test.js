@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 
 const addDocMock = vi.fn();
 const collectionMock = vi.fn((db, name) => ({ db, name }));
@@ -13,12 +13,23 @@ vi.mock('./firebase', () => ({
   isFirebaseConfigured: true
 }));
 
-const { recordAiOutcome, detectAiOutcome, AI_OUTCOME_WINDOW_MS } = await import('./aiOutcomeService');
+const { recordAiOutcome, detectAiOutcome, AI_OUTCOME_WINDOW_MS, _enableTestAiOutcome } = await import('./aiOutcomeService');
 
 describe('recordAiOutcome', () => {
   beforeEach(() => {
     addDocMock.mockReset();
     collectionMock.mockClear();
+    _enableTestAiOutcome(true);
+  });
+
+  afterAll(() => {
+    _enableTestAiOutcome(false);
+  });
+
+  it('suppresses writes in test mode when test outcome is not enabled', async () => {
+    _enableTestAiOutcome(false);
+    await recordAiOutcome({ outcome: 'deleted', carrier: 'ups', confidence: 'high', userId: 'user-1' });
+    expect(addDocMock).not.toHaveBeenCalled();
   });
 
   it('writes a delete outcome with no editedFields', async () => {

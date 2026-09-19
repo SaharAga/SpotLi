@@ -40,7 +40,20 @@ function pickTrackedFields(values) {
  *
  * @param {{ userId: string, source: 'regex'|'ai', confidence: string|null, inputText: string, initialValues: object, correctedValues: object }} example
  */
+let isTestTrainingReportingEnabled = false;
+
+/**
+ * Test-only hook to enable recording in unit tests.
+ * @param {boolean} val
+ */
+export function _enableTestTrainingReporting(val = true) {
+  isTestTrainingReportingEnabled = val;
+}
+
 export async function recordTrainingExample({ userId, source, confidence, inputText, initialValues, correctedValues }) {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.MODE === 'test' && !isTestTrainingReportingEnabled) {
+    return;
+  }
   if (!userId) return;
   if (!isFirebaseConfigured || !db) return;
 

@@ -34,7 +34,24 @@ const TRACKED_FIELDS = ['trackingNumber', 'carrier'];
  *
  * @param {{ outcome: 'deleted' | 'edited', carrier: string, confidence: string | null, editedFields?: string[], userId: string | null | undefined }} entry
  */
+let isTestAiOutcomeEnabled = false;
+
+/**
+ * Test helper to explicitly allow recording AI outcomes during unit tests.
+ * @param {boolean} [enabled=true]
+ */
+export function _enableTestAiOutcome(enabled = true) {
+  isTestAiOutcomeEnabled = enabled;
+}
+
+export function _isTestAiOutcomeEnabled() {
+  return isTestAiOutcomeEnabled;
+}
+
 export async function recordAiOutcome({ outcome, carrier, confidence, editedFields = [], userId }) {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.MODE === 'test' && !isTestAiOutcomeEnabled) {
+    return;
+  }
   if (outcome === 'edited' && editedFields.length === 0) return;
   if (!userId) return;
   if (!isFirebaseConfigured || !db) return;

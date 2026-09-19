@@ -15,7 +15,20 @@ import { db, isFirebaseConfigured } from './firebase';
  *
  * @param {{ source: 'regex' | 'ai', confidence: string | null, editedFields: string[] }} correction
  */
+let isTestCorrectionReportingEnabled = false;
+
+/**
+ * Test-only hook to enable recording in unit tests.
+ * @param {boolean} val
+ */
+export function _enableTestCorrectionReporting(val = true) {
+  isTestCorrectionReportingEnabled = val;
+}
+
 export async function recordParseCorrection({ source, confidence, editedFields }) {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.MODE === 'test' && !isTestCorrectionReportingEnabled) {
+    return;
+  }
   if (!editedFields || editedFields.length === 0) return;
   if (!isFirebaseConfigured || !db) return;
 
