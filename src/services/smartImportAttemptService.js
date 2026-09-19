@@ -19,7 +19,20 @@ import { db, isFirebaseConfigured } from './firebase';
  *
  * @param {{ source: 'regex' | 'ai', confidence: string | null, carrier: string | null, corrected: boolean }} attempt
  */
+let isTestAttemptReportingEnabled = false;
+
+/**
+ * Test-only hook to enable recording in unit tests.
+ * @param {boolean} val
+ */
+export function _enableTestAttemptReporting(val = true) {
+  isTestAttemptReportingEnabled = val;
+}
+
 export async function recordSmartImportAttempt({ source, confidence, carrier, corrected }) {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.MODE === 'test' && !isTestAttemptReportingEnabled) {
+    return;
+  }
   if (!isFirebaseConfigured || !db) return;
 
   try {

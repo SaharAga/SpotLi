@@ -27,7 +27,20 @@ import { FEATURE_ID_LIST } from '../constants/featureIds';
  * @param {string} feature One of FEATURE_IDS (featureIds.js)
  * @param {{ uid?: string | null }} [options]
  */
+let isTestFeatureUsageEnabled = false;
+
+/**
+ * Test-only hook to enable recording in unit tests.
+ * @param {boolean} val
+ */
+export function _enableTestFeatureUsage(val = true) {
+  isTestFeatureUsageEnabled = val;
+}
+
 export async function recordFeatureUse(feature, { uid } = {}) {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.MODE === 'test' && !isTestFeatureUsageEnabled) {
+    return;
+  }
   if (!FEATURE_ID_LIST.includes(feature)) return;
   if (!isFirebaseConfigured || !db) return;
 

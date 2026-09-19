@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 
 const addDocMock = vi.fn();
 const collectionMock = vi.fn((db, name) => ({ db, name }));
@@ -13,12 +13,30 @@ vi.mock('./firebase', () => ({
   isFirebaseConfigured: true
 }));
 
-const { recordTrainingExample } = await import('./trainingDataService');
+const { recordTrainingExample, _enableTestTrainingReporting } = await import('./trainingDataService');
 
 describe('recordTrainingExample', () => {
   beforeEach(() => {
     addDocMock.mockReset();
     collectionMock.mockClear();
+    _enableTestTrainingReporting(true);
+  });
+
+  afterAll(() => {
+    _enableTestTrainingReporting(false);
+  });
+
+  it('suppresses writes in test mode when not explicitly enabled', async () => {
+    _enableTestTrainingReporting(false);
+    await recordTrainingExample({
+      userId: 'user-42',
+      source: 'ai',
+      confidence: 'medium',
+      inputText: 'sample text',
+      initialValues: {},
+      correctedValues: {}
+    });
+    expect(addDocMock).not.toHaveBeenCalled();
   });
 
   it('does nothing without a userId', async () => {

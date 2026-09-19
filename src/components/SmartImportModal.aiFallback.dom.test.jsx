@@ -154,7 +154,7 @@ describe('SmartImportModal — AI fallback (rendered)', () => {
     expect(await screen.findByRole('button', { name: 'Enter Details Manually' })).toBeInTheDocument();
   });
 
-  it('does not apply an AI result without a locally verified candidate', async () => {
+  it('enables Add button with double-check hint for an ungrounded AI result so user can review and edit', async () => {
     parseWithAi.mockResolvedValue({
       success: true,
       data: {
@@ -169,13 +169,17 @@ describe('SmartImportModal — AI fallback (rendered)', () => {
 
     await user.type(screen.getByPlaceholderText(/paste|text|sms/i), 'ambiguous text');
     await user.click(screen.getByRole('button', { name: /extract shipping details/i }));
+    expect(await screen.findByText(/wasn.t fully confident/i)).toBeInTheDocument();
     const addButton = await screen.findByRole('button', { name: /add this package to tracker/i });
-    expect(addButton).toBeDisabled();
+    expect(addButton).toBeEnabled();
     await user.click(addButton);
-    expect(onParsedResult).not.toHaveBeenCalled();
+    expect(onParsedResult).toHaveBeenCalledWith(expect.objectContaining({
+      trackingNumber: 'ZZ999888777IL',
+      carrierId: 'israel-post'
+    }));
   });
 
-  it('keeps Add disabled and does not apply an AI-selected uncertain candidate', async () => {
+  it('enables Add button when AI selects an uncertain candidate', async () => {
     parseWithAi.mockResolvedValue({
       success: true,
       data: {
@@ -190,9 +194,12 @@ describe('SmartImportModal — AI fallback (rendered)', () => {
     await user.type(screen.getByPlaceholderText(/paste|text|sms/i), '1Z999AA10123456784');
     await user.click(screen.getByRole('button', { name: /extract shipping details/i }));
     const addButton = await screen.findByRole('button', { name: /add this package to tracker/i });
-    expect(addButton).toBeDisabled();
+    expect(addButton).toBeEnabled();
     await user.click(addButton);
-    expect(onParsedResult).not.toHaveBeenCalled();
+    expect(onParsedResult).toHaveBeenCalledWith(expect.objectContaining({
+      trackingNumber: '1Z999AA10123456784',
+      carrierId: 'ups'
+    }));
   });
 
   it('attaching a screenshot calls the AI parser in image mode and shows the result', async () => {

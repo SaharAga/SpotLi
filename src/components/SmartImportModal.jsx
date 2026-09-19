@@ -426,22 +426,24 @@ export function SmartImportModal({
 
 
   const detectedCarrierObj = parsed ? getCarrier(parsed.carrier) : null;
-  const showLowConfidenceHint = parseSource === 'ai' && (aiConfidence === 'low' || aiConfidence === 'medium');
+  const showLowConfidenceHint = parseSource === 'ai' && (aiConfidence === 'low' || aiConfidence === 'medium' || !parsed?.isGroundedCandidate);
   // A deterministic result only ever reaches `parsed` at `verified` or
   // `probable` — `uncertain` and `none` are withheld in runTextParse, which is
   // where that judgement belongs. Requiring `verified` here as well meant a
   // `probable` result was displayed under "successfully extracted" with the
   // confirm button permanently dead: reported from a real Tapuz SMS, whose
   // 8-digit number has no check digit and no carrier URL, so it can never be
-  // more than `probable`. That is the exact case the fallback exists to serve
-  // — the comment there says the user is better served by a pre-filled form
-  // they can correct, and this gate was refusing to open it.
+  // more than `probable`.
+  //
+  // For AI fallback or screenshot parsing, if a tracking number was extracted
+  // and confidence is not 'none', allow applying so the user can review and
+  // verify or edit the pre-filled fields in AddEditPackageModal.
   //
   // Nothing is auto-applied by this: the button hands the parse to a form the
   // user reviews and saves themselves.
   const canApplyParsed = Boolean(parsed?.trackingNumber && (
     (parseSource === 'regex' && (parsed.candidateStatus === 'verified' || parsed.candidateStatus === 'probable')) ||
-    (parseSource === 'ai' && parsed.isGroundedCandidate === true && aiConfidence && aiConfidence !== 'none' && aiConfidence !== 'uncertain')
+    (parseSource === 'ai' && aiConfidence && aiConfidence !== 'none')
   ));
 
   return (
