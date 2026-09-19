@@ -42,7 +42,8 @@ export function createGmailWatchRenewalHandler({ db, clientSecret }) {
         });
         await setGmailConnection({
           db,
-          uid: doc.id,
+          uid: conn.uid || doc.id,
+          connectionId: doc.id,
           data: {
             historyId: watchRes.data.historyId ? String(watchRes.data.historyId) : conn.historyId,
             watchExpiration: watchRes.data.expiration || null,
@@ -51,7 +52,7 @@ export function createGmailWatchRenewalHandler({ db, clientSecret }) {
         });
         renewed += 1;
       } catch (err) {
-        console.error(`[gmailWatchRenewal] Failed to renew watch for uid ${doc.id}:`, err);
+        console.error(`[gmailWatchRenewal] Failed to renew watch for connection ${doc.id}:`, err);
         failed += 1;
         // Surface on the connection doc so a persistently failing renewal is
         // visible to the app (e.g. IngestionGuideModal) instead of only
@@ -59,7 +60,8 @@ export function createGmailWatchRenewalHandler({ db, clientSecret }) {
         // silently from the user's point of view.
         await setGmailConnection({
           db,
-          uid: doc.id,
+          uid: conn.uid || doc.id,
+          connectionId: doc.id,
           data: { lastRenewalError: String(err?.message || err) }
         }).catch(() => {});
       }

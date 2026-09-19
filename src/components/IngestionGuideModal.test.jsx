@@ -125,12 +125,15 @@ describe('IngestionGuideModal Component Tests', () => {
     expect(handleToast).not.toHaveBeenCalled();
   });
 
-  it('does not restart the OAuth flow (and its full inbox rescan) when Gmail is already connected', async () => {
+  it('allows connecting additional Gmail accounts when one is already connected', async () => {
     const { connectGmail, getGmailConnectionStatus } = await import('../services/emailSyncService');
     getGmailConnectionStatus.mockResolvedValueOnce({
       connected: true,
       emailAddress: 'user@gmail.com',
-      connectedAt: '2026-01-01T00:00:00.000Z'
+      connectedAt: '2026-01-01T00:00:00.000Z',
+      accounts: [
+        { email: 'user@gmail.com', status: 'active', connectedAt: '2026-01-01T00:00:00.000Z' }
+      ]
     });
     const handleToast = vi.fn();
     renderModal({ onShowToast: handleToast });
@@ -139,7 +142,34 @@ describe('IngestionGuideModal Component Tests', () => {
     fireEvent.click(addGmailBtn);
 
     await waitFor(() => {
-      expect(handleToast).toHaveBeenCalledWith(expect.stringContaining('Gmail'), 'info');
+      expect(connectGmail).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('enforces maximum capacity of 5 connected Gmail inboxes', async () => {
+    const { connectGmail, getGmailConnectionStatus } = await import('../services/emailSyncService');
+    getGmailConnectionStatus.mockResolvedValueOnce({
+      connected: true,
+      emailAddress: 'user1@gmail.com',
+      accounts: [
+        { email: 'user1@gmail.com', service: 'gmail', status: 'active' },
+        { email: 'user2@gmail.com', service: 'gmail', status: 'active' },
+        { email: 'user3@gmail.com', service: 'gmail', status: 'active' },
+        { email: 'user4@gmail.com', service: 'gmail', status: 'active' },
+        { email: 'user5@gmail.com', service: 'gmail', status: 'active' }
+      ]
+    });
+    const handleToast = vi.fn();
+    renderModal({ onShowToast: handleToast });
+
+    const addGmailBtn = await screen.findByText(/\+ Add Gmail|Gmail נוסף/i);
+    fireEvent.click(addGmailBtn);
+
+    await waitFor(() => {
+      expect(handleToast).toHaveBeenCalledWith(
+        expect.stringMatching(/limit|מגבלת/i),
+        'info'
+      );
     });
     expect(connectGmail).not.toHaveBeenCalled();
   });

@@ -84,10 +84,9 @@ export function createGmailOAuthStartHandler({ clientSecret }) {
     const url = oauth2Client.generateAuthUrl({
       access_type: 'offline',
       // Force showing the consent screen (and thus re-issuing a refresh
-      // token) even for a user who has already granted this app access —
-      // Google only returns a refresh_token on the *first* consent
-      // otherwise.
-      prompt: 'consent',
+      // token) even for a user who has already granted this app access, and
+      // prompt account selection so users can easily link additional Gmail inboxes.
+      prompt: 'consent select_account',
       scope: GMAIL_SCOPES,
       state
     });
@@ -167,7 +166,7 @@ export function createGmailOAuthCallbackHandler({ db, clientSecret, runBackfill 
         console.warn('[gmailOAuthCallback] GMAIL_PUBSUB_TOPIC not set — skipping watch registration');
       }
 
-      await setGmailConnection({
+      const connectionId = await setGmailConnection({
         db,
         uid,
         data: {
@@ -176,7 +175,8 @@ export function createGmailOAuthCallbackHandler({ db, clientSecret, runBackfill 
           historyId: historyId ? String(historyId) : null,
           watchExpiration,
           connectedAt: new Date().toISOString(),
-          status: 'active'
+          status: 'active',
+          lastRenewalError: null
         }
       });
 
@@ -185,7 +185,7 @@ export function createGmailOAuthCallbackHandler({ db, clientSecret, runBackfill 
         // The client also triggers gmailBackfill itself after redirect-back
         // as a belt-and-suspenders retry in case this in-process call is
         // killed by the function's own response/timeout.
-        runBackfill({ uid }).catch((err) =>
+        runBackfill({ uid, connectionId, refreshToken: tokens.refresh_token, emailAddress }).catch((err) =>
           console.error('[gmailOAuthCallback] Background backfill failed:', err)
         );
       }

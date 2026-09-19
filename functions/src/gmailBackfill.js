@@ -13,7 +13,7 @@
 
 import { HttpsError } from 'firebase-functions/v2/https';
 import { DEFAULT_FORWARDING_FILTER_QUERY } from './emailFilterQuery.js';
-import { getGmailConnection, getGmailClientForUser } from './gmailAuth.js';
+import { getGmailConnection, getGmailConnectionsForUser, getGmailClientForUser } from './gmailAuth.js';
 import {
   buildPackagesFromGmailMessageWithAiFallback,
   buildOrderStatusUpdateFromGmailMessage
@@ -56,13 +56,53 @@ export function createGmailBackfillHandler({ db, clientSecret, geminiApiKey }) {
       );
     }
 
-    const connection = await getGmailConnection({ db, uid });
-    if (!connection?.refreshToken) {
+    const targetEmail = request.data?.emailAddress ? String(request.data.emailAddress).trim().toLowerCase() : null;
+    let connections = await getGmailConnectionsForUser({ db, uid });
+    connections = (connections || []).filter((c) => (c.status === undefined || c.status === 'active') && c.refreshToken);
+
+    if (targetEmail) {
+      connections = connections.filter((c) => c.emailAddress?.toLowerCase() === targetEmail);
+    }
+
+    if (connections.length === 0) {
+      const legacyConn = await getGmailConnection({ db, uid, emailAddress: targetEmail });
+      if (legacyConn?.refreshToken) {
+        connections = [legacyConn];
+      }
+    }
+
+    if (connections.length === 0) {
       throw new HttpsError('failed-precondition', 'No connected Gmail account for this user.');
     }
 
-    const result = await runBackfillForUser({ db, uid, refreshToken: connection.refreshToken, clientSecret, geminiApiKey });
-    return result;
+    if (connections.length === 1) {
+      const result = await runBackfillForUser({
+        db,
+        uid,
+        refreshToken: connections[0].refreshToken,
+        clientSecret,
+        geminiApiKey
+      });
+      return result;
+    }
+
+    let totalScanned = 0;
+    let totalSaved = 0;
+    let totalSkipped = 0;
+    for (const conn of connections) {
+      const res = await runBackfillForUser({
+        db,
+        uid,
+        refreshToken: conn.refreshToken,
+        clientSecret,
+        geminiApiKey
+      });
+      totalScanned += res.scanned || 0;
+      totalSaved += res.saved || 0;
+      totalSkipped += res.skipped || 0;
+    }
+
+    return { ok: true, scanned: totalScanned, saved: totalSaved, skipped: totalSkipped };
   };
 }
 
