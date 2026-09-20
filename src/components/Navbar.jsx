@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import {
-  Plus, Sparkles, Menu, X, LogIn,
+  Plus, Sparkles, Menu, X, LogIn, Globe,
   ClipboardCheck, Edit3, ShieldCheck, ArrowRight
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
@@ -31,7 +31,7 @@ export function Navbar({
   onResetData,
   onShowToast
 }) {
-  const { language, t } = useLanguage();
+  const { language, toggleLanguage, t } = useLanguage();
   const { user } = useAuth();
 
   const [isSideDrawerOpen, setIsSideDrawerOpen] = useState(false);
@@ -192,6 +192,19 @@ export function Navbar({
               title={language === 'he' ? 'מרכז ניהול ומדדים' : 'Admin Telemetry'}
             >
               <ShieldCheck className="w-4 h-4 text-indigo-400" />
+            </button>
+          )}
+          {/* Quick Language Toggle on mobile for pre-auth visitors */}
+          {!user && (
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              className="flex items-center gap-1 p-2 sm:px-2.5 sm:py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] justify-center text-xs font-bold"
+              aria-label={language === 'he' ? 'Switch to English' : 'החלף לעברית'}
+              title={language === 'he' ? 'Switch to English' : 'החלף לעברית'}
+            >
+              <Globe className="w-3.5 h-3.5 text-blue-400 shrink-0" aria-hidden="true" />
+              <span>{language === 'he' ? 'EN' : 'עב'}</span>
             </button>
           )}
           {/* Quick User Account Avatar / LogIn Button */}

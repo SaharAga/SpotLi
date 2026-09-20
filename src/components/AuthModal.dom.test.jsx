@@ -91,7 +91,11 @@ describe('AuthModal (rendered)', () => {
       const user = userEvent.setup();
       renderWithLanguage(<AuthModal isOpen initialMode="signin" onClose={vi.fn()} />);
 
-      await user.click(screen.getByRole('button', { name: /install the app first/i }));
+      const bannerBtn = screen.getByRole('button', { name: /install the app first/i });
+      expect(bannerBtn).toHaveAttribute('aria-haspopup', 'dialog');
+      expect(screen.getByText(/Tap for quick Safari installation steps/i)).toBeInTheDocument();
+
+      await user.click(bannerBtn);
       expect(await screen.findByText(/Add to Home Screen/i)).toBeInTheDocument();
     });
   });
@@ -254,5 +258,42 @@ describe('AuthModal (rendered)', () => {
     renderWithLanguage(<AuthModal isOpen initialMode="signin" reason="gmail_sync" onClose={vi.fn()} />);
     expect(screen.getByText(/Connect with Google for Gmail Sync|חיבור עם Google לסנכרון Gmail/i)).toBeInTheDocument();
     expect(screen.getByText(/Google Account is required to automatically connect/i)).toBeInTheDocument();
+  });
+
+  it('renders the language switcher button and toggles language', async () => {
+    const user = userEvent.setup();
+    renderWithLanguage(<AuthModal isOpen initialMode="signin" onClose={vi.fn()} />, { language: 'he' });
+
+    const langBtn = screen.getByRole('button', { name: /switch to english/i });
+    expect(langBtn).toBeInTheDocument();
+    expect(langBtn).toHaveTextContent('EN');
+    expect(langBtn.className).toMatch(/min-h-\[48px\]/);
+    expect(langBtn.className).toMatch(/min-w-\[48px\]/);
+
+    await user.click(langBtn);
+
+    expect(screen.getByRole('button', { name: /החלף לעברית/i })).toBeInTheDocument();
+    expect(screen.getByText('עב')).toBeInTheDocument();
+  });
+
+  it('renders the body container with overflow-y-auto for mobile and desktop scrolling', () => {
+    renderWithLanguage(<AuthModal isOpen initialMode="signin" onClose={vi.fn()} />);
+    const scrollContainer = document.body.querySelector('[data-modal-panel] .overflow-y-auto');
+    expect(scrollContainer).toBeInTheDocument();
+    expect(scrollContainer).toHaveClass('overflow-y-auto');
+    expect(scrollContainer).toHaveClass('flex-1');
+    expect(scrollContainer).toHaveClass('min-h-0');
+  });
+
+  it('scrolls body container to top when setFormError is called on submit failure', async () => {
+    const user = userEvent.setup();
+    renderWithLanguage(<AuthModal isOpen initialMode="signin" onClose={vi.fn()} />);
+    const scrollContainer = document.body.querySelector('[data-modal-panel] .overflow-y-auto');
+    scrollContainer.scrollTo = vi.fn();
+
+    await user.click(getSubmitButton(/sign in$/i));
+
+    expect(await screen.findByText(/Please enter an email address/i)).toBeInTheDocument();
+    expect(scrollContainer.scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
   });
 });
