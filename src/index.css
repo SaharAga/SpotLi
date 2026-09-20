@@ -532,6 +532,11 @@
       -webkit-overflow-scrolling: touch;
       overscroll-behavior-y: contain;
     }
+
+    [data-modal-panel]:not([data-modal-compact]):not(:has(.overflow-y-auto)) {
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch;
+    }
   }
 
   /* Modal panel constraints for desktop: ensure scrollable containers shrink cleanly */

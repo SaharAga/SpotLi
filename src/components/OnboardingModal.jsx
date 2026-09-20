@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Mail, MessageSquareText, MapPin, ChevronRight, ChevronLeft, 
-  Sparkles, Sun, CheckCircle2, ArrowRight, Package
+  Sparkles, Sun, CheckCircle2, ArrowRight, Package, Globe
 } from 'lucide-react';
 import { Modal } from './Modal';
 import { useLanguage } from '../context/LanguageContext';
@@ -15,7 +15,7 @@ export function OnboardingModal({
   onSignInEmail,
   onTryDemo
 }) {
-  const { t, isRTL, language } = useLanguage();
+  const { t, isRTL, language, toggleLanguage } = useLanguage();
   const [currentSlide, setCurrentSlide] = useState(0);
 
   if (!isOpen) return null;
@@ -260,13 +260,25 @@ export function OnboardingModal({
             </button>
           ))}
         </div>
-        <button
-          type="button"
-          onClick={onSignIn || onClose}
-          className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors px-3 py-2 rounded-xl hover:bg-slate-200/80 dark:hover:bg-slate-800/80 min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer"
-        >
-          {onSignIn ? t('onboarding.signIn') : t('onboarding.skip')}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleLanguage}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] text-xs font-bold"
+            aria-label={language === 'he' ? 'Switch to English' : 'החלף לעברית'}
+            title={language === 'he' ? 'Switch to English' : 'החלף לעברית'}
+          >
+            <Globe className="w-4 h-4 text-blue-400 shrink-0" aria-hidden="true" />
+            <span>{language === 'he' ? 'EN' : 'עב'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={onSignIn || onClose}
+            className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors px-3 py-2 rounded-xl hover:bg-slate-200/80 dark:hover:bg-slate-800/80 min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer"
+          >
+            {onSignIn ? t('onboarding.signIn') : t('onboarding.skip')}
+          </button>
+        </div>
       </div>
 
       {/* Slide Body */}

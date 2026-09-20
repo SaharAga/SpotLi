@@ -274,6 +274,7 @@ export function Modal({
         ref={panelRef}
         tabIndex={-1}
         data-modal-panel={compact ? undefined : ""}
+        data-modal-compact={compact ? "" : undefined}
         data-tab-screen={isTabScreen ? "true" : undefined}
         data-no-animate={!shouldAnimate ? "true" : undefined}
         data-flush-bottom={flushBottom ? "true" : undefined}

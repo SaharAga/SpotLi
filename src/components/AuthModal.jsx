@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   X, Cloud, Check, AlertCircle,
-  Mail, User, Lock, Loader2, LogOut, Trash2, ArrowLeft, Sparkles, Smartphone, ChevronRight
+  Mail, User, Lock, Loader2, LogOut, Trash2, ArrowLeft, Sparkles, Smartphone, ChevronRight, Globe
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -106,7 +106,16 @@ export function AuthModal({
     logout 
   } = useAuth();
   
-  const { language, isRTL } = useLanguage();
+  const { language, toggleLanguage, isRTL } = useLanguage();
+  const bodyRef = useRef(null);
+
+  const scrollBodyToTop = () => {
+    if (typeof bodyRef.current?.scrollTo === 'function') {
+      bodyRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (bodyRef.current) {
+      bodyRef.current.scrollTop = 0;
+    }
+  };
 
   const [activeTab, setActiveTab] = useState(initialMode || 'signin'); // 'signin' | 'register' | 'forgot'
 
@@ -172,11 +181,13 @@ export function AuthModal({
 
     if (!cleanEmail) {
       setFormError(language === 'he' ? 'נא להזין כתובת אימייל' : 'Please enter an email address');
+      scrollBodyToTop();
       return;
     }
 
     if (!validateEmail(cleanEmail)) {
       setFormError(language === 'he' ? 'כתובת האימייל אינה תקינה (לדוגמה: name@domain.com)' : 'Please enter a valid email address (e.g. name@domain.com)');
+      scrollBodyToTop();
       return;
     }
 
@@ -191,6 +202,7 @@ export function AuthModal({
         );
       } catch (err) {
         setFormError(err.message || 'Error sending password reset email');
+        scrollBodyToTop();
       } finally {
         setIsLoading(false);
       }
@@ -199,29 +211,35 @@ export function AuthModal({
 
     if (!cleanPassword) {
       setFormError(language === 'he' ? 'נא להזין סיסמה' : 'Please enter a password');
+      scrollBodyToTop();
       return;
     }
 
     if (cleanPassword.length < 8) {
       setFormError(language === 'he' ? 'הסיסמה חייבת להכיל לפחות 8 תווים' : 'Password must be at least 8 characters');
+      scrollBodyToTop();
       return;
     }
 
     if (activeTab === 'register') {
       if (!/(?=.*[A-Za-zא-ת])(?=.*[0-9])/.test(cleanPassword)) {
         setFormError(language === 'he' ? 'הסיסמה חייבת לכלול שילוב של אותיות ומספרים' : 'Password must include both letters and numbers');
+        scrollBodyToTop();
         return;
       }
       if (!/[^A-Za-z0-9א-ת]/.test(cleanPassword)) {
         setFormError(language === 'he' ? 'הסיסמה חייבת לכלול לפחות תו מיוחד אחד (כגון !@#$%)' : 'Password must contain at least one special character (!@#$%)');
+        scrollBodyToTop();
         return;
       }
       if (!cleanName) {
         setFormError(language === 'he' ? 'נא להזין שם מלא' : 'Please enter your full name');
+        scrollBodyToTop();
         return;
       }
       if (cleanPassword !== cleanConfirm) {
         setFormError(language === 'he' ? 'הסיסמאות אינן תואמות. נא להזין שוב.' : 'Passwords do not match. Please re-enter.');
+        scrollBodyToTop();
         return;
       }
       if (!agreedToTerms) {
@@ -230,6 +248,7 @@ export function AuthModal({
             ? 'יש לאשר את תנאי השימוש ומדיניות הפרטיות כדי להמשיך'
             : 'You must agree to the Terms of Use and Privacy Policy to continue'
         );
+        scrollBodyToTop();
         return;
       }
     }
@@ -253,6 +272,7 @@ export function AuthModal({
       onClose();
     } catch (err) {
       setFormError(err.message || (language === 'he' ? 'שגיאה באימות' : 'Authentication error'));
+      scrollBodyToTop();
     } finally {
       setIsLoading(false);
     }
@@ -319,10 +339,10 @@ export function AuthModal({
       isOpen={isOpen}
       onClose={onClose}
       componentName="AuthModal"
-      className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8"
+      className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-8 max-h-[90vh] flex flex-col"
     >
         {/* Header */}
-        <div className="p-6 border-b border-slate-800 flex flex-col bg-slate-900">
+        <div className="p-6 border-b border-slate-800 flex flex-col bg-slate-900 shrink-0">
           <div className="w-10 h-1 bg-slate-700/80 rounded-full mx-auto -mt-2 mb-4 shrink-0 lg:hidden" aria-hidden="true" />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -339,18 +359,30 @@ export function AuthModal({
                 </p>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleLanguage}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] text-xs font-bold"
+                aria-label={language === 'he' ? 'Switch to English' : 'החלף לעברית'}
+                title={language === 'he' ? 'Switch to English' : 'החלף לעברית'}
+              >
+                <Globe className="w-4 h-4 text-blue-400 shrink-0" aria-hidden="true" />
+                <span>{language === 'he' ? 'EN' : 'עב'}</span>
+              </button>
+              <button
+                onClick={onClose}
+                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-5 text-xs">
+        <div ref={bodyRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-6 space-y-5 text-xs pb-[max(2rem,env(safe-area-inset-bottom))]">
           {/* Active User Card if already logged in */}
           {user ? (
             <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-4">
@@ -450,14 +482,22 @@ export function AuthModal({
                 <button
                   type="button"
                   onClick={() => setShowInstallGuide(true)}
+                  aria-haspopup="dialog"
                   className="w-full mb-4 px-3 py-2 rounded-2xl bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 transition-colors cursor-pointer flex items-center gap-2.5 text-start min-h-[48px]"
                 >
                   <Smartphone className="w-4 h-4 text-blue-400 shrink-0" aria-hidden="true" />
-                  <span className="flex-1 text-xs font-bold text-slate-200">
-                    {language === 'he'
-                      ? 'משתמשים באייפון? התקינו את האפליקציה קודם'
-                      : 'Using an iPhone? Install the app first'}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <span className="block text-xs font-bold text-slate-200">
+                      {language === 'he'
+                        ? 'משתמשים באייפון? התקינו את האפליקציה קודם'
+                        : 'Using an iPhone? Install the app first'}
+                    </span>
+                    <span className="block text-[11px] text-blue-400/90 font-medium">
+                      {language === 'he'
+                        ? 'לחצו להוראות התקנה מהירות בספארי'
+                        : 'Tap for quick Safari installation steps'}
+                    </span>
+                  </div>
                   <ChevronRight
                     className={`w-4 h-4 text-blue-400 shrink-0 ${isRTL ? 'rotate-180' : ''}`}
                     aria-hidden="true"
