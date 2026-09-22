@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accessibility Statement — SpotLi</title>
+  <link rel="icon" type="image/png" href="/icons/app-icon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #030712;
+      --card-bg: #0b1329;
+      --card-border: #1e293b;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-gradient: linear-gradient(135deg, #3b82f6, #6366f1, #8b5cf6);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      line-height: 1.65;
+      padding: 2rem 1rem;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      max-width: 860px;
+      width: 100%;
+    }
+    header {
+      margin-bottom: 2.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .logo-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: inherit;
+    }
+    .brand img {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+    }
+    .brand-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .lang-switcher {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .lang-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: var(--text);
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .lang-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-top: 0.5rem;
+    }
+    .updated {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    .highlight-card {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(99, 102, 241, 0.08));
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #93c5fd;
+      margin: 1.5rem 0 0.75rem 0;
+    }
+    h2:first-child { margin-top: 0; }
+    p {
+      color: #cbd5e1;
+      font-size: 0.95rem;
+      margin-bottom: 1rem;
+    }
+    ul {
+      margin-left: 1.5rem;
+      margin-bottom: 1rem;
+      color: #cbd5e1;
+      font-size: 0.95rem;
+    }
+    li { margin-bottom: 0.4rem; }
+    .rtl {
+      direction: rtl;
+      font-family: 'Assistant', 'Inter', system-ui, sans-serif;
+    }
+    .rtl ul { margin-left: 0; margin-right: 1.5rem; }
+    footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--card-border);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo-row">
+        <a href="/" class="brand">
+          <img src="/icons/app-icon.png" alt="SpotLi Logo">
+          <span class="brand-title">SpotLi</span>
+        </a>
+        <div class="lang-switcher">
+          <button class="lang-btn active" onclick="switchLang('en')">English</button>
+          <button class="lang-btn" onclick="switchLang('he')">עברית</button>
+        </div>
+      </div>
+      <div>
+        <h1 id="page-title">Accessibility Statement</h1>
+        <p class="updated" id="page-updated">Last updated: September 22, 2026</p>
+      </div>
+    </header>
+
+    <!-- English Content -->
+    <main id="content-en">
+      <div class="card highlight-card">
+        <h2>Standard IS 5568 & WCAG 2.1 Level AA Compliance</h2>
+        <p>SpotLi is committed to providing an inclusive, barrier-free digital environment for all users, including individuals with motor, visual, auditory, or cognitive disabilities. This application conforms to Israeli Standard <strong>IS 5568</strong> ("Guidelines for Accessibility of Internet Content"), which adopts the international <strong>Web Content Accessibility Guidelines (WCAG) 2.1 Level AA</strong> standard.</p>
+      </div>
+
+      <div class="card">
+        <h2>1. Compliance Statement</h2>
+        <p>SpotLi is committed to ensuring digital accessibility for all users, including people with disabilities. We continuously improve the user experience and apply relevant accessibility standards. This digital application conforms to the requirements of the Equal Rights for Persons with Disabilities (Service Accessibility Adjustments) Regulations, 5773-2013, and Israeli Standard IS 5568 ("Guidelines for Accessibility of Internet Content"), which adopts the Web Content Accessibility Guidelines (WCAG) 2.1 at Level AA.</p>
+
+        <h2>2. Accessibility Features Implemented</h2>
+        <p>SpotLi includes the following built-in accessibility adjustments:</p>
+        <ul>
+          <li><strong>Keyboard Navigation:</strong> All interactive elements, controls, dialogues, and form inputs are fully accessible and operable via standard keyboard commands (Tab, Shift+Tab, Enter, Escape, Arrow keys) with high-visibility focus indicators.</li>
+          <li><strong>Screen Reader Optimization:</strong> Semantic HTML5 elements and ARIA landmarks/roles (dialog, alertdialog, button, status) are used throughout, ensuring screen readers (such as NVDA, JAWS, VoiceOver, and TalkBack) can accurately convey content, status changes, and notifications.</li>
+          <li><strong>Touch Ergonomics:</strong> All interactive touch targets (buttons, list items, toggles) meet or exceed the minimum 48x48px physical bounding box requirement to prevent accidental activations.</li>
+          <li><strong>Visual Clarity & Contrast:</strong> The user interface adheres to strict WCAG 2.1 Level AA color contrast ratios (minimum 4.5:1 for normal text and 3:1 for large text or graphical components) across light, dark, and system themes.</li>
+          <li><strong>Bilingual Symmetry & Motion:</strong> Pixel-perfect layout mirroring between Hebrew (RTL) and English (LTR) using CSS logical properties, with support for the "prefers-reduced-motion" system setting.</li>
+        </ul>
+
+        <h2>3. Digital-Only Service Nature</h2>
+        <p>SpotLi operates exclusively as a digital application (Progressive Web Application). SpotLi has no physical offices, branches, or reception desks open to the public. As such, physical on-site accessibility arrangements (such as ramps, elevators, accessible parking, or service animal access) are not applicable.</p>
+
+        <h2>4. Accessibility Coordinator & Contact Information</h2>
+        <p>If you encounter an accessibility barrier, have questions regarding accessibility, or require specific accommodations in an alternative format, please contact our Accessibility Coordinator directly at: <strong><a href="mailto:contact@spotliapp.com" style="color: var(--accent);">contact@spotliapp.com</a></strong>. We review all accessibility inquiries and commit to responding and providing reasonable accommodations within <strong>14 business days</strong>.</p>
+      </div>
+    </main>
+
+    <!-- Hebrew Content -->
+    <main id="content-he" class="rtl" style="display: none; text-align: right;">
+      <div class="card highlight-card">
+        <h2>עמידה בתקן ת"י 5568 והנחיות WCAG 2.1 ברמת AA</h2>
+        <p>SpotLi רואה חשיבות עליונה בהנגשת שירותיה הדיגיטליים לאנשים עם מוגבלויות, מתוך מחויבות עמוקה לשוויון זכויות, עצמאות וכבוד האדם. יישום זה הותאם במלואו לדרישות <strong>תקן ישראלי ת"י 5568</strong> ("קווים מנחים לנגישות תכנים באינטרנט"), המאמץ את הנחיות הנגישות הבינלאומיות של ארגון W3C (תקן <strong>WCAG 2.1</strong>) ברמת עמידה <strong>AA</strong>.</p>
+      </div>
+
+      <div class="card">
+        <h2>1. הצהרת מחויבות ותקן נגישות</h2>
+        <p>SpotLi רואה חשיבות עליונה בהנגשת השירות הדיגיטלי לאנשים עם מוגבלויות, מתוך מחויבות לשוויון זכויות, כבוד האדם ועצמאותו. יישום זה הותאם בהתאם לתקנות שוויון זכויות לאנשים עם מוגבלות (התאמות נגישות לשירות), התשע"ג-2013, ולתקן הישראלי ת"י 5568 ("קווים מנחים לנגישות תכנים באינטרנט"), המאמץ את הנחיות הנגישות הבינלאומיות של ארגון W3C (תקן WCAG 2.1) ברמת עמידה AA.</p>
+
+        <h2>2. התאמות הנגישות שבוצעו ביישום</h2>
+        <p>ביישום בוצעו התאמות נגישות קפדניות, לרבות:</p>
+        <ul>
+          <li><strong>ניווט מקלדת מלא:</strong> כל הרכיבים האינטראקטיביים, הכפתורים, הטפסים ותיבות הדו-שיח ניתנים להפעלה מלאה באמצעות המקלדת בלבד (מקשי Tab, Shift+Tab, Enter, הרווח, חיצים ומקש Esc לסגירת חלונות), תוך הדגשת פוקוס ויזואלית ברורה.</li>
+          <li><strong>תאימות לקוראי מסך:</strong> שימוש במבנה סמנטי תקני (HTML5) ורכיבי ARIA (כגון dialog, status, button) המאפשרים לקוראי מסך (דוגמת NVDA, JAWS, VoiceOver ו-TalkBack) להקריא במדויק את המידע, הסטטוסים וההודעות.</li>
+          <li><strong>אזורי מגע מוגדלים (Touch Targets):</strong> כל כפתורי הפעולה והרכיבים הלחיצים נבנו בגודל מינימלי של 48x48 פיקסלים, לנוחות הפעלה מקסימלית במכשירי מגע ולמניעת לחיצות שגויות.</li>
+          <li><strong>ניגודיות חזותית ועיצוב:</strong> צבעי הממשק נבדקו ועומדים ביחסי ניגודיות מחמירים (מינימום 4.5:1 לטקסט רגיל ו-3:1 לטקסט גדול) במצב בהיר ובמצב כהה כאחד.</li>
+          <li><strong>התאמה דו-לשונית והפחתת תנועה:</strong> תמיכה מלאה בהתאמת כיווניות (RTL לעברית, LTR לאנגלית) וכיבוד הגדרות מערכת להפחתת תנועה והנפשות (prefers-reduced-motion).</li>
+        </ul>
+
+        <h2>3. אופי השירות (שירות דיגיטלי בלבד)</h2>
+        <p>SpotLi הינה אפליקציית רשת מתקדמת (PWA) הפועלת באופן מקוון ודיגיטלי בלבד. לשירות אין משרדים, סניפים, עמדות קבלת קהל פיזיות או מרכז שירות לקוחות פרונטלי. לפיכך, התאמות נגישות פיזיות (כגון מעליות, חניות נכים, רמפות או שילוט מישושי) אינן רלוונטיות לשירות זה.</p>
+
+        <h2>4. רכז נגישות ודרכי פנייה</h2>
+        <p>אנו ממשיכים במאמצים לשפר את נגישות היישום. אם נתקלת בקושי, בתקלה בנגישות או אם נדרשת התאמה מיוחדת, ניתן לפנות לרכז הנגישות בכתובת הדוא"ל: <strong><a href="mailto:contact@spotliapp.com" style="color: var(--accent);">contact@spotliapp.com</a></strong>. אנו מתחייבים לבדוק כל פנייה ולספק מענה והתאמות נגישות נדרשות תוך <strong>14 ימי עסקים</strong> לכל היותר.</p>
+      </div>
+    </main>
+
+    <footer>
+      <p>&copy; 2026 SpotLi. All rights reserved. | <a href="/terms.html">Terms of Use</a> | <a href="/privacy.html">Privacy Policy</a> | <a href="/">Open SpotLi App</a></p>
+    </footer>
+  </div>
+
+  <script>
+    function switchLang(lang) {
+      document.getElementById('content-en').style.display = lang === 'en' ? 'block' : 'none';
+      document.getElementById('content-he').style.display = lang === 'he' ? 'block' : 'none';
+      document.getElementById('page-title').innerText = lang === 'en' ? 'Accessibility Statement' : 'הצהרת נגישות';
+      document.getElementById('page-updated').innerText = lang === 'en' ? 'Last updated: September 22, 2026' : 'עודכן לאחרונה: 22 בספטמבר 2026';
+      
+      const buttons = document.querySelectorAll('.lang-btn');
+      buttons[0].classList.toggle('active', lang === 'en');
+      buttons[1].classList.toggle('active', lang === 'he');
+    }
+  </script>
+</body>
+</html>

@@ -512,22 +512,29 @@ export function AboutModal({
           <div>
             <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider mb-2.5 flex items-center gap-2">
               <FileText className="w-4 h-4 text-slate-400" />
-              <span>{language === 'he' ? 'משפטי' : 'Legal'}</span>
+              <span>{language === 'he' ? 'משפטי ונגישות' : 'Legal & Accessibility'}</span>
             </h3>
-            <div className="flex gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               <button
                 type="button"
                 onClick={() => setOpenLegalDoc('terms')}
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-semibold transition-colors cursor-pointer min-h-[48px]"
+                className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-semibold transition-colors cursor-pointer min-h-[48px]"
               >
                 <span>{language === 'he' ? 'תנאי שימוש' : 'Terms of Use'}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setOpenLegalDoc('privacy')}
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-semibold transition-colors cursor-pointer min-h-[48px]"
+                className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-semibold transition-colors cursor-pointer min-h-[48px]"
               >
                 <span>{language === 'he' ? 'מדיניות פרטיות' : 'Privacy Policy'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setOpenLegalDoc('accessibility')}
+                className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-950/60 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-semibold transition-colors cursor-pointer min-h-[48px]"
+              >
+                <span>{language === 'he' ? 'הצהרת נגישות' : 'Accessibility Statement'}</span>
               </button>
             </div>
           </div>
