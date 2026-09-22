@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Versioning convention (established 2026-08-22)**: standard `MAJOR.MINOR.PATCH` — MINOR bumps for new user-facing features/capabilities, PATCH bumps for bug fixes. `MAJOR` stays `0` while in alpha. (A non-standard 4th segment, e.g. `0.6.2.14`–`0.6.2.18`, crept in for a stretch of hotfix releases without being a deliberate decision — retired as of `0.7.0`. See `AGENT_SYNC.md`, 2026-08-22, for the discussion.)
 
+## [0.40.0] - 2026-09-22
+
+### Added
+- Enhanced Israeli legal and regulatory compliance across Terms of Use, Privacy Policy, and Accessibility Statement (Israeli Standard IS 5568 / WCAG 2.1 AA, Privacy Protection Law Amendment 13 Section 11 statutory notice, 17TRACK & Gaash Worldwide tracking API disclosures, transparent localStorage inventory, Section 13-14 rights with appeal routes, Communications Law §30A Anti-Spam transactional notices, and unblocked data export during legal consent re-gating).
+
 ## [0.39.1] - 2026-09-20
 
 ### Fixed
