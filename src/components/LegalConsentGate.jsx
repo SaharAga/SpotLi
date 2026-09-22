@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { ShieldCheck, FileText, Sparkles, LogOut } from 'lucide-react';
+import { ShieldCheck, FileText, Sparkles, LogOut, Download } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 const LegalDocumentModal = React.lazy(() => import('./LegalDocumentModal').then(module => ({ default: module.LegalDocumentModal })));
 import { Modal } from './Modal';
 import { LEGAL_VERSION } from '../constants/legalVersion';
+import { exportRawToJSON } from '../utils/exportUtils';
+import { deliveryService } from '../services/deliveryService';
+import { todayISO } from '../utils/dateUtils';
 
 /**
  * Blocking, non-dismissable overlay shown to any signed-in user whose stored
@@ -14,15 +17,17 @@ import { LEGAL_VERSION } from '../constants/legalVersion';
  * collects the same acceptance inline (AuthModal), so a fresh email signup
  * normally never sees this gate.
  *
- * The only way out besides accepting is signing out — there's no X button,
- * this isn't meant to be dismissable.
+ * The only way out besides accepting is signing out or exporting data — there's
+ * no X button, this isn't meant to be dismissable. If a user declines the updated
+ * terms, they are provided with an explicit data export action so they are not
+ * trapped without access to their shipment records.
  */
 export function LegalConsentGate({ onShowToast }) {
   const { user, acceptLegalTerms, logout } = useAuth();
   const { language } = useLanguage();
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [aiOptIn, setAiOptIn] = useState(false);
-  const [openDoc, setOpenDoc] = useState(null); // 'terms' | 'privacy' | null
+  const [openDoc, setOpenDoc] = useState(null); // 'terms' | 'privacy' | 'accessibility' | null
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const needsConsent = !!(user && user.legalAcceptedVersion !== LEGAL_VERSION);
@@ -52,6 +57,17 @@ export function LegalConsentGate({ onShowToast }) {
       }
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleExportData = () => {
+    const rawPackages = deliveryService.getRawPackages(user?.id);
+    exportRawToJSON(rawPackages, true, `spotli_backup_${user?.id || 'guest'}_${todayISO()}.json`);
+    if (onShowToast) {
+      onShowToast(
+        language === 'he' ? 'קובץ גיבוי הנתונים הורד בהצלחה' : 'Data backup downloaded successfully',
+        'success'
+      );
     }
   };
 
@@ -157,14 +173,25 @@ export function LegalConsentGate({ onShowToast }) {
               {language === 'he' ? 'המשך' : 'Continue'}
             </button>
 
-            <button
-              type="button"
-              onClick={() => logout()}
-              className="w-full flex items-center justify-center gap-1.5 text-slate-500 hover:text-slate-300 text-xs font-semibold cursor-pointer py-1"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>{language === 'he' ? 'התנתקות במקום זאת' : 'Sign out instead'}</span>
-            </button>
+            <div className="pt-2 border-t border-slate-800/80 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={handleExportData}
+                className="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 text-slate-300 hover:text-slate-100 text-xs font-semibold transition-colors cursor-pointer min-h-[48px]"
+              >
+                <Download className="w-3.5 h-3.5 text-blue-400" />
+                <span>{language === 'he' ? 'ייצוא הנתונים שלי (גיבוי JSON)' : 'Export my data (JSON backup)'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => logout()}
+                className="w-full flex items-center justify-center gap-1.5 text-slate-500 hover:text-slate-300 text-xs font-semibold cursor-pointer py-1 min-h-[48px]"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>{language === 'he' ? 'התנתקות במקום זאת' : 'Sign out instead'}</span>
+              </button>
+            </div>
           </div>
         </Modal>
 

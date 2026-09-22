@@ -1,13 +1,13 @@
 /**
- * Terms of Use & Privacy Policy content, plus the version stamp that gates
- * LegalConsentGate (src/components/LegalConsentGate.jsx). Bump LEGAL_VERSION
- * whenever the substance of either document changes — every signed-in user
- * whose stored `legalAcceptedVersion` doesn't match gets re-gated.
+ * Terms of Use, Privacy Policy & Accessibility Statement content, plus the version
+ * stamp that gates LegalConsentGate (src/components/LegalConsentGate.jsx).
+ * Bump LEGAL_VERSION whenever the substance of either document changes — every signed-in
+ * user whose stored `legalAcceptedVersion` doesn't match gets re-gated.
  *
  * Scope: this app is currently offered only to users in Israel (see the
- * "Where this is offered" section) — a deliberate choice to avoid carrying
- * an unresolved EU representative/international-transfer posture while
- * still in alpha.
+ * "Where this is offered" section) — conforming with Israeli Privacy Protection Law
+ * (including Amendment 13), Israeli Standard IS 5568 (WCAG 2.1 AA), Communications Law §30A,
+ * and Standard Form Contracts Law.
  */
 
 import { LEGAL_VERSION } from './legalVersion';
@@ -18,7 +18,7 @@ const CONTACT_EMAIL = 'contact@spotliapp.com';
 export const TERMS_CONTENT = {
   en: {
     title: 'Terms of Use',
-    updated: 'Last updated: September 5, 2026',
+    updated: 'Last updated: September 22, 2026',
     sections: [
       {
         heading: 'What this is',
@@ -38,7 +38,7 @@ export const TERMS_CONTENT = {
       },
       {
         heading: 'Third-party carriers and locker pickup points',
-        body: 'SpotLi is NOT a shipping company, freight forwarder, postal operator, courier service, or delivery handler. SpotLi does not ship, transport, handle, store, or deliver packages. SpotLi queries supported carrier endpoints (currently Israel Post for live status updates), provides direct web portal tracking links for other domestic and international carriers (including Cheetah, HFD, BoxIt, Tapuz, Orian, Cainiao, and 17Track), and parses courier messages to display tracking status and locker pickup information for your personal convenience. Carrier names, trademarks, and logos displayed in the app belong to their respective owners. SpotLi is not affiliated with, endorsed by, or operated by any carrier, and has zero control over carrier shipping schedules, physical deliveries, tracking accuracy, locker availability, or access code validity.'
+        body: 'SpotLi is NOT a shipping company, freight forwarder, postal operator, courier service, or delivery handler. SpotLi does not ship, transport, handle, store, or deliver packages. SpotLi queries supported carrier endpoints and tracking APIs (including Israel Post, 17TRACK API, and Gaash Worldwide for live status updates), provides direct web portal tracking links for other domestic and international carriers (including Cheetah, HFD, BoxIt, Tapuz, Orian, and Cainiao), and parses courier messages to display tracking status and locker pickup information for your personal convenience. Carrier names, trademarks, and logos displayed in the app belong to their respective owners. SpotLi is not affiliated with, endorsed by, or operated by any carrier, and has zero control over carrier shipping schedules, physical deliveries, tracking accuracy, locker availability, or access code validity.'
       },
       {
         heading: 'External navigation & courier messaging',
@@ -49,8 +49,8 @@ export const TERMS_CONTENT = {
         body: 'SpotLi provides optional email-based shipment tracking: (1) Inbound Email Forwarding via CloudMailin: You may forward shipping confirmation emails to your personal ingestion address. Emails are processed transiently to extract tracking details, and raw emails are discarded. (2) Gmail Integration via Google OAuth 2.0: If you connect your Google account, SpotLi requests restricted read-only access (https://www.googleapis.com/auth/gmail.readonly) solely to search for and extract tracking numbers, carrier names, and delivery dates from shipping confirmation emails. SpotLi’s use and transfer to any other app of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements. We never read your personal emails, never sell your email data, and never use email content for advertising or AI model training. You may disconnect Gmail or discontinue forwarding at any time from Account Settings. SpotLi is not liable for missed, unparsed, delayed, or miscategorized emails.'
       },
       {
-        heading: 'Web push notifications & alerts',
-        body: 'If you enable web push notifications, SpotLi attempts to send delivery status updates to your registered browser. Push notifications are provided for convenience only and depend on network availability, third-party push servers, and device operating system power-saving policies. SpotLi does not guarantee timely delivery or receipt of notifications and is not liable for any missed deliveries or uncollected packages resulting from delayed, failed, or inaccurate notifications.'
+        heading: 'Web push notifications & Anti-Spam statutory compliance',
+        body: 'If you enable web push notifications, SpotLi attempts to send delivery status updates to your registered browser. In accordance with Section 30A of the Israeli Communications (Telecommunications and Broadcasting) Law, 5742-1982 (Anti-Spam Law), all push notifications and alerts sent by SpotLi are strictly operational and transactional delivery status updates requested directly by you. SpotLi does not send any commercial advertising, marketing, or promotional messages ("דבר פרסומת"). You may revoke notification permissions at any time through your browser settings or device operating system. Push notifications are provided for convenience only and depend on network availability, third-party push servers, and device operating system power-saving policies. SpotLi does not guarantee timely delivery or receipt of notifications and is not liable for any missed deliveries or uncollected packages resulting from delayed, failed, or inaccurate notifications.'
       },
       {
         heading: 'AI-assisted import',
@@ -70,7 +70,7 @@ export const TERMS_CONTENT = {
       },
       {
         heading: 'Strict limitation of liability',
-        body: 'TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, UNDER NO CIRCUMSTANCES SHALL THE OPERATOR OF SPOTLI, AFFILIATES, OR SERVICE PROVIDERS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, PUNITIVE, EXEMPLARY, OR CONSEQUENTIAL DAMAGES WHATSOEVER (INCLUDING, WITHOUT LIMITATION, DAMAGES FOR LOST, DAMAGED, DELAYED, STOLEN, OR MISDELIVERED PACKAGES OR GOODS; LOSS OF PROFITS; BUSINESS INTERRUPTION; LOSS OF DATA; REPLACEMENT COSTS; OR PERSONAL DISTRESS) ARISING OUT OF OR IN CONNECTION WITH YOUR USE OF, OR INABILITY TO USE, THE SERVICE, THIRD-PARTY CARRIER SYSTEMS, GMAIL INTEGRATION, PUSH NOTIFICATIONS, OR NAVIGATION LINKS, WHETHER BASED ON WARRANTY, CONTRACT, TORT (INCLUDING NEGLIGENCE), OR ANY OTHER LEGAL THEORY, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. IN ALL CASES, THE TOTAL AGGREGATE LIABILITY OF THE OPERATOR FOR ALL CLAIMS ARISING UNDER OR RELATING TO THESE TERMS OR THE SERVICE SHALL BE STRICTLY LIMITED TO THE GREATER OF: (A) THE TOTAL AMOUNT PAID BY YOU TO SPOTLI IN THE TWELVE (12) MONTHS PRECEDING THE CLAIM (CURRENTLY ZERO, AS THE APP IS OFFERED FREE OF CHARGE), OR (B) ONE HUNDRED NEW ISRAELI SHEKELS (NIS 100). THIS LIMITATION OF LIABILITY IS CUMULATIVE AND SHALL NOT BE ENLARGED BY MULTIPLE INCIDENTS OR CLAIMS.'
+        body: 'TO THE FULLEST EXTENT PERMITTED BY APPLICABLE LAW, AND EXCEPT WHERE LIABILITY CANNOT BE EXCLUDED OR LIMITED UNDER MANDATORY, NON-WAIVABLE PROVISIONS OF APPLICABLE ISRAELI LAW (SUCH AS INTENTIONAL MISCONDUCT OR GROSS NEGLIGENCE UNDER THE STANDARD FORM CONTRACTS LAW, 5743-1982), UNDER NO CIRCUMSTANCES SHALL THE OPERATOR OF SPOTLI, AFFILIATES, OR SERVICE PROVIDERS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, PUNITIVE, EXEMPLARY, OR CONSEQUENTIAL DAMAGES WHATSOEVER (INCLUDING, WITHOUT LIMITATION, DAMAGES FOR LOST, DAMAGED, DELAYED, STOLEN, OR MISDELIVERED PACKAGES OR GOODS; LOSS OF PROFITS; BUSINESS INTERRUPTION; LOSS OF DATA; REPLACEMENT COSTS; OR PERSONAL DISTRESS) ARISING OUT OF OR IN CONNECTION WITH YOUR USE OF, OR INABILITY TO USE, THE SERVICE, THIRD-PARTY CARRIER SYSTEMS, GMAIL INTEGRATION, PUSH NOTIFICATIONS, OR NAVIGATION LINKS, WHETHER BASED ON WARRANTY, CONTRACT, TORT (INCLUDING NEGLIGENCE), OR ANY OTHER LEGAL THEORY, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. IN ALL CASES, THE TOTAL AGGREGATE LIABILITY OF THE OPERATOR FOR ALL CLAIMS ARISING UNDER OR RELATING TO THESE TERMS OR THE SERVICE SHALL BE STRICTLY LIMITED TO THE GREATER OF: (A) THE TOTAL AMOUNT PAID BY YOU TO SPOTLI IN THE TWELVE (12) MONTHS PRECEDING THE CLAIM (CURRENTLY ZERO, AS THE APP IS OFFERED FREE OF CHARGE), OR (B) ONE HUNDRED NEW ISRAELI SHEKELS (NIS 100). THIS LIMITATION OF LIABILITY IS CUMULATIVE AND SHALL NOT BE ENLARGED BY MULTIPLE INCIDENTS OR CLAIMS.'
       },
       {
         heading: 'Suspending or discontinuing the service',
@@ -96,7 +96,7 @@ export const TERMS_CONTENT = {
   },
   he: {
     title: 'תנאי שימוש',
-    updated: 'עודכן לאחרונה: 5 בספטמבר 2026',
+    updated: 'עודכן לאחרונה: 22 בספטמבר 2026',
     sections: [
       {
         heading: 'מהו השירות',
@@ -116,7 +116,7 @@ export const TERMS_CONTENT = {
       },
       {
         heading: 'ספקי שילוח חיצוניים ונקודות איסוף',
-        body: 'SpotLi אינה חברת שילוח, אינה סוכנות דואר, אינה חברת בלדרות ואינה מספקת שירותי הובלה או מסירה. SpotLi אינה משנעת, אינה מחזיקה ואינה מוסרת חבילות בפועל. האפליקציה משמשת ככלי אגרגציה אינפורמטיבי בלבד, הפונה למערכות מעקב נתמכות (כיום דואר ישראל לעדכוני סטטוס חיים), מייצרת קישורי גישה ישירים לפורטלי המעקב של ספקי שילוח נוספים בארץ ובעולם (לרבות צ\'יטה, HFD, בוקסיט, תפוז, אוריאן, קאיניאו ו-17Track), ומפענחת הודעות שילוח לטובת נוחות אישית. שמות החברות, סימני המסחר והלוגואים שייכים לבעליהם בלבד; SpotLi אינה שלוחה שלהם, אינה מופעלת על ידם ואין לה כל שליטה על לוחות הזמנים, הדיוק של נתוני המעקב, זמינות לוקרים או תקינות קודי איסוף.'
+        body: 'SpotLi אינה חברת שילוח, אינה סוכנות דואר, אינה חברת בלדרות ואינה מספקת שירותי הובלה או מסירה. SpotLi אינה משנעת, אינה מחזיקה ואינה מוסרת חבילות בפועל. האפליקציה משמשת ככלי אגרגציה אינפורמטיבי בלבד, הפונה למערכות מעקב נתמכות וממשקי API (לרבות דואר ישראל, ממשק 17TRACK וחברת געש וורלדווייד לעדכוני סטטוס חיים), מייצרת קישורי גישה ישירים לפורטלי המעקב של ספקי שילוח נוספים בארץ ובעולם (לרבות צ\'יטה, HFD, בוקסיט, תפוז, אוריאן וקאיניאו), ומפענחת הודעות שילוח לטובת נוחות אישית. שמות החברות, סימני המסחר והלוגואים שייכים לבעליהם בלבד; SpotLi אינה שלוחה שלהם, אינה מופעלת על ידם ואין לה כל שליטה על לוחות הזמנים, הדיוק של נתוני המעקב, זמינות לוקרים או תקינות קודי איסוף.'
       },
       {
         heading: 'קישורי ניווט חיצוניים והתקשרות עם שליחים',
@@ -127,8 +127,8 @@ export const TERMS_CONTENT = {
         body: 'SpotLi מציעה שירותי מעקב מבוססי דוא"ל אופציונליים: (1) העברת דוא"ל נכנס באמצעות CloudMailin: באפשרותך להעביר הודעות אישור משלוח לכתובת ייעודית אישית. ההודעות מעובדות באופן רגעי בזיכרון לחילוץ פרטי המעקב ונמחקות מיידית. (2) סנכרון Gmail באמצעות Google OAuth 2.0: אם בחרת לחבר חשבון Google, האפליקציה מבקשת הרשאת קריאה מוגבלת בלבד (https://www.googleapis.com/auth/gmail.readonly) אך ורק לצורך איתור וחילוץ של מספרי מעקב, שמות ספקים ותאריכי מסירה מהודעות שילוח. השימוש וההעברה של מידע שהתקבל מ-Google APIs על ידי SpotLi נעשים בהתאם מלא למדיניות נתוני המשתמש של שירותי Google API, לרבות דרישות השימוש המוגבל (Limited Use). איננו קוראים הודעות אישיות, איננו מוכרים נתוני דוא"ל, ואיננו משתמשים במידע זה לפרסום או לאימון מודלים של בינה מלאכותית. ניתן לנתק את Gmail או להפסיק את ההעברה בכל עת מהגדרות החשבון. SpotLi אינה אחראית להודעות שלא נקלטו, שלא פוענחו, או שנשמטו.'
       },
       {
-        heading: 'התראות דחיפה בדפדפן (Web Push)',
-        body: 'במידה שתאשר/י קבלת התראות בדפדפן, המערכת תנסה לשלוח התראות על עדכוני סטטוס של חבילותיך. התראות אלו מיועדות לנוחות בלבד ותלויות בחיבור רשת, שרתי דחיפה חיצוניים והגדרות חיסכון בסוללה של מכשירך. SpotLi אינה מתחייבת להגעת ההתראות במועד ואינה נושאת בכל אחריות בגין חבילות שלא נאספו או איחורים כתוצאה מהתראה שלא התקבלה או שאיחרה.'
+        heading: 'התראות דחיפה בדפדפן (Web Push) והוראות חוק התקשורת',
+        body: 'במידה שתאשר/י קבלת התראות בדפדפן, המערכת תנסה לשלוח התראות על עדכוני סטטוס של חבילותיך. בהתאם להוראות סעיף 30א לחוק התקשורת (בזק ושידורים), התשמ"ב-1982 ("חוק הספאם"), מובהר בזאת במפורש כי כל ההתראות וההודעות הנשלחות על ידי SpotLi הינן הודעות שירותיות ותפעוליות בלבד אודות סטטוס המשלוחים שלך, אשר התבקשו על ידך באופן ישיר. SpotLi אינה שולחת כל מסר פרסומי, שיווקי או מסחרי ("דבר פרסומת"). באפשרותך לבטל את הרשאת ההתראות בכל עת דרך הגדרות הדפדפן או מערכת ההפעלה. התראות אלו מיועדות לנוחות בלבד ותלויות בחיבור רשת, שרתי דחיפה חיצוניים והגדרות חיסכון בסוללה של מכשירך. SpotLi אינה מתחייבת להגעת ההתראות במועד ואינה נושאת בכל אחריות בגין חבילות שלא נאספו או איחורים כתוצאה מהתראה שלא התקבלה או שאיחרה.'
       },
       {
         heading: 'ייבוא בעזרת AI',
@@ -147,8 +147,8 @@ export const TERMS_CONTENT = {
         body: 'במידה המרבית המותרת על פי כל דין חל, השירות, האפליקציה, ההתראות וכל התכונות הנלוות ניתנים strictly על בסיס "כפי שהם" ("AS IS") ו"כפי שהם זמינים" ("AS AVAILABLE"), ללא כל אחריות, הצהרה או ערובה מכל סוג שהוא, מפורשת, משתמעת, חוקית או אחרת. המפעיל מתנער מפורשות מכל אחריות משתמעת להתאמה למטרה מסוימת, איכות מסחרית, אי-הפרת זכויות, זמינות רציפה, היעדר שגיאות או וירוסים, דיוק נתוני המעקב או מהימנות ההתראות.'
       },
       {
-        heading: 'הגבלת חבות מוחלטת',
-        body: 'במידה המרבית המותרת על פי דין, בשום מקרה ובשום עילה משפטית (בין אם חוזית, נזיקית, רשלנות, אחריות קפידה או אחרת), לא יהיה מפעיל SpotLi אחראי כלפיך או כלפי צד שלישי כלשהו לכל נזק ישיר, עקיף, מיוחד, תוצאתי, עונשי או נלווה מכל סוג שהוא — לרבות, ומבלי לגרוע, בגין חבילות או טובין שאבדו, ניזוקו, התעכבו, נגנבו או נמסרו בטעות; אובדן רווחים; אובדן מידע; השבתת עסק; עלויות שחזור; או עוגמת נפש — הנובעים מהשימוש בשירות או מחוסר היכולת להשתמש בו, תקלות במערכות שילוח, אינטגרציית Gmail, התראות דחיפה או קישורי ניווט, גם אם הודע למפעיל על האפשרות לנזקים כאמור. בכל מקרה, סך החבות הכוללת והמצטברת של מפעיל האפליקציה בגין כל עילה או תביעה תוגבל לסכום הגבוה מבין: (א) הסכומים ששולמו על ידך בפועל עבור השירות ב-12 החודשים שקדמו לאירוע (כיום אפס, שכן האפליקציה ניתנת בחינם), או (ב) סך של 100 שקלים חדשים (100 ש"ח).'
+        heading: 'הגבלת חבות והוראות חוק החוזים האחידים',
+        body: 'במידה המרבית המותרת על פי דין (ולמעט במקרים שבהם לא ניתן להתנות על אחריות או להגבילה על פי הוראות קוגנטיות שאינן ניתנות להתנאה לפי הדין הישראלי החל, לרבות בגין מעשה מכוון או רשלנות רבתי בהתאם להוראות חוק החוזים האחידים, התשמ"ג-1982), בשום מקרה ובשום עילה משפטית (בין אם חוזית, נזיקית, רשלנות, אחריות קפידה או אחרת), לא יהיה מפעיל SpotLi אחראי כלפיך או כלפי צד שלישי כלשהו לכל נזק ישיר, עקיף, מיוחד, תוצאתי, עונשי או נלווה מכל סוג שהוא — לרבות, ומבלי לגרוע, בגין חבילות או טובין שאבדו, ניזוקו, התעכבו, נגנבו או נמסרו בטעות; אובדן רווחים; אובדן מידע; השבתת עסק; עלויות שחזור; או עוגמת נפש — הנובעים מהשימוש בשירות או מחוסר היכולת להשתמש בו, תקלות במערכות שילוח, אינטגרציית Gmail, התראות דחיפה או קישורי ניווט, גם אם הודע למפעיל על האפשרות לנזקים כאמור. בכל מקרה, סך החבות הכוללת והמצטברת של מפעיל האפליקציה בגין כל עילה או תביעה תוגבל לסכום הגבוה מבין: (א) הסכומים ששולמו על ידך בפועל עבור השירות ב-12 החודשים שקדמו לאירוע (כיום אפס, שכן האפליקציה ניתנת בחינם), או (ב) סך של 100 שקלים חדשים (100 ש"ח).'
       },
       {
         heading: 'השעיה או הפסקת השירות',
@@ -177,11 +177,15 @@ export const TERMS_CONTENT = {
 export const PRIVACY_CONTENT = {
   en: {
     title: 'Privacy Policy',
-    updated: 'Last updated: September 14, 2026',
+    updated: 'Last updated: September 22, 2026',
     sections: [
       {
         heading: 'Data Controller & Contact',
         body: `SpotLi is developed and operated by an individual developer, not a corporate entity. For any privacy requests, data access, or questions, contact: ${CONTACT_EMAIL}. This direct email channel is monitored and available even if you do not have an active account.`
+      },
+      {
+        heading: 'Statutory Notice Under Section 11 of the Privacy Protection Law',
+        body: 'In accordance with Section 11 of the Israeli Privacy Protection Law, 5741-1981 (including Amendment 13), you are hereby notified that: (1) Voluntary Provision: You have no statutory legal obligation to provide any personal data to SpotLi; the provision of all personal data (including name, email address, tracking numbers, or courier messages) is entirely voluntary and is based solely on your explicit consent and free choice. (2) Purposes of Collection: The personal data you provide is collected and processed solely for the purposes detailed in this policy, specifically to operate your account, aggregate and track shipments, provide automated delivery status alerts, and enable cross-device cloud synchronization. (3) Consequences of Refusal: If you choose not to provide personal data, you may still use SpotLi as a local offline guest tracker on your device; however, you will not be able to create an account, synchronize shipments across multiple devices, connect Gmail, or receive cloud push notifications. (4) Recipients of Information: Personal data is transferred only to authorized infrastructure processors (Google Firebase, Google Gemini, CloudMailin) and carrier status endpoints as strictly necessary to operate the service and detailed herein.'
       },
       {
         heading: 'Geographic Scope',
@@ -189,7 +193,7 @@ export const PRIVACY_CONTENT = {
       },
       {
         heading: 'What Data We Collect, and Why',
-        body: 'We collect and process only the minimal data strictly necessary to provide the features you use: (1) Account Profile: Name and email from your chosen authentication provider (Firebase Auth) to operate your account and enable cross-device synchronization (contractual necessity). (2) Package and Shipment Data: Tracking numbers, carrier names, statuses, dates, and optional notes that you enter or sync, to display and track your packages (contractual necessity). (3) Email Synchronization Data: If you enable Gmail sync or email forwarding, tracking numbers and courier metadata extracted from shipping confirmation emails. (4) Push Notification Tokens: Browser web push subscription endpoints to send you delivery alerts when granted (consent). (5) Crash & Diagnostic Telemetry: Automated client runtime error reports (error stack trace, browser version, operating system) sent to /crashReports to maintain stability and fix critical defects (legitimate interest). (6) Smart Import Usage Counters: Daily counters to enforce fair usage limits on third-party AI APIs (legitimate interest). (7) Voluntary Feedback: Text and optional screenshots submitted via the feedback modal (consent).'
+        body: 'We collect and process only the minimal personal data strictly necessary to provide the features you use: (1) Account Profile: Name and email from your chosen authentication provider (Firebase Auth) to operate your account and enable cross-device synchronization (contractual necessity). (2) Package and Shipment Data: Tracking numbers, carrier names, statuses, dates, and optional notes that you enter or sync, to display and track your packages (contractual necessity). (3) Email Synchronization Data: If you enable Gmail sync or email forwarding, tracking numbers and courier metadata extracted from shipping confirmation emails. (4) Push Notification Tokens: Browser web push subscription endpoints to send you delivery alerts when granted (consent). (5) Crash & Diagnostic Telemetry: Automated client runtime error reports (error stack trace, browser version, operating system) sent to /crashReports to maintain stability and fix critical defects (legitimate interest). (6) Smart Import Usage Counters: Daily counters to enforce fair usage limits on third-party AI APIs (legitimate interest). (7) Voluntary Feedback: Text and optional screenshots submitted via the feedback modal (consent).'
       },
       {
         heading: 'Where Data Lives and Security Measures',
@@ -212,8 +216,8 @@ export const PRIVACY_CONTENT = {
         body: 'To diagnose crashes and maintain application reliability, unhandled frontend exceptions may automatically send technical error reports to a secure Firestore collection (/crashReports). These reports include the error message, stack trace, user agent, app version, and timestamp. Crash reports do not collect passwords, tracking numbers, or personal package details.'
       },
       {
-        heading: 'Third-Party Data Sharing',
-        body: 'We never sell your data or use it for marketing or advertising. We share data only with infrastructure and service providers strictly required to deliver the app: (1) Google Cloud / Firebase: Cloud infrastructure, database, authentication, and hosting. (2) Shipping Carriers: When you refresh live tracking, your tracking number is queried against supported carrier endpoints (currently Israel Post); for other domestic and international carriers, SpotLi generates direct outbound links to the carrier’s official tracking portal (such as Cainiao, 17Track, etc., which operate from China / Hong Kong) for you to view on their websites. (3) Google Gemini API: For AI-assisted parsing of pasted text or screenshots when triggered by you. (4) CloudMailin: Inbound email parsing processor. (5) External Navigation / Messaging: Clicking navigation (Waze, Google Maps) or WhatsApp links opens external third-party services that operate under their own independent privacy policies.'
+        heading: 'Third-Party Data Sharing & Carrier Tracking APIs',
+        body: 'We never sell your data or use it for marketing or advertising. We share data only with infrastructure and service providers strictly required to deliver the app: (1) Google Cloud / Firebase: Cloud infrastructure, database, authentication, and hosting. (2) Shipping Carriers & Live Tracking APIs: When you refresh live tracking, your tracking number and carrier identifier (never your identity, name, or email) are queried server-to-server against supported tracking endpoints: (a) Israel Post APIs for domestic mail status; (b) 17TRACK API (operated by 17TRACK, with cloud infrastructure in China / Hong Kong) to aggregate real-time delivery checkpoints across international carriers (such as Cainiao, Yanwen, Sunyou); (c) Gaash Worldwide APIs for customs and local logistics status; and (d) direct web portal tracking links generated for domestic carriers (Cheetah, HFD, BoxIt, Tapuz, Orian). (3) Google Gemini API: For AI-assisted parsing of pasted text or screenshots when triggered by you. (4) CloudMailin: Inbound email parsing processor. (5) External Navigation / Messaging: Clicking navigation (Waze, Google Maps) or WhatsApp links opens external third-party services that operate under their own independent privacy policies.'
       },
       {
         heading: 'AI-assisted import & Gemini Processing',
@@ -232,12 +236,12 @@ export const PRIVACY_CONTENT = {
         body: 'Your account profile and package records are retained until you delete your account. You can permanently delete your account and all associated package data at any time via Settings → Danger Zone. Upon account deletion, your profile, package records, push tokens, Gmail connection tokens, and stored package documents are permanently purged. Two categories are deliberately collected without any link to your account and therefore cannot be located or deleted per user: feedback you submit, and anonymous crash reports generated automatically when the application encounters an error. Neither contains your name, email address or account identifier. Crash reports are additionally stripped of personal data before they are stored.'
       },
       {
-        heading: 'Your Rights',
-        body: `Under applicable Israeli privacy law, you have the right to inspect data held about you, correct inaccuracies, request export of your data (via Account Settings), or request account deletion. For any privacy requests, contact: ${CONTACT_EMAIL}.`
+        heading: 'Your Statutory Rights Under Israeli Law (Sections 13–14)',
+        body: `Under Sections 13 and 14 of the Israeli Privacy Protection Law, 5741-1981, you have the right to inspect personal data held about you in our database and request the correction or deletion of data that is inaccurate, incomplete, or out of date. To exercise these rights: (1) Self-service access and deletion: You can view all your stored packages directly in the app at any time, export a complete JSON backup via Account Settings, or permanently delete your account and all associated cloud data via Settings → Danger Zone. (2) Written requests: You may submit a formal request to inspect, correct, or delete your data by writing to: ${CONTACT_EMAIL}. Under statutory Israeli law, we will review and respond to your request within 30 days. (3) Right of Appeal: If we refuse a request to inspect or correct your data, you have the statutory right to appeal that refusal to the Magistrates' Court (בית משפט השלום) in accordance with the Privacy Protection Regulations. (4) Regulatory Inquiries: You also have the right to lodge an inquiry or complaint with the Israeli Privacy Protection Authority (הרשות להגנת הפרטיות) via its official government portal (gov.il/ppa).`
       },
       {
-        heading: 'Cookies & Local Storage',
-        body: 'SpotLi does not use third-party tracking or advertising cookies. We use browser localStorage and session storage exclusively for essential operational purposes: maintaining your offline state, caching package data, and saving your preferences.'
+        heading: 'Cookies & Local Storage Inventory',
+        body: 'SpotLi does not use third-party advertising cookies, marketing pixels, or cross-site tracking technologies. We use browser LocalStorage and SessionStorage exclusively for essential operational and performance purposes: (1) "spotli_theme" / "deliveree_theme" (LocalStorage): Stores your preferred UI theme (dark, light, or system). (2) "spotli_app_build_version" / "deliveree_app_build_version" (LocalStorage): Stores the active client build version to detect updates and invalidate stale caches. (3) "deliveree_packages" / "deliveree_packages_*" (LocalStorage): Stores cached package records, statuses, and checkpoints to enable offline resilience and instant rendering. (4) "deliveree_auth_user_v1" & Firebase Auth tokens (LocalStorage / IndexedDB): Managed by Google Firebase Authentication to maintain your authenticated session. (5) "deliveree_date_format", "deliveree_preferred_nav_app", "deliveree_notification_prefs" (LocalStorage): Stores client interface preferences. (6) "deliveree_deleted_tombstones_*" (LocalStorage): Tracks deleted package IDs to ensure offline deletions synchronize properly with Firestore without resurrecting deleted items.'
       },
       {
         heading: 'Children\'s Privacy',
@@ -251,11 +255,15 @@ export const PRIVACY_CONTENT = {
   },
   he: {
     title: 'מדיניות פרטיות',
-    updated: 'עודכן לאחרונה: 14 בספטמבר 2026',
+    updated: 'עודכן לאחרונה: 22 בספטמבר 2026',
     sections: [
       {
         heading: 'בעל השליטה במידע ויצירת קשר',
         body: `SpotLi מפותחת ומופעלת על ידי מפתח יחיד, ואינה ישות תאגידית. לכל שאלה, בקשה לעיון או מימוש זכויות פרטיות, ניתן לפנות ישירות לכתובת: ${CONTACT_EMAIL}. כתובת דוא"ל זו זמינה ומנוטרת באופן קבוע גם עבור משתמשים שאינם מחוברים לחשבון.`
+      },
+      {
+        heading: 'הודעה על פי סעיף 11 לחוק הגנת הפרטיות (חובת יידוע)',
+        body: 'בהתאם להוראות סעיף 11 לחוק הגנת הפרטיות, התשמ"א-1981 (לרבות תיקון 13), הנך מיודע/ת בזאת כי: (1) אי-תחולת חובה חוקית: לא חלה עליך כל חובה חוקית למסור מידע אישי כלשהו ל-SpotLi, ומסירת כל מידע (לרבות שם, כתובת דוא"ל, מספרי מעקב או הודעות שילוח) תלויה ברצונך, בהסכמתך המפורשת ונעשית מבחירה חופשית. (2) מטרות איסוף המידע: המידע הנמסר על ידך מבוקש ונאסף אך ורק למטרות המפורטות במדיניות זו — תפעול חשבונך, ריכוז ומעקב אחר משלוחים, שליחת עדכוני סטטוס תפעוליים וסנכרון נתונים בענן בין מכשיריך. (3) השלכות אי-הסכמה למסירת המידע: אינך מחויב/ת למסור מידע זה, ובאפשרותך להשתמש באפליקציה במלואה באופן מקומי כאורח/ת (Guest); עם זאת, ללא מסירת כתובת דוא"ל לא ניתן יהיה לפתוח חשבון, לסנכרן חבילות בין מכשירים שונים, לחבר את שירות Gmail או לקבל התראות ענן. (4) מקבלי המידע: המידע נמסר אך ורק לספקי תשתית עיבוד מוסמכים (Google Firebase, Google Gemini, CloudMailin) ולמערכות המעקב של חברות השילוח, אך ורק במידה הנדרשת להפעלת השירות וכמפורט להלן במדיניות זו.'
       },
       {
         heading: 'תחולה גיאוגרפית',
@@ -286,8 +294,8 @@ export const PRIVACY_CONTENT = {
         body: 'לצורך ניטור יציבות ופתרון תקלות, שגיאות דפדפן חמורות עשויות לשדר באופן אוטומטי דיווח טכני לאוסף מאובטח ב-Firestore (crashReports/). דיווח זה כולל הודעת שגיאה, פירוט שורות קוד (Stack trace), סוג דפדפן, מערכת הפעלה וזמן האירוע. הדיווח אינו כולל סיסמאות, מספרי מעקב או פרטי חבילות אישיים.'
       },
       {
-        heading: 'שיתוף מידע עם צדדים שלישיים',
-        body: 'איננו מוכרים את המידע שלך ואיננו משתפים אותו למטרות שיווקיות. המידע מועבר אך ורק לספקי תשתית חיוניים: (1) Google Cloud / Firebase: שירותי ענן, אחסון, אימות ומסדי נתונים. (2) ספקי שילוח: בעת רענון מעקב חי, מספר המעקב נשלח למערכות ספקי שילוח נתמכים (כיום דואר ישראל); עבור ספקים אחרים בארץ ובעולם, SpotLi מפיקה קישורי מעקב ישירים לאתרי הספקים (כגון קאיניאו, 17Track וכו\', הפועלים מסין/הונג קונג) לצפייה יזומה על ידך בדפדפן. (3) Google Gemini API: לעיבוד טקסט ותמונות בייבוא חכם. (4) CloudMailin: מעבד דוא"ל נכנס. (5) שירותי ניווט והודעות חיצוניים: לחיצה על קישורי ניווט (Waze, Maps) או WhatsApp מפעילה שירותי צד שלישי הפועלים תחת מדיניות הפרטיות שלהם בלבד.'
+        heading: 'שיתוף מידע עם צדדים שלישיים וממשקי מעקב (APIs)',
+        body: 'איננו מוכרים את המידע שלך ואיננו משתפים אותו למטרות שיווקיות. המידע מועבר אך ורק לספקי תשתית חיוניים: (1) Google Cloud / Firebase: שירותי ענן, אחסון, אימות ומסדי נתונים. (2) ספקי שילוח וממשקי מעקב: בעת רענון מעקב חי, מספר המעקב וקוד הספק בלבד (ולעולם לא שמך, כתובת הדוא"ל או זהותך) נשלחים בין שרתים (server-to-server) למערכות ספקי שילוח ומאגרי מעקב: (א) ממשק דואר ישראל לעדכוני דואר מקומי; (ב) ממשק ה-API של 17TRACK (המופעל על ידי 17TRACK ותשתיות ענן בסין / הונג קונג) לצורך משיכה וריכוז של סטטוסי משלוח בינלאומיים מחברות שילוח גלובליות (כגון קאיניאו, Yanwen, Sunyou); (ג) ממשקי חברת געש וורלדווייד (Gaash Worldwide) לבירור סטטוס שחרור ממכס והפצה בישראל; (ד) הפקת קישורי מעקב ישירים לפורטלים של חברות שילוח מקומיות (צ\'יטה, HFD, בוקסיט, תפוז, אוריאן). (3) Google Gemini API: לעיבוד טקסט ותמונות בייבוא חכם. (4) CloudMailin: מעבד דוא"ל נכנס. (5) שירותי ניווט והודעות חיצוניים: לחיצה על קישורי ניווט (Waze, Maps) או WhatsApp מפעילה שירותי צד שלישי הפועלים תחת מדיניות הפרטיות שלהם בלבד.'
       },
       {
         heading: 'ייבוא בעזרת AI ו-Google Gemini',
@@ -306,12 +314,12 @@ export const PRIVACY_CONTENT = {
         body: 'פרטי החשבון והמשלוחים נשמרים עד למחיקת החשבון על ידך. באפשרותך למחוק לצמיתות את החשבון ואת כל המידע המקושר אליו בכל עת דרך הגדרות ← אזור סכנה ← מחיקת חשבון. עם המחיקה, פרטי הפרופיל, רשומות המשלוחים, מזהי ההתראות, טוקני ה-Gmail ומסמכי החבילות נמחקים לצמיתות. שני סוגי מידע נאספים במכוון ללא כל קישור לחשבון, ולכן אינם ניתנים לאיתור או למחיקה לפי משתמש: משוב שנשלח על ידך, ודיווחי קריסה אנונימיים הנוצרים אוטומטית כאשר היישום נתקל בשגיאה. אף אחד מהם אינו כולל את שמך, כתובת הדוא"ל או מזהה החשבון שלך. מדיווחי הקריסה מוסר מידע אישי לפני השמירה.'
       },
       {
-        heading: 'זכויותיך',
-        body: `על פי חוק הגנת הפרטיות, התשמ"א-1981, הנך זכאי/ת לעיין במידע המוחזק אודותיך, לבקש את תיקונו או לבקש את מחיקתו. לייצוא הנתונים השמורים, ניתן להשתמש בכלי הגיבוי בהגדרות החשבון. לכל פנייה בנושא פרטיות: ${CONTACT_EMAIL}.`
+        heading: 'זכויותיך על פי הדין הישראלי (סעיפים 13–14)',
+        body: `על פי סעיפים 13 ו-14 לחוק הגנת הפרטיות, התשמ"א-1981, הנך זכאי/ת לעיין במידע המוחזק אודותיך במאגר המידע, וכן לבקש לתקן או למחוק מידע שאינו נכון, שלם, ברור או מעודכן. למימוש זכויות אלו: (1) עיון, ייצוא ומחיקה עצמאיים: באפשרותך לעיין בכל פרטי החבילות ישירות באפליקציה, לייצא גיבוי מלא של נתוניך בקובץ JSON דרך הגדרות החשבון, או למחוק לצמיתות את חשבונך ואת כל נתוני הענן דרך הגדרות ← אזור סכנה ← מחיקת חשבון. (2) פניות בכתב: ניתן להגיש בקשה רשמית לעיון, תיקון או מחיקה של מידע בפנייה ישירה לכתובת: ${CONTACT_EMAIL}. בהתאם לחוק, אנו נשיב לבקשתך תוך 30 ימים ממועד קבלתה. (3) זכות ערעור לבית המשפט: במידה שבקשת עיון או תיקון תידחה, הנך זכאי/ת לערער על סירוב זה בפני בית משפט השלום בהתאם לתקנות הגנת הפרטיות (תנאים לעיון במידע וסדרי הדין בערעור על סירוב לבקשת עיון), התשמ"א-1981. (4) תלונות לרשות להגנת הפרטיות: כמו כן, שמורה לך הזכות להגיש פנייה או תלונה לרשות להגנת הפרטיות במשרד המשפטים באמצעות הפורטל הממשלתי (gov.il/ppa).`
       },
       {
-        heading: 'עוגיות ואחסון מקומי',
-        body: 'SpotLi אינה משתמשת בעוגיות מעקב או שיווק של צדדים שלישיים. אנו עושים שימוש ב-localStorage ובאחסון הפעלה (sessionStorage) לצורך תפעולו התקין של השירות, שמירת העדפותיך ומצב לא-מקוון בלבד.'
+        heading: 'פירוט עוגיות ומאגרי אחסון מקומי (Local Storage)',
+        body: 'SpotLi אינה משתמשת בעוגיות מעקב, שיווק, פיקסלים או פרסום של צדדים שלישיים. אנו עושים שימוש באחסון מקומי (LocalStorage) ובאחסון הפעלה (SessionStorage) אך ורק לצרכים תפעוליים חיוניים: (1) "spotli_theme" / "deliveree_theme" (אחסון מקומי): שמירת ערכת הנושא הנבחרת (כהה, בהיר או לפי מערכת ההפעלה). (2) "spotli_app_build_version" / "deliveree_app_build_version" (אחסון מקומי): שמירת גרסת המערכת הפעילה לצורך זיהוי עדכוני גרסה ורענון קבצי מטמון (Cache). (3) "deliveree_packages" / "deliveree_packages_*" (אחסון מקומי): שמירת נתוני החבילות, מספרי המעקב והסטטוסים במכשירך לתמיכה במצב לא-מקוון וטעינה מהירה. (4) "deliveree_auth_user_v1" וטוקני אימות של Firebase Auth (ב-IndexedDB / LocalStorage): מנוהלים על ידי שירותי Google Firebase Authentication לשמירת החיבור המאובטח של חשבונך. (5) "deliveree_date_format", "deliveree_preferred_nav_app", "deliveree_notification_prefs" (אחסון מקומי): שמירת העדפות ממשק המשתמש (פורמט תאריכים, אפליקציית ניווט מועדפת, הגדרות התראות). (6) "deliveree_deleted_tombstones_*" (אחסון מקומי): תיעוד מחיקות שבוצעו במצב לא-מקוון למניעת שחזור שגוי בסנכרון מול הענן.'
       },
       {
         heading: 'פרטיות קטינים',
@@ -320,6 +328,53 @@ export const PRIVACY_CONTENT = {
       {
         heading: 'שינויים במדיניות הפרטיות',
         body: 'אנו עשויים לעדכן מדיניות זו מעת לעת. שינוי מהותי ילווה בעדכון תאריך הגרסה ויחייב אישור מחודש במסך ההסכמה המשפטית בעת כניסתך הבאה לחשבון.'
+      }
+    ]
+  }
+};
+
+export const ACCESSIBILITY_CONTENT = {
+  en: {
+    title: 'Accessibility Statement',
+    updated: 'Last updated: September 22, 2026',
+    sections: [
+      {
+        heading: 'Compliance Statement',
+        body: 'SpotLi is committed to ensuring digital accessibility for all users, including people with disabilities. We continuously improve the user experience and apply relevant accessibility standards. This digital application conforms to the requirements of the Equal Rights for Persons with Disabilities (Service Accessibility Adjustments) Regulations, 5773-2013, and Israeli Standard IS 5568 ("Guidelines for Accessibility of Internet Content"), which adopts the Web Content Accessibility Guidelines (WCAG) 2.1 at Level AA.'
+      },
+      {
+        heading: 'Accessibility Features Implemented',
+        body: 'SpotLi includes the following built-in accessibility adjustments: (1) Keyboard Navigation: All interactive elements, controls, dialogues, and form inputs are fully accessible and operable via standard keyboard commands (Tab, Shift+Tab, Enter, Escape, Arrow keys) with high-visibility focus indicators. (2) Screen Reader Optimization: Semantic HTML5 elements and ARIA landmarks/roles (dialog, alertdialog, button, status) are used throughout, ensuring screen readers (such as NVDA, JAWS, VoiceOver, and TalkBack) can accurately convey content, status changes, and notifications. (3) Touch Ergonomics: All interactive touch targets (buttons, list items, toggles) meet or exceed the minimum 48x48px physical bounding box requirement to prevent accidental activations. (4) Visual Clarity & Contrast: The user interface adheres to strict WCAG 2.1 Level AA color contrast ratios (minimum 4.5:1 for normal text and 3:1 for large text or graphical components) across light, dark, and system themes. (5) Bilingual Symmetry & Motion: Pixel-perfect layout mirroring between Hebrew (RTL) and English (LTR) using CSS logical properties, with support for the "prefers-reduced-motion" system setting.'
+      },
+      {
+        heading: 'Digital-Only Service Nature',
+        body: 'SpotLi operates exclusively as a digital application (Progressive Web Application). SpotLi has no physical offices, branches, or reception desks open to the public. As such, physical on-site accessibility arrangements (such as ramps, elevators, accessible parking, or service animal access) are not applicable.'
+      },
+      {
+        heading: 'Accessibility Coordinator & Contact Information',
+        body: `If you encounter an accessibility barrier, have questions regarding accessibility, or require specific accommodations in an alternative format, please contact our Accessibility Coordinator directly at: ${CONTACT_EMAIL}. We review all accessibility inquiries and commit to responding and providing reasonable accommodations within 14 business days.`
+      }
+    ]
+  },
+  he: {
+    title: 'הצהרת נגישות',
+    updated: 'עודכן לאחרונה: 22 בספטמבר 2026',
+    sections: [
+      {
+        heading: 'הצהרת מחויבות ותקן נגישות',
+        body: 'SpotLi רואה חשיבות עליונה בהנגשת השירות הדיגיטלי לאנשים עם מוגבלויות, מתוך מחויבות לשוויון זכויות, כבוד האדם ועצמאותו. יישום זה הותאם בהתאם לתקנות שוויון זכויות לאנשים עם מוגבלות (התאמות נגישות לשירות), התשע"ג-2013, ולתקן הישראלי ת"י 5568 ("קווים מנחים לנגישות תכנים באינטרנט"), המאמץ את הנחיות הנגישות הבינלאומיות של ארגון W3C (תקן WCAG 2.1) ברמת עמידה AA.'
+      },
+      {
+        heading: 'התאמות הנגישות שבוצעו ביישום',
+        body: 'ביישום בוצעו התאמות נגישות קפדניות, לרבות: (1) ניווט מקלדת מלא: כל הרכיבים האינטראקטיביים, הכפתורים, הטפסים ותיבות הדו-שיח ניתנים להפעלה מלאה באמצעות המקלדת בלבד (מקשי Tab, Shift+Tab, Enter, הרווח, חיצים ומקש Esc לסגירת חלונות), תוך הדגשת פוקוס ויזואלית ברורה. (2) תאימות לקוראי מסך: שימוש במבנה סמנטי תקני (HTML5) ורכיבי ARIA (כגון dialog, status, button) המאפשרים לקוראי מסך (דוגמת NVDA, JAWS, VoiceOver ו-TalkBack) להקריא במדויק את המידע, הסטטוסים וההודעות. (3) אזורי מגע מוגדלים (Touch Targets): כל כפתורי הפעולה והרכיבים הלחיצים נבנו בגודל מינימלי של 48x48 פיקסלים, לנוחות הפעלה מקסימלית במכשירי מגע ולמניעת לחיצות שגויות. (4) ניגודיות חזותית ועיצוב: צבעי הממשק נבדקו ועומדים ביחסי ניגודיות מחמירים (מינימום 4.5:1 לטקסט רגיל ו-3:1 לטקסט גדול) במצב בהיר ובמצב כהה כאחד. (5) התאמה דו-לשונית והפחתת תנועה: תמיכה מלאה בהתאמת כיווניות (RTL לעברית, LTR לאנגלית) וכיבוד הגדרות מערכת להפחתת תנועה והנפשות (prefers-reduced-motion).'
+      },
+      {
+        heading: 'אופי השירות (שירות דיגיטלי בלבד)',
+        body: 'SpotLi הינה אפליקציית רשת מתקדמת (PWA) הפועלת באופן מקוון ודיגיטלי בלבד. לשירות אין משרדים, סניפים, עמדות קבלת קהל פיזיות או מרכז שירות לקוחות פרונטלי. לפיכך, התאמות נגישות פיזיות (כגון מעליות, חניות נכים, רמפות או שילוט מישושי) אינן רלוונטיות לשירות זה.'
+      },
+      {
+        heading: 'רכז נגישות ודרכי פנייה',
+        body: `אנו ממשיכים במאמצים לשפר את נגישות היישום. אם נתקלת בקושי, בתקלה בנגישות או אם נדרשת התאמה מיוחדת, ניתן לפנות לרכז הנגישות בכתובת הדוא"ל: ${CONTACT_EMAIL}. אנו מתחייבים לבדוק כל פנייה ולספק מענה והתאמות נגישות נדרשות תוך 14 ימי עסקים לכל היותר.`
       }
     ]
   }

@@ -87,4 +87,22 @@ describe('LegalConsentGate DOM Tests', () => {
 
     expect(authMocks.acceptLegalTerms).toHaveBeenCalledWith(false);
   });
+
+  it('triggers export data when clicking export button', async () => {
+    const user = userEvent.setup();
+    authMocks.user = {
+      id: 'uid123',
+      email: 'test@example.com',
+      legalAcceptedVersion: '2026-08-23.1'
+    };
+    const onShowToast = vi.fn();
+
+    renderWithLanguage(<LegalConsentGate onShowToast={onShowToast} />, { language: 'en' });
+
+    const exportBtn = screen.getByRole('button', { name: /Export my data/i });
+    expect(exportBtn).toBeInTheDocument();
+    await user.click(exportBtn);
+
+    expect(onShowToast).toHaveBeenCalledWith('Data backup downloaded successfully', 'success');
+  });
 });

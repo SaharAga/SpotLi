@@ -54,6 +54,32 @@ describe('LegalDocumentModal (rendered)', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders Accessibility Statement content when docType is "accessibility"', () => {
+    renderWithLanguage(
+      <LegalDocumentModal isOpen onClose={vi.fn()} docType="accessibility" />
+    );
+
+    const heading = document.getElementById('legal-doc-title');
+    expect(heading).toHaveTextContent('Accessibility Statement');
+    expect(screen.getByText('Compliance Statement')).toBeInTheDocument();
+    expect(screen.getByText(/IS 5568/i)).toBeInTheDocument();
+    expect(screen.getByText(/WCAG 2.1/i)).toBeInTheDocument();
+    expect(screen.getByText(/contact@spotliapp.com/i)).toBeInTheDocument();
+  });
+
+  it('renders Hebrew Accessibility Statement when docType is "accessibility" and language is "he"', () => {
+    renderWithLanguage(
+      <LegalDocumentModal isOpen onClose={vi.fn()} docType="accessibility" />,
+      { language: 'he' }
+    );
+
+    const heading = document.getElementById('legal-doc-title');
+    expect(heading).toHaveTextContent('הצהרת נגישות');
+    expect(screen.getByText(/ת"י 5568/i)).toBeInTheDocument();
+    expect(screen.getByText(/WCAG 2.1/i)).toBeInTheDocument();
+    expect(screen.getByText(/contact@spotliapp.com/i)).toBeInTheDocument();
+  });
+
   it('renders Hebrew RTL content when language is "he"', () => {
     renderWithLanguage(
       <LegalDocumentModal isOpen onClose={vi.fn()} docType="terms" />,
