@@ -7,9 +7,10 @@ import { getFirestore, FieldPath } from 'firebase-admin/firestore';
 import webpush from 'web-push';
 import { createParseWithAiHandler } from './handler.js';
 import { createInboundEmailHandler } from './inboundEmailHandler.js';
-import { gmailOAuthClientSecret } from './gmailAuth.js';
+import { decodeConnection, gmailOAuthClientSecret, gmailTokenKey } from './gmailAuth.js';
 import { createGmailOAuthStartHandler, createGmailOAuthCallbackHandler } from './gmailOAuthCallback.js';
 import { createGmailPushHandler } from './gmailPushHandler.js';
+import { createPubSubOidcVerifier } from './pubsubPushAuth.js';
 import { createGmailBackfillHandler, runBackfillForUser } from './gmailBackfill.js';
 import { createGmailWatchRenewalHandler } from './gmailWatchRenewal.js';
 import { createGmailDisconnectHandler } from './gmailDisconnect.js';
@@ -135,7 +136,7 @@ export const gmailOAuthStart = onCall(
 export const gmailOAuthCallback = onRequest(
   {
     cors: false,
-    secrets: [gmailOAuthClientSecret, geminiApiKey],
+    secrets: [gmailOAuthClientSecret, geminiApiKey, gmailTokenKey],
     timeoutSeconds: 30,
     memory: '256MiB'
   },
@@ -163,7 +164,7 @@ export const gmailOAuthCallback = onRequest(
           runBackfillForUser({
             db: firestore,
             uid,
-            refreshToken: snap.data()?.refreshToken,
+            refreshToken: decodeConnection(snap.id, snap.data(), uid).refreshToken,
             clientSecret: secret,
             geminiApiKey: apiKey
           })
@@ -172,15 +173,29 @@ export const gmailOAuthCallback = onRequest(
     })(req, res)
 );
 
+// Built once per instance so google-auth-library can cache Google's signing
+// certificates across requests. null until both env vars are configured.
+let cachedPushOidcVerifier;
+function gmailPushOidcVerifier() {
+  if (cachedPushOidcVerifier === undefined) {
+    cachedPushOidcVerifier = createPubSubOidcVerifier({
+      audience: process.env.GMAIL_PUSH_OIDC_AUDIENCE,
+      serviceAccountEmail: process.env.GMAIL_PUSH_SERVICE_ACCOUNT
+    });
+  }
+  return cachedPushOidcVerifier;
+}
+
 /**
  * Pub/Sub push endpoint for Gmail `users.watch()` notifications — real-time
  * delivery of newly arrived mail for connected accounts. See
- * gmailPushHandler.js for the auth model (shared-secret query token).
+ * gmailPushHandler.js for the auth model (Pub/Sub OIDC token, with the
+ * legacy shared-secret query token accepted until GMAIL_PUSH_REQUIRE_OIDC).
  */
 export const gmailPushNotification = onRequest(
   {
     cors: false,
-    secrets: [gmailOAuthClientSecret, gmailPushToken, geminiApiKey],
+    secrets: [gmailOAuthClientSecret, gmailPushToken, geminiApiKey, gmailTokenKey],
     timeoutSeconds: 60,
     memory: '256MiB'
   },
@@ -189,6 +204,8 @@ export const gmailPushNotification = onRequest(
       db: getFirestore(),
       clientSecret: gmailOAuthClientSecret.value(),
       pushToken: gmailPushToken.value(),
+      verifyOidc: gmailPushOidcVerifier(),
+      requireOidc: process.env.GMAIL_PUSH_REQUIRE_OIDC === 'true',
       // Optional: the Gemini fallback (gmailAiFallback.js) simply doesn't
       // run without it, same as parseWithAi's own secret dependency.
       geminiApiKey: geminiApiKey.value()
@@ -202,7 +219,7 @@ export const gmailPushNotification = onRequest(
  */
 export const gmailBackfill = onCall(
   {
-    secrets: [gmailOAuthClientSecret, geminiApiKey],
+    secrets: [gmailOAuthClientSecret, geminiApiKey, gmailTokenKey],
     // Scanning up to 100 messages one-by-one can take a while.
     timeoutSeconds: 180,
     memory: '256MiB'
@@ -227,7 +244,7 @@ export const gmailWatchRenewal = onSchedule(
   {
     schedule: 'every day 03:00',
     timeZone: 'Etc/UTC',
-    secrets: [gmailOAuthClientSecret],
+    secrets: [gmailOAuthClientSecret, gmailTokenKey],
     timeoutSeconds: 300,
     memory: '256MiB'
   },
@@ -244,7 +261,7 @@ export const gmailWatchRenewal = onSchedule(
  */
 export const gmailDisconnect = onCall(
   {
-    secrets: [gmailOAuthClientSecret],
+    secrets: [gmailOAuthClientSecret, gmailTokenKey],
     timeoutSeconds: 30,
     memory: '256MiB'
   },
@@ -263,7 +280,7 @@ export const gmailDisconnect = onCall(
  */
 export const deleteAccountData = onCall(
   {
-    secrets: [gmailOAuthClientSecret],
+    secrets: [gmailOAuthClientSecret, gmailTokenKey],
     timeoutSeconds: 60,
     memory: '256MiB'
   },
@@ -298,6 +315,8 @@ export const ingestionAddress = onCall(
  */
 export const gmailConnectionStatus = onCall(
   {
+    // Connection reads decrypt the stored refresh token (tokenCipher.js).
+    secrets: [gmailTokenKey],
     timeoutSeconds: 15,
     // 128MiB was too tight for a Node 22 2nd-gen function pulling in the
     // Firebase Admin SDK — its first-ever deploy failed the Cloud Run

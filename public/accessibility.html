@@ -145,13 +145,13 @@
           <span class="brand-title">SpotLi</span>
         </a>
         <div class="lang-switcher">
-          <button class="lang-btn active" onclick="switchLang('en')">English</button>
-          <button class="lang-btn" onclick="switchLang('he')">עברית</button>
+          <button type="button" class="lang-btn active" data-lang="en">English</button>
+          <button type="button" class="lang-btn" data-lang="he">עברית</button>
         </div>
       </div>
       <div>
-        <h1 id="page-title">Accessibility Statement</h1>
-        <p class="updated" id="page-updated">Last updated: September 26, 2026</p>
+        <h1 id="page-title" data-en="Accessibility Statement" data-he="הצהרת נגישות">Accessibility Statement</h1>
+        <p class="updated" id="page-updated" data-en="Last updated: September 26, 2026" data-he="עודכן לאחרונה: 26 בספטמבר 2026">Last updated: September 26, 2026</p>
       </div>
     </header>
 
@@ -219,17 +219,6 @@
     </footer>
   </div>
 
-  <script>
-    function switchLang(lang) {
-      document.getElementById('content-en').style.display = lang === 'en' ? 'block' : 'none';
-      document.getElementById('content-he').style.display = lang === 'he' ? 'block' : 'none';
-      document.getElementById('page-title').innerText = lang === 'en' ? 'Accessibility Statement' : 'הצהרת נגישות';
-      document.getElementById('page-updated').innerText = lang === 'en' ? 'Last updated: September 26, 2026' : 'עודכן לאחרונה: 26 בספטמבר 2026';
-      
-      const buttons = document.querySelectorAll('.lang-btn');
-      buttons[0].classList.toggle('active', lang === 'en');
-      buttons[1].classList.toggle('active', lang === 'he');
-    }
-  </script>
+  <script src="/legal-page.js"></script>
 </body>
 </html>

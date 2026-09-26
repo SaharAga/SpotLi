@@ -113,6 +113,47 @@ export function normalize17TrackEvent(trackingNumber, trackInfo) {
  *   now?: () => number
  * }} deps
  */
+/** Firestore's gRPC code for "the query needs an index that isn't built yet". */
+const FAILED_PRECONDITION = 9;
+
+/**
+ * Every users/{uid}/packages doc holding this tracking number.
+ *
+ * One collection-group query (index: firestore.indexes.json). Until that
+ * index is deployed and built, Firestore rejects the query with
+ * FAILED_PRECONDITION; then this falls back to walking every user a page at
+ * a time, so an index that is missing or still building costs speed, never
+ * updates. (The walk used to stop after the first 100 users.)
+ */
+export async function findPackagesByTrackingNumber(db, number) {
+  try {
+    const snap = await db.collectionGroup('packages').where('trackingNumber', '==', number).get();
+    return snap.docs;
+  } catch (err) {
+    if (err?.code !== FAILED_PRECONDITION) throw err;
+    console.warn('[track17Webhook] packages.trackingNumber collection-group index not ready; scanning users');
+  }
+
+  const docs = [];
+  let cursor = null;
+  do {
+    let usersQuery = db.collection('users').limit(USER_PAGE_SIZE);
+    if (cursor) usersQuery = usersQuery.startAfter(cursor);
+    const usersSnap = await usersQuery.get();
+
+    for (const userDoc of usersSnap.docs) {
+      const pkgSnap = await userDoc.ref.collection('packages')
+        .where('trackingNumber', '==', number)
+        .limit(5)
+        .get();
+      docs.push(...pkgSnap.docs);
+    }
+
+    cursor = usersSnap.docs.length === USER_PAGE_SIZE ? usersSnap.docs[usersSnap.docs.length - 1] : null;
+  } while (cursor);
+  return docs;
+}
+
 export function createTrack17WebhookHandler({
   db,
   track17ApiKey = '',
@@ -151,35 +192,14 @@ export function createTrack17WebhookHandler({
       if (!result.tracked) continue;
 
       try {
-        // Walk every user, a page at a time. This used to read only the
-        // first 100 users, so everyone after them silently never received
-        // webhook updates. A collection-group query on packages.trackingNumber
-        // would avoid the full walk, but needs a collection-group index that
-        // CI does not deploy (see docs/security-legal-review-2026-09-26.md).
-        let cursor = null;
-        do {
-          let usersQuery = db.collection('users').limit(USER_PAGE_SIZE);
-          if (cursor) usersQuery = usersQuery.startAfter(cursor);
-          const usersSnap = await usersQuery.get();
-
-          for (const userDoc of usersSnap.docs) {
-            const pkgSnap = await userDoc.ref.collection('packages')
-              .where('trackingNumber', '==', number)
-              .limit(5)
-              .get();
-
-            for (const pkgDoc of pkgSnap.docs) {
-              const pkg = pkgDoc.data();
-              const patch = buildTrackingPatch(pkg, result);
-              if (patch) {
-                await pkgDoc.ref.set(patch, { merge: true });
-                updatedCount += 1;
-              }
-            }
+        for (const pkgDoc of await findPackagesByTrackingNumber(db, number)) {
+          const pkg = pkgDoc.data();
+          const patch = buildTrackingPatch(pkg, result);
+          if (patch) {
+            await pkgDoc.ref.set(patch, { merge: true });
+            updatedCount += 1;
           }
-
-          cursor = usersSnap.docs.length === USER_PAGE_SIZE ? usersSnap.docs[usersSnap.docs.length - 1] : null;
-        } while (cursor);
+        }
       } catch (err) {
         console.warn(`[track17Webhook] Error applying update for ${number}:`, err?.message);
       }

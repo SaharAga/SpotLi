@@ -7,6 +7,10 @@ import {
   USER_PAGE_SIZE
 } from './track17Webhook.js';
 
+const indexNotReady = () => ({
+  where: () => ({ get: async () => { throw Object.assign(new Error('requires an index'), { code: 9 }); } })
+});
+
 describe('track17Webhook', () => {
   const secretKey = 'test_secret_key_123';
 
@@ -133,7 +137,9 @@ describe('track17Webhook', () => {
         }
       };
 
+      // Index not built yet → falls back to the user walk.
       const mockDb = {
+        collectionGroup: indexNotReady,
         collection: () => ({
           limit: () => ({
             get: async () => ({ docs: [mockUserDoc] })
@@ -196,7 +202,7 @@ describe('track17Webhook', () => {
         get: async () => ({ docs: users.slice(start, start + USER_PAGE_SIZE) }),
         startAfter: (doc) => page(users.indexOf(doc) + 1)
       });
-      const mockDb = { collection: () => ({ limit: () => page(0) }) };
+      const mockDb = { collectionGroup: indexNotReady, collection: () => ({ limit: () => page(0) }) };
 
       const handler = createTrack17WebhookHandler({ db: mockDb, track17ApiKey: secretKey });
       const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
@@ -204,6 +210,30 @@ describe('track17Webhook', () => {
 
       expect(mockSet).toHaveBeenCalledTimes(1);
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ updated: 1 }));
+    });
+
+    it('uses one collection-group query when the index is live, without scanning users', async () => {
+      const payloadObj = {
+        data: [{ number: 'CH10849201', track_info: { latest_status: { status: 'Delivered' }, tracking: { providers: [{ events: [] }] } } }]
+      };
+      const rawBody = JSON.stringify(payloadObj);
+      const signature = crypto.createHash('sha256').update(`${rawBody}/${secretKey}`).digest('hex');
+
+      const mockSet = vi.fn();
+      const where = vi.fn(() => ({
+        get: async () => ({ docs: [{ data: () => ({ status: 'in_transit', trackingNumber: 'CH10849201' }), ref: { set: mockSet } }] })
+      }));
+      const collection = vi.fn();
+      const mockDb = { collectionGroup: vi.fn(() => ({ where })), collection };
+
+      const handler = createTrack17WebhookHandler({ db: mockDb, track17ApiKey: secretKey });
+      const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+      await handler({ method: 'POST', headers: { sign: signature }, body: payloadObj, rawBody }, res);
+
+      expect(mockDb.collectionGroup).toHaveBeenCalledWith('packages');
+      expect(where).toHaveBeenCalledWith('trackingNumber', '==', 'CH10849201');
+      expect(collection).not.toHaveBeenCalled();
+      expect(mockSet).toHaveBeenCalledTimes(1);
     });
   });
 });

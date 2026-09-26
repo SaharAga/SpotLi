@@ -215,8 +215,12 @@ SpotLi supports two channels for automatic shipment tracking from emails:
    - **1-Click Connect**: Redirect-based OAuth 2.0 flow with `gmail.readonly` scope.
    - **Real-Time Updates**: Integrates Gmail `users.watch()` with Cloud Pub/Sub push notifications (`gmailPushHandler`).
    - **Historical Backfill**: Automatically scans and deduplicates orders from the preceding 30 days upon connection (`gmailBackfill`).
-   - **Token Isolation**: Refresh tokens are stored server-side only in `gmailConnections/{uid}` with a strict **deny-all** in `firestore.rules` (only accessible via Firebase Admin SDK).
-   - **Watch Renewal**: Weekly Cloud Scheduler job (`gmailWatchRenewal`) automatically renews 7-day Gmail mailbox watches.
+   - **Token Isolation**: Refresh tokens are stored server-side only in `gmailConnections/{uid}` with a strict **deny-all** in `firestore.rules` (only accessible via Firebase Admin SDK), and encrypted at rest with AES-256-GCM (`tokenCipher.js`). The key is a secret that must exist before functions deploy; keep a copy, because losing it forces every user to reconnect Gmail:
+     ```bash
+     openssl rand -base64 32 | firebase functions:secrets:set GMAIL_TOKEN_KEY --data-file=-
+     ```
+   - **Push authentication**: `gmailPushNotification` verifies the Pub/Sub OIDC token (`pubsubPushAuth.js`) once `GMAIL_PUSH_OIDC_AUDIENCE` / `GMAIL_PUSH_SERVICE_ACCOUNT` are set in `functions/.env`. Until `GMAIL_PUSH_REQUIRE_OIDC=true` it also accepts the legacy `?token=` (`GMAIL_PUSH_TOKEN` secret).
+   - **Watch Renewal**: Daily Cloud Scheduler job (`gmailWatchRenewal`) renews 7-day Gmail mailbox watches, and re-encrypts any refresh token stored before encryption existed.
 
 **Real-time push notification for new packages** (`functions/src/newPackagePush.js`,
 `pushNotifications.js`): when either ingestion channel above creates a package, a Firestore

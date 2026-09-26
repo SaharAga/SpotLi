@@ -161,7 +161,10 @@ jobs:
             echo "$CHANGED"
 
             echo "$CHANGED" | grep -qE '^functions/' && FUNCTIONS=true || FUNCTIONS=false
-            echo "$CHANGED" | grep -qE '^firestore\.rules$' && RULES=true || RULES=false
+            # Indexes ride with the rules: both are Firestore config deployed
+            # by the same step, and the 17TRACK webhook's collection-group
+            # lookup depends on firestore.indexes.json being live.
+            echo "$CHANGED" | grep -qE '^firestore\.(rules|indexes\.json)$' && RULES=true || RULES=false
 
             # A diff of nothing but prose cannot change what oxlint or vitest
             # sees, yet lint and the test suite ran in full on every docs PR
@@ -473,9 +476,9 @@ jobs:
       # .github/workflows/health-check.yml verifies daily that the deployed
       # rules still match the repo, which is the backstop if this is ever
       # skipped when it should not have been.
-      - name: Deploy Firestore rules
+      - name: Deploy Firestore rules and indexes
         if: needs.detect.outputs.rules == 'true'
-        run: npx --yes firebase-tools@14 deploy --only firestore:rules --project deliveree-app-2a938 --non-interactive
+        run: npx --yes firebase-tools@14 deploy --only firestore:rules,firestore:indexes --project deliveree-app-2a938 --non-interactive
 
   deploy-functions:
     name: Deploy Cloud Functions
@@ -602,7 +605,7 @@ jobs:
       # .github/workflows/health-check.yml verifies daily that the deployed
       # rules still match the repo, which is the backstop if this is ever
       # skipped when it should not have been.
-      - name: Deploy Firestore rules
+      - name: Deploy Firestore rules and indexes
         if: needs.detect.outputs.rules == 'true'
-        run: npx --yes firebase-tools@14 deploy --only firestore:rules --project deliveree-app-2a938 --non-interactive
+        run: npx --yes firebase-tools@14 deploy --only firestore:rules,firestore:indexes --project deliveree-app-2a938 --non-interactive
 

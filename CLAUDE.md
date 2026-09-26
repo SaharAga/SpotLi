@@ -129,6 +129,16 @@ accidentally committed secrets (`scripts/pre_commit_secrets_check.js`). Don't by
   rotate it. Never put the uid in the address — the uid used to be a bearer credential for
   writing into someone's package list. Legacy uid addresses are honoured only for users who
   have never been issued a token.
+- **Gmail tokens & push auth**: refresh tokens are encrypted at rest (AES-256-GCM,
+  `functions/src/tokenCipher.js`, key in the `GMAIL_TOKEN_KEY` secret). Read and write them only
+  through `gmailAuth.js` (`setGmailConnection` / `decodeConnection`), never from raw doc data.
+  Any function that touches them must list `gmailTokenKey` in its `secrets`. The Gmail push
+  endpoint accepts a Pub/Sub OIDC token (`pubsubPushAuth.js`), and the legacy `?token=` until
+  `GMAIL_PUSH_REQUIRE_OIDC=true`.
+- **CSP**: `firebase.json` allows no inline script. Put page scripts in `public/*.js`
+  (see `boot.js`, `legal-page.js`) rather than `<script>` blocks or `onclick=` attributes, and
+  give unhashed scripts a no-cache header. The CSP rule skips Firebase's reserved `/__/**`
+  paths (Google's auth handler).
 - **App Check**: optional (`VITE_RECAPTCHA_V3_SITE_KEY`); when unset, `src/services/firebase.js`
   simply never initializes it. It's what allows `/feedback` to accept unauthenticated writes
   safely — see README "Abuse protection" for the enable sequence (must stay in that order:
@@ -234,7 +244,7 @@ a conflict; new changeset files never conflict with each other.
 ## CI/Deployment
 
 `.github/workflows/ci.yml`: lint → test → build on every push/PR to `main`. Deploys to Firebase
-Hosting and pushes `firestore.rules` only on a push to `main` that changes `package.json`'s
+Hosting and pushes `firestore.rules` (and `firestore.indexes.json`) only on a push to `main` that changes `package.json`'s
 version (i.e. a release commit, per above) — an ordinary merge lands without deploying — and only
 when the `FIREBASE_HOSTING_ENABLED` repo variable is set. `VITE_FIREBASE_*` values come from
 repository variables (public client identifiers, not secrets). `functions/` deploys on its own

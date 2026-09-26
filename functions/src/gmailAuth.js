@@ -11,9 +11,33 @@
 
 import { google } from 'googleapis';
 import { defineSecret } from 'firebase-functions/params';
+import { decryptToken, encryptToken } from './tokenCipher.js';
 
 /** Firebase secret holding the Google Cloud OAuth client secret. */
 export const gmailOAuthClientSecret = defineSecret('GMAIL_OAUTH_CLIENT_SECRET');
+
+/**
+ * AES-256 key (base64, 32 bytes) that encrypts refresh tokens at rest — see
+ * tokenCipher.js. Every function that reads or writes a connection's
+ * refresh token must declare it in its `secrets`.
+ */
+export const gmailTokenKey = defineSecret('GMAIL_TOKEN_KEY');
+
+/**
+ * Turns a stored connection doc into the in-memory shape callers use, with
+ * the refresh token decrypted. The only read path for `refreshToken`.
+ * @param {string} docId
+ * @param {object | undefined} data
+ * @param {string} [uidHint]
+ */
+export function decodeConnection(docId, data, uidHint) {
+  const uid = data?.uid || uidHint || docId;
+  const connection = { connectionId: docId, ...data, uid };
+  if (data?.refreshToken) {
+    connection.refreshToken = decryptToken(data.refreshToken, { aad: uid });
+  }
+  return connection;
+}
 
 /** Read access only — no forwarding-rule creation, no mailbox mutation. */
 export const GMAIL_SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
@@ -91,8 +115,7 @@ export async function getGmailConnection({ db, uid, emailAddress }) {
     const docId = getConnectionDocId(uid, targetEmail);
     const snap = await db.collection(GMAIL_CONNECTIONS_COLLECTION).doc(docId).get();
     if (snap.exists) {
-      const data = snap.data();
-      return { connectionId: snap.id, uid: data?.uid || uid, ...data };
+      return decodeConnection(snap.id, snap.data(), uid);
     }
     const connections = await getGmailConnectionsForUser({ db, uid });
     const match = connections.find((c) => c.emailAddress?.toLowerCase() === targetEmail);
@@ -102,8 +125,7 @@ export async function getGmailConnection({ db, uid, emailAddress }) {
   // Check legacy doc keyed by uid
   const legacySnap = await db.collection(GMAIL_CONNECTIONS_COLLECTION).doc(uid).get();
   if (legacySnap.exists && legacySnap.data()?.refreshToken) {
-    const data = legacySnap.data();
-    return { connectionId: legacySnap.id, uid: data?.uid || uid, ...data };
+    return decodeConnection(legacySnap.id, legacySnap.data(), uid);
   }
 
   // Return first active connection from multi-account query
@@ -130,7 +152,7 @@ export async function getGmailConnectionsForUser({ db, uid }) {
         const data = typeof doc.data === 'function' ? doc.data() : doc.data;
         const email = data?.emailAddress ? data.emailAddress.toLowerCase() : null;
         if (email) seenEmails.add(email);
-        connections.push({ connectionId: doc.id, uid, ...data });
+        connections.push(decodeConnection(doc.id, data, uid));
       }
     } catch (err) {
       console.warn('[getGmailConnectionsForUser] where query failed, falling back:', err?.message || err);
@@ -145,7 +167,7 @@ export async function getGmailConnectionsForUser({ db, uid }) {
         const legacyData = typeof legacySnap.data === 'function' ? legacySnap.data() : legacySnap.data;
         const legacyEmail = legacyData?.emailAddress ? legacyData.emailAddress.toLowerCase() : null;
         if (!legacyEmail || !seenEmails.has(legacyEmail)) {
-          connections.push({ connectionId: legacySnap.id, uid, ...legacyData });
+          connections.push(decodeConnection(legacySnap.id, legacyData, uid));
         }
       }
     } catch {
@@ -170,6 +192,9 @@ export async function setGmailConnection({ db, uid, connectionId, data }) {
   };
   if (!payload.uid && docId && !docId.includes('__')) {
     payload.uid = docId;
+  }
+  if (payload.refreshToken) {
+    payload.refreshToken = encryptToken(payload.refreshToken, { aad: payload.uid });
   }
   await db
     .collection(GMAIL_CONNECTIONS_COLLECTION)
@@ -245,5 +270,5 @@ export async function findGmailConnectionByEmail({ db, emailAddress }) {
   if (snap.empty) return null;
   const doc = snap.docs[0];
   const data = typeof doc.data === 'function' ? doc.data() : doc.data;
-  return { connectionId: doc.id, uid: data?.uid || doc.id, ...data };
+  return decodeConnection(doc.id, data);
 }
