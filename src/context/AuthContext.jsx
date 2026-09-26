@@ -15,9 +15,11 @@ import { doc, setDoc, deleteDoc, getDoc, collection, getDocs, query, where } fro
 import {
   auth,
   db,
+  functionsInstance,
   googleProvider,
   isFirebaseConfigured
 } from '../services/firebase';
+import { callFunction } from '../services/callableClient';
 import { cloudAdapter } from '../services/cloudStorageAdapter';
 import { deliveryService } from '../services/deliveryService';
 import { sanitizeString } from '../utils/packageValidator';
@@ -929,10 +931,21 @@ export function AuthProvider({ children }) {
    * leave orphaned Firestore data with no client able to reach it again
    * (once the uid is gone, isOwner(uid) can never match). Local state is
    * only cleared at the very end, once both deletes actually succeeded.
+   *
+   * The deleteAccountData Cloud Function runs first: it disconnects Gmail
+   * (revokes the refresh token, stops the watch) and purges what the client
+   * cannot reach — push tokens, the ingestion-address token, usage counters
+   * and logs. If it fails, nothing else is deleted and the error propagates,
+   * so the user can retry rather than be left with a live Gmail token behind
+   * an account that no longer exists.
    */
   const deleteUserAccountAndData = useCallback(async (userId) => {
     const targetId = userId || user?.id;
     if (!targetId) return;
+
+    if (db && functionsInstance) {
+      await callFunction('deleteAccountData', undefined, { timeoutMs: 65000 });
+    }
 
     if (db) {
       const userPackagesRef = collection(db, 'users', targetId, 'packages');

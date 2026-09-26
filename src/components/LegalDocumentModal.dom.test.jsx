@@ -63,8 +63,9 @@ describe('LegalDocumentModal (rendered)', () => {
     expect(heading).toHaveTextContent('Accessibility Statement');
     expect(screen.getByText('Compliance Statement')).toBeInTheDocument();
     expect(screen.getByText(/IS 5568/i)).toBeInTheDocument();
-    expect(screen.getByText(/WCAG 2.1/i)).toBeInTheDocument();
-    expect(screen.getByText(/contact@spotliapp.com/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/WCAG/i).length).toBeGreaterThan(0);
+    // Reg. 35 of the 2013 Service Accessibility Regulations: coordinator contact.
+    expect(screen.getByText(/Accessibility Coordinator:/i)).toBeInTheDocument();
   });
 
   it('renders Hebrew Accessibility Statement when docType is "accessibility" and language is "he"', () => {
@@ -76,8 +77,8 @@ describe('LegalDocumentModal (rendered)', () => {
     const heading = document.getElementById('legal-doc-title');
     expect(heading).toHaveTextContent('הצהרת נגישות');
     expect(screen.getByText(/ת"י 5568/i)).toBeInTheDocument();
-    expect(screen.getByText(/WCAG 2.1/i)).toBeInTheDocument();
-    expect(screen.getByText(/contact@spotliapp.com/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/WCAG/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/לפנות לרכז הנגישות:/i)).toBeInTheDocument();
   });
 
   it('renders Hebrew RTL content when language is "he"', () => {

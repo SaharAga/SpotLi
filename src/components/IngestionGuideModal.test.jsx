@@ -34,6 +34,7 @@ vi.mock('../services/emailSyncService', async () => {
     // connectGmail navigates the whole page away on success in the real
     // implementation, so there is no synchronous "connected" state to
     // observe here — just that the call resolves ok and nothing crashes.
+    fetchIngestionToken: vi.fn().mockResolvedValue('abababababababababababab'),
     connectGmail: vi.fn().mockResolvedValue({ ok: true }),
     getGmailConnectionStatus: vi.fn().mockResolvedValue({ connected: false }),
     triggerGmailBackfill: vi.fn().mockResolvedValue({ ok: true, saved: 0 }),
@@ -84,9 +85,11 @@ describe('IngestionGuideModal Component Tests', () => {
     // The forwarding address now lives behind the fallback disclosure —
     // it is the backup for people who cannot connect an inbox above, so it
     // no longer competes with the one-tap buttons.
-    expect(screen.queryByText(/233b362d7b331adfde6e\+usr_testuser123@cloudmailin\.net/i)).toBeNull();
+    expect(screen.queryByText(/233b362d7b331adfde6e\+tok_abababababababababababab@cloudmailin\.net/i)).toBeNull();
     fireEvent.click(screen.getByText(/Don't use Gmail or Outlook\?|אין לך Gmail או Outlook\?/i));
-    expect(screen.getByText(/233b362d7b331adfde6e\+usr_testuser123@cloudmailin\.net/i)).toBeTruthy();
+    expect(await screen.findByText(/233b362d7b331adfde6e\+tok_abababababababababababab@cloudmailin\.net/i)).toBeTruthy();
+    // The uid must never appear in the forwarding address.
+    expect(screen.queryByText(/testuser123@cloudmailin/i)).toBeNull();
   });
 
   it('switches between interactive provider setup guides smoothly', () => {
@@ -289,6 +292,7 @@ describe('IngestionGuideModal Component Tests', () => {
     renderModal({ onShowToast: handleToast });
 
     fireEvent.click(screen.getByText(/Don't use Gmail or Outlook\?|אין לך Gmail או Outlook\?/i));
+    await screen.findByText(/tok_abababababababababababab/i);
     const copyEmailBtn = screen.getByLabelText(/Copy private ingestion email|העתק כתובת אימייל פרטית/i);
     fireEvent.click(copyEmailBtn);
 

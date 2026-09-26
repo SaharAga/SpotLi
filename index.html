@@ -11,45 +11,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="SpotLi - Modern, smart parcel and shipment tracking dashboard with auto carrier detection and live timelines." />
     
-    <!-- Apply the right theme before first paint — defaults to the OS/browser preference, not a hardcoded value -->
-    <script>
-      (function() {
-        try {
-          var stored = localStorage.getItem('spotli_theme') || localStorage.getItem('deliveree_theme') || 'system';
-          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-          var isDark = stored === 'system' ? prefersDark : stored === 'dark';
-          document.documentElement.classList.add(isDark ? 'dark' : 'light');
-        } catch {
-          document.documentElement.classList.add('dark');
-        }
-      })();
-    </script>
-
-    <!-- Instant Hard Cache Purge on Version Bump (preserves Service Worker & Push Subscriptions) -->
-    <script>
-      (function() {
-        var APP_CURRENT_VER = '__APP_VERSION__';
-        var storedVer = localStorage.getItem('spotli_app_build_version') || localStorage.getItem('deliveree_app_build_version');
-        if (storedVer !== APP_CURRENT_VER) {
-          if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-              for (var i = 0; i < registrations.length; i++) {
-                registrations[i].update().catch(function() {});
-              }
-            }).catch(function() {});
-          }
-          if (typeof window !== 'undefined' && 'caches' in window) {
-            caches.keys().then(function(keys) {
-              keys.forEach(function(key) {
-                caches.delete(key);
-              });
-            }).catch(function() {});
-          }
-          localStorage.setItem('spotli_app_build_version', APP_CURRENT_VER);
-        }
-      })();
-    </script>
-
     <!-- PWA & Mobile Installation Meta Tags -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#0f172a" />
@@ -59,27 +20,11 @@
     <meta name="apple-mobile-web-app-title" content="SpotLi" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
 
-    <!-- Staging Visual Differentiation -->
-    <script>
-      (function() {
-        try {
-          var isStaging = window.location.hostname.indexOf('staging') !== -1 || window.location.hostname.indexOf('localhost') !== -1;
-          if (isStaging) {
-            document.title = 'SpotLi (Staging)';
-            var manifestLink = document.querySelector('link[rel="manifest"]');
-            if (manifestLink) manifestLink.setAttribute('href', '/manifest-staging.json');
-            var metaTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
-            if (metaTitle) metaTitle.setAttribute('content', 'SpotLi (Stg)');
-            var themeColor = document.querySelector('meta[name="theme-color"]');
-            if (themeColor) themeColor.setAttribute('content', '#d97706');
-            var icon = document.querySelector('link[rel="icon"]');
-            if (icon) icon.setAttribute('href', '/icons/icon-staging.svg');
-            var appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
-            if (appleIcon) appleIcon.setAttribute('href', '/icons/apple-touch-icon-staging.png');
-          }
-        } catch (e) {}
-      })();
-    </script>
+    <!-- Pre-paint bootstrap: theme class, cache purge on version bump, staging
+         look. External (not inline) so the CSP needs no script-src
+         'unsafe-inline'; must stay after the tags it edits. -->
+    <meta name="spotli-build-version" content="__APP_VERSION__" />
+    <script src="/boot.js"></script>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

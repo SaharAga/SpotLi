@@ -6,6 +6,10 @@ import {
   createInboundEmailHandler
 } from './inboundEmailHandler.js';
 
+// Handler tests exercise extraction/persistence; recipient authorization has
+// its own tests in ingestionToken.test.js.
+const legacyResolve = async ({ toAddress }) => extractUserIdFromToAddress(toAddress);
+
 describe('inboundEmailHandler Unit Tests', () => {
   describe('sanitizeEmailHtml', () => {
     it('strips script and style tags and decodes html entities', () => {
@@ -123,7 +127,7 @@ describe('inboundEmailHandler Unit Tests', () => {
     });
 
     it('rejects non-POST requests with 405', async () => {
-      const handler = createInboundEmailHandler({ db: null, webhookToken: TEST_TOKEN });
+      const handler = createInboundEmailHandler({ db: null, webhookToken: TEST_TOKEN, resolveRecipient: legacyResolve });
       const req = { method: 'GET', query: { token: TEST_TOKEN } };
       const res = {
         status: vi.fn().mockReturnThis(),
@@ -135,7 +139,7 @@ describe('inboundEmailHandler Unit Tests', () => {
     });
 
     it('rejects missing or invalid user recipient with 400', async () => {
-      const handler = createInboundEmailHandler({ db: null, webhookToken: TEST_TOKEN });
+      const handler = createInboundEmailHandler({ db: null, webhookToken: TEST_TOKEN, resolveRecipient: legacyResolve });
       const req = {
         method: 'POST',
         query: { token: TEST_TOKEN },
@@ -151,7 +155,7 @@ describe('inboundEmailHandler Unit Tests', () => {
     });
 
     it('returns 200 with ok: false when no tracking number is present', async () => {
-      const handler = createInboundEmailHandler({ db: null, webhookToken: TEST_TOKEN });
+      const handler = createInboundEmailHandler({ db: null, webhookToken: TEST_TOKEN, resolveRecipient: legacyResolve });
       const req = {
         method: 'POST',
         query: { token: TEST_TOKEN },
@@ -182,7 +186,7 @@ describe('inboundEmailHandler Unit Tests', () => {
         }))
       };
 
-      const handler = createInboundEmailHandler({ db: dbMock, webhookToken: TEST_TOKEN });
+      const handler = createInboundEmailHandler({ db: dbMock, webhookToken: TEST_TOKEN, resolveRecipient: legacyResolve });
       const req = {
         method: 'POST',
         query: { token: TEST_TOKEN },
@@ -216,7 +220,7 @@ describe('inboundEmailHandler Unit Tests', () => {
     it('acknowledges but does not persist a probable candidate', async () => {
       const set = vi.fn();
       const db = { collection: vi.fn(() => ({ doc: vi.fn(() => ({ collection: vi.fn(), set })) })) };
-      const handler = createInboundEmailHandler({ db, webhookToken: TEST_TOKEN });
+      const handler = createInboundEmailHandler({ db, webhookToken: TEST_TOKEN, resolveRecipient: legacyResolve });
       const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
 
       await handler({
@@ -276,7 +280,7 @@ describe('inboundEmailHandler Unit Tests', () => {
         })
       };
 
-      const handler = createInboundEmailHandler({ db: dbMock, webhookToken: TEST_TOKEN });
+      const handler = createInboundEmailHandler({ db: dbMock, webhookToken: TEST_TOKEN, resolveRecipient: legacyResolve });
       const req = {
         method: 'POST',
         query: { token: TEST_TOKEN },
@@ -341,7 +345,7 @@ describe('inboundEmailHandler Unit Tests', () => {
         })
       };
 
-      const handler = createInboundEmailHandler({ db: dbMock, webhookToken: TEST_TOKEN });
+      const handler = createInboundEmailHandler({ db: dbMock, webhookToken: TEST_TOKEN, resolveRecipient: legacyResolve });
       const req = {
         method: 'POST',
         query: { token: TEST_TOKEN },
@@ -403,7 +407,7 @@ describe('inboundEmailHandler Unit Tests', () => {
         })
       };
 
-      const handler = createInboundEmailHandler({ db: dbMock, webhookToken: TEST_TOKEN });
+      const handler = createInboundEmailHandler({ db: dbMock, webhookToken: TEST_TOKEN, resolveRecipient: legacyResolve });
       const req = {
         method: 'POST',
         query: { token: TEST_TOKEN },
@@ -433,7 +437,7 @@ describe('inboundEmailHandler Unit Tests', () => {
     });
 
     it('rejects with 401 Unauthorized when webhookToken is configured and query token is missing or mismatched', async () => {
-      const handler = createInboundEmailHandler({ db: {}, webhookToken: 'secret-token-123' });
+      const handler = createInboundEmailHandler({ db: {}, webhookToken: 'secret-token-123', resolveRecipient: legacyResolve });
       const reqMissing = {
         method: 'POST',
         query: {},
@@ -464,7 +468,7 @@ describe('inboundEmailHandler Unit Tests', () => {
     });
 
     it('accepts the request when webhookToken matches query token', async () => {
-      const handler = createInboundEmailHandler({ db: {}, webhookToken: 'secret-token-123' });
+      const handler = createInboundEmailHandler({ db: {}, webhookToken: 'secret-token-123', resolveRecipient: legacyResolve });
       const req = {
         method: 'POST',
         query: { token: 'secret-token-123' },

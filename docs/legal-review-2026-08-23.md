@@ -1,5 +1,7 @@
 # Deliveree — Legal Review: Terms of Use & Privacy Policy
 
+> **Update 2026-09-26:** the account-deletion (§0.4) and third-party-disclosure (§0.1, §0.2) findings are re-checked and fixed in [`security-legal-review-2026-09-26.md`](security-legal-review-2026-09-26.md).
+
 **Review date:** 2026-08-23
 **Document reviewed:** Deliveree Terms of Use + Privacy Policy (English draft, "Last updated: August 23, 2026")
 **Parties:** Sahar Aga (single independent developer, operator/controller) ↔ end users (consumers, primarily in Israel)

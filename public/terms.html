@@ -137,13 +137,13 @@
           <span class="brand-title">SpotLi</span>
         </a>
         <div class="lang-switcher">
-          <button class="lang-btn active" onclick="switchLang('en')">English</button>
-          <button class="lang-btn" onclick="switchLang('he')">עברית</button>
+          <button type="button" class="lang-btn active" data-lang="en">English</button>
+          <button type="button" class="lang-btn" data-lang="he">עברית</button>
         </div>
       </div>
       <div>
-        <h1 id="page-title">Terms of Use</h1>
-        <p class="updated" id="page-updated">Last updated: September 22, 2026</p>
+        <h1 id="page-title" data-en="Terms of Use" data-he="תנאי שימוש">Terms of Use</h1>
+        <p class="updated" id="page-updated" data-en="Last updated: September 26, 2026" data-he="עודכן לאחרונה: 26 בספטמבר 2026">Last updated: September 26, 2026</p>
       </div>
     </header>
 
@@ -174,7 +174,7 @@
         <p>The app may provide convenience links to open third-party navigation apps (such as Waze, Google Maps, Apple Maps, or Moovit) to direct you to lockers or pickup points, or one-click links to contact couriers via third-party messaging services (such as WhatsApp or SMS). These links launch external third-party applications and services governed entirely by their own terms and privacy policies. SpotLi has no control over and assumes zero responsibility or liability for third-party navigation routes, traffic conditions, map inaccuracies, or interactions with courier personnel.</p>
 
         <h2>7. Email synchronization & forwarding (Gmail & CloudMailin)</h2>
-        <p>SpotLi provides optional email-based shipment tracking: (1) Inbound Email Forwarding via CloudMailin: You may forward shipping confirmation emails to your personal ingestion address. Emails are processed transiently to extract tracking details, and raw emails are discarded. (2) Gmail Integration via Google OAuth 2.0: If you connect your Google account, SpotLi requests restricted read-only access (https://www.googleapis.com/auth/gmail.readonly) solely to search for and extract tracking numbers, carrier names, and delivery dates from shipping confirmation emails. SpotLi’s use and transfer to any other app of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements. We never read your personal emails, never sell your email data, and never use email content for advertising or AI model training. You may disconnect Gmail or discontinue forwarding at any time from Account Settings. SpotLi is not liable for missed, unparsed, delayed, or miscategorized emails.</p>
+        <p>SpotLi provides optional email-based shipment tracking: (1) Inbound Email Forwarding via CloudMailin: You may forward shipping confirmation emails to your personal ingestion address. Emails are processed transiently to extract tracking details, and raw emails are not stored (a package's notes may include the email's subject line). Your forwarding address is private to you: keep it confidential, and generate a new one in the app if it is exposed. (2) Gmail Integration via Google OAuth 2.0: If you connect your Google account, SpotLi requests restricted read-only access (https://www.googleapis.com/auth/gmail.readonly) solely to search for and extract tracking numbers, carrier names, and delivery dates from shipping confirmation emails. SpotLi’s use and transfer to any other app of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements. We never read your personal emails, never sell your email data, and never use email content for advertising or AI model training. You may disconnect Gmail or discontinue forwarding at any time from Account Settings. SpotLi is not liable for missed, unparsed, delayed, or miscategorized emails.</p>
 
         <h2>8. Web push notifications & Anti-Spam statutory compliance</h2>
         <p>If you enable web push notifications, SpotLi attempts to send delivery status updates to your registered browser. In accordance with Section 30A of the Israeli Communications (Telecommunications and Broadcasting) Law, 5742-1982 (Anti-Spam Law), all push notifications and alerts sent by SpotLi are strictly operational and transactional delivery status updates requested directly by you. SpotLi does not send any commercial advertising, marketing, or promotional messages ("דבר פרסומת"). You may revoke notification permissions at any time through your browser settings or device operating system. Push notifications are provided for convenience only and depend on network availability, third-party push servers, and device operating system power-saving policies. SpotLi does not guarantee timely delivery or receipt of notifications and is not liable for any missed deliveries or uncollected packages resulting from delayed, failed, or inaccurate notifications.</p>
@@ -201,7 +201,7 @@
         <p>We may revise these Terms from time to time as the application evolves. Any material modification will be accompanied by an updated version stamp and will require re-confirmation via the in-app Legal Consent Gate before you may continue accessing cloud-synchronized account features. Declining updated Terms does not prevent you from exporting or permanently deleting your existing data.</p>
 
         <h2>16. Governing law and jurisdiction</h2>
-        <p>These Terms and any dispute, controversy, or claim arising out of or relating to them or the service shall be governed by and construed in accordance with the laws of the State of Israel, without giving effect to any principles of conflicts of law. You agree to submit to the exclusive jurisdiction of the competent courts in Tel Aviv-Jaffa, Israel.</p>
+        <p>These Terms and any dispute, controversy, or claim arising out of or relating to them or the service shall be governed by and construed in accordance with the laws of the State of Israel, without giving effect to any principles of conflicts of law. Disputes shall be heard by the competent courts in Israel. Nothing in these Terms limits your right, as a consumer, to bring a claim in any Israeli court that has jurisdiction under applicable law, including the court nearest your place of residence.</p>
 
         <h2>17. General provisions</h2>
         <p>If any provision of these Terms is held to be invalid, illegal, or unenforceable by a court of competent jurisdiction, the remaining provisions shall continue in full force and effect. No failure or delay by us in exercising any right or remedy under these Terms shall operate as a waiver thereof. You may not assign or transfer your rights under these Terms without our prior written consent; we may freely assign our rights and obligations without restriction.</p>
@@ -238,7 +238,7 @@
         <p>האפליקציה עשויה לכלול קישורי נוחות לפתיחת יישומי ניווט חיצוניים (כגון Waze, Google Maps, Apple Maps או Moovit) לניווט לנקודות חלוקה ולוקרים, או קישורים להתקשרות ישירה עם שליחים (כגון WhatsApp או SMS). קישורים אלו פותחים יישומים של צדדים שלישיים הכפופים לתנאי השימוש ומדיניות הפרטיות שלהם בלבד. ל-SpotLi אין כל שליטה, אחריות או חבות לגבי מסלולי נסיעה, תנאי תנועה, דיוק מפות, או אינטראקציות עם שליחים.</p>
 
         <h2>7. סנכרון והעברת דוא"ל (Gmail ו-CloudMailin)</h2>
-        <p>SpotLi מציעה שירותי מעקב מבוססי דוא"ל אופציונליים: (1) העברת דוא"ל נכנס באמצעות CloudMailin: באפשרותך להעביר הודעות אישור משלוח לכתובת ייעודית אישית. ההודעות מעובדות באופן רגעי בזיכרון לחילוץ פרטי המעקב ונמחקות מיידית. (2) סנכרון Gmail באמצעות Google OAuth 2.0: אם בחרת לחבר חשבון Google, האפליקציה מבקשת הרשאת קריאה מוגבלת בלבד (https://www.googleapis.com/auth/gmail.readonly) אך ורק לצורך איתור וחילוץ של מספרי מעקב, שמות ספקים ותאריכי מסירה מהודעות שילוח. השימוש וההעברה של מידע שהתקבל מ-Google APIs על ידי SpotLi נעשים בהתאם מלא למדיניות נתוני המשתמש של שירותי Google API, לרבות דרישות השימוש המוגבל (Limited Use). איננו קוראים הודעות אישיות, איננו מוכרים נתוני דוא"ל, ואיננו משתמשים במידע זה לפרסום או לאימון מודלים של בינה מלאכותית. ניתן לנתק את Gmail או להפסיק את ההעברה בכל עת מהגדרות החשבון. SpotLi אינה אחראית להודעות שלא נקלטו, שלא פוענחו, או שנשמטו.</p>
+        <p>SpotLi מציעה שירותי מעקב מבוססי דוא"ל אופציונליים: (1) העברת דוא"ל נכנס באמצעות CloudMailin: באפשרותך להעביר הודעות אישור משלוח לכתובת ייעודית אישית. ההודעות מעובדות באופן רגעי בזיכרון לחילוץ פרטי המעקב ואינן נשמרות (הערות החבילה עשויות לכלול את נושא ההודעה). כתובת ההעברה אישית לך: שמור/י אותה בסוד, וצור/י כתובת חדשה באפליקציה אם נחשפה. (2) סנכרון Gmail באמצעות Google OAuth 2.0: אם בחרת לחבר חשבון Google, האפליקציה מבקשת הרשאת קריאה מוגבלת בלבד (https://www.googleapis.com/auth/gmail.readonly) אך ורק לצורך איתור וחילוץ של מספרי מעקב, שמות ספקים ותאריכי מסירה מהודעות שילוח. השימוש וההעברה של מידע שהתקבל מ-Google APIs על ידי SpotLi נעשים בהתאם מלא למדיניות נתוני המשתמש של שירותי Google API, לרבות דרישות השימוש המוגבל (Limited Use). איננו קוראים הודעות אישיות, איננו מוכרים נתוני דוא"ל, ואיננו משתמשים במידע זה לפרסום או לאימון מודלים של בינה מלאכותית. ניתן לנתק את Gmail או להפסיק את ההעברה בכל עת מהגדרות החשבון. SpotLi אינה אחראית להודעות שלא נקלטו, שלא פוענחו, או שנשמטו.</p>
 
         <h2>8. התראות דחיפה בדפדפן (Web Push) והוראות חוק התקשורת</h2>
         <p>במידה שתאשר/י קבלת התראות בדפדפן, המערכת תנסה לשלוח התראות על עדכוני סטטוס של חבילותיך. בהתאם להוראות סעיף 30א לחוק התקשורת (בזק ושידורים), התשמ"ב-1982 ("חוק הספאם"), מובהר בזאת במפורש כי כל ההתראות וההודעות הנשלחות על ידי SpotLi הינן הודעות שירותיות ותפעוליות בלבד אודות סטטוס המשלוחים שלך, אשר התבקשו על ידך באופן ישיר. SpotLi אינה שולחת כל מסר פרסומי, שיווקי או מסחרי ("דבר פרסומת"). באפשרותך לבטל את הרשאת ההתראות בכל עת דרך הגדרות הדפדפן או מערכת ההפעלה. התראות אלו מיועדות לנוחות בלבד ותלויות בחיבור רשת, שרתי דחיפה חיצוניים והגדרות חיסכון בסוללה של מכשירך. SpotLi אינה מתחייבת להגעת ההתראות במועד ואינה נושאת בכל אחריות בגין חבילות שלא נאספו או איחורים כתוצאה מהתראה שלא התקבלה או שאיחרה.</p>
@@ -265,7 +265,7 @@
         <p>אנו רשאים לעדכן תנאים אלו מעת לעת. שינוי מהותי ילווה בעדכון מספר הגרסה ויחייב אישור מחודש של המשתמש במסך ההסכמה המשפטית בטרם המשך שימוש בתכונות מבוססות ענן. סירוב לא ימנע ייצוא או מחיקה מלאה של המידע הקיים שלך.</p>
 
         <h2>16. דין חל וסמכות שיפוט</h2>
-        <p>על תנאים אלו, פרשנותם וכל סכסוך הנובע מהם או מהשירות יחולו אך ורק דיני מדינת ישראל, ללא מתן תוקף לכללי ברירת הדין. סמכות השיפוט הבלעדית והייחודית בכל עניין נתונה לבתי המשפט המוסמכים בעיר תל אביב-יפו.</p>
+        <p>על תנאים אלו, פרשנותם וכל סכסוך הנובע מהם או מהשירות יחולו אך ורק דיני מדינת ישראל, ללא מתן תוקף לכללי ברירת הדין. סכסוכים יתבררו בבתי המשפט המוסמכים בישראל. אין בתנאים אלו כדי לגרוע מזכותך כצרכן/ית להגיש תביעה בכל בית משפט בישראל המוסמך לכך על פי דין, לרבות בית המשפט הקרוב למקום מגורייך.</p>
 
         <h2>17. שונות</h2>
         <p>אם ייקבע על ידי ערכאה מוסמכת כי הוראה מהוראות תנאים אלו אינה חוקית או אינה ניתנת לאכיפה, יתר ההוראות יישארו במלוא תוקפן. אי-אכיפת זכות לא תיחשב כויתור עליה. אינך רשאי/ת להמחות או להעביר את זכויותיך לפי תנאים אלו ללא הסכמה מראש ובכתב; המפעיל רשאי להמחות את זכויותיו וחובותיו ללא כל הגבלה.</p>
@@ -280,17 +280,6 @@
     </footer>
   </div>
 
-  <script>
-    function switchLang(lang) {
-      document.getElementById('content-en').style.display = lang === 'en' ? 'block' : 'none';
-      document.getElementById('content-he').style.display = lang === 'he' ? 'block' : 'none';
-      document.getElementById('page-title').innerText = lang === 'en' ? 'Terms of Use' : 'תנאי שימוש';
-      document.getElementById('page-updated').innerText = lang === 'en' ? 'Last updated: September 22, 2026' : 'עודכן לאחרונה: 22 בספטמבר 2026';
-      
-      const buttons = document.querySelectorAll('.lang-btn');
-      buttons[0].classList.toggle('active', lang === 'en');
-      buttons[1].classList.toggle('active', lang === 'he');
-    }
-  </script>
+  <script src="/legal-page.js"></script>
 </body>
 </html>

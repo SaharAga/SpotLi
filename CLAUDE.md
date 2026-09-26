@@ -114,6 +114,31 @@ accidentally committed secrets (`scripts/pre_commit_secrets_check.js`). Don't by
 - **Legal consent**: `LegalConsentGate` blocks any signed-in user whose stored
   `legalAcceptedVersion` doesn't match `LEGAL_VERSION` (`src/constants/legal.js`). Bump
   `LEGAL_VERSION` whenever the ToU/Privacy Policy substance changes to re-prompt everyone.
+  The legal text exists twice — `src/constants/legal.js` (in-app) and `public/privacy.html`,
+  `terms.html`, `accessibility.html` (public pages, also what Google's OAuth review reads) —
+  in Hebrew and English; change all of them together. When code starts sending data somewhere
+  new or storing something new, the Privacy Policy must say so (see
+  `docs/security-legal-review-2026-09-26.md` for the last code-vs-text audit).
+- **Account deletion**: the client calls the `deleteAccountData` Cloud Function
+  (`functions/src/accountDeletion.js`) *before* deleting the Auth user, and aborts if it fails.
+  It disconnects Gmail and purges uid-linked data the client can't reach. Any new collection
+  that stores a uid (in a field or a doc ID) must be added to its lists, or deletion silently
+  leaves it behind.
+- **Inbound-email address**: `<inbox>+tok_<token>@cloudmailin.net`, where the token maps to a
+  uid only server-side (`ingestionTokens`, `functions/src/ingestionToken.js`) and the user can
+  rotate it. Never put the uid in the address — the uid used to be a bearer credential for
+  writing into someone's package list. Legacy uid addresses are honoured only for users who
+  have never been issued a token.
+- **Gmail tokens & push auth**: refresh tokens are encrypted at rest (AES-256-GCM,
+  `functions/src/tokenCipher.js`, key in the `GMAIL_TOKEN_KEY` secret). Read and write them only
+  through `gmailAuth.js` (`setGmailConnection` / `decodeConnection`), never from raw doc data.
+  Any function that touches them must list `gmailTokenKey` in its `secrets`. The Gmail push
+  endpoint accepts a Pub/Sub OIDC token (`pubsubPushAuth.js`), and the legacy `?token=` until
+  `GMAIL_PUSH_REQUIRE_OIDC=true`.
+- **CSP**: `firebase.json` allows no inline script. Put page scripts in `public/*.js`
+  (see `boot.js`, `legal-page.js`) rather than `<script>` blocks or `onclick=` attributes, and
+  give unhashed scripts a no-cache header. The CSP rule skips Firebase's reserved `/__/**`
+  paths (Google's auth handler).
 - **App Check**: optional (`VITE_RECAPTCHA_V3_SITE_KEY`); when unset, `src/services/firebase.js`
   simply never initializes it. It's what allows `/feedback` to accept unauthenticated writes
   safely — see README "Abuse protection" for the enable sequence (must stay in that order:
@@ -219,7 +244,7 @@ a conflict; new changeset files never conflict with each other.
 ## CI/Deployment
 
 `.github/workflows/ci.yml`: lint → test → build on every push/PR to `main`. Deploys to Firebase
-Hosting and pushes `firestore.rules` only on a push to `main` that changes `package.json`'s
+Hosting and pushes `firestore.rules` (and `firestore.indexes.json`) only on a push to `main` that changes `package.json`'s
 version (i.e. a release commit, per above) — an ordinary merge lands without deploying — and only
 when the `FIREBASE_HOSTING_ENABLED` repo variable is set. `VITE_FIREBASE_*` values come from
 repository variables (public client identifiers, not secrets). `functions/` deploys on its own

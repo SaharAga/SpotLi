@@ -71,7 +71,7 @@ discards in-progress form state.
   matches or the input is a screenshot. Maps the AI response into the same shape the regex parser
   returns so the rest of the component (and `AddEditPackageModal`) don't need to know which path
   produced a result.
-- **`IngestionGuideModal`** — shipment ingestion & sync center: manages Gmail OAuth sync (`connectGmail`), Outlook auto-forwarding (`requestOutlookForwardingSetup`), dedicated ingestion email addresses (`getIngestionEmailAddress`), and provider-specific forwarding setup guides.
+- **`IngestionGuideModal`** — shipment ingestion & sync center: manages Gmail OAuth sync (`connectGmail`), Outlook auto-forwarding (`requestOutlookForwardingSetup`), private, rotatable ingestion email addresses (`fetchIngestionToken` + `buildIngestionEmailAddress`), and provider-specific forwarding setup guides.
 
 ## Analytics / export
 

@@ -4,7 +4,8 @@
  * expiration needs to be re-registered or push notifications silently stop.
  */
 
-import { getGmailClientForUser, setGmailConnection, GMAIL_CONNECTIONS_COLLECTION } from './gmailAuth.js';
+import { decodeConnection, getGmailClientForUser, setGmailConnection, GMAIL_CONNECTIONS_COLLECTION } from './gmailAuth.js';
+import { isEncryptedToken } from './tokenCipher.js';
 import { logUsageEvent } from './analyticsEvents.js';
 
 const RENEW_WITHIN_MS = 2 * 24 * 60 * 60 * 1000; // renew anything expiring within 2 days
@@ -28,9 +29,29 @@ export function createGmailWatchRenewalHandler({ db, clientSecret }) {
     const now = Date.now();
     let renewed = 0;
     let failed = 0;
+    let migrated = 0;
 
     for (const doc of snap.docs) {
-      const conn = doc.data();
+      const stored = doc.data();
+      let conn;
+      try {
+        conn = decodeConnection(doc.id, stored);
+      } catch (err) {
+        console.error(`[gmailWatchRenewal] Cannot decrypt refresh token for connection ${doc.id}:`, err?.message || err);
+        failed += 1;
+        continue;
+      }
+
+      // Re-encrypt tokens stored before encryption at rest existed.
+      if (stored.refreshToken && !isEncryptedToken(stored.refreshToken)) {
+        try {
+          await setGmailConnection({ db, uid: conn.uid, connectionId: doc.id, data: { refreshToken: conn.refreshToken } });
+          migrated += 1;
+        } catch (err) {
+          console.error(`[gmailWatchRenewal] Failed to encrypt legacy token for connection ${doc.id}:`, err?.message || err);
+        }
+      }
+
       const expiration = conn.watchExpiration ? Number(conn.watchExpiration) : 0;
       if (expiration && expiration - now > RENEW_WITHIN_MS) continue; // not due yet
 
@@ -67,12 +88,13 @@ export function createGmailWatchRenewalHandler({ db, clientSecret }) {
       }
     }
 
-    console.log(`[gmailWatchRenewal] renewed=${renewed} failed=${failed} total=${snap.size}`);
+    console.log(`[gmailWatchRenewal] renewed=${renewed} failed=${failed} migrated=${migrated} total=${snap.size}`);
     await logUsageEvent(db, {
       feature: 'gmail_sync',
       type: 'watch_renewal',
       renewed,
       failed,
+      migrated,
       total: snap.size
     });
   };

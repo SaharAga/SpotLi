@@ -5,14 +5,10 @@
  * subscription }`. The decoded `data` is `{ emailAddress, historyId }` —
  * Gmail doesn't push message content, just "something changed, look here".
  *
- * Auth: this endpoint is protected by a shared-secret query param
- * (`?token=...` checked against the GMAIL_OAUTH_CLIENT_SECRET-derived
- * value below) configured on the Pub/Sub push subscription's endpoint URL.
- * This is documented as the simpler of the two options in the setup
- * checklist; the more robust alternative — configuring the push
- * subscription with OIDC authentication and verifying the token audience/
- * issuer here — is noted there too for anyone who wants to upgrade it.
- * Either way, Cloud Functions' onRequest already sits behind HTTPS, so this
+ * Auth: a Google-signed OIDC token from an authenticated push subscription
+ * (see pubsubPushAuth.js), or — until GMAIL_PUSH_REQUIRE_OIDC is set — the
+ * legacy shared-secret query param (`?token=`, the GMAIL_PUSH_TOKEN secret)
+ * on the subscription's endpoint URL. Either way, Cloud Functions' onRequest already sits behind HTTPS, so this
  * is defense against a stranger discovering the URL and forging events, not
  * against network eavesdropping.
  */
@@ -37,14 +33,28 @@ import {
 /**
  * @param {{ db: FirebaseFirestore.Firestore, clientSecret: string, pushToken: string, geminiApiKey?: string }} deps
  */
-export function createGmailPushHandler({ db, clientSecret, pushToken, geminiApiKey }) {
+export function createGmailPushHandler({
+  db,
+  clientSecret,
+  pushToken,
+  geminiApiKey,
+  verifyOidc = null,
+  requireOidc = false
+}) {
   return async function handler(req, res) {
     if (req.method !== 'POST') {
       res.status(405).send('Method Not Allowed');
       return;
     }
 
-    if (!pushToken || !req.query?.token || !safeCompareTokens(req.query.token, pushToken)) {
+    // Preferred: the Google-signed OIDC token Pub/Sub attaches when the push
+    // subscription has authentication enabled (pubsubPushAuth.js). The
+    // legacy `?token=` secret stays accepted until requireOidc is turned on,
+    // so switching the subscription over never drops notifications.
+    const oidcOk = verifyOidc ? await verifyOidc(req.headers?.authorization) : false;
+    const legacyOk = !requireOidc &&
+      Boolean(pushToken && req.query?.token && safeCompareTokens(req.query.token, pushToken));
+    if (!oidcOk && !legacyOk) {
       res.status(401).send('Unauthorized');
       return;
     }

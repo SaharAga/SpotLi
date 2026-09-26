@@ -20,7 +20,9 @@ const CACHE_NAME = `spotli-shell-v${APP_VERSION}`;
 const SHELL_URL = '/index.html';
 
 // Best-effort: a missing entry must not fail the whole install.
-const PRECACHE_URLS = ['/', SHELL_URL, '/manifest.json', '/icons/icon-192.png'];
+// boot.js is the pre-paint script index.html loads synchronously; without it an
+// offline start renders before the theme class is set.
+const PRECACHE_URLS = ['/', SHELL_URL, '/boot.js', '/manifest.json', '/icons/icon-192.png'];
 
 const OFFLINE_FALLBACK = `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">

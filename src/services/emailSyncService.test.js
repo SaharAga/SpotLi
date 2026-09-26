@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
-  getIngestionEmailAddress,
+  buildIngestionEmailAddress,
   getConnectedServices,
   getConnectedAccounts,
   addConnectedAccount,
@@ -17,24 +17,16 @@ describe('emailSyncService Unit Tests', () => {
     vi.restoreAllMocks();
   });
 
-  describe('getIngestionEmailAddress', () => {
-    it('returns clean email based on user uid', () => {
-      expect(getIngestionEmailAddress({ uid: 'user12345' })).toBe('233b362d7b331adfde6e+usr_user12345@cloudmailin.net');
+  describe('buildIngestionEmailAddress', () => {
+    it('builds the token address', () => {
+      expect(buildIngestionEmailAddress('abababababababababababab'))
+        .toBe('233b362d7b331adfde6e+tok_abababababababababababab@cloudmailin.net');
     });
 
-    it('returns placeholder when user is null or missing uid', () => {
-      expect(getIngestionEmailAddress(null)).toBe('233b362d7b331adfde6e@cloudmailin.net');
-      expect(getIngestionEmailAddress({})).toBe('233b362d7b331adfde6e@cloudmailin.net');
-    });
-
-    it('strips non-alphanumeric characters from uid', () => {
-      expect(getIngestionEmailAddress({ uid: 'user-abc_123!@#' })).toBe('233b362d7b331adfde6e+usr_userabc123@cloudmailin.net');
-    });
-
-    it('preserves full 28-character Firebase Auth UID without truncation', () => {
-      const fullUid = 'abcdefghijklmnopqrstuvwxyz12';
-      expect(fullUid.length).toBe(28);
-      expect(getIngestionEmailAddress({ uid: fullUid })).toBe(`233b362d7b331adfde6e+usr_${fullUid}@cloudmailin.net`);
+    it('never falls back to a uid-based or shared address', () => {
+      expect(buildIngestionEmailAddress(null)).toBeNull();
+      expect(buildIngestionEmailAddress('')).toBeNull();
+      expect(buildIngestionEmailAddress('user12345')).toBeNull();
     });
   });
 

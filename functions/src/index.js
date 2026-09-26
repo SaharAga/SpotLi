@@ -3,13 +3,14 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { onDocumentCreated, onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { defineSecret } from 'firebase-functions/params';
 import { initializeApp, getApps } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, FieldPath } from 'firebase-admin/firestore';
 import webpush from 'web-push';
 import { createParseWithAiHandler } from './handler.js';
 import { createInboundEmailHandler } from './inboundEmailHandler.js';
-import { gmailOAuthClientSecret } from './gmailAuth.js';
+import { decodeConnection, gmailOAuthClientSecret, gmailTokenKey } from './gmailAuth.js';
 import { createGmailOAuthStartHandler, createGmailOAuthCallbackHandler } from './gmailOAuthCallback.js';
 import { createGmailPushHandler } from './gmailPushHandler.js';
+import { createPubSubOidcVerifier } from './pubsubPushAuth.js';
 import { createGmailBackfillHandler, runBackfillForUser } from './gmailBackfill.js';
 import { createGmailWatchRenewalHandler } from './gmailWatchRenewal.js';
 import { createGmailDisconnectHandler } from './gmailDisconnect.js';
@@ -22,6 +23,8 @@ import { createScheduledTrackingRefreshHandler } from './scheduledTrackingRefres
 import { createRegisterTrackingNumberHandler } from './registerTrackingNumber.js';
 import { createTrack17WebhookHandler } from './track17Webhook.js';
 import { TRACKING_REFRESH_LIMITS } from './config.js';
+import { createDeleteAccountDataHandler } from './accountDeletion.js';
+import { createIngestionAddressHandler } from './ingestionToken.js';
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
 const track17ApiKey = defineSecret('TRACK17_API_KEY');
@@ -133,7 +136,7 @@ export const gmailOAuthStart = onCall(
 export const gmailOAuthCallback = onRequest(
   {
     cors: false,
-    secrets: [gmailOAuthClientSecret, geminiApiKey],
+    secrets: [gmailOAuthClientSecret, geminiApiKey, gmailTokenKey],
     timeoutSeconds: 30,
     memory: '256MiB'
   },
@@ -161,7 +164,7 @@ export const gmailOAuthCallback = onRequest(
           runBackfillForUser({
             db: firestore,
             uid,
-            refreshToken: snap.data()?.refreshToken,
+            refreshToken: decodeConnection(snap.id, snap.data(), uid).refreshToken,
             clientSecret: secret,
             geminiApiKey: apiKey
           })
@@ -170,15 +173,29 @@ export const gmailOAuthCallback = onRequest(
     })(req, res)
 );
 
+// Built once per instance so google-auth-library can cache Google's signing
+// certificates across requests. null until both env vars are configured.
+let cachedPushOidcVerifier;
+function gmailPushOidcVerifier() {
+  if (cachedPushOidcVerifier === undefined) {
+    cachedPushOidcVerifier = createPubSubOidcVerifier({
+      audience: process.env.GMAIL_PUSH_OIDC_AUDIENCE,
+      serviceAccountEmail: process.env.GMAIL_PUSH_SERVICE_ACCOUNT
+    });
+  }
+  return cachedPushOidcVerifier;
+}
+
 /**
  * Pub/Sub push endpoint for Gmail `users.watch()` notifications — real-time
  * delivery of newly arrived mail for connected accounts. See
- * gmailPushHandler.js for the auth model (shared-secret query token).
+ * gmailPushHandler.js for the auth model (Pub/Sub OIDC token, with the
+ * legacy shared-secret query token accepted until GMAIL_PUSH_REQUIRE_OIDC).
  */
 export const gmailPushNotification = onRequest(
   {
     cors: false,
-    secrets: [gmailOAuthClientSecret, gmailPushToken, geminiApiKey],
+    secrets: [gmailOAuthClientSecret, gmailPushToken, geminiApiKey, gmailTokenKey],
     timeoutSeconds: 60,
     memory: '256MiB'
   },
@@ -187,6 +204,8 @@ export const gmailPushNotification = onRequest(
       db: getFirestore(),
       clientSecret: gmailOAuthClientSecret.value(),
       pushToken: gmailPushToken.value(),
+      verifyOidc: gmailPushOidcVerifier(),
+      requireOidc: process.env.GMAIL_PUSH_REQUIRE_OIDC === 'true',
       // Optional: the Gemini fallback (gmailAiFallback.js) simply doesn't
       // run without it, same as parseWithAi's own secret dependency.
       geminiApiKey: geminiApiKey.value()
@@ -200,7 +219,7 @@ export const gmailPushNotification = onRequest(
  */
 export const gmailBackfill = onCall(
   {
-    secrets: [gmailOAuthClientSecret, geminiApiKey],
+    secrets: [gmailOAuthClientSecret, geminiApiKey, gmailTokenKey],
     // Scanning up to 100 messages one-by-one can take a while.
     timeoutSeconds: 180,
     memory: '256MiB'
@@ -225,7 +244,7 @@ export const gmailWatchRenewal = onSchedule(
   {
     schedule: 'every day 03:00',
     timeZone: 'Etc/UTC',
-    secrets: [gmailOAuthClientSecret],
+    secrets: [gmailOAuthClientSecret, gmailTokenKey],
     timeoutSeconds: 300,
     memory: '256MiB'
   },
@@ -242,7 +261,7 @@ export const gmailWatchRenewal = onSchedule(
  */
 export const gmailDisconnect = onCall(
   {
-    secrets: [gmailOAuthClientSecret],
+    secrets: [gmailOAuthClientSecret, gmailTokenKey],
     timeoutSeconds: 30,
     memory: '256MiB'
   },
@@ -254,6 +273,41 @@ export const gmailDisconnect = onCall(
 );
 
 /**
+ * Server-side half of account deletion: disconnects Gmail and purges every
+ * uid-linked document the client cannot reach (push tokens, ingestion token,
+ * rate-limit counters, usage logs) plus the users/{uid} subtree. The client
+ * awaits this before deleting the Auth user — see accountDeletion.js.
+ */
+export const deleteAccountData = onCall(
+  {
+    secrets: [gmailOAuthClientSecret, gmailTokenKey],
+    timeoutSeconds: 60,
+    memory: '256MiB'
+  },
+  (request) => {
+    const db = getFirestore();
+    return createDeleteAccountDataHandler({
+      db,
+      disconnectGmail: createGmailDisconnectHandler({ db, clientSecret: gmailOAuthClientSecret.value() }),
+      documentIdField: FieldPath.documentId()
+    })(request);
+  }
+);
+
+/**
+ * Returns (issuing on first use, or rotating on `{ rotate: true }`) the
+ * random token in the caller's inbound-email forwarding address — see
+ * ingestionToken.js for why the address no longer carries the uid.
+ */
+export const ingestionAddress = onCall(
+  {
+    timeoutSeconds: 15,
+    memory: '256MiB'
+  },
+  (request) => createIngestionAddressHandler({ db: getFirestore() })(request)
+);
+
+/**
  * Reports whether the signed-in caller has an active Gmail connection —
  * the client can't read gmailConnections/{uid} directly (refresh tokens
  * must never reach the browser), so this is the sanctioned way the UI
@@ -261,6 +315,8 @@ export const gmailDisconnect = onCall(
  */
 export const gmailConnectionStatus = onCall(
   {
+    // Connection reads decrypt the stored refresh token (tokenCipher.js).
+    secrets: [gmailTokenKey],
     timeoutSeconds: 15,
     // 128MiB was too tight for a Node 22 2nd-gen function pulling in the
     // Firebase Admin SDK — its first-ever deploy failed the Cloud Run
