@@ -246,6 +246,13 @@ describe('High-Assurance Property-Based Verification (fast-check)', () => {
       );
     });
 
+    it('prefers the labeled number over a carrier-shaped word just before the label', () => {
+      // Shrunk counterexample from the property above (CI, 2026-09-26): the
+      // Yanwen-shaped noise word ranked first because it sat "near" the label.
+      expect(parseSmartText('AAAAAAAAYP tracking number: 4829104821').trackingNumber).toBe('4829104821');
+      expect(parseSmartText('UB123456789YP מספר מעקב: 4829104821').trackingNumber).toBe('4829104821');
+    });
+
     it('Soundness: an unlabeled bare digit run is never auto-filled', () => {
       // The counterpart property. Without a label the parser may still surface
       // the number as a low-confidence suggestion, but it must never reach

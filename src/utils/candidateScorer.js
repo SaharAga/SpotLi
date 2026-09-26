@@ -784,6 +784,11 @@ export function extractAndScoreCandidates(text) {
       urlDomainMatch: checkUrlDomainMatch(primaryCarrier, normalizedText)
         || messageHasCarrierDomain(normalizedText),
       labelProximity: 1.0, // Directly extracted from labeled pattern
+      // The label grammar captured this value itself ("tracking number: X").
+      // labelProximity alone cannot say that: it is distance-based in both
+      // directions, so a token sitting just *before* the label scores ~0.99
+      // too. The sort below uses this to tell the two apart.
+      fromLabeledPattern: true,
       falsePositiveFlags: detectFalsePositiveFlags(cleanVal, normalizedText, start, end),
       sourceSpan: { start, end }
     });
@@ -1093,6 +1098,13 @@ export function extractAndScoreCandidates(text) {
     const aDirect = !a.fromUrlPath && !a.fromGrouped && (a.labelProximity ?? 0) >= 0.8;
     const bDirect = !b.fromUrlPath && !b.fromGrouped && (b.labelProximity ?? 0) >= 0.8;
     if (aDirect && bDirect && a.formatMatch && b.formatMatch && a.score >= 0.7 && b.score >= 0.7) {
+      // The value the label actually introduces beats one that merely sits
+      // near it. Without this, "AAAAAAAAYP tracking number: 4829104821"
+      // returned the Yanwen-shaped word in front of the label, because both
+      // counted as "near a label" and Yanwen's carrier priority is lower.
+      if (Boolean(a.fromLabeledPattern) !== Boolean(b.fromLabeledPattern)) {
+        return a.fromLabeledPattern ? -1 : 1;
+      }
       const aPri = a.priority ?? 999;
       const bPri = b.priority ?? 999;
       if (aPri !== bPri) {
