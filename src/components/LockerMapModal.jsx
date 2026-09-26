@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { X, MapPin, Clock, Phone, Navigation, ExternalLink, ShieldCheck, Search, Flag, AlertCircle, ArrowLeft, Layers, CheckCircle2 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { Modal } from './Modal';
@@ -134,6 +134,16 @@ export function LockerMapModal({
   }, [selectedLocation, userPickupPoints]);
 
   const [activePoint, setActivePoint] = useState(() => initialPoint);
+  const detailRef = useRef(null);
+  // Below md the list and the detail share one scroller, so picking a point
+  // has to bring its detail into view — otherwise the tap looks like it did
+  // nothing.
+  const selectPoint = (point) => {
+    setActivePoint(point);
+    if (typeof window !== 'undefined' && window.matchMedia?.('(max-width: 767px)').matches) {
+      requestAnimationFrame(() => detailRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -253,7 +263,7 @@ export function LockerMapModal({
       className="relative w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-6 max-h-[90vh] flex flex-col"
     >
         {/* Header */}
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between gap-4 bg-slate-950/50">
+        <div className="p-3 sm:p-5 border-b border-slate-800 flex items-center justify-between gap-4 bg-slate-950/50">
           <button
             onClick={onClose}
             className="shrink-0 me-3 flex shrink-0 items-center justify-center min-h-[48px] min-w-[48px] rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-slate-100 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none"
@@ -269,7 +279,7 @@ export function LockerMapModal({
               <h3 className="text-base sm:text-lg font-bold text-slate-100">
                 {isRTL ? 'איתור נקודת איסוף ולוקרים' : 'Pickup Points & Locker Locator'}
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="hidden sm:block text-xs text-slate-400">
                 {isRTL ? 'ניווט, שעות פעילות ומידע על לוקרים קרובים' : 'Waze & Google Maps navigation, hours & details'}
               </p>
             </div>
@@ -293,14 +303,14 @@ export function LockerMapModal({
         </div>
 
         {/* Content Layout (Split: List & Interactive Preview) */}
-        {/* The split is a desktop layout. On a phone both halves shared one
-            scroller, and the tall detail panel squeezed the list down to a
-            single visible row — the list was effectively invisible. Each half
-            now scrolls on its own and the list gets a guaranteed share of the
-            height. */}
-        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 grid-rows-[minmax(0,2fr)_minmax(0,3fr)] md:grid-rows-1 divide-y md:divide-y-0 md:divide-x md:rtl:divide-x-reverse divide-slate-800">
+        {/* The split is a desktop layout. Below md the two halves used to get
+            their own scrollers at a fixed 2fr/3fr share, which on a 667px
+            phone left two cramped windows (~190px and ~280px) scrolling
+            independently. Now they stack in ONE scroller — list first, detail
+            after — and selecting a point scrolls its detail into view. */}
+        <div className="flex-1 min-h-0 overflow-y-auto md:overflow-visible md:grid md:grid-cols-2 md:grid-rows-1 divide-y md:divide-y-0 md:divide-x md:rtl:divide-x-reverse divide-slate-800">
           {/* Pickup List */}
-          <div className="min-h-0 p-4 space-y-3 overflow-y-auto">
+          <div className="md:min-h-0 p-4 space-y-3 md:overflow-y-auto">
             {filteredUserPoints.length > 0 && (
               <div className="space-y-2 mb-4">
                 <div className="flex items-center justify-between text-xs font-bold text-indigo-700 dark:text-indigo-300 px-1">
@@ -318,7 +328,16 @@ export function LockerMapModal({
                   return (
                     <div
                       key={point.id}
-                      onClick={() => setActivePoint(point)}
+                      onClick={() => selectPoint(point)}
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={isSelected}
+                      onKeyDown={(e) => {
+                        if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                          e.preventDefault();
+                          selectPoint(point);
+                        }
+                      }}
                       className={`p-4 rounded-2xl border transition-ui cursor-pointer ${
                         isSelected
                           ? 'bg-indigo-500/15 dark:bg-indigo-600/20 border-indigo-500 ring-2 ring-indigo-500/40 shadow-lg'
@@ -366,7 +385,16 @@ export function LockerMapModal({
                 return (
                   <div
                     key={point.id}
-                    onClick={() => setActivePoint(point)}
+                    onClick={() => selectPoint(point)}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={isSelected}
+                    onKeyDown={(e) => {
+                      if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                        e.preventDefault();
+                        selectPoint(point);
+                      }
+                    }}
                     className={`p-4 rounded-2xl border transition-ui cursor-pointer ${
                       isSelected
                         ? 'bg-blue-600/10 border-blue-500/60 ring-1 ring-blue-500/30'
@@ -392,11 +420,11 @@ export function LockerMapModal({
 
                     <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
                       <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-emerald-400" />
+                        <Clock className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                         <span>{hours}</span>
                       </span>
                       <span className="text-slate-500">|</span>
-                      <span className="text-blue-300 font-medium">{point.carrier}</span>
+                      <span className="text-blue-700 dark:text-blue-300 font-medium">{point.carrier}</span>
                     </div>
                   </div>
                 );
@@ -405,12 +433,12 @@ export function LockerMapModal({
           </div>
 
           {/* Active Location Detail & 1-Click Nav Card */}
-          <div className="min-h-0 overflow-y-auto p-4 sm:p-6 bg-slate-950/40 flex flex-col justify-between space-y-6">
+          <div ref={detailRef} className="md:min-h-0 md:overflow-y-auto scroll-mt-2 p-4 sm:p-6 bg-slate-950/40 flex flex-col justify-between space-y-6">
             {activePoint ? (
               <>
                 <div className="space-y-4">
                   {/* Simulated Map Visual Header */}
-                  <div className="relative h-44 rounded-2xl bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-950 border border-slate-800 flex flex-col items-center justify-center p-4 text-center overflow-hidden">
+                  <div className="relative h-44 rounded-2xl bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-500/25 border border-slate-800 flex flex-col items-center justify-center p-4 text-center overflow-hidden">
                     <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:16px_16px]" />
                     <div className="relative w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/40 mb-2">
                       <MapPin className="w-6 h-6" />
@@ -425,7 +453,7 @@ export function LockerMapModal({
 
                   {/* If user packages exist at this location */}
                   {activePoint.packages && activePoint.packages.length > 0 && (
-                    <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-950/70 via-slate-900/90 to-blue-950/70 border-2 border-indigo-500/40 space-y-3 shadow-lg">
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-500/10 dark:from-indigo-950/70 via-slate-900/90 to-blue-500/10 dark:to-blue-950/70 border-2 border-indigo-500/40 space-y-3 shadow-lg">
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <span className="text-xs font-bold text-indigo-800 dark:text-indigo-200 flex items-center gap-1.5">
                           <Layers className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
@@ -499,7 +527,7 @@ export function LockerMapModal({
                           <button
                             type="button"
                             onClick={() => setIsReportingHours(!isReportingHours)}
-                            className="text-xs text-indigo-300 hover:text-indigo-200 underline font-medium flex items-center gap-1 cursor-pointer"
+                            className="text-xs text-indigo-700 dark:text-indigo-300 hover:text-indigo-200 underline font-medium flex items-center gap-1 cursor-pointer"
                           >
                             <Flag className="w-3 h-3" />
                             <span>{t('openingHours.reportWrongHours')}</span>
@@ -518,7 +546,7 @@ export function LockerMapModal({
                     {/* Inline Report Incorrect Hours Box */}
                     {isReportingHours && (
                       <form onSubmit={handleReportWrongHours} className="p-3 rounded-xl bg-slate-900 border border-indigo-500/30 space-y-2 animate-fade-in text-xs">
-                        <label className="block text-xs font-bold text-indigo-200">
+                        <label className="block text-xs font-bold text-indigo-800 dark:text-indigo-200">
                           {t('openingHours.reportPromptTitle')}
                         </label>
                         <input
@@ -549,7 +577,7 @@ export function LockerMapModal({
                     )}
 
                     <div className="flex items-center gap-2 text-xs text-slate-300">
-                      <Clock className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <Clock className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                       <span>{language === 'he' ? activePoint.hoursHe : activePoint.hours}</span>
                     </div>
                     <div className="flex items-center gap-2 text-xs text-slate-300">
@@ -605,7 +633,7 @@ export function LockerMapModal({
                       href={getWazeUrl(activePoint.lat, activePoint.lng)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 hover:text-slate-100 text-xs font-bold border border-cyan-500/30 transition-ui cursor-pointer min-h-[48px]"
+                      className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-700 dark:text-cyan-300 hover:text-slate-100 text-xs font-bold border border-cyan-500/30 transition-ui cursor-pointer min-h-[48px]"
                     >
                       <Navigation className="w-3.5 h-3.5" />
                       <span>Waze</span>

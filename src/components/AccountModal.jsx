@@ -309,7 +309,7 @@ export function AccountModal({
         <div className={card}>
           <span className={label}>{language === 'he' ? 'תאריך הצטרפות' : 'Account Created'}</span>
           <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-emerald-400 shrink-0" />
+            <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span className="font-semibold text-slate-100 text-xs">{user?.createdAt || 'August 2026'}</span>
           </div>
         </div>
@@ -317,7 +317,7 @@ export function AccountModal({
 
       <div className={`${card} flex flex-wrap items-center justify-between gap-3`}>
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+          <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
             <Cloud className="w-5 h-5" />
           </div>
           <div>
@@ -331,7 +331,7 @@ export function AccountModal({
             </span>
           </div>
         </div>
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold">
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
           <Check className="w-3 h-3" />
           <span>{language === 'he' ? 'פעיל' : 'Active'}</span>
         </span>
@@ -398,7 +398,7 @@ export function AccountModal({
 
         {permissionStatus === 'granted' && (
           <div className="flex items-center justify-between pt-2 border-t border-slate-800">
-            <div className="flex items-center gap-2 text-xs text-emerald-400 font-semibold">
+            <div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>{t('notifications.permissionGranted')}</span>
             </div>
@@ -439,11 +439,11 @@ export function AccountModal({
             ].map((row) => (
               <div key={row.en} className="flex items-center gap-2 text-[11px]">
                 {row.ok ? (
-                  <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 ) : (
-                  <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />
+                  <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
                 )}
-                <span className={row.ok ? 'text-slate-400' : 'text-amber-400 font-semibold'}>
+                <span className={row.ok ? 'text-slate-400' : 'text-amber-600 dark:text-amber-400 font-semibold'}>
                   {language === 'he' ? row.he : row.en}
                 </span>
               </div>

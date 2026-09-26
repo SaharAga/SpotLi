@@ -44,14 +44,14 @@ export function FirstTimeEmptyState({
         {showGmailTile && (
         <div className="flex flex-col justify-between p-5 rounded-3xl bg-gradient-to-b from-slate-900 to-slate-900/90 border-2 border-amber-500/40 hover:border-amber-400 transition-ui shadow-xl shadow-amber-950/20 relative group">
           <div className="absolute top-4 end-4">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40">
               <Sparkles className="w-2.5 h-2.5" aria-hidden="true" />
               {t('firstTimeEmpty.gmailTileBadge')}
             </span>
           </div>
 
           <div>
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-4 shadow-md" aria-hidden="true">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-4 shadow-md" aria-hidden="true">
               <Mail className="w-6 h-6" />
             </div>
             <h3 id="gmail-tile-heading" className="text-sm font-bold text-slate-100 mb-1.5">
@@ -102,7 +102,7 @@ export function FirstTimeEmptyState({
         {/* Tile 3: Explore with Demo Package */}
         <div className="flex flex-col justify-between p-5 rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition-ui shadow-xl relative group">
           <div>
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-4 shadow-md" aria-hidden="true">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-4 shadow-md" aria-hidden="true">
               <Sparkles className="w-6 h-6" />
             </div>
             <h3 id="demo-tile-heading" className="text-sm font-bold text-slate-100 mb-1.5">

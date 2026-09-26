@@ -52,7 +52,7 @@ export function AutoArchivePromptModal({
       </p>
 
       <p className="text-xs text-slate-400 bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 mb-6 flex items-start gap-2">
-        <span className="shrink-0 text-amber-400">ℹ️</span>
+        <span className="shrink-0 text-amber-600 dark:text-amber-400">ℹ️</span>
         <span>{t("autoArchive.promptHint")}</span>
       </p>
 

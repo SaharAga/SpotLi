@@ -135,7 +135,7 @@ export function PostAuthSetupWizard({
       <div className="p-6 flex-1 flex flex-col items-center justify-center text-center overflow-y-auto">
         {step === 1 ? (
           <div className="w-full max-w-sm flex flex-col items-center animate-fade-in my-auto">
-            <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-4 shadow-lg shadow-amber-950/30">
+            <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center justify-center text-amber-600 dark:text-amber-400 mb-4 shadow-lg shadow-amber-950/30">
               <Mail className="w-8 h-8" />
             </div>
 
@@ -148,13 +148,13 @@ export function PostAuthSetupWizard({
 
             {/* Google Re-Auth / Auto-Ingestion Clarification */}
             <div className="w-full max-w-sm mb-6 p-3.5 bg-slate-950/70 border border-amber-500/30 rounded-2xl text-[11px] text-slate-300 text-start flex items-start gap-3 shadow-inner">
-              <div className="w-6 h-6 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0 mt-0.5">
+              <div className="w-6 h-6 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0 mt-0.5">
                 <ShieldCheck className="w-3.5 h-3.5" />
               </div>
               <div className="leading-relaxed">
                 <div className="text-slate-100 font-bold mb-0.5 flex items-center gap-1.5">
                   <span>{t('wizard.ssoExplanationTitle')}</span>
-                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-semibold uppercase tracking-wider">
+                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 font-semibold uppercase tracking-wider">
                     {t('wizard.ssoExplanationBadge')}
                   </span>
                 </div>
@@ -165,8 +165,8 @@ export function PostAuthSetupWizard({
             </div>
 
             {isGmailConnected ? (
-              <div className="w-full p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center gap-2 text-emerald-300 text-xs font-bold mb-4">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <div className="w-full p-4 rounded-2xl bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center gap-2 text-emerald-700 dark:text-emerald-300 text-xs font-bold mb-4">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>{t('wizard.gmailConnected')}</span>
               </div>
             ) : (
@@ -211,8 +211,8 @@ export function PostAuthSetupWizard({
             )}
 
             {pushStatus === 'granted' ? (
-              <div className="w-full p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center gap-2 text-emerald-300 text-xs font-bold mb-4">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <div className="w-full p-4 rounded-2xl bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-center gap-2 text-emerald-700 dark:text-emerald-300 text-xs font-bold mb-4">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>{t('wizard.notificationsEnabled')}</span>
               </div>
             ) : (

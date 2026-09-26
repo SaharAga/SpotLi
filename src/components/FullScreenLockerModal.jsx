@@ -162,9 +162,9 @@ export function FullScreenLockerModal({
       className="relative w-full max-w-xl bg-slate-950 border-2 border-emerald-500/40 rounded-3xl shadow-2xl overflow-hidden my-4 max-h-[95vh] flex flex-col text-slate-100"
     >
       {/* Sunlight-Proof Header */}
-      <div className="p-5 border-b border-slate-800 bg-gradient-to-r from-emerald-950/60 via-slate-900 to-teal-950/60 flex items-center justify-between gap-3 shrink-0">
+      <div className="p-5 border-b border-slate-800 bg-gradient-to-r from-emerald-500/15 via-slate-900 to-teal-500/15 flex items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
             {isBundled ? <Layers className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
           </div>
           <div>
@@ -175,7 +175,7 @@ export function FullScreenLockerModal({
                   : t('lockerMode.title')}
               </span>
               {!isBundled && (
-                <span className="text-xs uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+                <span className="text-xs uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-500/30">
                   {language === 'he' ? carrier.hebrewName : carrier.name}
                 </span>
               )}
@@ -309,14 +309,14 @@ export function FullScreenLockerModal({
         {pkg.pickupLocation && (
           <div className="w-full p-4 rounded-2xl bg-slate-900/60 border border-slate-800 flex items-start justify-between gap-3 text-start">
             <div className="flex items-start gap-2.5">
-              <MapPin className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <h4 className="text-xs sm:text-sm font-bold text-slate-100">
                     {pkg.pickupLocation}
                   </h4>
                   {pkg.isRedirected && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold border border-amber-500/30">
                       {t('redirectDetection.badge')}
                     </span>
                   )}
@@ -377,7 +377,7 @@ export function FullScreenLockerModal({
             href={whatsappProxyUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-400 hover:text-emerald-300 font-bold text-xs border border-emerald-900/60 transition-ui flex items-center justify-center gap-2 min-h-[48px]"
+            className="py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-600 dark:text-emerald-400 hover:text-emerald-300 font-bold text-xs border border-emerald-900/60 transition-ui flex items-center justify-center gap-2 min-h-[48px]"
           >
             <ExternalLink className="w-4 h-4" />
             <span>
@@ -403,7 +403,7 @@ export function FullScreenLockerModal({
         {pkg.pickupPhone && (
           <a
             href={`tel:${pkg.pickupPhone}`}
-            className="w-full py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-300 font-bold text-xs border border-slate-800 transition-ui flex items-center justify-center gap-2 min-h-[48px]"
+            className="w-full py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-700 dark:text-emerald-300 font-bold text-xs border border-slate-800 transition-ui flex items-center justify-center gap-2 min-h-[48px]"
             aria-label={`${t('phoneActions.callStore')}: ${pkg.pickupPhone}`}
           >
             <Phone className="w-3.5 h-3.5" />

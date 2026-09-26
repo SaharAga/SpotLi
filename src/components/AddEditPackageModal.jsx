@@ -561,14 +561,14 @@ export function AddEditPackageModal({
               </optgroup>
             </select>
             {localCarrier && localCarrier !== carrier && (
-              <div className="mt-2.5 p-3 bg-cyan-950/40 border border-cyan-500/30 rounded-xl flex items-center justify-between gap-2 text-xs text-cyan-200 animate-fade-in">
+              <div className="mt-2.5 p-3 bg-cyan-500/10 dark:bg-cyan-950/40 border border-cyan-500/30 rounded-xl flex items-center justify-between gap-2 text-xs text-cyan-800 dark:text-cyan-200 animate-fade-in">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-cyan-400">
+                  <span className="font-semibold text-cyan-600 dark:text-cyan-400">
                     {language === 'he' ? 'חברת הפצה מקומית (העברה):' : 'Domestic Handover Courier:'}
                   </span>
                   <span className="font-medium">{language === 'he' ? getCarrier(localCarrier).hebrewName : getCarrier(localCarrier).name}</span>
                   {localTrackingNumber && (
-                    <span className="font-mono text-cyan-300">({localTrackingNumber})</span>
+                    <span className="font-mono text-cyan-700 dark:text-cyan-300">({localTrackingNumber})</span>
                   )}
                 </div>
                 <button
@@ -577,7 +577,7 @@ export function AddEditPackageModal({
                     setLocalCarrier('');
                     setLocalTrackingNumber('');
                   }}
-                  className="px-3 py-1.5 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-200 hover:text-white rounded-lg font-medium transition-colors shrink-0 flex items-center gap-1 min-h-[48px] cursor-pointer"
+                  className="px-3 py-1.5 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-800 dark:text-cyan-200 hover:text-white rounded-lg font-medium transition-colors shrink-0 flex items-center gap-1 min-h-[48px] cursor-pointer"
                   title={language === 'he' ? 'הסר חברת הפצה מקומית' : 'Remove domestic handover'}
                   aria-label={language === 'he' ? 'הסר חברת הפצה מקומית' : 'Remove domestic handover'}
                 >

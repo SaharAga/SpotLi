@@ -108,7 +108,7 @@ export class ErrorBoundary extends React.Component {
               {this.state.error?.message || 'An unexpected error occurred while rendering SpotLi.'}
             </p>
 
-            <div className="p-3 bg-slate-950 rounded-xl text-xs font-mono text-rose-300 text-start overflow-x-auto max-h-32 border border-slate-800">
+            <div className="p-3 bg-slate-950 rounded-xl text-xs font-mono text-rose-700 dark:text-rose-300 text-start overflow-x-auto max-h-32 border border-slate-800">
               {this.state.error?.stack || String(this.state.error)}
             </div>
 

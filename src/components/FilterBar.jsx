@@ -178,7 +178,7 @@ export function FilterBar({
                 disabled={isRefreshing}
                 aria-label={t('tracking.refreshAll')}
                 className={`w-full flex items-center justify-center gap-2 min-h-[48px] rounded-xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-emerald-400 hover:bg-slate-800 transition-colors text-xs font-bold ${
-                  isRefreshing ? 'text-emerald-400' : ''
+                  isRefreshing ? 'text-emerald-600 dark:text-emerald-400' : ''
                 }`}
               >
                 {isRefreshing ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <RefreshCw className="w-4 h-4" aria-hidden="true" />}

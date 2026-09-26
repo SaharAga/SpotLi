@@ -67,15 +67,15 @@ export function NavigationChoiceModal({
   const getAppIcon = (appId) => {
     switch (appId) {
       case NAV_APPS.WAZE:
-        return <Car className="w-5 h-5 text-cyan-400 shrink-0" />;
+        return <Car className="w-5 h-5 text-cyan-600 dark:text-cyan-400 shrink-0" />;
       case NAV_APPS.GOOGLE_MAPS:
         return <Compass className="w-5 h-5 text-blue-400 shrink-0" />;
       case NAV_APPS.APPLE_MAPS:
         return <Navigation className="w-5 h-5 text-slate-300 shrink-0" />;
       case NAV_APPS.MOOVIT:
-        return <Bus className="w-5 h-5 text-amber-400 shrink-0" />;
+        return <Bus className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />;
       case NAV_APPS.OS_DEFAULT:
-        return <Smartphone className="w-5 h-5 text-emerald-400 shrink-0" />;
+        return <Smartphone className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />;
       default:
         return <MapPin className="w-5 h-5 text-blue-400 shrink-0" />;
     }
@@ -94,7 +94,7 @@ export function NavigationChoiceModal({
       {/* Header */}
       <div className="p-5 sm:p-6 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
             <Navigation className="w-5 h-5" />
           </div>
           <div>
@@ -169,7 +169,7 @@ export function NavigationChoiceModal({
                       {appName}
                     </span>
                     {isPreferred && (
-                      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">
+                      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/30">
                         <Check className="w-3 h-3" />
                         <span>{t('navigation.preferredBadge') || 'Default'}</span>
                       </span>

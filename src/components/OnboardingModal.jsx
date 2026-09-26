@@ -230,11 +230,11 @@ export function OnboardingModal({
       onClose={onClose}
     >
       {/* Header bar with Skip button */}
-      <div className="px-6 pt-5 pb-3 flex items-center justify-between shrink-0">
+      <div className="px-4 sm:px-6 pt-5 pb-3 flex items-center justify-between gap-2 shrink-0">
         <div 
           role="tablist" 
           aria-label={t('onboarding.progress')} 
-          className="flex items-center"
+          className="flex items-center flex-1 min-w-0"
         >
           {slides.map((_, idx) => (
             <button
@@ -245,7 +245,9 @@ export function OnboardingModal({
               aria-selected={idx === currentSlide}
               aria-controls="onboarding-slide-panel"
               onClick={() => setCurrentSlide(idx)}
-              className="p-2 min-h-[48px] min-w-[32px] flex items-center justify-center cursor-pointer"
+              /* 48px wide where it fits; on a 320px screen the row shares the header
+                 with two buttons, so the dots give way rather than push them off. */
+              className="min-h-[48px] w-12 min-w-0 shrink flex items-center justify-center cursor-pointer"
               aria-label={t('onboarding.slideIndicator')
                 .replace('{current}', String(idx + 1))
                 .replace('{total}', String(slides.length))}
@@ -260,7 +262,7 @@ export function OnboardingModal({
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           <button
             type="button"
             onClick={toggleLanguage}
@@ -274,7 +276,7 @@ export function OnboardingModal({
           <button
             type="button"
             onClick={onSignIn || onClose}
-            className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors px-3 py-2 rounded-xl hover:bg-slate-200/80 dark:hover:bg-slate-800/80 min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer"
+            className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors px-2 sm:px-3 py-2 rounded-xl hover:bg-slate-200/80 dark:hover:bg-slate-800/80 min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer whitespace-nowrap"
           >
             {onSignIn ? t('onboarding.signIn') : t('onboarding.skip')}
           </button>

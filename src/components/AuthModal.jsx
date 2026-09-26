@@ -59,7 +59,7 @@ export function calculatePasswordStrength(password) {
       labelHe: 'בינונית',
       labelEn: 'Fair',
       colorClass: 'bg-amber-500',
-      textClass: 'text-amber-400',
+      textClass: 'text-amber-600 dark:text-amber-400',
       criteria
     };
   }
@@ -73,7 +73,7 @@ export function calculatePasswordStrength(password) {
       labelHe: 'מאובטחת',
       labelEn: 'Secure',
       colorClass: 'bg-emerald-500',
-      textClass: 'text-emerald-400',
+      textClass: 'text-emerald-600 dark:text-emerald-400',
       criteria
     };
   }
@@ -405,7 +405,7 @@ export function AuthModal({
                     <p className="text-xs text-slate-400">{user.email}</p>
                   </div>
                 </div>
-                <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20">
+                <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/20">
                   {language === 'he' ? 'מחובר' : 'Active'}
                 </span>
               </div>
@@ -443,7 +443,7 @@ export function AuthModal({
                 {/* Delete Confirmation Warning Box */}
                 {showDeleteConfirm && (
                   <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 space-y-2.5 animate-fade-in">
-                    <p className="text-xs text-rose-300 font-medium leading-relaxed">
+                    <p className="text-xs text-rose-700 dark:text-rose-300 font-medium leading-relaxed">
                       {language === 'he'
                         ? 'פעולה זו תמחק לצמיתות את החשבון, נתוני המעקב והחבילות שלך מכל השרתים.'
                         : 'This action will permanently delete your account, tracking data, and packages from all servers.'}
@@ -510,12 +510,12 @@ export function AuthModal({
                 <>
                   {/* Contextual Educational Banner when prompted by Gmail sync */}
                   {reason === 'gmail_sync' && (
-                    <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-3 text-amber-300 animate-fade-in">
-                      <div className="w-7 h-7 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center shrink-0 text-amber-400 mt-0.5">
+                    <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-3 text-amber-700 dark:text-amber-300 animate-fade-in">
+                      <div className="w-7 h-7 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center shrink-0 text-amber-600 dark:text-amber-400 mt-0.5">
                         <Sparkles className="w-4 h-4" />
                       </div>
                       <div className="space-y-0.5 text-xs">
-                        <h4 className="font-bold text-amber-200">
+                        <h4 className="font-bold text-amber-800 dark:text-amber-200">
                           {language === 'he' ? 'חיבור עם Google לסנכרון Gmail' : 'Connect with Google for Gmail Sync'}
                         </h4>
                         <p className="text-amber-300/80 leading-relaxed">
@@ -626,7 +626,7 @@ export function AuthModal({
               )}
 
               {formSuccess && (
-                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs leading-relaxed animate-fade-in flex items-start gap-2">
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs leading-relaxed animate-fade-in flex items-start gap-2">
                   <Check className="w-4 h-4 shrink-0 mt-0.5" />
                   <span>{formSuccess}</span>
                 </div>
@@ -682,7 +682,9 @@ export function AuthModal({
                             setFormError('');
                             setFormSuccess('');
                           }}
-                          className="text-xs text-blue-400 hover:text-blue-300 cursor-pointer font-medium"
+                          /* 48px tall to tap, pulled back with negative margin so the
+                             label row keeps its height. */
+                          className="inline-flex items-center min-h-[48px] -my-3.5 px-2 -me-2 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 cursor-pointer font-medium"
                         >
                           {language === 'he' ? 'שכחת סיסמה?' : 'Forgot password?'}
                         </button>
@@ -724,7 +726,7 @@ export function AuthModal({
                         <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center ${hasMinLength ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-500'}`}>
                           <Check className="w-2.5 h-2.5" />
                         </div>
-                        <span className={hasMinLength ? 'text-emerald-400 font-medium' : 'text-slate-500'}>
+                        <span className={hasMinLength ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-500'}>
                           {language === 'he' ? 'לפחות 8 תווים' : 'At least 8 characters'}
                         </span>
                       </div>
@@ -733,7 +735,7 @@ export function AuthModal({
                         <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center ${hasLettersAndNumbers ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-500'}`}>
                           <Check className="w-2.5 h-2.5" />
                         </div>
-                        <span className={hasLettersAndNumbers ? 'text-emerald-400 font-medium' : 'text-slate-500'}>
+                        <span className={hasLettersAndNumbers ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-500'}>
                           {language === 'he' ? 'שילוב של אותיות ומספרים' : 'Combination of letters and numbers'}
                         </span>
                       </div>
@@ -742,7 +744,7 @@ export function AuthModal({
                         <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center ${hasSpecialChar ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-500'}`}>
                           <Check className="w-2.5 h-2.5" />
                         </div>
-                        <span className={hasSpecialChar ? 'text-emerald-400 font-medium' : 'text-slate-500'}>
+                        <span className={hasSpecialChar ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-500'}>
                           {language === 'he' ? 'לפחות תו מיוחד אחד (!@#$%)' : 'At least one special character (!@#$%)'}
                         </span>
                       </div>
@@ -752,7 +754,7 @@ export function AuthModal({
                           <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center ${passwordsMatch ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
                             <Check className="w-2.5 h-2.5" />
                           </div>
-                          <span className={passwordsMatch ? 'text-emerald-400 font-medium' : 'text-rose-400'}>
+                          <span className={passwordsMatch ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-rose-400'}>
                             {passwordsMatch 
                               ? (language === 'he' ? 'הסיסמאות תואמות' : 'Passwords match') 
                               : (language === 'he' ? 'הסיסמאות אינן תואמות' : 'Passwords do not match')}
@@ -816,7 +818,7 @@ export function AuthModal({
                       </span>
                     </label>
 
-                    <label className="flex items-start gap-2 p-2.5 rounded-xl bg-blue-950/20 border border-blue-500/20 cursor-pointer min-h-[48px]">
+                    <label className="flex items-start gap-2 p-2.5 rounded-xl bg-blue-500/10 dark:bg-blue-950/20 border border-blue-500/20 cursor-pointer min-h-[48px]">
                       <input
                         type="checkbox"
                         checked={aiOptIn}

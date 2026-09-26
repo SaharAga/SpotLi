@@ -208,7 +208,7 @@ export function SideNavDrawer({
                   onClick={() => handleNavClick(onOpenAppTour)}
                   className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-800 text-slate-200 text-start cursor-pointer transition-colors min-h-[48px]"
                 >
-                  <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                  <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
                   <span className="font-semibold">{t('appTourMenu')}</span>
                 </button>
               )}
@@ -218,7 +218,7 @@ export function SideNavDrawer({
                 onClick={() => handleNavClick(onOpenAnalytics)}
                 className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-800 text-slate-200 text-start cursor-pointer transition-colors min-h-[48px]"
               >
-                <BarChart3 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <BarChart3 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span className="font-semibold">{t('insights.title')}</span>
               </button>
 
@@ -233,7 +233,7 @@ export function SideNavDrawer({
 
               {/* Import Backup */}
               <label className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-800 text-slate-200 text-start cursor-pointer transition-colors min-h-[48px]">
-                <Upload className="w-4 h-4 text-emerald-400 shrink-0" />
+                <Upload className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span className="font-semibold">{t('backup.importData')}</span>
                 <input type="file" accept=".json" onChange={handleFileInput} className="hidden" />
               </label>
@@ -254,9 +254,9 @@ export function SideNavDrawer({
           {/* Alpha Feedback */}
           <button
             onClick={() => handleNavClick(onOpenFeedback)}
-            className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-800 text-emerald-300 text-start cursor-pointer transition-colors min-h-[48px]"
+            className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-slate-800 text-emerald-700 dark:text-emerald-300 text-start cursor-pointer transition-colors min-h-[48px]"
           >
-            <MessageSquare className="w-4 h-4 text-emerald-400 shrink-0" />
+            <MessageSquare className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span className="font-semibold">{language === 'he' ? 'משוב ודיווח באגים' : 'Alpha Feedback'}</span>
           </button>
 
@@ -310,7 +310,7 @@ export function SideNavDrawer({
               onClick={() => toggleTheme()}
               className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-800/80 text-slate-200 font-semibold cursor-pointer min-h-[48px]"
             >
-              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-400" />}
+              {isDark ? <Sun className="w-4 h-4 text-amber-600 dark:text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-400" />}
               <span>{isDark ? (language === 'he' ? 'מצב יום' : 'Light') : (language === 'he' ? 'מצב לילה' : 'Dark')}</span>
             </button>
 
@@ -328,7 +328,7 @@ export function SideNavDrawer({
                 logout();
                 onClose();
               }}
-              className="w-full py-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 font-bold text-xs transition-colors cursor-pointer min-h-[48px]"
+              className="w-full py-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-700 dark:text-rose-300 font-bold text-xs transition-colors cursor-pointer min-h-[48px]"
             >
               {language === 'he' ? 'התנתקות מהחשבון' : 'Sign Out'}
             </button>

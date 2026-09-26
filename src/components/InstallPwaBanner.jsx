@@ -125,7 +125,7 @@ export function InstallPwaBanner({ onVisibilityChange } = {}) {
           <button
             type="button"
             onClick={handleDismiss}
-            className="text-blue-300 hover:text-slate-100 p-1 rounded-lg hover:bg-white/10 transition-colors shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center"
+            className="text-blue-300 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center"
             aria-label="Dismiss banner"
           >
             <X className="w-4 h-4" aria-hidden="true" />
@@ -150,7 +150,7 @@ export function InstallPwaBanner({ onVisibilityChange } = {}) {
             type="button"
             onClick={handleDismiss}
             aria-label={isRTL ? 'לא עכשיו' : 'Not now'}
-            className="px-3 py-2 text-xs font-medium text-blue-200 hover:text-slate-100 hover:bg-white/10 rounded-xl transition-colors cursor-pointer min-h-[48px]"
+            className="px-3 py-2 text-xs font-medium text-blue-200 hover:text-white hover:bg-white/10 rounded-xl transition-colors cursor-pointer min-h-[48px]"
           >
             {isRTL ? 'לא עכשיו' : 'Not now'}
           </button>

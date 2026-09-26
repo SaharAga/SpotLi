@@ -147,7 +147,7 @@ export function LegalConsentGate({ onShowToast }) {
               </span>
             </label>
 
-            <label className="flex items-start gap-2.5 p-3 rounded-xl bg-blue-950/20 border border-blue-500/20 cursor-pointer min-h-[48px]">
+            <label className="flex items-start gap-2.5 p-3 rounded-xl bg-blue-500/10 dark:bg-blue-950/20 border border-blue-500/20 cursor-pointer min-h-[48px]">
               <input
                 type="checkbox"
                 checked={aiOptIn}
