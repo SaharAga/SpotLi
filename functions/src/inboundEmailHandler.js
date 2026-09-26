@@ -19,6 +19,7 @@ import {
   inferDeliveryStatus,
   shouldAdvanceStatus
 } from './trackingExtraction.js';
+import { parseIngestionRecipient, resolveIngestionRecipient } from './ingestionToken.js';
 
 export { sanitizeEmailHtml, extractTrackingDetails, extractAllTrackingDetails, inferDeliveryStatus, shouldAdvanceStatus };
 
@@ -48,32 +49,16 @@ export function safeCompareTokens(a, b) {
  * @param {string} toAddress
  * @returns {string|null}
  */
+/**
+ * Legacy uid extraction, kept for callers/tests of the old address format.
+ * Authorization now goes through resolveIngestionRecipient (ingestionToken.js).
+ */
 export function extractUserIdFromToAddress(toAddress) {
-  if (typeof toAddress !== 'string') return null;
-
-  // 1. Check for plus-addressing (e.g. 233b362d7b331adfde6e+usr_abc123@cloudmailin.net)
-  const plusMatch = toAddress.match(/\+(?:usr_)?([a-zA-Z0-9_-]+)@/i);
-  if (plusMatch && plusMatch[1]) {
-    const cleanId = plusMatch[1].split('_')[0];
-    if (cleanId && cleanId.length >= 3) return cleanId;
-  }
-
-  // 2. Check for direct subdomain pattern (e.g. usr_abc123@in.spotliapp.com or abc123.pkg@spotliapp.com)
-  const emailMatch = toAddress.match(/([a-zA-Z0-9_-]+)(?:\.pkg)?@(?:in\.)?(?:spotliapp\.com|deliveree\.app|cloudmailin\.net)/i);
-  if (!emailMatch) return null;
-
-  const localPart = emailMatch[1];
-  // Strip usr_ prefix if present
-  const userId = localPart.startsWith('usr_') ? localPart.slice(4) : localPart;
-  const cleanUserId = userId.split('_')[0];
-  return cleanUserId && cleanUserId.length >= 3 ? cleanUserId : null;
+  const parsed = parseIngestionRecipient(toAddress);
+  return parsed?.kind === 'uid' ? parsed.value : null;
 }
 
-/**
- * Creates the inbound email HTTP handler.
- * @param {{ db: any, webhookToken?: string }} deps
- */
-export function createInboundEmailHandler({ db, webhookToken }) {
+export function createInboundEmailHandler({ db, webhookToken, resolveRecipient = resolveIngestionRecipient }) {
   return async function handleInboundEmail(req, res) {
     // Only accept POST requests
     if (req.method !== 'POST') {
@@ -123,7 +108,7 @@ export function createInboundEmailHandler({ db, webhookToken }) {
       const cleanText = (rawText && cleanHtml)
         ? `${rawText}\n\n${cleanHtml}`
         : (rawText || cleanHtml);
-      const userId = extractUserIdFromToAddress(to);
+      const userId = db ? await resolveRecipient({ db, toAddress: to }) : extractUserIdFromToAddress(to);
 
       if (!userId) {
         res.status(400).json({ error: 'Invalid or missing recipient ingestion token' });
@@ -263,7 +248,7 @@ export function createInboundEmailHandler({ db, webhookToken }) {
     } catch (err) {
       console.error('[InboundEmailHandler] Error processing email:', err);
       // Return 200 with error flag to prevent infinite webhook retries
-      res.status(200).json({ ok: false, error: err.message || 'Internal error' });
+      res.status(200).json({ ok: false, error: 'Internal error' });
     }
   };
 }

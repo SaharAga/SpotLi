@@ -30,6 +30,9 @@ import { buildTrackingPatch, normalizeNumber } from './scheduledTrackingRefresh.
  * @param {string} signature
  * @returns {boolean}
  */
+/** Users read per page while looking for holders of a tracking number. */
+export const USER_PAGE_SIZE = 100;
+
 export function safeCompareSignatures(calculated, signature) {
   if (typeof calculated !== 'string' || typeof signature !== 'string' || !calculated || !signature) {
     return false;
@@ -148,24 +151,35 @@ export function createTrack17WebhookHandler({
       if (!result.tracked) continue;
 
       try {
-        // Query users collection to find holders of this tracking number
-        const usersSnap = await db.collection('users').limit(100).get();
+        // Walk every user, a page at a time. This used to read only the
+        // first 100 users, so everyone after them silently never received
+        // webhook updates. A collection-group query on packages.trackingNumber
+        // would avoid the full walk, but needs a collection-group index that
+        // CI does not deploy (see docs/security-legal-review-2026-09-26.md).
+        let cursor = null;
+        do {
+          let usersQuery = db.collection('users').limit(USER_PAGE_SIZE);
+          if (cursor) usersQuery = usersQuery.startAfter(cursor);
+          const usersSnap = await usersQuery.get();
 
-        for (const userDoc of usersSnap.docs) {
-          const pkgSnap = await userDoc.ref.collection('packages')
-            .where('trackingNumber', '==', number)
-            .limit(5)
-            .get();
+          for (const userDoc of usersSnap.docs) {
+            const pkgSnap = await userDoc.ref.collection('packages')
+              .where('trackingNumber', '==', number)
+              .limit(5)
+              .get();
 
-          for (const pkgDoc of pkgSnap.docs) {
-            const pkg = pkgDoc.data();
-            const patch = buildTrackingPatch(pkg, result);
-            if (patch) {
-              await pkgDoc.ref.set(patch, { merge: true });
-              updatedCount += 1;
+            for (const pkgDoc of pkgSnap.docs) {
+              const pkg = pkgDoc.data();
+              const patch = buildTrackingPatch(pkg, result);
+              if (patch) {
+                await pkgDoc.ref.set(patch, { merge: true });
+                updatedCount += 1;
+              }
             }
           }
-        }
+
+          cursor = usersSnap.docs.length === USER_PAGE_SIZE ? usersSnap.docs[usersSnap.docs.length - 1] : null;
+        } while (cursor);
       } catch (err) {
         console.warn(`[track17Webhook] Error applying update for ${number}:`, err?.message);
       }

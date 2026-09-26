@@ -4,7 +4,8 @@ import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { copyToClipboard } from '../utils/clipboard';
 import {
-  getIngestionEmailAddress,
+  buildIngestionEmailAddress,
+  fetchIngestionToken,
   getConnectedServices,
   getGmailConnectionStatus,
   removeConnectedAccount,
@@ -27,6 +28,8 @@ export function IngestionGuideModal({
   
   const [copiedEmail, setCopiedEmail] = useState(false);
   const copyEmailTimerRef = useRef(null);
+  const [ingestionToken, setIngestionToken] = useState(null);
+  const [isRotatingAddress, setIsRotatingAddress] = useState(false);
   const [copiedFilter, setCopiedFilter] = useState(false);
   const copyFilterTimerRef = useRef(null);
   const [showQR, setShowQR] = useState(false);
@@ -90,6 +93,19 @@ export function IngestionGuideModal({
     }
   };
 
+  // The forwarding address carries a server-issued token, never the uid.
+  useEffect(() => {
+    if (!isOpen || !userUid) {
+      setIngestionToken(null);
+      return undefined;
+    }
+    let cancelled = false;
+    fetchIngestionToken()
+      .then((token) => { if (!cancelled) setIngestionToken(token); })
+      .catch((err) => console.warn('[IngestionGuideModal] Failed to load ingestion address:', err));
+    return () => { cancelled = true; };
+  }, [isOpen, userUid]);
+
   // Sync state whenever user ID changes or modal opens
   useEffect(() => {
     if (isOpen) {
@@ -125,9 +141,28 @@ export function IngestionGuideModal({
 
   const appOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://spotliapp.com';
   const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(appOrigin)}`;
-  const ingestionEmail = getIngestionEmailAddress(user);
+  const ingestionEmail = buildIngestionEmailAddress(ingestionToken);
+
+  const handleRotateAddress = async () => {
+    setIsRotatingAddress(true);
+    try {
+      const token = await fetchIngestionToken({ rotate: true });
+      setIngestionToken(token);
+      if (onShowToast) onShowToast(
+        language === 'he'
+          ? 'נוצרה כתובת חדשה. הכתובת הקודמת בוטלה — עדכנו את כללי ההעברה.'
+          : 'New address created. The old one no longer works — update your forwarding rules.',
+        'success'
+      );
+    } catch {
+      if (onShowToast) onShowToast(language === 'he' ? 'יצירת כתובת חדשה נכשלה' : 'Failed to create a new address', 'error');
+    } finally {
+      setIsRotatingAddress(false);
+    }
+  };
 
   const handleCopyEmail = async () => {
+    if (!ingestionEmail) return;
     const success = await copyToClipboard(ingestionEmail);
     if (success) {
       setCopiedEmail(true);
@@ -232,7 +267,8 @@ export function IngestionGuideModal({
         return;
       }
 
-      const activeIngestionEmail = getIngestionEmailAddress(currentUser);
+      const activeIngestionEmail = ingestionEmail || buildIngestionEmailAddress(await fetchIngestionToken());
+      if (!activeIngestionEmail) throw new Error(language === 'he' ? 'כתובת ההעברה אינה זמינה' : 'Forwarding address unavailable');
       const res = await requestOutlookForwardingSetup(activeIngestionEmail);
       setConnectedServicesState(getConnectedServices(currentUser));
 
@@ -575,11 +611,21 @@ export function IngestionGuideModal({
                   {language === 'he' ? 'כתובת ההעברה הייחודית שלך:' : 'Your Private Ingestion Address:'}
                 </span>
                 <span className="font-mono text-xs text-blue-400 font-semibold truncate block select-all">
-                  <bdi dir="ltr">{ingestionEmail}</bdi>
+                  <bdi dir="ltr">{ingestionEmail || '…'}</bdi>
                 </span>
               </div>
               <button
+                onClick={handleRotateAddress}
+                disabled={isRotatingAddress || !ingestionEmail}
+                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 min-h-[48px] disabled:opacity-50"
+                aria-label={language === 'he' ? 'צור כתובת העברה חדשה ובטל את הקודמת' : 'Create a new forwarding address and revoke the old one'}
+                title={language === 'he' ? 'כתובת חדשה' : 'New address'}
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isRotatingAddress ? 'animate-spin' : ''}`} />
+              </button>
+              <button
                 onClick={handleCopyEmail}
+                disabled={!ingestionEmail}
                 className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 min-h-[48px]"
                 aria-label={language === 'he' ? 'העתק כתובת אימייל פרטית' : 'Copy private ingestion email'}
               >

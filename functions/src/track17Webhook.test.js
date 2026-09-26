@@ -3,7 +3,8 @@ import crypto from 'node:crypto';
 import {
   verify17TrackSignature,
   normalize17TrackEvent,
-  createTrack17WebhookHandler
+  createTrack17WebhookHandler,
+  USER_PAGE_SIZE
 } from './track17Webhook.js';
 
 describe('track17Webhook', () => {
@@ -162,6 +163,47 @@ describe('track17Webhook', () => {
         }),
         { merge: true }
       );
+    });
+
+    it('reaches package holders beyond the first page of users', async () => {
+      const payloadObj = {
+        data: [{ number: 'CH10849201', track_info: { latest_status: { status: 'Delivered' }, tracking: { providers: [{ events: [] }] } } }]
+      };
+      const rawBody = JSON.stringify(payloadObj);
+      const signature = crypto.createHash('sha256').update(`${rawBody}/${secretKey}`).digest('hex');
+
+      const mockSet = vi.fn();
+      const users = Array.from({ length: USER_PAGE_SIZE * 2 + 5 }, (_, i) => {
+        const holdsPackage = i === USER_PAGE_SIZE * 2 + 3; // on the third page
+        return {
+          id: `u${i}`,
+          ref: {
+            collection: () => ({
+              where: () => ({
+                limit: () => ({
+                  get: async () => ({
+                    docs: holdsPackage
+                      ? [{ data: () => ({ status: 'in_transit', trackingNumber: 'CH10849201' }), ref: { set: mockSet } }]
+                      : []
+                  })
+                })
+              })
+            })
+          }
+        };
+      });
+      const page = (start) => ({
+        get: async () => ({ docs: users.slice(start, start + USER_PAGE_SIZE) }),
+        startAfter: (doc) => page(users.indexOf(doc) + 1)
+      });
+      const mockDb = { collection: () => ({ limit: () => page(0) }) };
+
+      const handler = createTrack17WebhookHandler({ db: mockDb, track17ApiKey: secretKey });
+      const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+      await handler({ method: 'POST', headers: { sign: signature }, body: payloadObj, rawBody }, res);
+
+      expect(mockSet).toHaveBeenCalledTimes(1);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ updated: 1 }));
     });
   });
 });

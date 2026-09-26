@@ -208,7 +208,7 @@ were affected:
 SpotLi supports two channels for automatic shipment tracking from emails:
 
 1. **Direct Inbound Email Gateway (`functions/src/inboundEmailHandler.js`)**:
-   - Every user gets a dedicated ingestion address (`233b362d7b331adfde6e+usr_<uid>@cloudmailin.net`).
+   - Every user gets a private, rotatable ingestion address (`233b362d7b331adfde6e+tok_<random token>@cloudmailin.net`); the token maps to the account only server-side (`ingestionTokens`), so the address never exposes the uid.
    - Inbound shipment emails sent or forwarded to this address trigger CloudMailin's webhook, which parses carrier tracking numbers and auto-saves packages to Firestore.
 
 2. **Gmail OAuth 2.0 & Real-Time Push Sync (`functions/src/gmail*`)**:

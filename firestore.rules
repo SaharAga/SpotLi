@@ -414,7 +414,12 @@ service cloud.firestore {
           'gmail_sync', 'pwa_install', 'share_target_import'
         ] &&
         request.resource.data.date is string &&
-        request.resource.data.date.matches('^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$');
+        request.resource.data.date.matches('^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$') &&
+        // The doc ID must be exactly {feature}_{identity}_{date}, as
+        // featureUsageService.js writes it. Without this, an anonymous
+        // client could create unlimited rows under arbitrary IDs and
+        // inflate the adoption counts (the rollup counts rows).
+        docId.matches('^' + request.resource.data.feature + '_[A-Za-z0-9-]{8,64}_' + request.resource.data.date + '$');
       allow read, delete: if false;
     }
 

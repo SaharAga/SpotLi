@@ -3,7 +3,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { onDocumentCreated, onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { defineSecret } from 'firebase-functions/params';
 import { initializeApp, getApps } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, FieldPath } from 'firebase-admin/firestore';
 import webpush from 'web-push';
 import { createParseWithAiHandler } from './handler.js';
 import { createInboundEmailHandler } from './inboundEmailHandler.js';
@@ -22,6 +22,8 @@ import { createScheduledTrackingRefreshHandler } from './scheduledTrackingRefres
 import { createRegisterTrackingNumberHandler } from './registerTrackingNumber.js';
 import { createTrack17WebhookHandler } from './track17Webhook.js';
 import { TRACKING_REFRESH_LIMITS } from './config.js';
+import { createDeleteAccountDataHandler } from './accountDeletion.js';
+import { createIngestionAddressHandler } from './ingestionToken.js';
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
 const track17ApiKey = defineSecret('TRACK17_API_KEY');
@@ -251,6 +253,41 @@ export const gmailDisconnect = onCall(
       db: getFirestore(),
       clientSecret: gmailOAuthClientSecret.value()
     })(request)
+);
+
+/**
+ * Server-side half of account deletion: disconnects Gmail and purges every
+ * uid-linked document the client cannot reach (push tokens, ingestion token,
+ * rate-limit counters, usage logs) plus the users/{uid} subtree. The client
+ * awaits this before deleting the Auth user — see accountDeletion.js.
+ */
+export const deleteAccountData = onCall(
+  {
+    secrets: [gmailOAuthClientSecret],
+    timeoutSeconds: 60,
+    memory: '256MiB'
+  },
+  (request) => {
+    const db = getFirestore();
+    return createDeleteAccountDataHandler({
+      db,
+      disconnectGmail: createGmailDisconnectHandler({ db, clientSecret: gmailOAuthClientSecret.value() }),
+      documentIdField: FieldPath.documentId()
+    })(request);
+  }
+);
+
+/**
+ * Returns (issuing on first use, or rotating on `{ rotate: true }`) the
+ * random token in the caller's inbound-email forwarding address — see
+ * ingestionToken.js for why the address no longer carries the uid.
+ */
+export const ingestionAddress = onCall(
+  {
+    timeoutSeconds: 15,
+    memory: '256MiB'
+  },
+  (request) => createIngestionAddressHandler({ db: getFirestore() })(request)
 );
 
 /**

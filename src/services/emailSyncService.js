@@ -8,16 +8,29 @@ export const LIVE_INBOUND_EMAIL_DOMAIN = 'cloudmailin.net';
 export const LIVE_INBOUND_INBOX_ID = '233b362d7b331adfde6e';
 
 /**
- * Derives a consistent, user-specific ingestion email address using the live receiving gateway.
- * @param {{ uid?: string } | null | undefined} user
- * @returns {string}
+ * Builds the user's private forwarding address from their ingestion token.
+ *
+ * The address used to embed the Firebase uid, which made the uid a bearer
+ * credential for writing into that user's package list. It now carries a
+ * random, rotatable token that only the server can map back to a uid (see
+ * functions/src/ingestionToken.js).
+ * @param {string | null | undefined} token
+ * @returns {string | null}
  */
-export function getIngestionEmailAddress(user) {
-  if (!user || !user.uid) {
-    return `${LIVE_INBOUND_INBOX_ID}@${LIVE_INBOUND_EMAIL_DOMAIN}`;
-  }
-  const cleanUid = String(user.uid).replace(/[^a-zA-Z0-9]/g, '');
-  return `${LIVE_INBOUND_INBOX_ID}+usr_${cleanUid}@${LIVE_INBOUND_EMAIL_DOMAIN}`;
+export function buildIngestionEmailAddress(token) {
+  if (typeof token !== 'string' || !/^[a-f0-9]{24}$/.test(token)) return null;
+  return `${LIVE_INBOUND_INBOX_ID}+tok_${token}@${LIVE_INBOUND_EMAIL_DOMAIN}`;
+}
+
+/**
+ * Fetches the signed-in user's ingestion token, issuing one on first use.
+ * @param {{ rotate?: boolean }} [options] rotate: revoke the current address and issue a new one
+ * @returns {Promise<string | null>}
+ */
+export async function fetchIngestionToken({ rotate = false } = {}) {
+  if (!isFirebaseConfigured || !auth?.currentUser || !functionsInstance) return null;
+  const result = await callFunction('ingestionAddress', rotate ? { rotate: true } : undefined);
+  return result?.token || null;
 }
 
 /**

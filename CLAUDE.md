@@ -114,6 +114,21 @@ accidentally committed secrets (`scripts/pre_commit_secrets_check.js`). Don't by
 - **Legal consent**: `LegalConsentGate` blocks any signed-in user whose stored
   `legalAcceptedVersion` doesn't match `LEGAL_VERSION` (`src/constants/legal.js`). Bump
   `LEGAL_VERSION` whenever the ToU/Privacy Policy substance changes to re-prompt everyone.
+  The legal text exists twice — `src/constants/legal.js` (in-app) and `public/privacy.html`,
+  `terms.html`, `accessibility.html` (public pages, also what Google's OAuth review reads) —
+  in Hebrew and English; change all of them together. When code starts sending data somewhere
+  new or storing something new, the Privacy Policy must say so (see
+  `docs/security-legal-review-2026-09-26.md` for the last code-vs-text audit).
+- **Account deletion**: the client calls the `deleteAccountData` Cloud Function
+  (`functions/src/accountDeletion.js`) *before* deleting the Auth user, and aborts if it fails.
+  It disconnects Gmail and purges uid-linked data the client can't reach. Any new collection
+  that stores a uid (in a field or a doc ID) must be added to its lists, or deletion silently
+  leaves it behind.
+- **Inbound-email address**: `<inbox>+tok_<token>@cloudmailin.net`, where the token maps to a
+  uid only server-side (`ingestionTokens`, `functions/src/ingestionToken.js`) and the user can
+  rotate it. Never put the uid in the address — the uid used to be a bearer credential for
+  writing into someone's package list. Legacy uid addresses are honoured only for users who
+  have never been issued a token.
 - **App Check**: optional (`VITE_RECAPTCHA_V3_SITE_KEY`); when unset, `src/services/firebase.js`
   simply never initializes it. It's what allows `/feedback` to accept unauthenticated writes
   safely — see README "Abuse protection" for the enable sequence (must stay in that order:
