@@ -1817,7 +1817,7 @@ export function DashboardContent() {
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 text-[11px] font-bold uppercase tracking-wide">
+                            <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-400/30 text-[11px] font-bold uppercase tracking-wide">
                               {t('locationBundling.dashboardBannerTitle')}
                             </span>
                             <span className="text-xs font-bold text-slate-200">
@@ -1836,7 +1836,7 @@ export function DashboardContent() {
                                 >
                                   <span className="truncate max-w-[130px] font-semibold">{title}</span>
                                   {p.pickupCode && (
-                                    <span className="font-mono text-emerald-400 font-bold text-[11px]">
+                                    <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">
                                       PIN: {p.pickupCode}
                                     </span>
                                   )}
@@ -1988,7 +1988,7 @@ export function DashboardContent() {
                       className="w-full flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-slate-900/40 hover:bg-slate-900/70 border border-slate-800/80 hover:border-slate-700/80 transition-all cursor-pointer min-h-[48px] focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none"
                     >
                       <div className="flex items-center gap-2.5">
-                        <div className="w-6 h-6 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                        <div className="w-6 h-6 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                           <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
                         </div>
                         <span className="text-xs font-bold text-slate-200">

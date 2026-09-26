@@ -178,7 +178,7 @@ export function AboutModal({
                 <h2 id="about-modal-title" className="text-base sm:text-lg font-black tracking-tight text-slate-100">
                   {t('appTitle')}
                 </h2>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-bold border border-blue-500/30 uppercase tracking-wider">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-700 dark:text-blue-300 font-bold border border-blue-500/30 uppercase tracking-wider">
                   <bdi dir="ltr">v{APP_VERSION}</bdi>
                 </span>
               </div>
@@ -214,7 +214,7 @@ export function AboutModal({
                 <span className="text-xs text-slate-400">
                   <bdi dir="ltr">({RELEASE_DATE})</bdi>
                 </span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 uppercase font-semibold">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30 uppercase font-semibold">
                   <bdi dir="ltr">{BUILD_CHANNEL}</bdi>
                 </span>
               </div>
@@ -283,7 +283,7 @@ export function AboutModal({
           <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/90 space-y-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4 text-emerald-400" />
+                <Activity className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
                   {language === 'he' ? (
                     <>
@@ -301,10 +301,10 @@ export function AboutModal({
                     dir="ltr"
                     className={`text-xs px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1 shrink-0 ${
                       bistResult.status === 'PASS'
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                        ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
                         : bistResult.status === 'WARN'
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                        : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                        ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+                        : 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30'
                     }`}
                   >
                     {bistResult.status === 'PASS' && <CheckCircle2 className="w-3 h-3" />}
@@ -322,7 +322,7 @@ export function AboutModal({
                 disabled={isRunningBist}
                 className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 font-bold text-xs border border-slate-700 transition-ui cursor-pointer min-h-[48px]"
               >
-                <Activity className={`w-3.5 h-3.5 ${isRunningBist ? 'animate-pulse text-emerald-400' : 'text-blue-400'}`} />
+                <Activity className={`w-3.5 h-3.5 ${isRunningBist ? 'animate-pulse text-emerald-600 dark:text-emerald-400' : 'text-blue-400'}`} />
                 <span>
                   {isRunningBist
                     ? (language === 'he' ? 'מבצע בדיקה...' : 'Testing...')
@@ -341,9 +341,9 @@ export function AboutModal({
                     <div className="space-y-0.5 min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 min-w-0">
                         {check.status === 'PASS' ? (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                         ) : check.status === 'WARN' ? (
-                          <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
                         ) : (
                           <XCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
                         )}
@@ -358,9 +358,9 @@ export function AboutModal({
                     <span
                       className={`text-xs px-1.5 py-0.5 rounded font-mono font-bold shrink-0 ${
                         check.status === 'PASS'
-                          ? 'bg-emerald-500/15 text-emerald-400'
+                          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
                           : check.status === 'WARN'
-                          ? 'bg-amber-500/15 text-amber-400'
+                          ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
                           : 'bg-rose-500/15 text-rose-400'
                       }`}
                     >
@@ -375,12 +375,12 @@ export function AboutModal({
           {/* Section 3: Privacy & Security Architecture Badges */}
           <div>
             <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider mb-2.5 flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>{language === 'he' ? 'ארכיטקטורת אבטחה ופרטיות' : 'Privacy & Security Standards'}</span>
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               <div className="p-3 bg-slate-950/60 border border-emerald-500/20 rounded-2xl flex items-start gap-2.5">
-                <div className="p-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 shrink-0">
+                <div className="p-1.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
                   <Award className="w-4 h-4" />
                 </div>
                 <div>
@@ -452,7 +452,7 @@ export function AboutModal({
           {/* Section 5: Release Highlights */}
           <div>
             <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider mb-2.5 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-400" />
+              <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
               <span>
                 {language === 'he' ? (
                   <>
@@ -467,7 +467,7 @@ export function AboutModal({
             </h3>
             <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2 text-xs">
               <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                 <span className="text-slate-300">
                   {language === 'he'
                     ? 'בדיקת תקינות מערכת (BIST) אינטראקטיבית בזמן אמת לאחסון מקומי, זיהוי ספקים ומגבלות זיכרון.'
@@ -475,7 +475,7 @@ export function AboutModal({
                 </span>
               </div>
               <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                 <span className="text-slate-300">
                   {language === 'he'
                     ? 'סנכרון ענן בזמן אמת עם Firebase Firestore ואבטחת נתונים לפי משתמש.'
@@ -483,7 +483,7 @@ export function AboutModal({
                 </span>
               </div>
               <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                 <span className="text-slate-300">
                   {language === 'he'
                     ? 'תמיכה ב-13+ ספקי שילוח ישראליים ובינלאומיים (דואר ישראל, צ\'יטה, HFD, בוקסיט, קאיניאו, DHL, FedEx ועוד).'
@@ -491,7 +491,7 @@ export function AboutModal({
                 </span>
               </div>
               <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                 <span className="text-slate-300">
                   {language === 'he'
                     ? 'זיהוי חכם והדבקה מהירה של מספרי מעקב מתוך הודעות SMS ואימייל עם קריאת לוח אוטומטית.'
@@ -499,7 +499,7 @@ export function AboutModal({
                 </span>
               </div>
               <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                 <span className="text-slate-300">
                   {language === 'he'
                     ? 'תמיכה מלאה בהתקנת PWA ומעקב לא מקוון במובייל ודסקטופ עם ארגונומיית מגע מלאה (48px+).'
@@ -545,7 +545,7 @@ export function AboutModal({
           <button
             type="button"
             onClick={onOpenFeedback}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 font-bold text-xs transition-ui cursor-pointer min-h-[48px] w-full sm:w-auto"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-700 dark:text-purple-300 border border-purple-500/30 font-bold text-xs transition-ui cursor-pointer min-h-[48px] w-full sm:w-auto"
           >
             <Heart className="w-4 h-4 text-purple-400 fill-purple-400/20" />
             <span>{language === 'he' ? 'שלח משוב ❤️' : 'Send Feedback ❤️'}</span>

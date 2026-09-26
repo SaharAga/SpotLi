@@ -39,6 +39,57 @@ const SOURCE_GLOB = 'src/**/*.jsx';
 const NON_INVERTING_SURFACE =
   /bg-(gradient|blue|indigo|emerald|rose|red|amber|orange|purple|violet|green|teal|cyan|sky|pink|fuchsia|yellow|lime)\b|bg-white\/|bg-black\/|from-|via-|to-/;
 
+/**
+ * Pale ink from a family the light theme does NOT remap.
+ *
+ * `.light` only redefines slate (inverted) and the blue/indigo/purple accent
+ * scales. Emerald, amber, rose and the rest keep their dark-theme values, so
+ * `text-emerald-300` is a pastel on a near-white panel in light mode — the
+ * PIN chip, the "Out for delivery" badge and every status tint shipped that
+ * way. The remapped accents are retuned but keep their lightness order, so
+ * their 100-300 are still pastels on white too. Each needs a light-mode shade with the pale one moved behind `dark:`.
+ * Amber/emerald/cyan and friends are pale enough to fail at 400 as well.
+ */
+const PALE_UNREMAPPED_INK =
+  /(?<![:\w-])text-(?:(?:emerald|amber|rose|orange|cyan|teal|green|yellow|red|sky|lime|pink|fuchsia|violet|blue|indigo|purple)-(?:50|100|200|300)|(?:emerald|amber|cyan|teal|green|yellow|lime|sky)-400)(?![\w/-])/;
+
+/**
+ * Grounds that stay dark in light mode, so pale ink on them is correct: a
+ * solid saturated fill, a gradient, or a near-black tint at high opacity
+ * (the toasts).
+ */
+const DARK_IN_BOTH_THEMES =
+  /(?<![:\w-])(?:bg|from)-(?:emerald|amber|rose|orange|cyan|teal|green|yellow|red|sky|lime|pink|fuchsia|violet|blue|indigo|purple)-(?:500|600|700|800|900|950)(?![\w/])|(?<![:\w-])(?:bg|from)-\w+-9[05]0\/[5-9]0/;
+
+/** Pale ink that is correct because its ground (on an ancestor) stays dark. */
+const PALE_INK_ALLOWLIST = [
+  {
+    file: 'src/components/Toast.jsx',
+    classes: 'w-5 h-5 text-emerald-400 shrink-0',
+    why: 'success icon on the bg-emerald-950/80 toast — dark in both themes'
+  },
+  {
+    file: 'src/components/InstallPwaBanner.jsx',
+    classes: 'text-blue-300 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center',
+    why: 'dismiss button on the from-blue-900/90 banner — dark in both themes'
+  },
+  {
+    file: 'src/components/InstallPwaBanner.jsx',
+    classes: 'px-3 py-2 text-xs font-medium text-blue-200 hover:text-white hover:bg-white/10 rounded-xl transition-colors cursor-pointer min-h-[48px]',
+    why: '"Not now" on the from-blue-900/90 banner — dark in both themes'
+  },
+  {
+    file: 'src/App.jsx',
+    classes: 'w-4 h-4 animate-spin text-blue-200',
+    why: 'spinner in the from-blue-600 update toast — dark in both themes'
+  },
+  {
+    file: 'src/components/FilterBar.jsx',
+    classes: 'text-blue-100',
+    why: 'count inside the active status chip, whose ground is bg-blue-600'
+  }
+];
+
 /** Utilities Tailwind v4 removed. They emit nothing; the style silently vanishes. */
 const REMOVED_IN_V4 = [
   [/\b(?:bg|text|border|ring|placeholder|divide)-opacity-\d+\b/, 'opacity modifier — use the color/NN syntax, e.g. bg-slate-900/10'],
@@ -161,6 +212,34 @@ describe('theme + Tailwind class contract', () => {
 
     // A stale exemption is its own bug: it silently re-permits the mistake the
     // day someone reuses that class string.
+    const stale = [...allowed].filter((k) => !seen.has(k));
+    expect(stale, `Allowlist entries no longer match any code:\n${stale.join('\n')}`).toEqual([]);
+  });
+
+  it('pairs pale ink from a non-remapped family with a light-mode shade', () => {
+    const allowed = new Set(
+      PALE_INK_ALLOWLIST.map((e) => `${e.file}::${e.classes.replace(/\s+/g, ' ').trim()}`)
+    );
+    const seen = new Set();
+    const offences = [];
+    for (const file of [...sourceFiles(), 'src/types/stages.js']) {
+      const source = readFileSync(join(REPO_ROOT, file), 'utf8');
+      for (const { line, value } of classStrings(source)) {
+        const hit = value.match(PALE_UNREMAPPED_INK);
+        if (!hit) continue;
+        if (DARK_IN_BOTH_THEMES.test(value)) continue;
+        const key = `${file}::${value.replace(/\s+/g, ' ').trim()}`;
+        seen.add(key);
+        if (allowed.has(key)) continue;
+        offences.push(
+          `${file}:${line}  ${hit[0]}\n` +
+            '    Not remapped by .light, so this is pastel-on-white in light mode.\n' +
+            '    Use a 600-800 shade and keep this one as dark:, e.g. text-emerald-700 dark:text-emerald-300.'
+        );
+      }
+    }
+    expect(offences, `\n${offences.join('\n\n')}`).toEqual([]);
+
     const stale = [...allowed].filter((k) => !seen.has(k));
     expect(stale, `Allowlist entries no longer match any code:\n${stale.join('\n')}`).toEqual([]);
   });

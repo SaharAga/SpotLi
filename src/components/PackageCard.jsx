@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Copy, Check, MoreVertical, Pin, Archive, Trash2, Edit3,
   Calendar, CheckCircle, ArrowUpRight, RefreshCw, Loader2, Package,
@@ -37,12 +38,16 @@ function PackageCardImpl({
   const copyTrackingTimerRef = useRef(null);
   const copyPinTimerRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  // The row menu opens downward by default. On the last cards in a list that
-  // put it under the bottom tab bar, so on open we measure the space actually
-  // left below the trigger and flip upward when the menu would not fit.
-  const [menuFlipUp, setMenuFlipUp] = useState(false);
+  // The row menu is portalled and fixed-positioned rather than absolute
+  // inside the card. Inside the card it lived in the list's stacking context,
+  // so the sticky header, the bottom tab bar and the Feedback FAB were all
+  // drawn over it — and a flip decision based on a guessed height (250px for
+  // a menu that is up to 344px) still pushed items under one of them. Now it
+  // is measured after render and placed in the band between the header and
+  // the tab bar that is actually visible.
+  const [menuPos, setMenuPos] = useState(null);
   const menuTriggerRef = useRef(null);
-  const MENU_HEIGHT = 250;
+  const menuRef = useRef(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Mobile Swipe Gesture State
@@ -224,17 +229,76 @@ function PackageCardImpl({
     }
   };
 
+  // Place the open menu once it has rendered and can be measured.
+  useLayoutEffect(() => {
+    if (!menuOpen) {
+      setMenuPos(null);
+      return;
+    }
+    const trigger = menuTriggerRef.current;
+    const menu = menuRef.current;
+    if (!trigger || !menu) return;
+    const GAP = 6;
+    const EDGE = 8;
+    const rect = trigger.getBoundingClientRect();
+    const header = document.querySelector('header');
+    const bottomNav = document.querySelector('nav.fixed.bottom-0');
+    const safeTop = Math.max(0, header ? header.getBoundingClientRect().bottom : 0) + EDGE;
+    const navTop = bottomNav ? bottomNav.getBoundingClientRect().top : window.innerHeight;
+    const safeBottom = Math.min(window.innerHeight, navTop > 0 ? navTop : window.innerHeight) - EDGE;
+    const height = menu.scrollHeight;
+    const spaceBelow = safeBottom - (rect.bottom + GAP);
+    const spaceAbove = rect.top - GAP - safeTop;
+    let top;
+    let maxHeight;
+    if (height <= spaceBelow) {
+      top = rect.bottom + GAP;
+    } else if (height <= spaceAbove) {
+      top = rect.top - GAP - height;
+    } else if (spaceBelow >= spaceAbove) {
+      top = rect.bottom + GAP;
+      maxHeight = Math.max(96, spaceBelow);
+    } else {
+      maxHeight = Math.max(96, spaceAbove);
+      top = rect.top - GAP - maxHeight;
+    }
+    const width = menu.offsetWidth;
+    // Aligned to the trigger's inline-end edge, as the absolute menu was.
+    const rawLeft = isRTL ? rect.left : rect.right - width;
+    const left = Math.min(Math.max(EDGE, rawLeft), window.innerWidth - width - EDGE);
+    setMenuPos({ top, left, maxHeight });
+  }, [menuOpen, isRTL]);
+
+  // A fixed menu would drift away from its card on scroll or resize, so
+  // either closes it — the same contract as a native context menu.
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const close = (e) => {
+      // The menu's own scroll (when it is height-capped) is not a page scroll.
+      if (e?.target instanceof Node && menuRef.current?.contains(e.target)) return;
+      setMenuOpen(false);
+    };
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setMenuOpen(false);
+        menuTriggerRef.current?.focus();
+      }
+    };
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [menuOpen]);
+
   const itemTitle = (language === 'he' && pkg.titleHe) ? pkg.titleHe : pkg.title;
   const stage = getStatusMeta(pkg.status);
 
   return (
-    <div
-      /* z-50, not z-30: this element creates a stacking context while the
-         menu is open, so the menu's own z-50 is scoped INSIDE it and cannot
-         escape. At z-30 the whole card-plus-menu sat below the install banner
-         and the bottom nav (both z-40), and the menu was drawn behind them. */
-      className={`relative rounded-2xl transition-ui ${menuOpen ? 'z-50' : 'z-0'}`}
-    >
+    <div className="relative z-0 rounded-2xl transition-ui">
       {/* Swipe Action Background Track (Email-box style revealed actions) */}
       {(isSwiping || swipeOffset !== 0) && (
         <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none flex items-center justify-between">
@@ -333,9 +397,9 @@ function PackageCardImpl({
             aria-hidden="true"
             className={`relative w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
               pkg.status === 'delivered'
-                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
                 : pkg.status === 'ready_for_pickup' || pkg.status === 'out_for_delivery'
-                  ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
                   : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
             }`}
           >
@@ -355,14 +419,17 @@ function PackageCardImpl({
           </div>
 
           <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-2">
-              <h3 className="text-[15px] font-semibold text-slate-100 group-hover:text-blue-400 transition-colors line-clamp-2 leading-snug">
+            {/* Wraps: a long status badge ("Out for Delivery / Pickup") used to
+                squeeze the title to a sliver ("A very…", "Packag / 12"). The
+                title keeps at least ~9rem and the badge drops below it. */}
+            <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+              <h3 className="min-w-0 flex-1 basis-36 text-[15px] font-semibold text-slate-100 group-hover:text-blue-400 transition-colors line-clamp-2 leading-snug">
                 {itemTitle}
               </h3>
               
-              <div className="shrink-0 flex items-center gap-1.5 ms-2">
+              <div className="shrink-0 flex items-center gap-1.5">
                 {pkg.isDemo && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30">
                     {t('firstTimeEmpty.demoBadge')}
                   </span>
                 )}
@@ -412,7 +479,7 @@ function PackageCardImpl({
             {pkg.customsDetails?.required && pkg.customsDetails?.status !== 'paid' && (
               <span
                 title={language === 'he' ? 'נדרש תשלום מכס' : 'Customs payment required'}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-500/25 text-xs font-semibold"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/25 text-xs font-semibold"
               >
                 <span>{language === 'he' ? 'מכס' : 'Customs'}</span>
               </span>
@@ -420,7 +487,7 @@ function PackageCardImpl({
             {pkg.localCarrier && pkg.localCarrier !== pkg.carrier && getCarrier(pkg.carrier).country !== 'Israel' && (
               <span
                 title={language === 'he' ? `הועבר לחלוקה מקומית: ${getCarrier(pkg.localCarrier).hebrewName} (${pkg.localTrackingNumber || ''})` : `Domestic handover: ${getCarrier(pkg.localCarrier).name}`}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-cyan-500/15 text-cyan-300 border border-cyan-500/25 text-xs font-medium"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/25 text-xs font-medium"
               >
                 <span>➔ {language === 'he' ? getCarrier(pkg.localCarrier).hebrewName : getCarrier(pkg.localCarrier).name}</span>
               </span>
@@ -430,7 +497,7 @@ function PackageCardImpl({
 
         {/* Digital Pickup Pass Widget: when pickup info, PIN, or locker location is active */}
         {(pkg.pickupLocation || pkg.pickupCode || pkg.shelfNumber || pkg.isRedirected) && (
-          <div className="rounded-2xl bg-gradient-to-br from-emerald-950/30 via-slate-950/60 to-slate-950/80 border border-emerald-500/20 p-3 flex flex-col gap-2.5 shadow-inner">
+          <div className="rounded-2xl bg-gradient-to-br from-emerald-500/10 via-slate-950/60 to-slate-950/80 border border-emerald-500/20 p-3 flex flex-col gap-2.5 shadow-inner">
             {(pkg.pickupCode || pkg.shelfNumber || pkg.isRedirected) && (
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 {pkg.pickupCode && (
@@ -444,13 +511,13 @@ function PackageCardImpl({
                         }}
                         title={language === 'he' ? 'פתח מצב לוקר מוגדל' : 'Open Full-Screen Locker Mode'}
                         aria-label={language === 'he' ? `פתח מצב לוקר — PIN ${pkg.pickupCode}` : `Open Locker Mode — PIN ${pkg.pickupCode}`}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 hover:bg-emerald-500/20 text-emerald-200 transition-colors cursor-pointer min-h-[44px]"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 transition-colors cursor-pointer min-h-[44px]"
                       >
-                        <Sun className="w-4 h-4 text-amber-400 shrink-0" aria-hidden="true" />
+                        <Sun className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
                         <span className="font-bold text-sm tracking-wider">PIN {pkg.pickupCode}</span>
                       </button>
                     ) : (
-                      <span className="px-3 py-1.5 text-emerald-200 font-bold text-sm tracking-wider min-h-[44px] flex items-center">
+                      <span className="px-3 py-1.5 text-emerald-800 dark:text-emerald-200 font-bold text-sm tracking-wider min-h-[44px] flex items-center">
                         PIN {pkg.pickupCode}
                       </span>
                     )}
@@ -458,11 +525,11 @@ function PackageCardImpl({
                       type="button"
                       onClick={handleCopyPin}
                       title={language === 'he' ? 'העתק קוד איסוף' : 'Copy pickup PIN'}
-                      className="px-2.5 py-1.5 hover:bg-emerald-500/20 border-s border-emerald-500/30 text-emerald-300 hover:text-white transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center active:scale-95"
+                      className="px-2.5 py-1.5 hover:bg-emerald-500/20 border-s border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:text-white transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center active:scale-95"
                       aria-label={language === 'he' ? 'העתק קוד איסוף' : 'Copy pickup PIN'}
                     >
                       {copiedPin ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-400 scale-110 transition-transform duration-200" aria-hidden="true" />
+                        <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 scale-110 transition-transform duration-200" aria-hidden="true" />
                       ) : (
                         <Copy className="w-3.5 h-3.5 transition-transform duration-200" aria-hidden="true" />
                       )}
@@ -474,7 +541,7 @@ function PackageCardImpl({
                   {pkg.shelfNumber && (
                     <span
                       title={language === 'he' ? `מספר מדף: ${pkg.shelfNumber}` : `Shelf number: ${pkg.shelfNumber}`}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/25 font-mono text-xs font-semibold"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/25 font-mono text-xs font-semibold"
                     >
                       <span>{language === 'he' ? 'מדף' : 'Shelf'} {pkg.shelfNumber}</span>
                     </span>
@@ -482,9 +549,9 @@ function PackageCardImpl({
                   {pkg.isRedirected && (
                     <span
                       title={language === 'he' ? 'חברת השילוח העבירה את החבילה לנקודה חלופית' : 'Package was redirected to an alternate pickup location'}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/25 text-xs font-semibold"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/25 text-xs font-semibold"
                     >
-                      <AlertTriangle className="w-3.5 h-3.5 text-amber-400" aria-hidden="true" />
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" aria-hidden="true" />
                       <span>{t('redirectDetection.badge')}</span>
                     </span>
                   )}
@@ -502,10 +569,10 @@ function PackageCardImpl({
                   className="flex-1 min-w-0 flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl hover:bg-slate-900/90 hover:text-emerald-300 transition-colors cursor-pointer min-h-[48px] text-start group/nav"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <MapPin className="w-4 h-4 text-emerald-400 shrink-0 group-hover/nav:scale-110 transition-transform" aria-hidden="true" />
+                    <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 group-hover/nav:scale-110 transition-transform" aria-hidden="true" />
                     <span className="truncate text-xs font-medium text-slate-200">{pkg.pickupLocation}</span>
                   </div>
-                  <span className="p-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 group-hover/nav:bg-emerald-500/25 transition-colors flex items-center gap-1 text-[11px] font-semibold shrink-0">
+                  <span className="p-1.5 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 group-hover/nav:bg-emerald-500/25 transition-colors flex items-center gap-1 text-[11px] font-semibold shrink-0">
                     <Navigation className="w-3.5 h-3.5 rtl:rotate-180" aria-hidden="true" />
                     <span className="hidden sm:inline">{language === 'he' ? 'נווט' : 'Navigate'}</span>
                   </span>
@@ -519,7 +586,7 @@ function PackageCardImpl({
                       triggerHapticFeedback('selection');
                       if (onOpenLockerMode) onOpenLockerMode(pkg);
                     }}
-                    className="px-3 py-2 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 text-xs font-semibold transition-colors cursor-pointer min-h-[48px] flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 shrink-0"
+                    className="px-3 py-2 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 text-xs font-semibold transition-colors cursor-pointer min-h-[48px] flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 shrink-0"
                     aria-label={
                       language === 'he'
                         ? `עוד ${sameLocationSiblings.length} חבילות באותה נקודה. פתח מסך איסוף מרוכז.`
@@ -531,7 +598,7 @@ function PackageCardImpl({
                         : `Open bundled pickup screen for ${sameLocationSiblings.length + 1} packages`
                     }
                   >
-                    <Layers className="w-3.5 h-3.5 text-indigo-300" aria-hidden="true" />
+                    <Layers className="w-3.5 h-3.5 text-indigo-700 dark:text-indigo-300" aria-hidden="true" />
                     <span>{language === 'he' ? `עוד ${sameLocationSiblings.length} כאן` : `+${sameLocationSiblings.length} here`}</span>
                   </button>
                 )}
@@ -581,10 +648,10 @@ function PackageCardImpl({
         {pkg.status !== 'delivered' && pickupCountdown.hasDeadline && (
           <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border ${
             pickupCountdown.urgency === 'critical' || pickupCountdown.urgency === 'expired'
-              ? 'bg-rose-500/15 text-rose-300 border-rose-500/25'
+              ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/25'
               : pickupCountdown.urgency === 'warning'
-                ? 'bg-amber-500/15 text-amber-300 border-amber-500/25'
-                : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25'
+                ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/25'
+                : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/25'
           }`}>
             <Clock className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
             <span className="truncate">{language === 'he' ? pickupCountdown.formattedHe : pickupCountdown.formattedEn}</span>
@@ -594,10 +661,10 @@ function PackageCardImpl({
         {pkg.status === 'delivered' && returnCountdown.hasDeadline && (
           <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border ${
             returnCountdown.urgency === 'critical' || returnCountdown.urgency === 'expired'
-              ? 'bg-rose-500/15 text-rose-300 border-rose-500/25'
+              ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/25'
               : returnCountdown.urgency === 'warning'
-                ? 'bg-amber-500/15 text-amber-300 border-amber-500/25'
-                : 'bg-blue-500/15 text-blue-300 border-blue-500/25'
+                ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/25'
+                : 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/25'
           }`}>
             <RotateCcw className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
             <span className="truncate">{language === 'he' ? returnCountdown.formattedHe : returnCountdown.formattedEn}</span>
@@ -612,7 +679,7 @@ function PackageCardImpl({
             {daysInfo && pkg.status !== 'delivered' && (
               <span
                 className={`shrink-0 text-xs px-2 py-0.5 rounded-md font-semibold ${
-                  daysInfo.isUrgent ? 'bg-amber-500/15 text-amber-300 border border-amber-500/25' : 'bg-slate-800/80 text-slate-400'
+                  daysInfo.isUrgent ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/25' : 'bg-slate-800/80 text-slate-400'
                 }`}
               >
                 {daysInfo.text}
@@ -629,7 +696,7 @@ function PackageCardImpl({
                 title={t('card.refreshStatus')}
                 aria-label={t('card.refreshStatus')}
                 className={`p-2 rounded-xl text-slate-400 hover:text-emerald-400 hover:bg-slate-800 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer ${
-                  isRefreshing ? 'animate-spin text-emerald-400' : ''
+                  isRefreshing ? 'animate-spin text-emerald-600 dark:text-emerald-400' : ''
                 }`}
               >
                 {isRefreshing ? <Loader2 className="w-4 h-4" aria-hidden="true" /> : <RefreshCw className="w-4 h-4" aria-hidden="true" />}
@@ -642,7 +709,7 @@ function PackageCardImpl({
               aria-label={pkg.status === 'delivered' ? t('card.markActive') : t('card.markDelivered')}
               title={pkg.status === 'delivered' ? t('card.markActive') : t('card.markDelivered')}
               className={`p-2 rounded-xl transition-all duration-150 active:scale-90 active:rotate-[-6deg] min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer ${
-                pkg.status === 'delivered' ? 'text-emerald-400 bg-emerald-500/15 border border-emerald-500/25' : 'text-slate-400 hover:text-emerald-400 hover:bg-slate-800'
+                pkg.status === 'delivered' ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 border border-emerald-500/25' : 'text-slate-400 hover:text-emerald-400 hover:bg-slate-800'
               }`}
             >
               <CheckCircle className={`w-4 h-4 ${pkg.status === 'delivered' ? 'fill-emerald-400/20' : ''}`} aria-hidden="true" />
@@ -654,13 +721,6 @@ function PackageCardImpl({
                 ref={menuTriggerRef}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (!menuOpen && menuTriggerRef.current) {
-                    const { bottom } = menuTriggerRef.current.getBoundingClientRect();
-                    // 96px keeps it clear of the bottom tab bar and the home
-                    // indicator inset, which is the space the menu used to
-                    // disappear into.
-                    setMenuFlipUp(window.innerHeight - bottom < MENU_HEIGHT + 96);
-                  }
                   setMenuOpen(!menuOpen);
                 }}
                 aria-label={t('card.moreActions')}
@@ -672,14 +732,15 @@ function PackageCardImpl({
                 <MoreVertical className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
 
-              {menuOpen && (
+              {menuOpen && typeof document !== 'undefined' && createPortal(
                 <>
-                  <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }} />
+                  <div className="fixed inset-0 z-[75]" onClick={(e) => { e.stopPropagation(); setMenuOpen(false); }} />
                   <div
+                    ref={menuRef}
                     aria-label={t('card.moreActions')}
-                    className={`absolute z-50 w-48 bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl py-1 text-xs end-0 ${
-                      menuFlipUp ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
-                    }`}
+                    dir={isRTL ? 'rtl' : 'ltr'}
+                    style={menuPos ? { top: menuPos.top, left: menuPos.left, maxHeight: menuPos.maxHeight } : { top: 0, left: 0, visibility: 'hidden' }}
+                    className="fixed z-[76] w-48 overflow-y-auto overscroll-contain bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl py-1 text-xs"
                   >
                     <button
                       type="button"
@@ -691,7 +752,7 @@ function PackageCardImpl({
                       aria-label={t('card.copyTracking')}
                       className="w-full flex items-center gap-2 px-3 py-2.5 text-slate-300 hover:bg-slate-800 hover:text-slate-100 min-h-[48px]"
                     >
-                      {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />}
+                      {copied ? <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden="true" /> : <Copy className="w-3.5 h-3.5" aria-hidden="true" />}
                       <span>{t('card.copyTracking')}</span>
                     </button>
 
@@ -779,7 +840,8 @@ function PackageCardImpl({
                       <span>{t('card.delete')}</span>
                     </button>
                   </div>
-                </>
+                </>,
+                document.body
               )}
             </div>
           </div>

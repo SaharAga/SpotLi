@@ -122,7 +122,7 @@ export function AnalyticsModal({
                 {t('insights.avgTime')}
               </span>
               <div className="flex items-baseline gap-1 mt-1">
-                <p className="text-2xl font-extrabold text-emerald-400">
+                <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
                   <bdi dir="ltr">{metrics.avgTransitDays}</bdi>
                 </p>
                 <span className="text-xs text-slate-400 font-medium">
@@ -136,7 +136,7 @@ export function AnalyticsModal({
               <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider truncate">
                 {t('insights.topCarrier')}
               </span>
-              <p className="text-base font-bold text-amber-400 mt-1 truncate">
+              <p className="text-base font-bold text-amber-600 dark:text-amber-400 mt-1 truncate">
                 {topCarrierObj ? (language === 'he' ? topCarrierObj.hebrewName : topCarrierObj.name) : '—'}
               </p>
             </div>
@@ -221,13 +221,13 @@ export function AnalyticsModal({
               {/* Performance Highlights */}
               <div className="space-y-3">
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-900/80 border border-slate-800/80">
-                  <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+                  <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                     <CheckCircle2 className="w-4 h-4" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between text-xs">
                       <span className="text-slate-300 font-medium">{t('insights.delivered')}</span>
-                      <span className="text-emerald-400 font-bold"><bdi dir="ltr">{metrics.deliveredCount} / {metrics.totalCount}</bdi></span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold"><bdi dir="ltr">{metrics.deliveredCount} / {metrics.totalCount}</bdi></span>
                     </div>
                   </div>
                 </div>
@@ -239,7 +239,7 @@ export function AnalyticsModal({
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between text-xs">
                       <span className="text-slate-300 font-medium">{t('insights.fastestCarrier')}</span>
-                      <span className="text-indigo-300 font-bold truncate">
+                      <span className="text-indigo-700 dark:text-indigo-300 font-bold truncate">
                         {fastestCarrier 
                           ? `${language === 'he' ? fastestCarrier.carrierHebrewName : fastestCarrier.carrierName} (${fastestCarrier.avgDays} ${t('insights.days')})`
                           : '—'}
@@ -255,7 +255,7 @@ export function AnalyticsModal({
           <div className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-4 shadow-sm">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
-                <Award className="w-4 h-4 text-amber-400" />
+                <Award className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                 <span>{t('insights.turnaroundLeaderboard')}</span>
               </h3>
               <span className="text-xs text-slate-400 hidden sm:inline">
@@ -277,7 +277,7 @@ export function AnalyticsModal({
                     <div className="flex items-center gap-3 min-w-0">
                       <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                         idx === 0 
-                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' 
+                          ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40' 
                           : idx === 1 
                           ? 'bg-slate-300/20 text-slate-200 border border-slate-400/40' 
                           : idx === 2 
@@ -297,7 +297,7 @@ export function AnalyticsModal({
                     </div>
 
                     <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold ${
-                      item.avgDays > 0 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400'
+                      item.avgDays > 0 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400'
                     }`}>
                       <Clock className="w-3.5 h-3.5" />
                       <span>
@@ -348,7 +348,7 @@ export function AnalyticsModal({
           {/* Status Breakdown */}
           <div className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-3 shadow-sm">
             <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-emerald-400" />
+              <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>{t('insights.stageDistribution')}</span>
             </h3>
 

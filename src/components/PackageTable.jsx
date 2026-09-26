@@ -102,7 +102,7 @@ function PackageTableImpl({
                       className="text-slate-500 hover:text-slate-100 transition-colors"
                       title={t('card.copyTracking')}
                     >
-                      {copiedId === pkg.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedId === pkg.id ? <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                 </td>

@@ -24,7 +24,7 @@ export function FeatureNudgeBanner({
     },
     gmail: {
       icon: Mail,
-      iconBg: 'bg-amber-500/20 border-amber-500/30 text-amber-400',
+      iconBg: 'bg-amber-500/20 border-amber-500/30 text-amber-600 dark:text-amber-400',
       border: 'border-amber-500/30',
       title: t('nudges.gmailTitle'),
       desc: t('nudges.gmailDesc'),
@@ -33,7 +33,7 @@ export function FeatureNudgeBanner({
     },
     locker: {
       icon: MapPin,
-      iconBg: 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400',
+      iconBg: 'bg-emerald-500/20 border-emerald-500/30 text-emerald-600 dark:text-emerald-400',
       border: 'border-emerald-500/30',
       title: t('nudges.lockerTitle'),
       desc: t('nudges.lockerDesc'),

@@ -58,13 +58,23 @@ const openModals = [];
  */
 let scrollLockCount = 0;
 let previousBodyOverflow = null;
+let previousRootOverflow = null;
 
+/*
+ * Both <html> and <body> are locked. index.css gives <html> `overflow-x:
+ * clip`, and once the root element's overflow is anything but `visible` the
+ * body's overflow no longer propagates to the viewport — so locking <body>
+ * alone locked nothing, and the page kept scrolling behind every modal.
+ */
 export function acquireScrollLock() {
   if (typeof document === 'undefined') return;
   if (scrollLockCount === 0) {
     const current = document.body.style.overflow;
     previousBodyOverflow = current === 'hidden' ? '' : current;
+    const root = document.documentElement.style.overflowY;
+    previousRootOverflow = root === 'hidden' ? '' : root;
     document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflowY = 'hidden';
   }
   scrollLockCount += 1;
 }
@@ -74,7 +84,9 @@ export function releaseScrollLock() {
   scrollLockCount = Math.max(0, scrollLockCount - 1);
   if (scrollLockCount === 0) {
     document.body.style.overflow = previousBodyOverflow || '';
+    document.documentElement.style.overflowY = previousRootOverflow || '';
     previousBodyOverflow = null;
+    previousRootOverflow = null;
   }
 }
 

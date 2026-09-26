@@ -195,12 +195,12 @@ export function ExportModal({
                 onClick={() => setSelectedFormat('csv')}
                 className={`p-3.5 rounded-2xl border text-start transition-ui cursor-pointer flex flex-col justify-between min-h-[48px] ${
                   selectedFormat === 'csv'
-                    ? 'bg-blue-600/15 border-blue-500 text-blue-300 ring-1 ring-blue-500/50'
+                    ? 'bg-blue-600/15 border-blue-500 text-blue-700 dark:text-blue-300 ring-1 ring-blue-500/50'
                     : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <FileSpreadsheet className="w-5 h-5 text-emerald-400" />
+                  <FileSpreadsheet className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                   {selectedFormat === 'csv' && <CheckCircle2 className="w-4 h-4 text-blue-400" />}
                 </div>
                 <div>
@@ -219,7 +219,7 @@ export function ExportModal({
                 onClick={() => setSelectedFormat('json')}
                 className={`p-3.5 rounded-2xl border text-start transition-ui cursor-pointer flex flex-col justify-between min-h-[48px] ${
                   selectedFormat === 'json'
-                    ? 'bg-blue-600/15 border-blue-500 text-blue-300 ring-1 ring-blue-500/50'
+                    ? 'bg-blue-600/15 border-blue-500 text-blue-700 dark:text-blue-300 ring-1 ring-blue-500/50'
                     : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
                 }`}
               >
@@ -245,12 +245,12 @@ export function ExportModal({
                 onClick={() => setSelectedFormat('print')}
                 className={`p-3.5 rounded-2xl border text-start transition-ui cursor-pointer flex flex-col justify-between min-h-[48px] ${
                   selectedFormat === 'print'
-                    ? 'bg-blue-600/15 border-blue-500 text-blue-300 ring-1 ring-blue-500/50'
+                    ? 'bg-blue-600/15 border-blue-500 text-blue-700 dark:text-blue-300 ring-1 ring-blue-500/50'
                     : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <Printer className="w-5 h-5 text-amber-400" />
+                  <Printer className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                   {selectedFormat === 'print' && <CheckCircle2 className="w-4 h-4 text-blue-400" />}
                 </div>
                 <div>
@@ -281,7 +281,7 @@ export function ExportModal({
                 onClick={() => setSelectedScope('all')}
                 className={`p-2.5 rounded-xl border text-center font-bold text-xs transition-ui cursor-pointer min-h-[48px] flex items-center justify-center ${
                   selectedScope === 'all'
-                    ? 'bg-blue-600/20 border-blue-500 text-blue-300'
+                    ? 'bg-blue-600/20 border-blue-500 text-blue-700 dark:text-blue-300'
                     : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200'
                 }`}
               >
@@ -295,7 +295,7 @@ export function ExportModal({
                 onClick={() => setSelectedScope('active')}
                 className={`p-2.5 rounded-xl border text-center font-bold text-xs transition-ui cursor-pointer min-h-[48px] flex items-center justify-center ${
                   selectedScope === 'active'
-                    ? 'bg-blue-600/20 border-blue-500 text-blue-300'
+                    ? 'bg-blue-600/20 border-blue-500 text-blue-700 dark:text-blue-300'
                     : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200'
                 }`}
               >
@@ -309,7 +309,7 @@ export function ExportModal({
                 onClick={() => setSelectedScope('delivered')}
                 className={`p-2.5 rounded-xl border text-center font-bold text-xs transition-ui cursor-pointer min-h-[48px] flex items-center justify-center ${
                   selectedScope === 'delivered'
-                    ? 'bg-blue-600/20 border-blue-500 text-blue-300'
+                    ? 'bg-blue-600/20 border-blue-500 text-blue-700 dark:text-blue-300'
                     : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200'
                 }`}
               >
@@ -326,13 +326,13 @@ export function ExportModal({
                 {language === 'he' ? 'חבילות שנכללות בייצוא:' : 'Included in Export:'}
               </span>
             </div>
-            <span className="px-3 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-300 font-bold text-xs">
+            <span className="px-3 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-700 dark:text-blue-300 font-bold text-xs">
               <bdi dir="ltr">{filteredExportPackages.length}</bdi> {language === 'he' ? 'פריטים' : 'items'}
             </span>
           </div>
 
           <div className="flex items-center gap-2 text-xs text-slate-400">
-            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span>
               {language === 'he' 
                 ? 'ייצוא מאובטח מבוצע מקומית במכשיר שלך ללא העברת מידע לצד שלישי.' 
@@ -361,7 +361,7 @@ export function ExportModal({
           >
             {copied ? (
               <>
-                <Check className="w-4 h-4 text-emerald-400" />
+                <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>{language === 'he' ? 'הועתק!' : 'Copied!'}</span>
               </>
             ) : (

@@ -365,7 +365,7 @@ export function PackageDetailModal({
                   onDelete(pkg.id);
                   onClose();
                 }}
-                className="p-2.5 px-3.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 hover:text-rose-200 transition-ui flex items-center gap-1.5 border border-rose-500/30 shadow-sm min-h-[48px] cursor-pointer"
+                className="p-2.5 px-3.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 hover:text-rose-200 transition-ui flex items-center gap-1.5 border border-rose-500/30 shadow-sm min-h-[48px] cursor-pointer"
                 title={language === 'he' ? 'מחיקת חבילה' : 'Delete package'}
                 aria-label={language === 'he' ? 'מחיקת חבילה' : 'Delete package'}
               >
@@ -423,7 +423,7 @@ export function PackageDetailModal({
                   <button
                     type="button"
                     onClick={handleUndoDelivery}
-                    className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-bold transition-ui border border-amber-500/30 min-h-[48px]"
+                    className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-bold transition-ui border border-amber-500/30 min-h-[48px]"
                   >
                     <RotateCcw className="w-4 h-4" />
                     <span>{language === 'he' ? 'ביטול מסירה' : 'Undo delivery'}</span>
@@ -458,9 +458,9 @@ export function PackageDetailModal({
                     title={!isAllowed && !isCurrent ? (language === 'he' ? 'מעבר לא מורשה' : 'Transition not permitted') : ''}
                     className={`flex flex-col items-center p-2.5 rounded-xl border text-center transition-ui ${
                       isCurrent
-                        ? 'border-blue-500 bg-blue-500/10 text-blue-300 ring-2 ring-blue-500/30'
+                        ? 'border-blue-500 bg-blue-500/10 text-blue-700 dark:text-blue-300 ring-2 ring-blue-500/30'
                         : isPassed
-                        ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-400'
+                        ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400'
                         : isAllowed
                         ? 'border-slate-800 bg-slate-900/50 text-slate-400 hover:border-slate-700 hover:text-slate-200'
                         : 'border-slate-900/60 bg-slate-950/40 text-slate-600 opacity-40 cursor-not-allowed'
@@ -490,7 +490,7 @@ export function PackageDetailModal({
                 <span>{formatDate(pkg.expectedDeliveryDate, language) || '-'}</span>
               </div>
               {daysInfo && (
-                <span className={`inline-block text-xs font-semibold mt-1 px-2 py-0.5 rounded-md ${daysInfo.isUrgent ? 'bg-amber-500/20 text-amber-300' : 'bg-blue-500/20 text-blue-300'}`}>
+                <span className={`inline-block text-xs font-semibold mt-1 px-2 py-0.5 rounded-md ${daysInfo.isUrgent ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300' : 'bg-blue-500/20 text-blue-700 dark:text-blue-300'}`}>
                   {daysInfo.text}
                 </span>
               )}
@@ -503,7 +503,7 @@ export function PackageDetailModal({
                 <MapPin className="w-4 h-4 text-rose-400 shrink-0" />
                 <span className="truncate">{pkg.origin || 'Global'}</span>
                 <span className="inline-block rtl:rotate-180 font-bold">→</span>
-                <span className="truncate text-blue-300">{pkg.destination || 'Israel'}</span>
+                <span className="truncate text-blue-700 dark:text-blue-300">{pkg.destination || 'Israel'}</span>
               </div>
             </div>
 
@@ -519,17 +519,17 @@ export function PackageDetailModal({
 
           {/* Pickup Information Card */}
           {(pkg.pickupCode || pkg.pickupLocation) && (
-            <div className="flex flex-col gap-3 p-5 rounded-2xl bg-emerald-950/30 border border-emerald-500/25 relative overflow-hidden">
+            <div className="flex flex-col gap-3 p-5 rounded-2xl bg-emerald-500/10 dark:bg-emerald-950/30 border border-emerald-500/25 relative overflow-hidden">
               <div className="flex flex-wrap items-start justify-between gap-4 relative z-10">
                 <div className="flex flex-col gap-2 flex-1">
                   {pkg.pickupCode && (
                     <div className="flex items-center gap-3">
                       <div className="flex flex-col">
-                        <span className="text-xs text-emerald-400 uppercase tracking-widest font-extrabold mb-1">
+                        <span className="text-xs text-emerald-600 dark:text-emerald-400 uppercase tracking-widest font-extrabold mb-1">
                           {language === 'he' ? 'קוד איסוף' : 'Pickup Code'}
                         </span>
                         <div className="flex items-center gap-2">
-                          <span className="text-3xl sm:text-4xl font-black text-emerald-50 tracking-wider font-mono">
+                          <span className="text-3xl sm:text-4xl font-black text-emerald-800 dark:text-emerald-50 tracking-wider font-mono">
                             <bdi dir="ltr">{pkg.pickupCode}</bdi>
                           </span>
                           <button
@@ -537,7 +537,7 @@ export function PackageDetailModal({
                               const success = await copyToClipboard(pkg.pickupCode);
                               if (success && onShowToast) onShowToast(language === 'he' ? 'קוד איסוף הועתק' : 'Pickup code copied', 'success');
                             }}
-                            className="p-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-300 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer"
+                            className="p-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/40 text-emerald-700 dark:text-emerald-300 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer"
                             title={language === 'he' ? 'העתק קוד' : 'Copy code'}
                             aria-label={language === 'he' ? 'העתק קוד איסוף' : 'Copy pickup code'}
                           >
@@ -548,7 +548,7 @@ export function PackageDetailModal({
                             <button
                               type="button"
                               onClick={() => onOpenLockerMode(pkg)}
-                              className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500/25 hover:bg-emerald-500/40 text-emerald-200 hover:text-slate-100 border border-emerald-500/40 text-xs font-bold transition-ui shadow-sm cursor-pointer min-h-[48px]"
+                              className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500/25 hover:bg-emerald-500/40 text-emerald-800 dark:text-emerald-200 hover:text-slate-100 border border-emerald-500/40 text-xs font-bold transition-ui shadow-sm cursor-pointer min-h-[48px]"
                               title={language === 'he' ? 'פתח מצב לוקר מוגדל' : 'Open Full-Screen Locker Mode'}
                             >
                               <Maximize2 className="w-3.5 h-3.5" />
@@ -563,11 +563,11 @@ export function PackageDetailModal({
                   {pkg.shelfNumber && (
                     <div className="flex items-center gap-3">
                       <div className="flex flex-col">
-                        <span className="text-xs text-amber-400 uppercase tracking-widest font-extrabold mb-1">
+                        <span className="text-xs text-amber-600 dark:text-amber-400 uppercase tracking-widest font-extrabold mb-1">
                           {language === 'he' ? 'מספר מדף / איסוף' : 'Shelf / Bin Number'}
                         </span>
                         <div className="flex items-center gap-2">
-                          <span className="text-2xl sm:text-3xl font-black text-amber-200 tracking-wider font-mono">
+                          <span className="text-2xl sm:text-3xl font-black text-amber-800 dark:text-amber-200 tracking-wider font-mono">
                             <bdi dir="ltr">{pkg.shelfNumber}</bdi>
                           </span>
                           <button
@@ -575,7 +575,7 @@ export function PackageDetailModal({
                               const success = await copyToClipboard(pkg.shelfNumber);
                               if (success && onShowToast) onShowToast(language === 'he' ? 'מספר מדף הועתק' : 'Shelf number copied', 'success');
                             }}
-                            className="p-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer"
+                            className="p-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/40 text-amber-700 dark:text-amber-300 transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center cursor-pointer"
                             title={language === 'he' ? 'העתק מספר מדף' : 'Copy shelf number'}
                             aria-label={language === 'he' ? 'העתק מספר מדף' : 'Copy shelf number'}
                           >
@@ -591,10 +591,10 @@ export function PackageDetailModal({
                     {pickupCountdown.hasDeadline && (
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold ${
                         pickupCountdown.urgency === 'critical' || pickupCountdown.urgency === 'expired'
-                          ? 'bg-rose-500/25 text-rose-300 border border-rose-500/40' 
+                          ? 'bg-rose-500/25 text-rose-700 dark:text-rose-300 border border-rose-500/40' 
                           : pickupCountdown.urgency === 'warning'
-                            ? 'bg-amber-500/25 text-amber-300 border border-amber-500/40'
-                            : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                            ? 'bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/40'
+                            : 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
                       }`}>
                         <Clock className="w-3.5 h-3.5" />
                         {language === 'he' ? pickupCountdown.formattedHe : pickupCountdown.formattedEn}
@@ -614,8 +614,8 @@ export function PackageDetailModal({
 
                   {/* Friday / Shabbat / Holiday Contextual Alerts */}
                   {(storeStatus.warningHe || storeStatus.warningEn) && (
-                    <div className="flex items-center gap-2 mt-1.5 p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-xs">
-                      <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                    <div className="flex items-center gap-2 mt-1.5 p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs">
+                      <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
                       <span>{language === 'he' ? storeStatus.warningHe : storeStatus.warningEn}</span>
                     </div>
                   )}
@@ -642,7 +642,7 @@ export function PackageDetailModal({
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-emerald-400 text-sm font-bold transition-ui min-h-[48px] border border-emerald-900"
+                    className="flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-emerald-600 dark:text-emerald-400 text-sm font-bold transition-ui min-h-[48px] border border-emerald-900"
                   >
                     <ExternalLink className="w-4 h-4" />
                     {language === 'he' ? 'שתף בוואטסאפ' : 'Share Proxy'}
@@ -651,7 +651,7 @@ export function PackageDetailModal({
                   {pkg.pickupPhone && (
                     <a
                       href={`tel:${pkg.pickupPhone}`}
-                      className="flex justify-center items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-800/40 hover:bg-emerald-700/50 text-emerald-200 hover:text-slate-100 text-xs font-bold transition-ui min-h-[48px] border border-emerald-500/30"
+                      className="flex justify-center items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-800/40 hover:bg-emerald-700/50 text-emerald-800 dark:text-emerald-200 hover:text-slate-100 text-xs font-bold transition-ui min-h-[48px] border border-emerald-500/30"
                       title={language === 'he' ? `התקשר: ${pkg.pickupPhone}` : `Call: ${pkg.pickupPhone}`}
                       aria-label={language === 'he' ? `התקשר לחנות: ${pkg.pickupPhone}` : `Call store: ${pkg.pickupPhone}`}
                     >
@@ -664,9 +664,9 @@ export function PackageDetailModal({
 
               {/* Courier Redirect Alert & Original Location Note */}
               {pkg.isRedirected && (
-                <div className="mt-3 p-3.5 rounded-2xl bg-amber-950/60 border border-amber-500/40 text-xs space-y-1.5 relative z-10 shadow-inner">
-                  <div className="flex items-center gap-2 text-amber-300 font-bold">
-                    <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                <div className="mt-3 p-3.5 rounded-2xl bg-amber-500/10 dark:bg-amber-950/60 border border-amber-500/40 text-xs space-y-1.5 relative z-10 shadow-inner">
+                  <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300 font-bold">
+                    <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
                     <span>{t('redirectDetection.bannerTitle')}</span>
                   </div>
                   <p className="text-amber-200/90 text-xs leading-relaxed">
@@ -683,13 +683,13 @@ export function PackageDetailModal({
 
               {/* Sibling Same-Location Bundling Alert */}
               {siblingPackages.length > 0 && (
-                <div className="mt-3 p-3.5 rounded-2xl bg-indigo-950/60 border border-indigo-500/40 text-xs space-y-2.5 relative z-10 shadow-inner">
+                <div className="mt-3 p-3.5 rounded-2xl bg-indigo-500/10 dark:bg-indigo-950/60 border border-indigo-500/40 text-xs space-y-2.5 relative z-10 shadow-inner">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div className="flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-300">
+                      <div className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-700 dark:text-indigo-300">
                         <Layers className="w-4 h-4" />
                       </div>
-                      <span className="font-bold text-indigo-100">
+                      <span className="font-bold text-indigo-800 dark:text-indigo-100">
                         {siblingPackages.length === 1
                           ? t('locationBundling.bundleBannerTitleSingle')
                           : (t('locationBundling.bundleBannerTitleMultiple') || 'עוד {count} חבילות ממתינות כאן!').replace('{count}', String(siblingPackages.length))}
@@ -738,7 +738,7 @@ export function PackageDetailModal({
                             title={language === 'he' ? `עבור לחבילה ${sibTitle}` : `Switch to ${sibTitle}`}
                           >
                             <span className="font-semibold text-slate-200 group-hover/sib:text-indigo-300 truncate max-w-[140px]">{sibTitle}</span>
-                            <span className="font-mono text-emerald-400 font-bold shrink-0">
+                            <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold shrink-0">
                               <bdi dir="ltr">{sib.pickupCode ? `PIN: ${sib.pickupCode}` : sib.trackingNumber}</bdi>
                             </span>
                           </button>
@@ -765,7 +765,7 @@ export function PackageDetailModal({
                     className="flex items-start gap-2 cursor-pointer group hover:opacity-90 transition-opacity"
                     title={language === 'he' ? 'לחץ לפתיחת ניווט' : 'Click to navigate'}
                   >
-                    <MapPin className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
+                    <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
                     <span className="text-sm text-emerald-100/90 leading-tight group-hover:underline">
                       {pkg.pickupLocation}
                     </span>
@@ -774,7 +774,7 @@ export function PackageDetailModal({
                   {/* Hours detail strip & Report wrong hours trigger */}
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-300 bg-slate-950/40 p-2.5 rounded-xl border border-emerald-500/20">
                     <div className="flex items-center gap-2">
-                      <Clock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                       <span className="text-slate-300 font-medium">
                         {language === 'he' ? resolvedHours.hoursHe : resolvedHours.hoursEn}
                       </span>
@@ -788,7 +788,7 @@ export function PackageDetailModal({
                     <button
                       type="button"
                       onClick={() => setIsReportingHours(!isReportingHours)}
-                      className="text-xs text-indigo-300 hover:text-indigo-200 underline font-medium flex items-center gap-1 cursor-pointer"
+                      className="text-xs text-indigo-700 dark:text-indigo-300 hover:text-indigo-200 underline font-medium flex items-center gap-1 cursor-pointer"
                     >
                       <Flag className="w-3 h-3" />
                       <span>{t('openingHours.reportWrongHours')}</span>
@@ -798,7 +798,7 @@ export function PackageDetailModal({
                   {/* Inline Report Incorrect Hours Box */}
                   {isReportingHours && (
                     <form onSubmit={handleReportWrongHours} className="p-3 rounded-xl bg-slate-900 border border-indigo-500/30 space-y-2 animate-fade-in text-xs">
-                      <label className="block text-xs font-bold text-indigo-200">
+                      <label className="block text-xs font-bold text-indigo-800 dark:text-indigo-200">
                         {t('openingHours.reportPromptTitle')}
                       </label>
                       <input
@@ -837,13 +837,13 @@ export function PackageDetailModal({
 
           {/* Customs Clearance Banner */}
           {pkg.customsDetails?.required && (
-            <div className="p-4 rounded-2xl bg-rose-950/30 border border-rose-500/30 flex flex-wrap items-center justify-between gap-3">
+            <div className="p-4 rounded-2xl bg-rose-500/10 dark:bg-rose-950/30 border border-rose-500/30 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-rose-500/20 text-rose-400">
                   <ShieldAlert className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-rose-200">
+                  <h4 className="text-sm font-bold text-rose-800 dark:text-rose-200">
                     {language === 'he' ? 'נדרש תשלום / שחרור ממכס' : 'Customs Payment / Clearance Required'}
                   </h4>
                   <p className="text-xs text-rose-300/80">
@@ -885,7 +885,7 @@ export function PackageDetailModal({
                   title={t('card.copyTracking')}
                   aria-label={t('card.copyTracking') || (language === 'he' ? 'העתק מספר מעקב' : 'Copy tracking number')}
                 >
-                  {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                  {copied ? <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-4 h-4" />}
                 </button>
               </div>
 
@@ -894,11 +894,11 @@ export function PackageDetailModal({
                   <span className="text-slate-400 font-medium">
                     {language === 'he' ? 'חלוקה מקומית בארץ:' : 'Domestic courier:'}
                   </span>
-                  <span className="font-mono font-bold text-cyan-300">
+                  <span className="font-mono font-bold text-cyan-700 dark:text-cyan-300">
                     <bdi dir="ltr">{pkg.localTrackingNumber}</bdi>
                   </span>
                   {pkg.localCarrier && (
-                    <span className="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-semibold">
+                    <span className="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 font-semibold">
                       {language === 'he' ? getCarrier(pkg.localCarrier).hebrewName : getCarrier(pkg.localCarrier).name}
                     </span>
                   )}
@@ -925,7 +925,7 @@ export function PackageDetailModal({
                   className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-emerald-400 text-xs font-bold transition-ui border border-slate-700/80 min-h-[48px]"
                   title={t('card.refreshStatus')}
                 >
-                  <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
+                  <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-emerald-600 dark:text-emerald-400' : ''}`} />
                   <span>{t('card.refreshStatus')}</span>
                 </button>
               )}
@@ -1003,10 +1003,10 @@ export function PackageDetailModal({
                 <div className="flex flex-wrap items-center gap-2 pt-1">
                   <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${
                     returnCountdown.urgency === 'critical' || returnCountdown.urgency === 'expired'
-                      ? 'bg-rose-500/25 text-rose-300 border-rose-500/40'
+                      ? 'bg-rose-500/25 text-rose-700 dark:text-rose-300 border-rose-500/40'
                       : returnCountdown.urgency === 'warning'
-                        ? 'bg-amber-500/25 text-amber-300 border-amber-500/40'
-                        : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                        ? 'bg-amber-500/25 text-amber-700 dark:text-amber-300 border-amber-500/40'
+                        : 'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30'
                   }`}>
                     <Clock className="w-3.5 h-3.5" />
                     {language === 'he' ? returnCountdown.formattedHe : returnCountdown.formattedEn}
@@ -1048,7 +1048,7 @@ export function PackageDetailModal({
                 lookup will not happen, only that it is not guaranteed. */}
             {!isLiveTrackingConfirmed(pkg.carrier) && (
               <div className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
-                <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                 <p className="text-xs text-amber-200/90 font-medium leading-relaxed">
                   {t('tracking.notConfirmed').replace('{carrier}', language === 'he' ? carrier.hebrewName : carrier.name)}
                 </p>

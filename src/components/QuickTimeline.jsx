@@ -70,7 +70,7 @@ export function QuickTimeline({ currentStatus }) {
         <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${STAGES[effectiveIndex]?.badgeClass || 'bg-slate-800 text-slate-300'}`}>
           {language === 'he' ? (STAGES[effectiveIndex]?.hebrewLabel || '') : (STAGES[effectiveIndex]?.label || '')}
         </span>
-        <span className={effectiveIndex === STAGES.length - 1 ? 'text-emerald-400 font-semibold' : ''}>
+        <span className={effectiveIndex === STAGES.length - 1 ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : ''}>
           {language === 'he' ? STAGES[STAGES.length - 1]?.hebrewLabel : STAGES[STAGES.length - 1]?.label}
         </span>
       </div>

@@ -54,9 +54,9 @@ export function Row({ label, value, tone = 'default', className = '' }) {
   const tones = {
     default: 'text-slate-100',
     muted: 'text-slate-400',
-    warning: 'text-amber-400',
+    warning: 'text-amber-600 dark:text-amber-400',
     danger: 'text-rose-400',
-    success: 'text-emerald-400'
+    success: 'text-emerald-600 dark:text-emerald-400'
   };
   return (
     <div
@@ -123,10 +123,10 @@ export function Pill({ children, tone = 'neutral', className = '' }) {
   const tones = {
     neutral: 'bg-slate-800 text-slate-300 border-slate-700',
     accent: 'bg-blue-500/12 text-blue-400 border-blue-500/30',
-    transit: 'bg-cyan-500/12 text-cyan-400 border-cyan-500/30',
-    warning: 'bg-amber-500/12 text-amber-400 border-amber-500/30',
+    transit: 'bg-cyan-500/12 text-cyan-600 dark:text-cyan-400 border-cyan-500/30',
+    warning: 'bg-amber-500/12 text-amber-600 dark:text-amber-400 border-amber-500/30',
     danger: 'bg-rose-500/12 text-rose-400 border-rose-500/30',
-    success: 'bg-emerald-500/12 text-emerald-400 border-emerald-500/30'
+    success: 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
   };
   return (
     <span

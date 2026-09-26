@@ -241,6 +241,9 @@ describe('Modal — body scroll lock', () => {
       </Modal>
     );
     expect(document.body.style.overflow).toBe('hidden');
+    // index.css clips <html> horizontally, which makes <html> — not <body> —
+    // the viewport's scroller; a body-only lock left the page scrollable.
+    expect(document.documentElement.style.overflowY).toBe('hidden');
 
     rerender(
       <Modal isOpen={false} onClose={() => {}} ariaLabel="d">
@@ -248,6 +251,7 @@ describe('Modal — body scroll lock', () => {
       </Modal>
     );
     expect(document.body.style.overflow).toBe('');
+    expect(document.documentElement.style.overflowY).toBe('');
   });
 
   it('keeps the lock while a second modal is still open', () => {

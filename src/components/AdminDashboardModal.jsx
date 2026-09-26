@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { MessageSquare, Star, Trash2, Bug, Lightbulb, Heart, RefreshCw, CloudOff, Cloud, AlertTriangle, ShieldCheck, TrendingDown, TrendingUp, BarChart3, Activity, Download, Cpu, Smartphone, Search, Filter, Layers, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { MessageSquare, Star, Trash2, Bug, Lightbulb, Heart, RefreshCw, CloudOff, Cloud, AlertTriangle, ShieldCheck, BarChart3, Activity, Download, Cpu, Search, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { isAdminUser } from '../constants/admin';
-import { APP_VERSION, BUILD_CHANNEL } from '../constants/version';
+import { APP_VERSION } from '../constants/version';
 import {
   fetchAllFeedback,
   mergeFeedbackSources,
@@ -18,6 +18,7 @@ import { fetchFeatureAdoptionStats, computeAdoptionSummary } from '../services/f
 import { syncQueueService, computeSyncQueueHealth } from '../services/syncQueueService';
 import { getAppCheckDiagnostic, whenAppCheckSettled } from '../services/firebase';
 import { AdminScreenshotLightbox } from './AdminScreenshotLightbox.jsx';
+import { Modal } from './Modal.jsx';
 import { downloadBlob } from '../utils/exportUtils';
 
 /**
@@ -37,7 +38,7 @@ export function describeAppCheck(state, language) {
     case 'token-ok':
       return {
         label: he ? 'מאומת' : 'Verified',
-        tone: 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300',
+        tone: 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300',
         nextStep: he
           ? 'הבקשות מהמכשיר הזה נחתמות. מונה ה-Verified בקונסולה אמור לעלות.'
           : 'Requests from this device are signed. The console\'s Verified count should climb.'
@@ -45,7 +46,7 @@ export function describeAppCheck(state, language) {
     case 'no-token':
       return {
         label: he ? 'המפתח נדחה' : 'Key rejected',
-        tone: 'bg-rose-500/10 border border-rose-500/20 text-rose-300',
+        tone: 'bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-300',
         nextStep: he
           ? 'המפתח הגיע לבנייה אבל reCAPTCHA דחה אותו. בדוק שהמפתח שייך לפרויקט הזה ושהדומיין שלמטה מופיע ברשימת הדומיינים המורשים שלו.'
           : 'The key reached the build but reCAPTCHA rejected it. Check that the key belongs to this Firebase project and that the hostname below is on its allowed-domains list.'
@@ -53,7 +54,7 @@ export function describeAppCheck(state, language) {
     case 'init-failed':
       return {
         label: he ? 'האתחול נכשל' : 'Init failed',
-        tone: 'bg-rose-500/10 border border-rose-500/20 text-rose-300',
+        tone: 'bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-300',
         nextStep: he
           ? 'initializeAppCheck זרק שגיאה — פירוט למטה.'
           : 'initializeAppCheck threw — details below.'
@@ -67,7 +68,7 @@ export function describeAppCheck(state, language) {
     default:
       return {
         label: he ? 'לא מוגדר' : 'Not configured',
-        tone: 'bg-amber-500/10 border border-amber-500/20 text-amber-300',
+        tone: 'bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300',
         nextStep: he
           ? 'מפתח ה-reCAPTCHA לא הגיע לבנייה הזו — בדוק את משתנה המאגר VITE_RECAPTCHA_V3_SITE_KEY ב-GitHub. עד אז לכתיבות ללא הזדהות, כמו /feedback, אין הגנה מפני בוטים.'
           : 'The reCAPTCHA key did not reach this build — check the VITE_RECAPTCHA_V3_SITE_KEY repository variable on GitHub. Until it does, unauthenticated writes like /feedback have no bot protection.'
@@ -80,7 +81,7 @@ export function AdminDashboardModal({
   onClose,
   onShowToast
 }) {
-  const { language, isRTL } = useLanguage();
+  const { language } = useLanguage();
   const { user } = useAuth();
   const isAdmin = isAdminUser(user);
 
@@ -148,6 +149,9 @@ export function AdminDashboardModal({
   const [feedbackFilterType, setFeedbackFilterType] = useState('all'); // 'all' | 'bug' | 'feature' | 'praise'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRating, setSelectedRating] = useState('all');
+
+  // Two-step confirm for clearing the local buffer (it cannot be undone).
+  const [confirmingClear, setConfirmingClear] = useState(false);
 
   // Lightbox state
   const [lightboxImage, setLightboxImage] = useState(null);
@@ -221,18 +225,6 @@ export function AdminDashboardModal({
     }
   }, [isOpen, isAdmin, loadAllTelemetry]);
 
-  // Close on Escape
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && !lightboxImage) {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose, lightboxImage]);
-
   if (!isOpen) return null;
 
   // Filtered feedbacks
@@ -250,6 +242,7 @@ export function AdminDashboardModal({
   });
 
   const handleClearLocalBuffer = () => {
+    setConfirmingClear(false);
     localStorage.removeItem(LOCAL_FEEDBACK_HISTORY_KEY);
     setLocalFeedbacks([]);
     if (onShowToast) {
@@ -285,29 +278,71 @@ export function AdminDashboardModal({
     downloadBlob(jsonStr, 'application/json;charset=utf-8;', `spotli_crashes_${new Date().toISOString().slice(0, 10)}.json`);
   };
 
+  const he = language === 'he';
+  const formatWhen = (value) => {
+    if (!value) return '';
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? '' : d.toLocaleString(he ? 'he-IL' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+  };
+  const FEEDBACK_TYPE_LABEL = {
+    bug: he ? 'תקלה' : 'Bug',
+    feature: he ? 'הצעה' : 'Idea',
+    praise: he ? 'שבח' : 'Praise'
+  };
+  const tabs = [
+    { id: 'trends', icon: BarChart3, label: he ? 'מגמות ואיכות' : 'Overview & Trends', short: he ? 'סקירה' : 'Trends', accent: 'indigo' },
+    { id: 'feedback', icon: MessageSquare, label: he ? 'משובי בודקים' : 'User Feedback', short: he ? 'משובים' : 'Feedback', accent: 'indigo', count: allFeedbacks.length },
+    { id: 'crashes', icon: AlertTriangle, label: he ? 'ניטור קריסות' : 'Crash Monitor', short: he ? 'קריסות' : 'Crashes', accent: 'orange', count: crashGroups.length },
+    { id: 'parser', icon: Cpu, label: he ? 'פיענוח חכם' : 'Smart Parser', short: he ? 'פיענוח' : 'Parser', accent: 'blue', count: parseCorrections.length },
+    { id: 'adoption', icon: Activity, label: he ? 'אימוץ תכונות' : 'Feature Adoption', short: he ? 'אימוץ' : 'Usage', accent: 'purple' },
+    { id: 'system', icon: Download, label: he ? 'ייצוא ומערכת' : 'Export & System', short: he ? 'מערכת' : 'System', accent: 'emerald' }
+  ];
+  const ACTIVE_TAB_TONE = {
+    indigo: 'text-indigo-700 dark:text-indigo-300 border-indigo-600 dark:border-indigo-400',
+    orange: 'text-orange-700 dark:text-orange-300 border-orange-600 dark:border-orange-400',
+    blue: 'text-blue-700 dark:text-blue-300 border-blue-600 dark:border-blue-400',
+    purple: 'text-purple-700 dark:text-purple-300 border-purple-600 dark:border-purple-400',
+    emerald: 'text-emerald-700 dark:text-emerald-300 border-emerald-600 dark:border-emerald-400'
+  };
+
+  // Shown in place of a "nothing here" message whenever the cloud read
+  // failed: an empty list after a failed fetch is not evidence of health.
+  const cloudUnavailableNotice = (
+    <div className="text-center py-12 space-y-2 bg-slate-950/40 rounded-2xl border border-slate-800">
+      <CloudOff className="w-8 h-8 text-rose-600 dark:text-rose-400 mx-auto" aria-hidden="true" />
+      <p className="text-xs font-semibold text-slate-300">
+        {he ? 'לא ניתן לטעון נתונים מהענן — אין כאן מידע על מצב האפליקציה.' : 'Could not load cloud data — this tells you nothing about app health.'}
+      </p>
+    </div>
+  );
+
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in overflow-y-auto"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="admin-dashboard-title"
+    <Modal
+      isOpen={isOpen}
+      onClose={() => {
+        // The lightbox answers its own Escape; don't close the dashboard under it.
+        if (!lightboxImage) onClose();
+      }}
+      labelledBy="admin-dashboard-title"
+      componentName="AdminDashboardModal"
+      className="w-full max-w-5xl h-[88vh] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl flex flex-col"
     >
-      <div className="relative w-full max-w-5xl max-h-[92vh] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col my-auto">
-        {/* Header */}
-        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between gap-3 bg-gradient-to-r from-indigo-900/30 via-slate-900 to-purple-900/30">
+        {/* Header — one compact row; on a phone every pixel here is a pixel
+            the data does not get. */}
+        <div className="px-4 py-3 sm:px-5 border-b border-slate-800 flex items-center justify-between gap-3 bg-slate-900">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2.5 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20 shrink-0">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shrink-0" aria-hidden="true">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <h2 id="admin-dashboard-title" className="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2 flex-wrap">
-                <span>{language === 'he' ? 'מרכז ניהול ומדדי איכות' : 'Admin Telemetry & Quality Center'}</span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-semibold border border-indigo-500/30">
+              <h2 id="admin-dashboard-title" className="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2 min-w-0">
+                <span className="truncate">{he ? 'מרכז ניהול' : 'Admin Center'}</span>
+                <span className="hidden sm:inline text-xs px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-semibold border border-indigo-500/30 shrink-0">
                   <bdi dir="ltr">v{APP_VERSION}</bdi>
                 </span>
               </h2>
-              <p className="text-xs text-slate-400 truncate">
-                {language === 'he' ? 'מעקב תקלות, דוחות קריסה, חוויית משתמש וביצועי מנוע הפיענוח' : 'Issue trends, crash reports, UX satisfaction & smart parser telemetry'}
+              <p className="hidden sm:block text-xs text-slate-400 truncate">
+                {he ? 'מעקב תקלות, דוחות קריסה, חוויית משתמש וביצועי מנוע הפיענוח' : 'Issue trends, crash reports, UX satisfaction & smart parser telemetry'}
               </p>
             </div>
           </div>
@@ -319,8 +354,8 @@ export function AdminDashboardModal({
                 onClick={loadAllTelemetry}
                 disabled={isLoading}
                 className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center disabled:opacity-50"
-                title={language === 'he' ? 'רענן נתונים מהענן' : 'Refresh cloud data'}
-                aria-label={language === 'he' ? 'רענן' : 'Refresh'}
+                title={he ? 'רענן נתונים מהענן' : 'Refresh cloud data'}
+                aria-label={he ? 'רענן' : 'Refresh'}
               >
                 <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
               </button>
@@ -329,171 +364,92 @@ export function AdminDashboardModal({
               type="button"
               onClick={onClose}
               className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 transition-colors cursor-pointer min-h-[48px] min-w-[48px] flex items-center justify-center"
-              aria-label={language === 'he' ? 'חזרה' : 'Back'}
-              title={language === 'he' ? 'חזרה' : 'Back'}
+              aria-label={he ? 'חזרה' : 'Back'}
+              title={he ? 'חזרה' : 'Back'}
             >
               <ArrowLeft className="w-5 h-5 rtl:rotate-180" aria-hidden="true" />
             </button>
           </div>
         </div>
 
-        {/* Status / Cloud Banner */}
-        <div className="px-4 sm:px-6 py-2.5 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between text-xs gap-2 flex-wrap">
-          <div className="flex items-center gap-2">
+        {/* Status line */}
+        <div className="px-4 sm:px-6 py-2 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between text-xs gap-x-3 gap-y-1 flex-wrap">
+          <div className="flex items-center gap-2 min-w-0">
             {isAdmin ? (
               cloudError ? (
                 <>
-                  <CloudOff className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                  <span className="text-rose-300 font-medium">
-                    {language === 'he'
-                      ? `שגיאה בחיבור לענן (${cloudError}) — מוצגים נתוני מכשיר זה בלבד.`
-                      : `Cloud connection issue (${cloudError}) — showing local buffer.`}
+                  <CloudOff className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" aria-hidden="true" />
+                  <span className="text-rose-700 dark:text-rose-300 font-medium">
+                    {he
+                      ? `אין חיבור לענן (${cloudError}) — מוצגים נתוני מכשיר זה בלבד`
+                      : `Cloud unavailable (${cloudError}) — showing this device only`}
                   </span>
                 </>
               ) : (
                 <>
-                  <Cloud className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                  <span className="text-emerald-300 font-medium">
-                    {language === 'he'
-                      ? `מחובר לענן • סה״כ ${cloudFeedbacks.length} משובים, ${crashReports.length} קריסות, ${parseCorrections.length} תיקוני פיענוח`
-                      : `Connected to Cloud • ${cloudFeedbacks.length} feedbacks, ${crashReports.length} crashes, ${parseCorrections.length} parse corrections`}
+                  <Cloud className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
+                  <span className="text-emerald-700 dark:text-emerald-300 font-medium">
+                    {isLoading
+                      ? (he ? 'טוען מהענן…' : 'Loading from cloud…')
+                      : (he
+                        ? `מחובר לענן · ${cloudFeedbacks.length} משובים · ${crashReports.length} קריסות · ${parseCorrections.length} תיקוני פיענוח`
+                        : `Cloud · ${cloudFeedbacks.length} feedback · ${crashReports.length} crashes · ${parseCorrections.length} parse fixes`)}
                   </span>
                 </>
               )
             ) : (
               <>
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <span className="text-amber-300 font-medium">
-                  {language === 'he'
-                    ? 'תצוגת מכשיר מקומית — התחבר עם חשבון מנהל מאומת (saharaga97@gmail.com) לגישה מלאה לענן.'
-                    : 'Local Buffer Mode — Sign in with verified admin email (saharaga97@gmail.com) for cloud telemetry.'}
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
+                <span className="text-amber-700 dark:text-amber-300 font-medium">
+                  {he
+                    ? 'תצוגת מכשיר מקומית — נדרש חשבון מנהל מאומת לגישה לנתוני הענן.'
+                    : 'Local device view — a verified admin account is needed for cloud data.'}
                 </span>
               </>
             )}
           </div>
-
-          <div className="text-slate-400 text-xs flex items-center gap-2">
-            <span>👤 {user?.email || (language === 'he' ? 'משתמש אורח' : 'Guest / Local')}</span>
-            {user?.emailVerified && <span className="text-emerald-400 font-bold">✓ Verified</span>}
-          </div>
+          <span className="text-slate-400 truncate max-w-full">
+            <bdi dir="ltr" className="sm:hidden">v{APP_VERSION} · </bdi>
+            {user?.email || (he ? 'משתמש אורח' : 'Guest')}
+          </span>
         </div>
 
-        {/* Tab Navigation */}
+        {/* Tabs — all six fit on a 360px phone (icon over a short label);
+            full labels from sm up. */}
         <div
           role="tablist"
-          aria-label={language === 'he' ? 'לשוניות מרכז ניהול' : 'Admin Telemetry Tabs'}
-          className="px-4 sm:px-6 pt-3 flex items-center gap-1 sm:gap-2 border-b border-slate-800 overflow-x-auto"
+          aria-label={he ? 'לשוניות מרכז ניהול' : 'Admin Telemetry Tabs'}
+          className="grid grid-cols-6 sm:flex sm:items-center sm:gap-2 px-1 sm:px-6 pt-1 sm:pt-3 border-b border-slate-800 overflow-x-auto overflow-y-hidden shrink-0"
         >
-          <button
-            type="button"
-            role="tab"
-            id="admin-tab-trends"
-            aria-selected={activeTab === 'trends'}
-            aria-controls="admin-panel-trends"
-            onClick={() => setActiveTab('trends')}
-            className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-ui cursor-pointer min-h-[48px] flex items-center gap-1.5 whitespace-nowrap ${
-              activeTab === 'trends'
-                ? 'bg-slate-800/90 text-indigo-600 dark:text-indigo-300 border-b-2 border-indigo-600 dark:border-indigo-400'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-800/40'
-            }`}
-          >
-            <BarChart3 className="w-3.5 h-3.5" />
-            <span>{language === 'he' ? 'מגמות ואיכות' : 'Overview & Trends'}</span>
-          </button>
-
-          <button
-            type="button"
-            role="tab"
-            id="admin-tab-feedback"
-            aria-selected={activeTab === 'feedback'}
-            aria-controls="admin-panel-feedback"
-            onClick={() => setActiveTab('feedback')}
-            className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-ui cursor-pointer min-h-[48px] flex items-center gap-1.5 whitespace-nowrap ${
-              activeTab === 'feedback'
-                ? 'bg-slate-800/90 text-indigo-600 dark:text-indigo-300 border-b-2 border-indigo-600 dark:border-indigo-400'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-800/40'
-            }`}
-          >
-            <MessageSquare className="w-3.5 h-3.5" />
-            <span>{language === 'he' ? 'משובי בודקים' : 'User Feedback'}</span>
-            <span className="text-xs px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-300">
-              {allFeedbacks.length}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            role="tab"
-            id="admin-tab-crashes"
-            aria-selected={activeTab === 'crashes'}
-            aria-controls="admin-panel-crashes"
-            onClick={() => setActiveTab('crashes')}
-            className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-ui cursor-pointer min-h-[48px] flex items-center gap-1.5 whitespace-nowrap ${
-              activeTab === 'crashes'
-                ? 'bg-slate-800/90 text-orange-600 dark:text-orange-300 border-b-2 border-orange-600 dark:border-orange-400'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-800/40'
-            }`}
-          >
-            <AlertTriangle className="w-3.5 h-3.5" />
-            <span>{language === 'he' ? 'ניטור קריסות' : 'Crash Monitor'}</span>
-            <span className="text-xs px-1.5 py-0.2 rounded-full bg-orange-500/20 text-orange-300">
-              {crashGroups.length}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            role="tab"
-            id="admin-tab-parser"
-            aria-selected={activeTab === 'parser'}
-            aria-controls="admin-panel-parser"
-            onClick={() => setActiveTab('parser')}
-            className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-ui cursor-pointer min-h-[48px] flex items-center gap-1.5 whitespace-nowrap ${
-              activeTab === 'parser'
-                ? 'bg-slate-800/90 text-blue-600 dark:text-blue-300 border-b-2 border-blue-600 dark:border-blue-400'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-800/40'
-            }`}
-          >
-            <Cpu className="w-3.5 h-3.5" />
-            <span>{language === 'he' ? 'פיענוח חכם' : 'Smart Parser'}</span>
-            <span className="text-xs px-1.5 py-0.2 rounded-full bg-blue-500/20 text-blue-300">
-              {parseCorrections.length}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            role="tab"
-            id="admin-tab-adoption"
-            aria-selected={activeTab === 'adoption'}
-            aria-controls="admin-panel-adoption"
-            onClick={() => setActiveTab('adoption')}
-            className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-ui cursor-pointer min-h-[48px] flex items-center gap-1.5 whitespace-nowrap ${
-              activeTab === 'adoption'
-                ? 'bg-slate-800/90 text-purple-600 dark:text-purple-300 border-b-2 border-purple-600 dark:border-purple-400'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-800/40'
-            }`}
-          >
-            <Activity className="w-3.5 h-3.5" />
-            <span>{language === 'he' ? 'אימוץ תכונות' : 'Feature Adoption'}</span>
-          </button>
-
-          <button
-            type="button"
-            role="tab"
-            id="admin-tab-system"
-            aria-selected={activeTab === 'system'}
-            aria-controls="admin-panel-system"
-            onClick={() => setActiveTab('system')}
-            className={`px-3.5 py-2.5 text-xs font-bold rounded-t-xl transition-ui cursor-pointer min-h-[48px] flex items-center gap-1.5 whitespace-nowrap ${
-              activeTab === 'system'
-                ? 'bg-slate-800/90 text-emerald-600 dark:text-emerald-300 border-b-2 border-emerald-600 dark:border-emerald-400'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-800/40'
-            }`}
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>{language === 'he' ? 'ייצוא ומערכת' : 'Export & System'}</span>
-          </button>
+          {tabs.map(({ id, icon: Icon, label, short, accent, count }) => {
+            const active = activeTab === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                id={`admin-tab-${id}`}
+                aria-selected={active}
+                aria-controls={`admin-panel-${id}`}
+                aria-label={count !== undefined ? `${label} (${count})` : label}
+                onClick={() => setActiveTab(id)}
+                className={`relative px-0 sm:px-3.5 py-1.5 sm:py-2.5 text-[11px] tracking-tight sm:tracking-normal sm:text-xs font-bold rounded-t-xl transition-ui cursor-pointer min-h-[48px] min-w-0 flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 whitespace-nowrap border-b-2 ${
+                  active
+                    ? `bg-slate-800/90 ${ACTIVE_TAB_TONE[accent]}`
+                    : 'border-transparent text-slate-500 hover:text-slate-200 hover:bg-slate-800/40'
+                }`}
+              >
+                <Icon className="w-4 h-4 sm:w-3.5 sm:h-3.5 shrink-0" aria-hidden="true" />
+                <span className="sm:hidden truncate max-w-full">{short}</span>
+                <span className="hidden sm:inline">{label}</span>
+                {count !== undefined && count > 0 && (
+                  <span className="absolute top-0.5 end-0.5 sm:static text-[10px] sm:text-xs leading-none px-1.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Main Content Viewport */}
@@ -502,7 +458,7 @@ export function AdminDashboardModal({
           id={`admin-panel-${activeTab}`}
           aria-labelledby={`admin-tab-${activeTab}`}
           tabIndex={0}
-          className="flex-1 overflow-y-auto p-4 sm:p-6 text-slate-200 space-y-6"
+          className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 text-slate-200 space-y-6"
         >
           {/* TAB 1: OVERVIEW & TRENDS */}
           {activeTab === 'trends' && (
@@ -513,7 +469,7 @@ export function AdminDashboardModal({
                 <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
                   <div className="flex items-center justify-between text-slate-400 text-xs">
                     <span>{language === 'he' ? 'ציון חוויית משתמש (CSAT)' : 'Avg UX Rating'}</span>
-                    <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                    <Star className="w-4 h-4 text-amber-600 dark:text-amber-400 fill-amber-400" />
                   </div>
                   <div className="text-2xl sm:text-3xl font-extrabold text-slate-100 flex items-baseline gap-1">
                     <span>{feedbackAnalytics.averageRating || '—'}</span>
@@ -528,9 +484,9 @@ export function AdminDashboardModal({
                 <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
                   <div className="flex items-center justify-between text-slate-400 text-xs">
                     <span>{language === 'he' ? 'תקלות שדווחו' : 'Reported Bugs'}</span>
-                    <Bug className="w-4 h-4 text-rose-400" />
+                    <Bug className="w-4 h-4 text-rose-600 dark:text-rose-400" />
                   </div>
-                  <div className="text-2xl sm:text-3xl font-extrabold text-rose-400">
+                  <div className="text-2xl sm:text-3xl font-extrabold text-rose-600 dark:text-rose-400">
                     {feedbackAnalytics.bugCount}
                   </div>
                   <div className="text-xs text-slate-400">
@@ -544,9 +500,9 @@ export function AdminDashboardModal({
                 <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
                   <div className="flex items-center justify-between text-slate-400 text-xs">
                     <span>{language === 'he' ? 'סוגי קריסות (ייחודיים)' : 'Unique Crashes'}</span>
-                    <AlertTriangle className="w-4 h-4 text-orange-400" />
+                    <AlertTriangle className="w-4 h-4 text-orange-600 dark:text-orange-400" />
                   </div>
-                  <div className="text-2xl sm:text-3xl font-extrabold text-orange-400">
+                  <div className="text-2xl sm:text-3xl font-extrabold text-orange-600 dark:text-orange-400">
                     {crashGroups.length}
                   </div>
                   <div className="text-xs text-slate-400">
@@ -558,9 +514,9 @@ export function AdminDashboardModal({
                 <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
                   <div className="flex items-center justify-between text-slate-400 text-xs">
                     <span>{language === 'he' ? 'הצעות ושבחים' : 'Ideas & Praise'}</span>
-                    <Heart className="w-4 h-4 text-emerald-400" />
+                    <Heart className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   </div>
-                  <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400">
+                  <div className="text-2xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">
                     {feedbackAnalytics.featureCount + feedbackAnalytics.praiseCount}
                   </div>
                   <div className="text-xs text-slate-400">
@@ -571,9 +527,9 @@ export function AdminDashboardModal({
 
               {/* Version by Version Comparison */}
               <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-x-3 gap-y-1 flex-wrap">
                   <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-indigo-400" />
+                    <Activity className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                     <span>{language === 'he' ? 'השוואת איכות לפי גרסאות אפליקציה' : 'Quality Trends by App Version'}</span>
                   </h3>
                   <span className="text-xs text-slate-400">
@@ -588,9 +544,9 @@ export function AdminDashboardModal({
                 ) : (
                   <div className="space-y-3">
                     {feedbackAnalytics.versionTrends.map((vt) => (
-                      <div key={vt.version} className="p-3.5 rounded-xl bg-slate-900 border border-slate-800/80 flex items-center justify-between gap-4">
+                      <div key={vt.version} className="p-3.5 rounded-xl bg-slate-900 border border-slate-800/80 flex items-center justify-between gap-x-4 gap-y-2 flex-wrap">
                         <div className="flex items-center gap-3">
-                          <span className="font-mono font-bold text-indigo-300 text-xs px-2 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+                          <span className="font-mono font-bold text-indigo-700 dark:text-indigo-300 text-xs px-2 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
                             v{vt.version}
                           </span>
                           <span className="text-xs text-slate-300">
@@ -598,17 +554,17 @@ export function AdminDashboardModal({
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-4 text-xs">
-                          <span className="flex items-center gap-1 text-rose-400 font-semibold">
-                            <Bug className="w-3.5 h-3.5" /> {vt.bug}
+                        <div className="flex items-center gap-3 text-xs flex-wrap">
+                          <span className="flex items-center gap-1 text-rose-600 dark:text-rose-400 font-semibold">
+                            <Bug className="w-3.5 h-3.5" aria-hidden="true" /> {vt.bug}
                           </span>
-                          <span className="flex items-center gap-1 text-blue-400 font-semibold">
+                          <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400 font-semibold">
                             <Lightbulb className="w-3.5 h-3.5" /> {vt.feature}
                           </span>
-                          <span className="flex items-center gap-1 text-emerald-400 font-semibold">
+                          <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
                             <Heart className="w-3.5 h-3.5" /> {vt.praise}
                           </span>
-                          <span className="flex items-center gap-1 text-amber-400 font-bold ml-2">
+                          <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold">
                             ⭐ {vt.avgRating}
                           </span>
                         </div>
@@ -621,9 +577,14 @@ export function AdminDashboardModal({
               {/* Weekly Trends Timeline */}
               <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-4">
                 <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4 text-emerald-400" />
+                  <BarChart3 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span>{language === 'he' ? 'ציר זמן שבועי: תקלות מול שיפורים' : 'Weekly Issue & Sentiment Timeline'}</span>
                 </h3>
+                <div className="flex items-center gap-4 text-xs text-slate-400 flex-wrap" aria-hidden="true">
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-rose-500" />{he ? 'תקלות' : 'Bugs'}</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" />{he ? 'הצעות' : 'Ideas'}</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />{he ? 'שבחים' : 'Praise'}</span>
+                </div>
 
                 {feedbackAnalytics.weeklyTrends.length === 0 ? (
                   <p className="text-xs text-slate-500 py-4 text-center">
@@ -634,7 +595,7 @@ export function AdminDashboardModal({
                     {feedbackAnalytics.weeklyTrends.map((wt) => (
                       <div key={wt.week} className="space-y-1">
                         <div className="flex justify-between text-xs text-slate-400">
-                          <span>{wt.label} ({wt.week})</span>
+                          <span>{wt.label}</span>
                           <span>{wt.total} {language === 'he' ? 'דיווחים' : 'reports'} • ⭐ {wt.avgRating}</span>
                         </div>
                         <div className="h-4 bg-slate-900 rounded-full overflow-hidden flex border border-slate-800">
@@ -674,12 +635,14 @@ export function AdminDashboardModal({
               {/* Filter and Search Bar */}
               <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between bg-slate-950/60 p-3 rounded-2xl border border-slate-800">
                 {/* Type Filter Buttons */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+                <div className="flex items-center gap-1.5 overflow-x-auto overflow-y-hidden pb-1 sm:pb-0">
                   {['all', 'bug', 'feature', 'praise'].map((type) => (
                     <button
+                      type="button"
+                      aria-pressed={feedbackFilterType === type}
                       key={type}
                       onClick={() => setFeedbackFilterType(type)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-ui cursor-pointer min-h-[48px] ${
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-ui cursor-pointer min-h-[48px] whitespace-nowrap ${
                         feedbackFilterType === type
                           ? 'bg-indigo-600 text-white shadow-md'
                           : 'bg-slate-900 text-slate-400 hover:text-slate-200'
@@ -694,11 +657,12 @@ export function AdminDashboardModal({
                 </div>
 
                 {/* Search and Star Filter */}
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1 sm:w-48">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="relative flex-1 min-w-0 sm:w-48">
                     <Search className="w-3.5 h-3.5 absolute start-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
                     <input
-                      type="text"
+                      type="search"
+                      aria-label={he ? 'חיפוש משובים' : 'Search feedback'}
                       placeholder={language === 'he' ? 'חיפוש בתוכן...' : 'Search feedback...'}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
@@ -709,14 +673,15 @@ export function AdminDashboardModal({
                   <select
                     value={selectedRating}
                     onChange={(e) => setSelectedRating(e.target.value)}
-                    className="bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer min-h-[48px]"
+                    aria-label={he ? 'סינון לפי דירוג' : 'Filter by rating'}
+                    className="w-32 shrink-0 bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer min-h-[48px]"
                   >
-                    <option value="all">{language === 'he' ? 'כל הדירוגים' : 'All Stars'}</option>
-                    <option value="5">⭐⭐⭐⭐⭐ (5)</option>
-                    <option value="4">⭐⭐⭐⭐ (4)</option>
-                    <option value="3">⭐⭐⭐ (3)</option>
-                    <option value="2">⭐⭐ (2)</option>
-                    <option value="1">⭐ (1)</option>
+                    <option value="all">{language === 'he' ? 'כל הדירוגים' : 'All stars'}</option>
+                    <option value="5">5 ★</option>
+                    <option value="4">4 ★</option>
+                    <option value="3">3 ★</option>
+                    <option value="2">2 ★</option>
+                    <option value="1">1 ★</option>
                   </select>
                 </div>
               </div>
@@ -724,9 +689,11 @@ export function AdminDashboardModal({
               {/* Feedback List */}
               {isLoading && allFeedbacks.length === 0 ? (
                 <div className="text-center py-12 space-y-2">
-                  <RefreshCw className="w-8 h-8 text-indigo-400 mx-auto animate-spin" />
+                  <RefreshCw className="w-8 h-8 text-indigo-600 dark:text-indigo-400 mx-auto animate-spin" />
                   <p className="text-xs text-slate-400">{language === 'he' ? 'טוען משובים...' : 'Loading feedback...'}</p>
                 </div>
+              ) : allFeedbacks.length === 0 && cloudError ? (
+                cloudUnavailableNotice
               ) : filteredFeedbacks.length === 0 ? (
                 <div className="text-center py-12 space-y-2 bg-slate-950/40 rounded-2xl border border-slate-800">
                   <MessageSquare className="w-8 h-8 text-slate-600 mx-auto" />
@@ -741,19 +708,19 @@ export function AdminDashboardModal({
                       <div className="flex items-center justify-between flex-wrap gap-2">
                         <div className="flex items-center gap-2">
                           <span className={`p-1.5 rounded-lg text-xs ${
-                            fb.type === 'bug' ? 'bg-rose-500/10 text-rose-400' :
-                            fb.type === 'feature' ? 'bg-blue-500/10 text-blue-400' :
-                            'bg-emerald-500/10 text-emerald-400'
+                            fb.type === 'bug' ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400' :
+                            fb.type === 'feature' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' :
+                            'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                           }`}>
                             {fb.type === 'bug' ? <Bug className="w-3.5 h-3.5" /> : fb.type === 'feature' ? <Lightbulb className="w-3.5 h-3.5" /> : <Heart className="w-3.5 h-3.5" />}
                           </span>
-                          <span className="font-bold text-slate-200 capitalize text-xs">{fb.type}</span>
-                          <span className="text-amber-400 font-bold text-xs flex items-center gap-0.5">
+                          <span className="font-bold text-slate-200 text-xs">{FEEDBACK_TYPE_LABEL[fb.type] || fb.type}</span>
+                          <span className="text-amber-600 dark:text-amber-400 font-bold text-xs flex items-center gap-0.5">
                             <Star className="w-3 h-3 fill-amber-400" /> {fb.rating}/5
                           </span>
                         </div>
                         <span className="text-xs text-slate-500 font-mono">
-                          <bdi dir="auto">{fb.timestamp ? new Date(fb.timestamp).toLocaleString() : ''}</bdi>
+                          <bdi dir="auto">{formatWhen(fb.timestamp)}</bdi>
                         </span>
                       </div>
 
@@ -771,12 +738,12 @@ export function AdminDashboardModal({
                           >
                             <img
                               src={fb.screenshot}
-                              alt="Tester screenshot"
+                              alt={he ? 'צילום מסך מהבודק' : 'Tester screenshot'}
                               loading="lazy"
                               className="w-full max-h-48 object-contain bg-slate-900 group-hover:opacity-90 transition-opacity"
                             />
                             <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-opacity">
-                              🔍 {language === 'he' ? 'לחץ לצפייה בגודל מלא' : 'Click for full size'}
+                              {language === 'he' ? 'לחץ לצפייה בגודל מלא' : 'Click for full size'}
                             </div>
                           </button>
                         </div>
@@ -784,12 +751,12 @@ export function AdminDashboardModal({
 
                       <div className="flex items-center justify-between text-xs text-slate-400 pt-1 flex-wrap gap-2">
                         <span className="truncate flex items-center gap-1.5">
-                          👤 Anonymous Tester
+                          {he ? 'בודק אנונימי' : 'Anonymous tester'}
                           {fb.source === 'cloud' && (
-                            <Cloud className="w-3 h-3 text-emerald-400" title="Synced from cloud" />
+                            <Cloud className="w-3 h-3 text-emerald-600 dark:text-emerald-400" aria-label={he ? 'מהענן' : 'From cloud'} />
                           )}
                         </span>
-                        <span><bdi dir="ltr">📱 {fb.screenWidth}x{fb.screenHeight} • v{fb.appVersion || APP_VERSION}</bdi></span>
+                        <span><bdi dir="ltr">{fb.screenWidth}×{fb.screenHeight} · v{fb.appVersion || APP_VERSION}</bdi></span>
                       </div>
                     </div>
                   ))}
@@ -801,19 +768,26 @@ export function AdminDashboardModal({
           {/* TAB 3: CRASH MONITOR */}
           {activeTab === 'crashes' && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between bg-slate-950/60 p-3 rounded-2xl border border-slate-800">
-                <span className="text-xs text-slate-300 font-semibold flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-orange-400" />
+              <div className="flex items-center justify-between gap-x-3 gap-y-1 flex-wrap bg-slate-950/60 p-3 rounded-2xl border border-slate-800">
+                <span className="text-xs text-slate-300 font-semibold flex items-center gap-2 min-w-0">
+                  <AlertTriangle className="w-4 h-4 text-orange-600 dark:text-orange-400" />
                   <span>{language === 'he' ? 'דוחות קריסה מקובצים לפי חתימת תקלה' : 'Crash Reports Grouped by Error Signature'}</span>
                 </span>
-                <span className="text-xs text-slate-400 font-mono">
+                <span className="text-xs text-slate-400 font-mono shrink-0">
                   {crashReports.length} {language === 'he' ? 'סך מופעים' : 'total events'}
                 </span>
               </div>
 
-              {crashGroups.length === 0 ? (
+              {isLoading && crashGroups.length === 0 ? (
+                <div className="text-center py-12 space-y-2">
+                  <RefreshCw className="w-8 h-8 text-indigo-600 dark:text-indigo-400 mx-auto animate-spin" aria-hidden="true" />
+                  <p className="text-xs text-slate-400">{he ? 'טוען דוחות קריסה...' : 'Loading crash reports...'}</p>
+                </div>
+              ) : crashGroups.length === 0 && cloudError ? (
+                cloudUnavailableNotice
+              ) : crashGroups.length === 0 ? (
                 <div className="text-center py-12 space-y-2 bg-slate-950/40 rounded-2xl border border-slate-800">
-                  <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
+                  <CheckCircle2 className="w-8 h-8 text-emerald-600 dark:text-emerald-400 mx-auto" />
                   <p className="text-xs font-semibold text-slate-300">
                     {language === 'he' ? 'אפס קריסות מדווחות! האפליקציה יציבה.' : 'Zero crashes reported! App is healthy.'}
                   </p>
@@ -823,16 +797,16 @@ export function AdminDashboardModal({
                   {crashGroups.map((group) => (
                     <div key={group.signature} className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 hover:border-slate-700 transition-colors">
                       <div className="flex items-center justify-between flex-wrap gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className="p-1.5 rounded-lg text-xs bg-orange-500/10 text-orange-400 font-bold">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="p-1.5 rounded-lg text-xs bg-orange-500/10 text-orange-600 dark:text-orange-400 font-bold">
                             {group.componentName || 'General'}
                           </span>
-                          <span className="text-orange-400 font-bold text-xs px-2.5 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20">
+                          <span className="text-orange-600 dark:text-orange-400 font-bold text-xs px-2.5 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20">
                             {group.count}× {language === 'he' ? 'מופעים' : 'occurrences'}
                           </span>
                           {group.sessionCount > 0 && (
                             <span
-                              className="text-rose-300 font-bold text-xs px-2.5 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/20"
+                              className="text-rose-700 dark:text-rose-300 font-bold text-xs px-2.5 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/20"
                               title={language === 'he' ? 'הבחנה בין סשן אחד שקרס שוב ושוב לבין הרבה משתמשים שנפגעו' : 'Distinct sessions hit, not raw occurrences — see crashReportService.js'}
                             >
                               {group.sessionCount} {language === 'he' ? 'סשנים ייחודיים' : 'unique sessions'}
@@ -840,17 +814,17 @@ export function AdminDashboardModal({
                           )}
                         </div>
                         <span className="text-xs text-slate-500 font-mono">
-                          {language === 'he' ? 'נצפה לאחרונה:' : 'Last seen:'} <bdi dir="auto">{group.lastSeen ? new Date(group.lastSeen).toLocaleString() : ''}</bdi>
+                          {language === 'he' ? 'נצפה לאחרונה:' : 'Last seen:'} <bdi dir="auto">{formatWhen(group.lastSeen)}</bdi>
                         </span>
                       </div>
 
-                      <p className="text-xs text-rose-300 bg-slate-900/90 p-3 rounded-xl border border-slate-800 font-mono whitespace-pre-wrap leading-relaxed">
+                      <p className="text-xs text-rose-700 dark:text-rose-300 bg-slate-900/90 p-3 rounded-xl border border-slate-800 font-mono whitespace-pre-wrap leading-relaxed">
                         {group.message}
                       </p>
 
-                      <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
-                        <span className="font-mono">Sig: {group.signature}</span>
-                        <span>Version: <bdi dir="ltr">v{group.appVersion || APP_VERSION}</bdi></span>
+                      <div className="flex items-center justify-between gap-x-3 gap-y-1 flex-wrap text-xs text-slate-400 pt-1">
+                        <span className="font-mono break-all"><bdi dir="ltr">{group.signature}</bdi></span>
+                        <span><bdi dir="ltr">v{group.appVersion || APP_VERSION}</bdi></span>
                       </div>
                     </div>
                   ))}
@@ -868,19 +842,19 @@ export function AdminDashboardModal({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                   <span className="text-xs text-slate-400">{language === 'he' ? 'סה״כ ניסיונות ייבוא חכם' : 'Total Smart Import Attempts'}</span>
-                  <div className="text-2xl font-bold text-blue-400">{missRateStats.total}</div>
+                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{missRateStats.total}</div>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                   <span className="text-xs text-slate-400">{language === 'he' ? 'אחוז שדרשו תיקון' : 'Needed a Correction'}</span>
-                  <div className="text-2xl font-bold text-amber-400">
+                  <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
                     {missRateStats.total > 0 ? `${Math.round(missRateStats.missRate * 100)}%` : '—'}
                   </div>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                   <span className="text-xs text-slate-400">{language === 'he' ? 'ללא תיקון' : 'Clean Saves'}</span>
-                  <div className="text-2xl font-bold text-emerald-400">
+                  <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                     {missRateStats.total > 0 ? `${Math.round((1 - missRateStats.missRate) * 100)}%` : '—'}
                   </div>
                 </div>
@@ -889,7 +863,7 @@ export function AdminDashboardModal({
               {Object.keys(missRateStats.perCarrier).length > 0 && (
                 <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-4">
                   <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                    <Cpu className="w-4 h-4 text-amber-400" />
+                    <Cpu className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                     <span>{language === 'he' ? 'אחוז תיקונים לפי מוביל' : 'Miss Rate by Carrier'}</span>
                   </h3>
                   <div className="space-y-2.5">
@@ -916,30 +890,32 @@ export function AdminDashboardModal({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                   <span className="text-xs text-slate-400">{language === 'he' ? 'סה״כ תיקוני משתמשים' : 'Total User Corrections'}</span>
-                  <div className="text-2xl font-bold text-blue-400">{parserStats.total}</div>
+                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{parserStats.total}</div>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                   <span className="text-xs text-slate-400">{language === 'he' ? 'מקור הפיענוח: Regex' : 'Source: Regex'}</span>
-                  <div className="text-2xl font-bold text-indigo-400">{parserStats.sourceBreakdown.regex}</div>
+                  <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{parserStats.sourceBreakdown.regex}</div>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                   <span className="text-xs text-slate-400">{language === 'he' ? 'מקור הפיענוח: Gemini AI' : 'Source: Gemini AI'}</span>
-                  <div className="text-2xl font-bold text-purple-400">{parserStats.sourceBreakdown.ai}</div>
+                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{parserStats.sourceBreakdown.ai}</div>
                 </div>
               </div>
 
               {/* Field breakdown */}
               <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-4">
                 <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                  <Cpu className="w-4 h-4 text-blue-400" />
+                  <Cpu className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   <span>{language === 'he' ? 'שדות שתוקנו הכי הרבה על ידי משתמשים' : 'Most Frequently Corrected Fields'}</span>
                 </h3>
 
                 {Object.keys(parserStats.fieldBreakdown).length === 0 ? (
                   <p className="text-xs text-slate-500 py-4 text-center">
-                    {language === 'he' ? 'אין נתוני תיקוני פיענוח עדיין' : 'No parse corrections recorded yet'}
+                    {cloudError
+                      ? (he ? 'לא ניתן לטעון נתונים מהענן' : 'Could not load cloud data')
+                      : (language === 'he' ? 'אין נתוני תיקוני פיענוח עדיין' : 'No parse corrections recorded yet')}
                   </p>
                 ) : (
                   <div className="space-y-2.5">
@@ -975,13 +951,15 @@ export function AdminDashboardModal({
               </p>
 
               {Object.keys(adoptionSummary).length === 0 ? (
-                <p className="text-xs text-slate-500 py-8 text-center">
-                  {language === 'he' ? 'אין עדיין נתוני אימוץ תכונות' : 'No feature-adoption data yet'}
-                </p>
+                cloudError ? cloudUnavailableNotice : (
+                  <p className="text-xs text-slate-500 py-8 text-center">
+                    {language === 'he' ? 'אין עדיין נתוני אימוץ תכונות' : 'No feature-adoption data yet'}
+                  </p>
+                )
               ) : (
                 <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-4">
                   <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-purple-400" />
+                    <Activity className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                     <span>{language === 'he' ? 'אימוץ לפי תכונה (30 ימים אחרונים)' : 'Adoption by Feature (Trailing 30 Days)'}</span>
                   </h3>
                   <div className="space-y-2.5">
@@ -1013,7 +991,7 @@ export function AdminDashboardModal({
               {/* App Check — the only place this is visible without DevTools */}
               <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
                 <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-blue-400" />
+                  <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   <span>{language === 'he' ? 'מצב App Check (מכשיר זה)' : 'App Check Status (This Device)'}</span>
                 </h3>
                 {(() => {
@@ -1033,17 +1011,17 @@ export function AdminDashboardModal({
               {/* Offline sync queue health (this device only — see note above) */}
               <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
                 <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                  <CloudOff className="w-4 h-4 text-amber-400" />
+                  <CloudOff className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                   <span>{language === 'he' ? 'בריאות תור הסנכרון (מכשיר זה)' : 'Sync Queue Health (This Device)'}</span>
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
                     <span className="text-xs text-slate-400">{language === 'he' ? 'ממתינים לסנכרון' : 'Pending Mutations'}</span>
-                    <div className="text-lg font-bold text-blue-400">{syncQueueHealth.pendingCount}</div>
+                    <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{syncQueueHealth.pendingCount}</div>
                   </div>
                   <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
                     <span className="text-xs text-slate-400">{language === 'he' ? 'הישן ביותר ממתין' : 'Oldest Pending'}</span>
-                    <div className="text-lg font-bold text-amber-400">
+                    <div className="text-lg font-bold text-amber-600 dark:text-amber-400">
                       {syncQueueHealth.oldestPendingAgeMs === null
                         ? '—'
                         : `${Math.round(syncQueueHealth.oldestPendingAgeMs / 60000)}m`}
@@ -1051,7 +1029,7 @@ export function AdminDashboardModal({
                   </div>
                   <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
                     <span className="text-xs text-slate-400">{language === 'he' ? 'נכשלו לצמיתות' : 'Dead-Lettered'}</span>
-                    <div className="text-lg font-bold text-rose-400">{syncQueueHealth.deadLetterCount}</div>
+                    <div className="text-lg font-bold text-rose-600 dark:text-rose-400">{syncQueueHealth.deadLetterCount}</div>
                   </div>
                 </div>
 
@@ -1071,7 +1049,7 @@ export function AdminDashboardModal({
                         className="p-3 rounded-xl bg-slate-900/80 border border-rose-500/20 space-y-2"
                       >
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="px-2 py-0.5 rounded-lg bg-rose-500/10 text-rose-300 text-[11px] font-bold">
+                          <span className="px-2 py-0.5 rounded-lg bg-rose-500/10 text-rose-700 dark:text-rose-300 text-[11px] font-bold">
                             {entry.type}
                           </span>
                           <span className="text-xs text-slate-300 font-medium break-all">
@@ -1087,7 +1065,7 @@ export function AdminDashboardModal({
                           onClick={() => handleRetryDeadLetter(entry.id)}
                           className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 min-h-[48px]"
                         >
-                          <RefreshCw className="w-4 h-4 text-blue-400" />
+                          <RefreshCw className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                           <span>{language === 'he' ? 'נסה שוב' : 'Retry'}</span>
                         </button>
                       </div>
@@ -1099,7 +1077,7 @@ export function AdminDashboardModal({
               {/* Export Tools */}
               <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
                 <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                  <Download className="w-4 h-4 text-emerald-400" />
+                  <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span>{language === 'he' ? 'ייצוא נתוני טלמטריה לניתוח חיצוני' : 'Export Telemetry Data for Offline Analysis'}</span>
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
@@ -1110,26 +1088,29 @@ export function AdminDashboardModal({
 
                 <div className="flex flex-wrap gap-2.5 pt-2">
                   <button
+                    type="button"
                     onClick={handleExportFeedbacksCSV}
                     className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 min-h-[48px]"
                   >
-                    <Download className="w-4 h-4 text-emerald-400" />
+                    <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     <span>{language === 'he' ? 'ייצא משובים (CSV)' : 'Export Feedback (CSV)'}</span>
                   </button>
 
                   <button
+                    type="button"
                     onClick={handleExportFeedbacksJSON}
                     className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 min-h-[48px]"
                   >
-                    <Download className="w-4 h-4 text-blue-400" />
+                    <Download className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <span>{language === 'he' ? 'ייצא משובים (JSON)' : 'Export Feedback (JSON)'}</span>
                   </button>
 
                   <button
+                    type="button"
                     onClick={handleExportCrashesJSON}
                     className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 min-h-[48px]"
                   >
-                    <Download className="w-4 h-4 text-orange-400" />
+                    <Download className="w-4 h-4 text-orange-600 dark:text-orange-400" />
                     <span>{language === 'he' ? 'ייצא קריסות (JSON)' : 'Export Crashes (JSON)'}</span>
                   </button>
                 </div>
@@ -1138,7 +1119,7 @@ export function AdminDashboardModal({
               {/* Local Buffer Management */}
               <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
                 <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                  <Trash2 className="w-4 h-4 text-rose-400" />
+                  <Trash2 className="w-4 h-4 text-rose-600 dark:text-rose-400" />
                   <span>{language === 'he' ? 'ניהול זיכרון מטמון מקומי' : 'Local Device Buffer'}</span>
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
@@ -1146,17 +1127,37 @@ export function AdminDashboardModal({
                     ? 'מנקה רק את היסטוריית המשובים שנשמרה בדפדפן זה. רשומות בענן נשמרות ללא שינוי.'
                     : 'Clears only feedback submissions buffered on this device. Cloud records remain immutable.'}
                 </p>
-                <button
-                  onClick={handleClearLocalBuffer}
-                  className="px-4 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-300 text-xs font-bold transition-colors cursor-pointer min-h-[48px]"
-                >
-                  {language === 'he' ? 'נקה זיכרון מקומי' : 'Clear Local Buffer'}
-                </button>
+                {confirmingClear ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleClearLocalBuffer}
+                      className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-colors cursor-pointer min-h-[48px]"
+                    >
+                      {he ? `כן, למחוק ${localFeedbacks.length} משובים מקומיים` : `Yes, delete ${localFeedbacks.length} local submissions`}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmingClear(false)}
+                      className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors cursor-pointer min-h-[48px]"
+                    >
+                      {he ? 'ביטול' : 'Cancel'}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingClear(true)}
+                    disabled={localFeedbacks.length === 0}
+                    className="px-4 py-2 rounded-xl bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-xs font-bold transition-colors cursor-pointer min-h-[48px] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {language === 'he' ? 'נקה זיכרון מקומי' : 'Clear Local Buffer'}
+                  </button>
+                )}
               </div>
             </div>
           )}
         </div>
-      </div>
 
       {/* Screenshot Lightbox Modal */}
       <AdminScreenshotLightbox
@@ -1165,6 +1166,6 @@ export function AdminDashboardModal({
         onClose={() => setLightboxImage(null)}
         language={language}
       />
-    </div>
+    </Modal>
   );
 }

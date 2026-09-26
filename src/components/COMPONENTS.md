@@ -41,7 +41,8 @@ discards in-progress form state.
   `MODALS.map()` in `App.jsx`, and once more inside `Modal` around the dialog's content.
 - **`Modal`** — the one modal shell. Owns the portal (into `document.body`), the backdrop and
   click-to-dismiss, Escape (routed to the topmost dialog only), the focus trap, initial focus and
-  focus restore to the trigger, the reference-counted body scroll lock, `role="dialog"` /
+  focus restore to the trigger, the reference-counted scroll lock (on `<html>` and `<body>` both — `<html>`'s `overflow-x: clip`
+  makes it the viewport scroller, so a body-only lock did nothing), `role="dialog"` /
   `aria-modal` / labelling, and the named z-layer stack (`MODAL_LAYERS`: `base` / `gate` / `top`)
   that replaced hand-picked z-indexes. Per-dialog appearance comes in as `className` /
   `overlayClassName` and is composed over the shared shell with `clsx` + `tailwind-merge`, so a
@@ -94,7 +95,8 @@ discards in-progress form state.
 
 - **`FeedbackModal`** — alpha-tester feedback submission (`feedbackService.js`), including the
   Smart-Import "this wasn't right?" report path.
-- **`AdminFeedbackModal`** — admin-only feedback inspector.
+- **`AdminFeedbackModal`** — admin-only feedback inspector; a thin wrapper over
+  `AdminDashboardModal`, which is built on `Modal` (full-screen below `lg`, fixed height above it).
 
 ## Adding a new modal
 

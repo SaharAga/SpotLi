@@ -6,6 +6,7 @@ import {
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { SideNavDrawer } from './SideNavDrawer';
+import { Modal } from './Modal';
 import { BottomNav, TAB_FOR_MODAL } from './BottomNav';
 
 // The two tab destinations that ARE modals. Kept here rather than imported
@@ -115,7 +116,7 @@ export function Navbar({
                 {t('appTitle')}
               </span>
               {typeof window !== 'undefined' && (window.location.hostname.includes('staging') || window.location.hostname.includes('localhost')) && (
-                <span className="text-xs px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-black tracking-wider flex items-center gap-1 shadow-sm shadow-amber-500/20">
+                <span className="text-xs px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 font-mono font-black tracking-wider flex items-center gap-1 shadow-sm shadow-amber-500/20">
                   STAGING
                 </span>
               )}
@@ -133,7 +134,7 @@ export function Navbar({
           {onOpenAdminFeedback && (
             <button
               onClick={onOpenAdminFeedback}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-bold transition-colors cursor-pointer min-h-[48px]"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-700 dark:text-indigo-300 text-xs font-bold transition-colors cursor-pointer min-h-[48px]"
               title={language === 'he' ? 'מרכז ניהול ומדדים' : 'Admin Telemetry Center'}
             >
               <ShieldCheck className="w-4 h-4 text-indigo-400" />
@@ -188,7 +189,7 @@ export function Navbar({
           {onOpenAdminFeedback && (
             <button
               onClick={onOpenAdminFeedback}
-              className="flex items-center justify-center p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 cursor-pointer min-h-[48px] min-w-[48px]"
+              className="flex items-center justify-center p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-700 dark:text-indigo-300 cursor-pointer min-h-[48px] min-w-[48px]"
               title={language === 'he' ? 'מרכז ניהול ומדדים' : 'Admin Telemetry'}
             >
               <ShieldCheck className="w-4 h-4 text-indigo-400" />
@@ -254,19 +255,31 @@ export function Navbar({
           purpose — it is how you leave them — but this sheet is the FAB's own
           chooser, not a place you navigated to, and at z-50 the bar cut off its
           lower half. */}
-      {isAddActionSheetOpen && (
-        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-950/80 backdrop-blur-md animate-fade-in" role="dialog" aria-modal="true">
-          <div className="fixed inset-0" onClick={() => setIsAddActionSheetOpen(false)} />
+      {/* Built on the shared Modal (compact, so it stays a sheet rather than
+          going full-screen below lg) for Escape, the focus trap and the body
+          scroll lock — hand-rolled, it had none of them and the page behind
+          it kept scrolling. */}
+      <Modal
+        isOpen={isAddActionSheetOpen}
+        onClose={() => setIsAddActionSheetOpen(false)}
+        compact
+        layer="top"
+        animate={false}
+        labelledBy="add-action-sheet-title"
+        componentName="AddActionSheet"
+        overlayClassName="items-end p-0 sm:items-center sm:p-4 animate-fade-in"
+        className="w-full max-w-lg"
+      >
           <div
             onTouchStart={handleSheetTouchStart}
             onTouchEnd={handleSheetTouchEnd}
-            className="relative w-full max-w-lg max-h-[85dvh] overflow-y-auto bg-slate-900 border-t sm:border border-slate-800 rounded-t-3xl sm:rounded-3xl p-4 sm:p-6 pb-[max(1rem,env(safe-area-inset-bottom,0px))] shadow-2xl space-y-4 z-10 animate-slide-up"
+            className="relative w-full max-h-[85dvh] overflow-y-auto bg-slate-900 border-t sm:border border-slate-800 rounded-t-3xl sm:rounded-3xl p-4 sm:p-6 pb-[max(1rem,env(safe-area-inset-bottom,0px))] shadow-2xl space-y-4 animate-slide-up"
           >
             {/* Native drag handle indicator */}
             <div className="w-10 h-1 bg-slate-700/80 rounded-full mx-auto -mt-1 mb-2 sm:hidden" aria-hidden="true" />
 
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+              <h3 id="add-action-sheet-title" className="text-base font-bold text-slate-100 flex items-center gap-2">
                 <Plus className="w-5 h-5 text-blue-400" />
                 <span>{language === 'he' ? 'הוספת חבילה' : 'Add Package'}</span>
               </h3>
@@ -323,8 +336,7 @@ export function Navbar({
               </button>
             </div>
           </div>
-        </div>
-      )}
+      </Modal>
 
       {/* NATIVE SIDE NAVIGATION DRAWER (RTL Right / LTR Left) */}
       <SideNavDrawer

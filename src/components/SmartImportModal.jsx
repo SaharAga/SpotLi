@@ -631,7 +631,7 @@ export function SmartImportModal({
                       <span>{t('smartModal.parsedSuccess')}</span>
                     </div>
                     {matchedExistingPackage && (
-                      <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-xs font-medium flex items-center gap-1">
+                      <span className="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-500/30 text-xs font-medium flex items-center gap-1">
                         <span>{language === 'he' ? 'חבילה קיימת מעודכנת' : 'Matching Existing Package'}</span>
                       </span>
                     )}
@@ -644,7 +644,7 @@ export function SmartImportModal({
 
                   {showLowConfidenceHint && (
                     <div className="flex items-start gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                      <ShieldAlert className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                      <ShieldAlert className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                       <p className="text-xs text-amber-200/90 leading-relaxed">
                         {language === 'he'
                           ? 'המערכת לא הייתה בטוחה לגמרי בתוצאה — כדאי לבדוק את הפרטים לפני השמירה.'

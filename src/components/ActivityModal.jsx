@@ -21,7 +21,7 @@ function getCheckpointPresentation(event) {
   if (/pickup|locker|איסוף|לוקר|ממתינה לאיסוף|סניף/.test(text)) {
     return {
       Icon: MapPin,
-      badgeColor: 'bg-emerald-500/12 text-emerald-400 dark:text-emerald-300 border border-emerald-500/20'
+      badgeColor: 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 dark:text-emerald-300 border border-emerald-500/20'
     };
   }
 
@@ -45,7 +45,7 @@ function getCheckpointPresentation(event) {
   if (/customs|מכס|שחרור ממכס|בדיקת מכס/.test(text)) {
     return {
       Icon: AlertCircle,
-      badgeColor: 'bg-amber-500/12 text-amber-400 dark:text-amber-300 border border-amber-500/20'
+      badgeColor: 'bg-amber-500/12 text-amber-600 dark:text-amber-400 dark:text-amber-300 border border-amber-500/20'
     };
   }
 
@@ -138,7 +138,7 @@ export function ActivityModal({ isOpen, onClose, packages = [], onOpenPackage })
             aria-label={he ? 'הצג חבילות בארכיון' : 'Include archived packages'}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer min-h-[48px] focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none ${
               includeArchived
-                ? 'bg-blue-600/20 border-blue-500/50 text-blue-300 shadow-sm shadow-blue-500/10'
+                ? 'bg-blue-600/20 border-blue-500/50 text-blue-700 dark:text-blue-300 shadow-sm shadow-blue-500/10'
                 : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-900'
             }`}
             title={he ? 'הצג גם חבילות מהארכיון' : 'Include archived packages'}

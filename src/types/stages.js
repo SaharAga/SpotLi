@@ -32,7 +32,7 @@ export const STAGES = [
     desc: 'Package is travelling internationally or moving between distribution hubs',
     hebrewDesc: 'החבילה בטיסה בינלאומית או במעבר בין מרכזי הפצה',
     color: 'cyan',
-    badgeClass: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
+    badgeClass: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20'
   },
   {
     id: 'customs',
@@ -54,7 +54,7 @@ export const STAGES = [
     desc: 'With local courier or awaiting pickup at local branch/locker',
     hebrewDesc: 'נמסר לשליח או ממתין לאיסוף בנקודת מסירה / לוקר / סניף דואר',
     color: 'amber',
-    badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+    badgeClass: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
   },
   {
     id: 'delivered',
@@ -65,7 +65,7 @@ export const STAGES = [
     desc: 'Package successfully delivered or collected',
     hebrewDesc: 'החבילה נמסרה בהצלחה לידי הלקוח',
     color: 'emerald',
-    badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+    badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
   }
 ];
 
@@ -114,7 +114,7 @@ export const STATUS_DEFINITIONS = Object.freeze({
     desc: 'Package is travelling internationally or moving between distribution hubs',
     hebrewDesc: 'החבילה בטיסה בינלאומית או במעבר בין מרכזי הפצה',
     color: 'cyan',
-    badgeClass: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
+    badgeClass: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20'
   },
   customs: {
     id: 'customs',
@@ -134,7 +134,7 @@ export const STATUS_DEFINITIONS = Object.freeze({
     desc: 'With local courier or awaiting pickup at local branch/locker',
     hebrewDesc: 'נמסר לשליח או ממתין לאיסוף בנקודת מסירה / לוקר / סניף דואר',
     color: 'amber',
-    badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+    badgeClass: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
   },
   /*
    * Not a member of STAGES. STAGES is the linear stepper every package walks,
@@ -157,7 +157,7 @@ export const STATUS_DEFINITIONS = Object.freeze({
     desc: 'Waiting at a locker, branch or pickup point to be collected',
     hebrewDesc: 'ממתין לאיסוף בלוקר, בנקודת חלוקה או בסניף',
     color: 'teal',
-    badgeClass: 'bg-teal-500/10 text-teal-400 border-teal-500/20'
+    badgeClass: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20'
   },
   delivered: {
     id: 'delivered',
@@ -167,7 +167,7 @@ export const STATUS_DEFINITIONS = Object.freeze({
     desc: 'Package successfully delivered or collected',
     hebrewDesc: 'החבילה נמסרה בהצלחה לידי הלקוח',
     color: 'emerald',
-    badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+    badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
   },
   exception: {
     id: 'exception',
